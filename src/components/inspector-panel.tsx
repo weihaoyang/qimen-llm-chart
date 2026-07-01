@@ -1,6 +1,7 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { serializeChartToCompactJson } from "@/lib/qimen/serializer";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 
 type InspectorPanelProps = {
@@ -10,7 +11,7 @@ type InspectorPanelProps = {
 export function InspectorPanel({
   chart,
 }: InspectorPanelProps) {
-  const jsonPayload = chart ? JSON.stringify(chart.raw, null, 2) : "";
+  const jsonPayload = chart ? serializeChartToCompactJson(chart) : "";
 
   return (
     <ScrollArea className="inspector-scroll inspector-scroll-plain">

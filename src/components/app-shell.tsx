@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { buildChart } from "@/lib/qimen/chart";
-import { serializeChartToStructuredText } from "@/lib/qimen/serializer";
+import {
+  serializeChartToCompactJson,
+  serializeChartToStructuredText,
+} from "@/lib/qimen/serializer";
 import type { Position } from "3meta";
 import type { NormalizedQimenChart, UserChartInput } from "@/lib/qimen/types";
 import { ChartForm } from "./chart-form";
@@ -78,7 +81,7 @@ export function AppShell() {
       return;
     }
 
-    await navigator.clipboard.writeText(JSON.stringify(chart.raw, null, 2));
+    await navigator.clipboard.writeText(serializeChartToCompactJson(chart));
     setCopyState("json");
   };
 

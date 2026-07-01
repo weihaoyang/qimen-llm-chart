@@ -46,6 +46,45 @@ const formatPatterns = (
   );
 };
 
+const normalizeValue = (value: unknown): unknown => {
+  if (value === undefined || value === null || value === "") {
+    return "无";
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeValue);
+  }
+
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nextValue]) => [
+        key,
+        normalizeValue(nextValue),
+      ]),
+    );
+  }
+
+  return value;
+};
+
+const normalizePatterns = (
+  patterns: AuspiciousPattern[] | InauspiciousPattern[] | undefined,
+) => {
+  if (!patterns || patterns.length === 0) {
+    return [];
+  }
+
+  return patterns.map((pattern) => ({
+    id: pattern.id ?? "无",
+    name: pattern.name ?? "无",
+    type: pattern.type ?? "无",
+    subType: pattern.sub_type ?? "无",
+    params: pattern.params ?? {},
+    description: pattern.description ?? "无",
+    position: pattern.position ?? "无",
+  }));
+};
+
 const joinPillar = (pillar: { stem: string; branch: string }) =>
   `${pillar.stem}${pillar.branch}`;
 
@@ -137,4 +176,99 @@ export const serializeChartToStructuredText = (
   );
 
   return [...overviewLines, ...palaceBlocks].join("\n\n");
+};
+
+export const serializeChartToCompactJson = (chart: NormalizedQimenChart) => {
+  const chartFields = [
+    "输入参数",
+    "解析后的本地时间",
+    "数据版本",
+    "时间信息",
+    "四柱",
+    "局",
+    "元",
+    "季节",
+    "月令五行",
+    "值符",
+    "值使",
+    "驿马",
+    "暗干表",
+    "全局特殊格局",
+  ];
+
+  const palaceFields = [
+    "宫位编号",
+    "卦名",
+    "内外盘",
+    "地盘天干",
+    "天盘天干",
+    "地支",
+    "八门",
+    "九星",
+    "八神",
+    "是否值符宫",
+    "是否值使宫",
+    "是否驿马宫",
+    "暗干",
+    "空亡信息",
+    "门迫关系",
+    "旺衰",
+    "十二长生",
+    "入墓信息",
+    "十干克应",
+    "六仪击刑",
+    "吉格列表",
+    "凶格列表",
+  ];
+
+  const payload = {
+    format: "qmdj-llm-compact-v1",
+    note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。",
+    legend: {
+      chart: chartFields,
+      palace: palaceFields,
+    },
+    chart: [
+      normalizeValue(chart.input),
+      chart.interpretedDateTime,
+      normalizeValue(chart.raw.version),
+      normalizeValue(chart.raw.timeInfo),
+      normalizeValue(chart.raw.fourPillars),
+      normalizeValue(chart.raw.ju),
+      normalizeValue(chart.raw.yuan),
+      normalizeValue(chart.raw.season),
+      normalizeValue(chart.raw.monthElement),
+      normalizeValue(chart.raw.zhiFu),
+      normalizeValue(chart.raw.zhiShi),
+      normalizeValue(chart.raw.postHorse),
+      normalizeValue(chart.hiddenStemsByPalace),
+      normalizeValue(chart.raw.specialPatterns),
+    ],
+    palaces: chart.raw.palaces.map((palace) => [
+      palace.position,
+      normalizeValue(palace.trigram),
+      normalizeValue(palace.innerOuter),
+      normalizeValue(palace.earthlyStem),
+      normalizeValue(palace.heavenlyStem),
+      normalizeValue(palace.earthBranch),
+      normalizeValue(palace.gate),
+      normalizeValue(palace.star),
+      normalizeValue(palace.deity),
+      Boolean(palace.isZhiFu),
+      Boolean(palace.isZhiShi),
+      Boolean(palace.isPostHorse),
+      normalizeValue(chart.hiddenStemsByPalace[palace.position] ?? "无"),
+      normalizeValue(palace.voidness),
+      normalizeValue(palace.gatePressure),
+      normalizeValue(palace.status),
+      normalizeValue(palace.growthInfo),
+      normalizeValue(palace.tombInfo),
+      normalizeValue(palace.tenStemResponse),
+      normalizeValue(palace.liuYiJiXing),
+      normalizePatterns(palace.auspiciousPatterns),
+      normalizePatterns(palace.inauspiciousPatterns),
+    ]),
+  };
+
+  return JSON.stringify(payload);
 };
