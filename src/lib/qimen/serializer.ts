@@ -4,6 +4,7 @@ import type {
   Palace,
   Position,
 } from "3meta";
+import type { ChartSequenceItem } from "./sequence";
 import type { NormalizedQimenChart } from "./types";
 
 const formatValue = (value: unknown): string => {
@@ -178,7 +179,7 @@ export const serializeChartToStructuredText = (
   return [...overviewLines, ...palaceBlocks].join("\n\n");
 };
 
-export const serializeChartToCompactJson = (chart: NormalizedQimenChart) => {
+const buildCompactSchema = () => {
   const chartFields = [
     "输入参数",
     "解析后的本地时间",
@@ -221,9 +222,16 @@ export const serializeChartToCompactJson = (chart: NormalizedQimenChart) => {
     "凶格列表",
   ];
 
-  const payload = {
-    format: "qmdj-llm-compact-v1",
-    note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。",
+  return {
+    chartFields,
+    palaceFields,
+  };
+};
+
+const buildCompactSections = (chart: NormalizedQimenChart) => {
+  const { chartFields, palaceFields } = buildCompactSchema();
+
+  return {
     legend: {
       chart: chartFields,
       palace: palaceFields,
@@ -269,6 +277,38 @@ export const serializeChartToCompactJson = (chart: NormalizedQimenChart) => {
       normalizePatterns(palace.inauspiciousPatterns),
     ]),
   };
-
-  return JSON.stringify(payload);
 };
+
+const buildCompactPayload = (chart: NormalizedQimenChart) => ({
+  format: "qmdj-llm-compact-v1",
+  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。",
+  ...buildCompactSections(chart),
+});
+
+export const serializeChartToCompactJson = (chart: NormalizedQimenChart) =>
+  JSON.stringify(buildCompactPayload(chart));
+
+export const serializeSequenceToCompactJson = (
+  sequence: ChartSequenceItem[],
+) =>
+  JSON.stringify((() => {
+    const first = sequence[0];
+    const sharedLegend = first ? buildCompactSections(first.chart).legend : { chart: [], palace: [] };
+
+    return {
+      format: "qmdj-llm-sequence-compact-v1",
+      note: "legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。",
+      count: sequence.length,
+      legend: sharedLegend,
+      items: sequence.map((item) => {
+        const { chart, palaces } = buildCompactSections(item.chart);
+        return {
+          index: item.index,
+          datetime: item.input.datetime,
+          timeZone: item.input.timeZone,
+          chart,
+          palaces,
+        };
+      }),
+    };
+  })());
