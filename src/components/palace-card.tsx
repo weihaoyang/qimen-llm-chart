@@ -17,7 +17,15 @@ export function PalaceCard({
   return (
     <button
       type="button"
-      className={cn("palace-card", isSelected && "is-selected")}
+      className={cn(
+        "palace-card",
+        isSelected && "is-selected",
+        palace.position === 5 && "is-center",
+        palace.isZhiFu && "is-zhifu",
+        palace.isZhiShi && "is-zhishi",
+        palace.isPostHorse && "is-posthorse",
+        palace.voidness.hasVoidness && "has-voidness",
+      )}
       onClick={onSelect}
     >
       <div className="palace-card__header">

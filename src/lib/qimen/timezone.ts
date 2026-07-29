@@ -61,6 +61,11 @@ const parseLocalDateTime = (datetime: string) => {
 
 const pad = (value: number) => value.toString().padStart(2, "0");
 
+export const formatLocalDateTime = (datetime: string) => {
+  const parts = parseLocalDateTime(datetime);
+  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
+};
+
 export const formatDateTimeInZone = (date: Date, timeZone: string) => {
   const parts = getTimeZoneParts(date, timeZone);
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;

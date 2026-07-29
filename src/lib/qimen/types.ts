@@ -13,10 +13,12 @@ import type {
   Star,
   Gate,
 } from "3meta";
+import type { QimenSettings } from "./settings";
 
 export type UserChartInput = {
   datetime: string;
   timeZone: string;
+  qimenSettings?: QimenSettings;
 };
 
 export type RawChartData = {
@@ -43,6 +45,7 @@ export type RawChartData = {
 };
 
 export type NormalizedQimenChart = {
+  engine: "3meta" | "taobi";
   input: UserChartInput;
   interpretedDateTime: string;
   raw: RawChartData;

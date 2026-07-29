@@ -26,7 +26,7 @@ describe("qimen integration", () => {
     expect(text).toContain(`值使门: ${chart.raw.zhiShi.gate}`);
   });
 
-  it("changes timezone metadata when timezone input changes", () => {
+  it("keeps the wall-clock chart stable when only timezone metadata changes", () => {
     const shanghai = buildChart({
       datetime: "2026-07-01T21:30",
       timeZone: "Asia/Shanghai",
@@ -38,6 +38,7 @@ describe("qimen integration", () => {
 
     expect(shanghai.input.timeZone).toBe("Asia/Shanghai");
     expect(tokyo.input.timeZone).toBe("Asia/Tokyo");
-    expect(shanghai.raw.timeInfo.chineseTime).not.toBe(tokyo.raw.timeInfo.chineseTime);
+    expect(shanghai.raw.timeInfo.chineseTime).toBe(tokyo.raw.timeInfo.chineseTime);
+    expect(shanghai.raw.fourPillars.hour).toEqual(tokyo.raw.fourPillars.hour);
   });
 });

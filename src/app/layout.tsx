@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import "react-iztro/lib/theme/default.css";
+import "react-iztro/lib/Iztrolabe/Iztrolabe.css";
+import "react-iztro/lib/Izpalace/Izpalace.css";
+import "react-iztro/lib/IzpalaceCenter/IzpalaceCenter.css";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "奇门遁甲双输出盘",
-  description: "同源生成九宫盘和 LLM 精确结构化文本。",
+  title: "胜天半子",
+  description: "胜天半子的命理三盘统一工作台，支持奇门、八字、紫微与 AI 分析。",
 };
 
 export default function RootLayout({
@@ -23,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="zh-CN">
       <body>{children}</body>
     </html>
   );

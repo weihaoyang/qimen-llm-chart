@@ -1,4 +1,5 @@
 import { buildChart } from "./chart";
+import type { QimenSettings } from "./settings";
 import type { NormalizedQimenChart, UserChartInput } from "./types";
 
 export type SequenceStep = "double-hour" | "day";
@@ -68,6 +69,7 @@ const fromUtcMillis = (value: number) => {
 
 export const buildSequenceInputs = (
   input: ChartSequenceInput,
+  qimenSettings?: QimenSettings,
 ): UserChartInput[] => {
   if (!input.startDatetime || !input.endDatetime) {
     throw new Error("请输入序列起止日期时间。");
@@ -95,6 +97,7 @@ export const buildSequenceInputs = (
     result.push({
       datetime: fromUtcMillis(current),
       timeZone: input.timeZone,
+      qimenSettings,
     });
   }
 
@@ -103,8 +106,9 @@ export const buildSequenceInputs = (
 
 export const buildChartSequence = (
   input: ChartSequenceInput,
+  qimenSettings?: QimenSettings,
 ): ChartSequenceItem[] =>
-  buildSequenceInputs(input).map((nextInput, index) => ({
+  buildSequenceInputs(input, qimenSettings).map((nextInput, index) => ({
     index,
     input: nextInput,
     chart: buildChart(nextInput),

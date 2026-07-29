@@ -30,7 +30,16 @@ export function SummaryStrip({ chart }: SummaryStripProps) {
   return (
     <div className="summary-strip">
       {SUMMARY_ITEMS.map((item) => (
-        <Card className="summary-chip" key={item.key}>
+        <Card
+          className={
+            item.key === "zhiFu" || item.key === "zhiShi" || item.key === "postHorse"
+              ? "summary-chip summary-chip--signal"
+              : item.key === "juType" || item.key === "juNumber"
+                ? "summary-chip summary-chip--core"
+                : "summary-chip"
+          }
+          key={item.key}
+        >
           <CardContent className="summary-chip__content">
             <Badge className="summary-chip__badge" variant="secondary">
               {item.label}
