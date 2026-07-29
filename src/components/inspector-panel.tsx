@@ -23,24 +23,33 @@ type InspectorPanelProps = {
 };
 
 export function InspectorPanel({
+  mode,
   structuredText,
   jsonPayload,
   agentQuestion,
   agentResult,
+  agentModel,
   agentLoading,
   agentError,
   onAgentQuestionChange,
   onAgentAnalyze,
   selectedPalace = null,
 }: InspectorPanelProps) {
+  const modeLabel: Record<WorkbenchMode, string> = {
+    qimen: "奇门",
+    bazi: "八字",
+    ziwei: "紫微",
+    combined: "三盘联合",
+  };
+
   return (
     <Tabs className="inspector-tabs" defaultValue="agent">
       <div className="inspector-panel__header">
         <div>
-          <span className="inspector-panel__eyebrow">Agent 分析</span>
-          <h2>基于当前盘面推演</h2>
+          <span className="inspector-panel__eyebrow">Agent</span>
+          <h2>{modeLabel[mode]}分析</h2>
         </div>
-        <span className="inspector-panel__mode-tag">单次 ¥10</span>
+        <span className="inspector-panel__mode-tag">¥10 / 次</span>
       </div>
 
       <TabsList className="inspector-tabs__list" variant="line">
@@ -69,9 +78,26 @@ export function InspectorPanel({
 
       <TabsContent className="inspector-tabs__content" value="agent">
         <div className="agent-panel">
+          <section className="agent-panel__hero">
+            <div className="agent-panel__hero-main">
+              <span>当前模式</span>
+              <strong>{modeLabel[mode]}</strong>
+            </div>
+            <div className="agent-panel__hero-side">
+              <div>
+                <span>购买方式</span>
+                <strong>无需登录</strong>
+              </div>
+              <div>
+                <span>执行方式</span>
+                <strong>支付后自动分析一次</strong>
+              </div>
+            </div>
+          </section>
+
           <section className="agent-panel__section agent-panel__section--question">
             <div className="agent-panel__section-head">
-              <strong>分析问题</strong>
+              <strong>问题</strong>
             </div>
             <label className="agent-panel__question" htmlFor="agent-question">
               <textarea
@@ -99,7 +125,8 @@ export function InspectorPanel({
 
           <section className="agent-panel__section agent-panel__section--result">
             <div className="agent-panel__section-head">
-              <strong>分析结果</strong>
+              <strong>结果</strong>
+              {agentModel ? <span>{agentModel}</span> : null}
             </div>
             <ScrollArea className="inspector-scroll inspector-scroll-plain">
               {agentResult ? (
@@ -109,7 +136,7 @@ export function InspectorPanel({
               ) : (
                 <div className="agent-result-empty">
                   <Sparkles />
-                  <span>分析完成后，结论会显示在这里。</span>
+                  <span>等待分析结果</span>
                 </div>
               )}
             </ScrollArea>

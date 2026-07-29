@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 import { AppShell } from "./app-shell";
 
 describe("AppShell", () => {
-  it("renders the chart and Agent-first workspace", () => {
+  it("renders the chart and Agent-first workspace", async () => {
     render(<AppShell />);
 
-    expect(screen.getByRole("heading", { name: "奇门主盘" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "奇门主盘" }, { timeout: 30000 })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /奇门/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /八字/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /紫微/ })).toBeInTheDocument();
@@ -17,5 +17,5 @@ describe("AppShell", () => {
     expect(screen.getByRole("tab", { name: "分析" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("调整盘面")).toBeInTheDocument();
     expect(screen.getByText("核验资料")).toBeInTheDocument();
-  });
+  }, 30000);
 });

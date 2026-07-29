@@ -3848,8 +3848,61 @@ body {
 
 .agent-panel {
   height: auto;
-  grid-template-rows: auto auto auto minmax(260px, 1fr);
+  grid-template-rows: auto auto auto auto minmax(260px, 1fr);
   gap: 10px;
+}
+
+.agent-panel__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 12px;
+  border-radius: 17px;
+  border: 1px solid rgba(70, 105, 186, 0.15);
+  background:
+    radial-gradient(circle at top right, rgba(70, 105, 186, 0.12), transparent 46%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(238, 242, 250, 0.9));
+}
+
+.agent-panel__hero span {
+  color: var(--ink-subtle);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.agent-panel__hero strong {
+  color: var(--foreground);
+  line-height: 1.12;
+}
+
+.agent-panel__hero-main,
+.agent-panel__hero-side > div {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.agent-panel__hero-main strong {
+  font-size: 1.42rem;
+  letter-spacing: -0.05em;
+}
+
+.agent-panel__hero-side {
+  display: grid;
+  gap: 6px;
+}
+
+.agent-panel__hero-side > div {
+  min-height: 46px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(93, 111, 148, 0.09);
+}
+
+.agent-panel__hero-side strong {
+  font-size: 0.76rem;
 }
 
 .agent-panel__section {
@@ -3906,9 +3959,11 @@ body {
 
 .agent-panel .command-button {
   width: 100%;
-  min-height: 50px;
-  border-radius: 13px;
-  font-size: 0.78rem;
+  min-height: 56px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  letter-spacing: -0.01em;
+  box-shadow: 0 15px 36px rgba(41, 75, 156, 0.2);
 }
 
 .agent-panel__section--result {
@@ -4090,6 +4145,10 @@ body {
     grid-column: auto;
     min-height: 0;
     padding: 11px;
+  }
+
+  .agent-panel__hero {
+    grid-template-columns: 1fr;
   }
 
   .agent-panel__toolbar {
