@@ -672,6 +672,19 @@ export function AppShell() {
         </aside>
       </main>
 
+      <footer className="qmdj-footer">
+        <div className="qmdj-footer__brand">
+          <span>胜天半子</span>
+          <p>围绕真实工作做长期可用的命理工作台。</p>
+        </div>
+        <div className="qmdj-footer__meta">
+          <span>© 2026 胜天半子</span>
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">
+            鄂ICP备2026026686号-1
+          </a>
+        </div>
+      </footer>
+
     </div>
   );
 }

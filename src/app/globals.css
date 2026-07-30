@@ -66,7 +66,7 @@ a {
   min-height: 100svh;
   padding: 4px 0 6px;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 5px;
 }
 
@@ -107,6 +107,50 @@ a {
 
 .page-shell[data-mode="combined"] {
   --mode-glow: rgba(141, 182, 148, 0.22);
+}
+
+.qmdj-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  padding: 8px 14px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(208, 170, 104, 0.14);
+  background: rgba(255, 251, 246, 0.78);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-soft);
+}
+
+.qmdj-footer__brand {
+  display: grid;
+  gap: 2px;
+}
+
+.qmdj-footer__brand span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.qmdj-footer__brand p {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.qmdj-footer__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+}
+
+.qmdj-footer__meta a {
+  color: var(--accent-strong);
 }
 
 .workspace-kicker {
@@ -3346,7 +3390,7 @@ a {
     width: min(100vw - 20px, 1400px);
     height: auto;
     min-height: 100svh;
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
 
   .observatory-hero,
@@ -4204,6 +4248,10 @@ body {
     padding-top: 10px;
   }
 
+  .qmdj-footer {
+    align-items: start;
+  }
+
   .observatory-hero {
     position: relative;
     top: auto;
@@ -4241,6 +4289,11 @@ body {
     width: calc(100vw - 16px);
     gap: 8px;
     padding: 8px 0 16px;
+  }
+
+  .qmdj-footer {
+    flex-direction: column;
+    align-items: start;
   }
 
   .observatory-hero {
