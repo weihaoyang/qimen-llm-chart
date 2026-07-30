@@ -14,6 +14,13 @@ export function PalaceCard({
   isSelected,
   onSelect,
 }: PalaceCardProps) {
+  const statusFlags = [
+    palace.isZhiFu ? "值符" : null,
+    palace.isZhiShi ? "值使" : null,
+    palace.isPostHorse ? "驿马" : null,
+    palace.voidness.hasVoidness ? "空亡" : null,
+  ].filter((value): value is string => Boolean(value));
+
   return (
     <button
       type="button"
@@ -35,7 +42,7 @@ export function PalaceCard({
         </div>
         <div className="palace-card__status">
           <span>{palace.innerOuter}</span>
-          <strong>{palace.gatePressure}</strong>
+          <strong>{[palace.gatePressure, ...statusFlags].join(" · ")}</strong>
         </div>
       </div>
 
@@ -77,12 +84,6 @@ export function PalaceCard({
         </div>
       </dl>
 
-      <div className="palace-card__flags">
-        {palace.isZhiFu ? <span>值符</span> : null}
-        {palace.isZhiShi ? <span>值使</span> : null}
-        {palace.isPostHorse ? <span>驿马</span> : null}
-        {palace.voidness.hasVoidness ? <span>空亡</span> : null}
-      </div>
     </button>
   );
 }
