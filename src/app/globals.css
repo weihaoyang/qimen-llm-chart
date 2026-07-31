@@ -4578,13 +4578,19 @@ body {
   }
 
   .palace-grid {
-    /* Fill the available single-screen reading area at 720px high without
-       creating an empty strip under the final row. */
+    /* Palace cards are content-led. Never stretch one palace just to fill
+       spare viewport height: it creates the conspicuous blank bands above
+       and below its reading data. */
     gap: 2px;
-    grid-template-rows: repeat(3, clamp(120px, calc((100svh - 360px) / 3), 156px));
+    height: auto;
+    align-content: start;
+    grid-template-rows: repeat(3, max-content);
   }
 
   .palace-card {
+    display: grid;
+    align-content: start;
+    gap: 1px;
     padding: 3px;
   }
 
@@ -4601,7 +4607,7 @@ body {
   }
 
   .palace-card__core {
-    margin-top: 1px;
+    margin-top: 0;
   }
 
   .palace-card__core div {
@@ -4610,7 +4616,7 @@ body {
   }
 
   .palace-card__facts {
-    margin-top: 1px;
+    margin-top: 0;
     gap: 1px 2px;
   }
 
