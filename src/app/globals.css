@@ -4578,10 +4578,63 @@ body {
   }
 
   .palace-grid {
-    /* Header, summary and footer reserve roughly 360px on a 720px-high
-       16:9 screen. The remaining space is divided evenly so row three
-       never disappears below the footer. */
-    grid-template-rows: repeat(3, clamp(120px, calc((100svh - 360px) / 3), 184px));
+    /* The compact fact rows keep every palace information-dense while the
+       final row remains above the desktop footer at 720px high. */
+    gap: 2px;
+    grid-template-rows: repeat(3, clamp(104px, calc((100svh - 408px) / 3), 156px));
+  }
+
+  .palace-card {
+    padding: 3px;
+  }
+
+  .palace-card__header {
+    align-items: center;
+  }
+
+  .palace-card__index {
+    line-height: 1;
+  }
+
+  .palace-card__header h3 {
+    line-height: 0.82;
+  }
+
+  .palace-card__core {
+    margin-top: 1px;
+  }
+
+  .palace-card__core div {
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+
+  .palace-card__facts {
+    margin-top: 1px;
+    gap: 1px 2px;
+  }
+
+  .palace-card__facts div {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+
+  .palace-card__facts dt {
+    flex: 0 0 auto;
+    line-height: 1;
+  }
+
+  .palace-card__facts dd {
+    min-width: 0;
+    margin-top: 0;
+    overflow: hidden;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .palace-card__header h3 {
