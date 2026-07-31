@@ -4584,23 +4584,26 @@ body {
   }
 
   .palace-grid {
-    height: 100%;
+    height: auto;
     min-height: 0;
+    align-self: start;
+    align-items: start;
+    align-content: start;
     gap: 2px;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, max-content);
   }
 
   .palace-card {
     display: grid;
+    align-self: start;
     min-height: 0;
-    grid-template-rows: minmax(26px, 0.65fr) minmax(34px, 0.85fr) minmax(48px, 1.25fr);
-    gap: 2px;
+    grid-template-rows: auto auto auto;
+    gap: 1px;
     padding: 3px;
   }
 
   .palace-card__header {
-    align-items: center;
-    height: 100%;
+    align-items: start;
   }
 
   .palace-card__index {
@@ -4613,21 +4616,17 @@ body {
 
   .palace-card__core {
     margin-top: 0;
-    height: 100%;
   }
 
   .palace-card__core div {
     display: grid;
-    align-content: center;
-    height: 100%;
+    align-content: start;
     padding-top: 1px;
     padding-bottom: 1px;
   }
 
   .palace-card__facts {
     margin-top: 0;
-    height: 100%;
-    grid-auto-rows: minmax(0, 1fr);
     gap: 1px 2px;
   }
 
@@ -4636,7 +4635,6 @@ body {
     align-items: center;
     gap: 3px;
     min-width: 0;
-    height: 100%;
     padding-top: 1px;
     padding-bottom: 1px;
   }
