@@ -4242,6 +4242,40 @@ body {
   }
 }
 
+/* The in-app preview commonly runs around 1080px wide. Keep the same
+   content-led palace sizing in that desktop/tablet band; the old 1181px
+   breakpoint left the grid's 1fr track stretching every card vertically. */
+@media (min-width: 721px) and (max-width: 1180px) and (min-height: 700px) {
+  .canvas-panel__content {
+    align-content: start;
+  }
+
+  .canvas-panel__content > .palace-grid-shell {
+    min-height: 0;
+  }
+
+  .palace-grid-shell {
+    height: auto;
+    min-height: 0;
+    align-self: start;
+    align-content: start;
+    grid-template-rows: auto auto auto;
+  }
+
+  .palace-grid {
+    height: auto;
+    align-self: start;
+    align-items: start;
+    align-content: start;
+    grid-template-rows: repeat(3, max-content);
+  }
+
+  .palace-card {
+    align-self: start;
+    height: auto;
+  }
+}
+
 @media (max-width: 1180px) {
   .page-shell {
     width: min(100vw - 20px, 1060px);
