@@ -4481,3 +4481,128 @@ body {
   background-color: #813225;
   border-color: #6d291f;
 }
+
+/* Open-source resize panels: allow the reading surface to be tuned without
+   sacrificing the 16:9 default composition. */
+.analysis-panel-group {
+  gap: 0;
+  align-items: stretch;
+}
+
+.analysis-panel {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.analysis-panel > .canvas-panel,
+.analysis-panel > .sidebar-panel {
+  min-width: 0;
+  height: 100%;
+}
+
+.analysis-panel-divider {
+  position: relative;
+  width: 18px;
+  display: grid;
+  place-items: center;
+  background-color: transparent;
+  outline: none;
+}
+
+.analysis-panel-divider::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 8px;
+  width: 1px;
+  background-color: #d2c1a4;
+}
+
+.analysis-panel-divider__grip {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 34px;
+  color: #7a6752;
+  border: 1px solid #d8c5a3;
+  border-radius: 8px;
+  background-color: #fbf7ed;
+  box-shadow: 0 3px 8px rgba(88, 64, 35, 0.1);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.analysis-panel-divider[data-separator="hover"] .analysis-panel-divider__grip,
+.analysis-panel-divider[data-separator="active"] .analysis-panel-divider__grip,
+.analysis-panel-divider:focus-visible .analysis-panel-divider__grip {
+  color: #813225;
+  border-color: #a54232;
+  background-color: #f1dfc0;
+}
+
+.tooltip-content {
+  z-index: 80;
+  max-width: 260px;
+  padding: 8px 10px;
+  border: 1px solid #4b4033;
+  border-radius: 8px;
+  color: #fff8eb;
+  background-color: #3b332a;
+  box-shadow: 0 10px 20px rgba(45, 36, 25, 0.2);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.tooltip-content__arrow {
+  fill: #3b332a;
+}
+
+.palace-grid-shell__term {
+  cursor: help;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+@media (min-width: 1181px) and (min-height: 700px) {
+  .analysis-panel-group {
+    min-height: 0;
+  }
+
+  .analysis-panel > .canvas-panel,
+  .analysis-panel > .sidebar-panel {
+    min-height: 0;
+  }
+
+  .palace-grid {
+    /* Header, summary and footer reserve roughly 360px on a 720px-high
+       16:9 screen. The remaining space is divided evenly so row three
+       never disappears below the footer. */
+    grid-template-rows: repeat(3, clamp(120px, calc((100svh - 360px) / 3), 184px));
+  }
+
+  .palace-card__header h3 {
+    font-size: 1.24rem;
+  }
+
+  .palace-card__status strong {
+    font-size: 0.74rem;
+  }
+
+  .palace-card__core span,
+  .palace-card__facts dt {
+    font-size: 0.66rem;
+  }
+
+  .palace-card__core strong {
+    font-size: 1.16rem;
+  }
+
+  .palace-card__facts dd {
+    font-size: 0.94rem;
+    line-height: 1.05;
+  }
+}

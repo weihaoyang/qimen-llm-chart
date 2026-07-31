@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import type { Position } from "3meta";
+import { GripVertical } from "lucide-react";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import { BaziPanel } from "@/components/bazi-panel";
 import { DEFAULT_AGENT_QUESTIONS } from "@/lib/agent/chat";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib/bazi/serializer";
@@ -236,6 +238,8 @@ export function AppShell() {
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [platformCheckoutLoading, setPlatformCheckoutLoading] = useState<string | null>(null);
+  const [isNarrowLayout, setIsNarrowLayout] = useState(false);
+  const [resizablePanelsReady, setResizablePanelsReady] = useState(false);
   const platformSelectedChannel = "alipay";
 
   const activeQimenChart = sequence[selectedSequenceIndex]?.chart ?? qimenChart;
@@ -536,6 +540,132 @@ export function AppShell() {
     }));
   }, []);
 
+  useEffect(() => {
+    setResizablePanelsReady(typeof ResizeObserver !== "undefined");
+
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 1180px)");
+    const syncLayout = () => setIsNarrowLayout(mediaQuery.matches);
+
+    syncLayout();
+    mediaQuery.addEventListener("change", syncLayout);
+    return () => mediaQuery.removeEventListener("change", syncLayout);
+  }, []);
+
+  const workbenchCanvas = (
+    <section className="canvas-panel" data-mode={mode}>
+      {mode === "qimen" && activeQimenChart ? <SummaryStrip chart={activeQimenChart} /> : null}
+
+      <div
+        className={
+          mode === "qimen" && sequence.length > 0
+            ? "canvas-panel__content has-sequence"
+            : "canvas-panel__content"
+        }
+      >
+        {mode === "qimen" ? (
+          <>
+            {sequence.length > 0 ? (
+              <div className="sequence-rail" aria-label="事件序列">
+                {sequence.map((item) => (
+                  <button
+                    className={
+                      item.index === selectedSequenceIndex
+                        ? "sequence-rail__item is-active"
+                        : "sequence-rail__item"
+                    }
+                    key={`${item.input.datetime}-${item.index}`}
+                    type="button"
+                    onClick={() => handleSelectSequenceItem(item.index)}
+                  >
+                    <span>{String(item.index + 1).padStart(2, "0")}</span>
+                    <strong>{item.input.datetime}</strong>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {activeQimenChart ? (
+              <PalaceGrid
+                chart={activeQimenChart}
+                selectedPalace={selectedPalace}
+                onSelectPalace={setSelectedPalace}
+              />
+            ) : (
+              <div className="empty-panel">等待生成盘面。</div>
+            )}
+          </>
+        ) : null}
+
+        {mode === "bazi" ? <BaziPanel chart={baziChart} /> : null}
+
+        {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
+
+        {mode === "combined" ? (
+          <CombinedPanel
+            baziChart={baziChart}
+            input={normalizedProfile}
+            qimenChart={qimenChart}
+            ziweiChart={ziweiChart}
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+
+  const workbenchSidebar = (
+    <aside className="sidebar-panel" data-mode={mode}>
+      <InspectorPanel
+        agentError={agentState[mode].error}
+        agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
+        agentModel={agentState[mode].model}
+        agentQuestion={agentState[mode].question}
+        agentResult={agentState[mode].content}
+        jsonPayload={jsonPayload}
+        mode={mode}
+        onAgentAnalyze={handleAgentAnalyze}
+        onAgentQuestionChange={handleAgentQuestionChange}
+        selectedPalace={mode === "qimen" ? selectedPalace : null}
+        structuredText={structuredText}
+      />
+
+      <details className="workspace-disclosure">
+        <summary>
+          <span>调整盘面</span>
+          <small>时间、历法与排盘口径</small>
+        </summary>
+        <ChartForm
+          copyState={copyState}
+          layout="sidebar"
+          mode={mode}
+          onCopyJson={handleCopyJson}
+          onCopyText={handleCopyText}
+          onQimenSettingsChange={handleQimenSettingsChange}
+          onSequenceSubmit={handleGenerateSequence}
+          onSequenceValueChange={setSequenceFormState}
+          onSubmit={handleGenerate}
+          onValueChange={setFormState}
+          qimenSettings={qimenSettings}
+          sequenceValue={sequenceFormState}
+          value={formState}
+        />
+      </details>
+
+      {mode === "qimen" ? (
+        <details className="workspace-disclosure">
+          <summary>
+            <span>核验资料</span>
+            <small>历法、四柱与排盘依据</small>
+          </summary>
+          <MetadataPanel chart={activeQimenChart} />
+        </details>
+      ) : null}
+    </aside>
+  );
+
   return (
     <div className="page-shell" data-mode={mode}>
       <header className="observatory-hero">
@@ -560,117 +690,31 @@ export function AppShell() {
 
       {error ? <p className="error-banner">{error}</p> : null}
 
-      <main className="analysis-layout">
-        <section
-          className="canvas-panel"
-          data-mode={mode}
+      {isNarrowLayout || !resizablePanelsReady ? (
+        <main className="analysis-layout analysis-layout--stacked">
+          {workbenchCanvas}
+          {workbenchSidebar}
+        </main>
+      ) : (
+        <Group
+          id="qimen-workbench-layout"
+          orientation="horizontal"
+          className="analysis-layout analysis-panel-group"
+          aria-label="主盘与智能分析分栏"
         >
-          {mode === "qimen" && activeQimenChart ? <SummaryStrip chart={activeQimenChart} /> : null}
-
-          <div
-            className={
-              mode === "qimen" && sequence.length > 0
-                ? "canvas-panel__content has-sequence"
-                : "canvas-panel__content"
-            }
-          >
-            {mode === "qimen" ? (
-              <>
-              {sequence.length > 0 ? (
-                <div className="sequence-rail" aria-label="事件序列">
-                  {sequence.map((item) => (
-                    <button
-                      className={
-                        item.index === selectedSequenceIndex
-                          ? "sequence-rail__item is-active"
-                          : "sequence-rail__item"
-                      }
-                      key={`${item.input.datetime}-${item.index}`}
-                      type="button"
-                      onClick={() => handleSelectSequenceItem(item.index)}
-                    >
-                      <span>{String(item.index + 1).padStart(2, "0")}</span>
-                      <strong>{item.input.datetime}</strong>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
-              {activeQimenChart ? (
-                <PalaceGrid
-                  chart={activeQimenChart}
-                  selectedPalace={selectedPalace}
-                  onSelectPalace={setSelectedPalace}
-                />
-              ) : (
-                <div className="empty-panel">等待生成盘面。</div>
-              )}
-              </>
-            ) : null}
-
-            {mode === "bazi" ? <BaziPanel chart={baziChart} /> : null}
-
-            {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
-
-            {mode === "combined" ? (
-              <CombinedPanel
-                baziChart={baziChart}
-                input={normalizedProfile}
-                qimenChart={qimenChart}
-                ziweiChart={ziweiChart}
-              />
-            ) : null}
-          </div>
-        </section>
-
-        <aside className="sidebar-panel" data-mode={mode}>
-          <InspectorPanel
-            agentError={agentState[mode].error}
-            agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
-            agentModel={agentState[mode].model}
-            agentQuestion={agentState[mode].question}
-            agentResult={agentState[mode].content}
-            jsonPayload={jsonPayload}
-            mode={mode}
-            onAgentAnalyze={handleAgentAnalyze}
-            onAgentQuestionChange={handleAgentQuestionChange}
-            selectedPalace={mode === "qimen" ? selectedPalace : null}
-            structuredText={structuredText}
-          />
-
-          <details className="workspace-disclosure">
-            <summary>
-              <span>调整盘面</span>
-              <small>时间、历法与排盘口径</small>
-            </summary>
-            <ChartForm
-              copyState={copyState}
-              layout="sidebar"
-              mode={mode}
-              onCopyJson={handleCopyJson}
-              onCopyText={handleCopyText}
-              onQimenSettingsChange={handleQimenSettingsChange}
-              onSequenceSubmit={handleGenerateSequence}
-              onSequenceValueChange={setSequenceFormState}
-              onSubmit={handleGenerate}
-              onValueChange={setFormState}
-              qimenSettings={qimenSettings}
-              sequenceValue={sequenceFormState}
-              value={formState}
-            />
-          </details>
-
-          {mode === "qimen" ? (
-            <details className="workspace-disclosure">
-              <summary>
-                <span>核验资料</span>
-                <small>历法、四柱与排盘依据</small>
-              </summary>
-              <MetadataPanel chart={activeQimenChart} />
-            </details>
-          ) : null}
-        </aside>
-      </main>
+          <Panel id="qimen-chart" defaultSize="68%" minSize="54%" className="analysis-panel">
+            {workbenchCanvas}
+          </Panel>
+          <Separator id="qimen-workbench-separator" className="analysis-panel-divider">
+            <span className="analysis-panel-divider__grip" aria-hidden="true">
+              <GripVertical size={17} strokeWidth={1.8} />
+            </span>
+          </Separator>
+          <Panel id="qimen-agent" defaultSize="32%" minSize="360px" className="analysis-panel">
+            {workbenchSidebar}
+          </Panel>
+        </Group>
+      )}
 
       <footer className="qmdj-footer">
         <div className="qmdj-footer__brand">

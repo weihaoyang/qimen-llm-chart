@@ -12,8 +12,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.3.2",
+    "@radix-ui/react-tooltip": "^1.2.16",
     "@singularity-sequence/web-sdk": "file:../singularity-sequence-consumer-platform/packages/web-sdk",
+    "@tailwindcss/postcss": "^4.3.2",
     "3meta": "^2.6.0",
     "class-variance-authority": "^0.7.1",
     "dayjs": "^1.11.19",
@@ -26,6 +27,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-iztro": "^1.4.2",
+    "react-resizable-panels": "^4.12.2",
     "tailwindcss": "^4.3.2",
     "taobi": "^0.4.5"
   },
