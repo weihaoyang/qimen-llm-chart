@@ -4577,25 +4577,30 @@ body {
     min-height: 0;
   }
 
+  .palace-grid-shell {
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
   .palace-grid {
-    /* Palace cards are content-led. Never stretch one palace just to fill
-       spare viewport height: it creates the conspicuous blank bands above
-       and below its reading data. */
+    height: 100%;
+    min-height: 0;
     gap: 2px;
-    height: auto;
-    align-content: start;
-    grid-template-rows: repeat(3, max-content);
+    grid-template-rows: repeat(3, minmax(0, 1fr));
   }
 
   .palace-card {
     display: grid;
-    align-content: start;
-    gap: 1px;
+    min-height: 0;
+    grid-template-rows: minmax(26px, 0.65fr) minmax(34px, 0.85fr) minmax(48px, 1.25fr);
+    gap: 2px;
     padding: 3px;
   }
 
   .palace-card__header {
     align-items: center;
+    height: 100%;
   }
 
   .palace-card__index {
@@ -4608,15 +4613,21 @@ body {
 
   .palace-card__core {
     margin-top: 0;
+    height: 100%;
   }
 
   .palace-card__core div {
+    display: grid;
+    align-content: center;
+    height: 100%;
     padding-top: 1px;
     padding-bottom: 1px;
   }
 
   .palace-card__facts {
     margin-top: 0;
+    height: 100%;
+    grid-auto-rows: minmax(0, 1fr);
     gap: 1px 2px;
   }
 
@@ -4625,6 +4636,7 @@ body {
     align-items: center;
     gap: 3px;
     min-width: 0;
+    height: 100%;
     padding-top: 1px;
     padding-bottom: 1px;
   }
