@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { Position } from "3meta";
 import { GripVertical } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
 import { DEFAULT_AGENT_QUESTIONS } from "@/lib/agent/chat";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib/bazi/serializer";
@@ -32,6 +34,7 @@ import {
   buildChartSequence,
   type ChartSequenceInput,
   type ChartSequenceItem,
+  type SequenceStep,
 } from "@/lib/qimen/sequence";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 import type { WorkbenchMode } from "@/lib/workbench/types";
@@ -618,6 +621,76 @@ export function AppShell() {
 
   const workbenchSidebar = (
     <aside className="sidebar-panel" data-mode={mode}>
+      {mode === "qimen" ? (
+        <section className="sidebar-quick-controls" aria-label="快速排盘">
+          <div className="sidebar-quick-controls__heading">
+            <span>快速排盘</span>
+            <small>自选时间与系列盘</small>
+          </div>
+          <label className="sidebar-quick-controls__field sidebar-quick-controls__field--wide">
+            <span>自选时间</span>
+            <Input
+              type="datetime-local"
+              value={formState.datetime}
+              onChange={(event) => setFormState({ ...formState, datetime: event.target.value })}
+            />
+          </label>
+          <label className="sidebar-quick-controls__field">
+            <span>序列开始</span>
+            <Input
+              type="datetime-local"
+              value={sequenceFormState.startDatetime}
+              onChange={(event) =>
+                setSequenceFormState({ ...sequenceFormState, startDatetime: event.target.value })
+              }
+            />
+          </label>
+          <label className="sidebar-quick-controls__field">
+            <span>序列结束</span>
+            <Input
+              type="datetime-local"
+              value={sequenceFormState.endDatetime}
+              onChange={(event) =>
+                setSequenceFormState({ ...sequenceFormState, endDatetime: event.target.value })
+              }
+            />
+          </label>
+          <label className="sidebar-quick-controls__field">
+            <span>指定间隔</span>
+            <select
+              className="control-select sidebar-quick-controls__select"
+              value={sequenceFormState.step}
+              onChange={(event) =>
+                setSequenceFormState({
+                  ...sequenceFormState,
+                  step: event.target.value as SequenceStep,
+                })
+              }
+            >
+              <option value="double-hour">时辰 / 2小时</option>
+              <option value="day">天 / 1天</option>
+            </select>
+          </label>
+          <div className="sidebar-quick-controls__actions">
+            <Button
+              className="command-button command-button-primary"
+              type="button"
+              onClick={() => handleGenerate(formState)}
+            >
+              生成自选盘
+            </Button>
+            <Button
+              className="command-button"
+              type="button"
+              variant="outline"
+              onClick={() => handleGenerateSequence(sequenceFormState)}
+            >
+              生成系列盘
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
       <InspectorPanel
         agentError={agentState[mode].error}
         agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
@@ -632,7 +705,7 @@ export function AppShell() {
         structuredText={structuredText}
       />
 
-      <details className="workspace-disclosure">
+      <details className="workspace-disclosure" open>
         <summary>
           <span>调整盘面</span>
           <small>时间、历法与排盘口径</small>

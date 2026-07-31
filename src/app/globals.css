@@ -407,6 +407,10 @@ a {
   width: 100%;
 }
 
+.command-bar--sidebar .command-bar__section--sequence {
+  order: -1;
+}
+
 .command-bar--sidebar .command-bar__group--inputs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3833,6 +3837,103 @@ body {
   backdrop-filter: none;
 }
 
+.sidebar-quick-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--panel-stroke);
+  border-radius: 16px;
+  background-color: var(--panel);
+  box-shadow: 0 10px 24px rgba(88, 64, 35, 0.08);
+}
+
+.sidebar-quick-controls__heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-quick-controls__heading span {
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.sidebar-quick-controls__heading small {
+  color: var(--ink-subtle);
+  font-size: 0.64rem;
+}
+
+.sidebar-quick-controls__field {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.sidebar-quick-controls__field--wide {
+  grid-column: 1 / -1;
+}
+
+.sidebar-quick-controls__field > span {
+  color: var(--ink-soft);
+  font-size: 0.62rem;
+}
+
+.sidebar-quick-controls__field input,
+.sidebar-quick-controls__select {
+  min-width: 0;
+  width: 100%;
+  min-height: 32px;
+  font-size: 0.72rem;
+}
+
+.sidebar-quick-controls__select {
+  padding: 0 9px;
+  border: 1px solid var(--panel-stroke);
+  border-radius: 8px;
+  color: var(--foreground);
+  background-color: var(--panel-strong);
+}
+
+.sidebar-quick-controls__actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sidebar-quick-controls__actions .command-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  font-size: 0.72rem;
+}
+
+.sidebar-quick-controls__actions .command-button-primary {
+  border-color: #8d3427;
+  color: #fff8eb;
+  background-color: #a54232;
+}
+
+.sidebar-quick-controls__actions .command-button-primary:hover {
+  border-color: #6d291f;
+  background-color: #813225;
+}
+
+@media (max-width: 720px) {
+  .sidebar-quick-controls,
+  .sidebar-quick-controls__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-quick-controls__field--wide {
+    grid-column: auto;
+  }
+}
+
 .inspector-tabs {
   order: 0;
   height: auto;
@@ -4273,6 +4374,49 @@ body {
   .palace-card {
     align-self: start;
     height: auto;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1180px) {
+  .observatory-hero {
+    grid-template-columns: minmax(120px, 0.3fr) minmax(0, 1fr);
+  }
+
+  .workbench-tabs,
+  .workbench-tabs__list {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .workbench-tabs__list {
+    overflow: hidden;
+  }
+
+  .workbench-tabs__trigger {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .workbench-tabs__trigger strong,
+  .workbench-tabs__kicker {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .command-bar--sidebar .command-bar__group--inputs,
+  .command-bar--sidebar .command-bar__actions,
+  .sequence-controls,
+  .qimen-method-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .command-bar--sidebar .control-field,
+  .command-bar--sidebar .control-field-wide,
+  .sequence-controls .control-field,
+  .sequence-controls .command-button {
+    min-width: 0;
   }
 }
 
