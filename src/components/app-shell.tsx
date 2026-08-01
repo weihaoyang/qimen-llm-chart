@@ -241,6 +241,7 @@ export function AppShell() {
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
   const [platformCheckoutLoading, setPlatformCheckoutLoading] = useState<string | null>(null);
   const [isNarrowLayout, setIsNarrowLayout] = useState(false);
   const [resizablePanelsReady, setResizablePanelsReady] = useState(false);
@@ -625,70 +626,100 @@ export function AppShell() {
       {mode === "qimen" ? (
         <section className="sidebar-quick-controls" aria-label="快速排盘">
           <div className="sidebar-quick-controls__heading">
-            <span>快速排盘</span>
-            <small>自选时间与系列盘</small>
+            <div>
+              <span>快速排盘</span>
+              <small>单张 / 序列</small>
+            </div>
+            <div className="quick-chart-toggle" role="tablist" aria-label="排盘类型">
+              <button
+                type="button"
+                className={quickChartMode === "single" ? "is-active" : ""}
+                role="tab"
+                aria-selected={quickChartMode === "single"}
+                onClick={() => setQuickChartMode("single")}
+              >
+                单张
+              </button>
+              <button
+                type="button"
+                className={quickChartMode === "series" ? "is-active" : ""}
+                role="tab"
+                aria-selected={quickChartMode === "series"}
+                onClick={() => setQuickChartMode("series")}
+              >
+                序列
+              </button>
+            </div>
           </div>
-          <label className="sidebar-quick-controls__field sidebar-quick-controls__field--wide">
-            <span>自选时间</span>
-            <Input
-              type="datetime-local"
-              value={formState.datetime}
-              onChange={(event) => setFormState({ ...formState, datetime: event.target.value })}
-            />
-          </label>
-          <label className="sidebar-quick-controls__field">
-            <span>序列开始</span>
-            <Input
-              type="datetime-local"
-              value={sequenceFormState.startDatetime}
-              onChange={(event) =>
-                setSequenceFormState({ ...sequenceFormState, startDatetime: event.target.value })
-              }
-            />
-          </label>
-          <label className="sidebar-quick-controls__field">
-            <span>序列结束</span>
-            <Input
-              type="datetime-local"
-              value={sequenceFormState.endDatetime}
-              onChange={(event) =>
-                setSequenceFormState({ ...sequenceFormState, endDatetime: event.target.value })
-              }
-            />
-          </label>
-          <label className="sidebar-quick-controls__field">
-            <span>指定间隔</span>
-            <select
-              className="control-select sidebar-quick-controls__select"
-              value={sequenceFormState.step}
-              onChange={(event) =>
-                setSequenceFormState({
-                  ...sequenceFormState,
-                  step: event.target.value as SequenceStep,
-                })
-              }
-            >
-              <option value="double-hour">时辰 / 2小时</option>
-              <option value="day">天 / 1天</option>
-            </select>
-          </label>
-          <div className="sidebar-quick-controls__actions">
-            <Button
-              className="command-button command-button-primary"
-              type="button"
-              onClick={() => handleGenerate(formState)}
-            >
-              生成自选盘
-            </Button>
-            <Button
-              className="command-button"
-              type="button"
-              variant="outline"
-              onClick={() => handleGenerateSequence(sequenceFormState)}
-            >
-              生成系列盘
-            </Button>
-          </div>
+          {quickChartMode === "single" ? (
+            <>
+              <label className="sidebar-quick-controls__field sidebar-quick-controls__field--wide">
+                <span>自选时间</span>
+                <Input
+                  type="datetime-local"
+                  value={formState.datetime}
+                  onChange={(event) => setFormState({ ...formState, datetime: event.target.value })}
+                />
+              </label>
+              <div className="sidebar-quick-controls__actions">
+                <Button
+                  className="command-button command-button-primary"
+                  type="button"
+                  onClick={() => handleGenerate(formState)}
+                >
+                  生成单张盘
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <label className="sidebar-quick-controls__field">
+                <span>序列开始</span>
+                <Input
+                  type="datetime-local"
+                  value={sequenceFormState.startDatetime}
+                  onChange={(event) =>
+                    setSequenceFormState({ ...sequenceFormState, startDatetime: event.target.value })
+                  }
+                />
+              </label>
+              <label className="sidebar-quick-controls__field">
+                <span>序列结束</span>
+                <Input
+                  type="datetime-local"
+                  value={sequenceFormState.endDatetime}
+                  onChange={(event) =>
+                    setSequenceFormState({ ...sequenceFormState, endDatetime: event.target.value })
+                  }
+                />
+              </label>
+              <label className="sidebar-quick-controls__field sidebar-quick-controls__field--wide">
+                <span>指定间隔</span>
+                <select
+                  className="control-select sidebar-quick-controls__select"
+                  value={sequenceFormState.step}
+                  onChange={(event) =>
+                    setSequenceFormState({
+                      ...sequenceFormState,
+                      step: event.target.value as SequenceStep,
+                    })
+                  }
+                >
+                  <option value="double-hour">时辰 / 2小时</option>
+                  <option value="day">天 / 1天</option>
+                </select>
+              </label>
+              <div className="sidebar-quick-controls__actions">
+                <Button
+                  className="command-button command-button-primary"
+                  type="button"
+                  onClick={() => handleGenerateSequence(sequenceFormState)}
+                >
+                  生成系列盘
+                </Button>
+              </div>
+            </>
+          )}
         </section>
       ) : null}
 

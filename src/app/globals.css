@@ -5298,6 +5298,119 @@ body {
   overflow: auto;
 }
 
+/* Compact chart summary: keep the key facts readable without stealing chart
+   height from the nine-palace surface. */
+.summary-strip {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 3px;
+  padding: 0;
+  border-radius: 9px;
+  background-color: #efe5d3;
+}
+
+.summary-chip,
+.summary-chip--core,
+.summary-chip--signal {
+  min-width: 0;
+  border-radius: 8px;
+  border-color: #dbc9aa;
+  background-color: #fbf7ed;
+  background-image: none !important;
+}
+
+.summary-chip__content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.summary-chip__badge {
+  flex: 0 0 auto;
+  padding: 1px 3px;
+  font-size: 0.5rem;
+  line-height: 1.1;
+}
+
+.summary-chip strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.66rem;
+  line-height: 1;
+}
+
+.quick-chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid #d6c19a;
+  border-radius: 8px;
+  background-color: #efe5d3;
+}
+
+.quick-chart-toggle button {
+  min-width: 42px;
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: #7a6752;
+  background-color: transparent;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quick-chart-toggle button.is-active {
+  color: #fff8eb;
+  background-color: #a54232;
+}
+
+.quick-chart-toggle button:focus-visible {
+  outline: 2px solid #b8874e;
+  outline-offset: 1px;
+}
+
+/* The Ziwei astrolabe remains a square reading surface at every width. */
+.ziwei-panel {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.ziwei-panel__canvas {
+  width: min(100%, 760px);
+  aspect-ratio: 1 / 1;
+  height: auto !important;
+  max-height: none;
+  margin-inline: auto;
+  padding: 8px;
+  overflow: auto;
+  background-color: #fbf7ed;
+  background-image: none !important;
+}
+
+.ziwei-panel__canvas .iztro-astrolabe {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+@media (max-width: 720px) {
+  .summary-strip {
+    grid-template-columns: repeat(7, minmax(92px, 1fr)) !important;
+    overflow-x: auto;
+  }
+
+  .ziwei-panel__canvas {
+    width: 100%;
+    max-height: none;
+  }
+}
+
 @media (min-width: 1181px) {
   [data-testid="qimen-chart"] {
     height: auto !important;
