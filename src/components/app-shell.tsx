@@ -240,6 +240,7 @@ export function AppShell() {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
+  const [agentOpen, setAgentOpen] = useState(false);
   const [platformCheckoutLoading, setPlatformCheckoutLoading] = useState<string | null>(null);
   const [isNarrowLayout, setIsNarrowLayout] = useState(false);
   const [resizablePanelsReady, setResizablePanelsReady] = useState(false);
@@ -691,21 +692,7 @@ export function AppShell() {
         </section>
       ) : null}
 
-      <InspectorPanel
-        agentError={agentState[mode].error}
-        agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
-        agentModel={agentState[mode].model}
-        agentQuestion={agentState[mode].question}
-        agentResult={agentState[mode].content}
-        jsonPayload={jsonPayload}
-        mode={mode}
-        onAgentAnalyze={handleAgentAnalyze}
-        onAgentQuestionChange={handleAgentQuestionChange}
-        selectedPalace={mode === "qimen" ? selectedPalace : null}
-        structuredText={structuredText}
-      />
-
-      <details className="workspace-disclosure" open>
+      <details className="workspace-disclosure workspace-disclosure--compact" open>
         <summary>
           <span>调整盘面</span>
           <small>时间、历法与排盘口径</small>
@@ -749,16 +736,6 @@ export function AppShell() {
 
         <ModeTabs mode={mode} onChange={setMode} />
 
-        <div className="observatory-hero__status">
-          <div className="observatory-pill">
-            <span>排盘时间</span>
-            <strong>{normalizedProfile.normalized.datetime}</strong>
-          </div>
-          <div className="observatory-pill">
-            <span>Agent 分析</span>
-            <strong>¥10 / 次</strong>
-          </div>
-        </div>
       </header>
 
       {error ? <p className="error-banner">{error}</p> : null}
@@ -801,6 +778,48 @@ export function AppShell() {
           </a>
         </div>
       </footer>
+
+      <button
+        type="button"
+        className="agent-launcher"
+        onClick={() => setAgentOpen(true)}
+        aria-label="打开 Agent 分析"
+      >
+        <span className="agent-launcher__dot" aria-hidden="true" />
+        <span>Agent</span>
+      </button>
+
+      {agentOpen ? (
+        <div className="agent-popover" role="dialog" aria-modal="true" aria-label="Agent 分析">
+          <div className="agent-popover__chrome">
+            <div>
+              <span className="agent-popover__eyebrow">智能分析</span>
+              <strong>Agent 分析</strong>
+            </div>
+            <button
+              type="button"
+              className="agent-popover__close"
+              onClick={() => setAgentOpen(false)}
+              aria-label="关闭 Agent 分析"
+            >
+              ×
+            </button>
+          </div>
+          <InspectorPanel
+            agentError={agentState[mode].error}
+            agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
+            agentModel={agentState[mode].model}
+            agentQuestion={agentState[mode].question}
+            agentResult={agentState[mode].content}
+            jsonPayload={jsonPayload}
+            mode={mode}
+            onAgentAnalyze={handleAgentAnalyze}
+            onAgentQuestionChange={handleAgentQuestionChange}
+            selectedPalace={mode === "qimen" ? selectedPalace : null}
+            structuredText={structuredText}
+          />
+        </div>
+      ) : null}
 
     </div>
   );

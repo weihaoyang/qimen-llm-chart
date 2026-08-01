@@ -3618,6 +3618,38 @@ a {
   }
 }
 
+@media (min-width: 1181px) {
+  #qimen-chart {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  #qimen-agent {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  .analysis-panel > .canvas-panel {
+    height: auto !important;
+  }
+
+  .analysis-panel > .sidebar-panel {
+    height: 100% !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.analysis-panel-group {
+  align-items: start !important;
+}
+
+.analysis-panel {
+  height: auto !important;
+  align-self: start;
+}
+
 /* 2026 workspace layout: chart first, Agent always visible, details on demand. */
 html,
 body {
@@ -4343,6 +4375,251 @@ body {
   }
 }
 
+/* Final workbench pass: keep the 16:9 reading surface tight and move Agent
+   into a compact, on-demand panel. */
+.canvas-panel__content,
+.canvas-panel__content > .palace-grid-shell,
+.canvas-panel__content > .bazi-panel,
+.canvas-panel__content > .ziwei-panel,
+.canvas-panel__content > .combined-panel {
+  min-height: 0 !important;
+}
+
+.canvas-panel {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.analysis-panel-group {
+  align-items: start !important;
+}
+
+.analysis-panel {
+  height: auto !important;
+  align-self: start;
+}
+
+.canvas-panel__content {
+  align-content: start;
+}
+
+.palace-grid-shell {
+  height: auto !important;
+  min-height: 0 !important;
+  align-self: start;
+  align-content: start;
+  grid-template-rows: auto auto auto !important;
+}
+
+.palace-grid-shell__hud {
+  min-height: 0;
+}
+
+.palace-grid {
+  height: auto !important;
+  min-height: 0 !important;
+  align-self: start;
+  align-items: start;
+  align-content: start;
+  grid-template-rows: repeat(3, max-content) !important;
+}
+
+.palace-card {
+  align-self: start;
+  height: auto;
+  min-height: 0;
+}
+
+.workspace-disclosure--compact > summary {
+  display: none;
+}
+
+.workspace-disclosure--compact {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.workspace-disclosure--compact > .command-bar,
+.workspace-disclosure--compact > .metadata-panel {
+  margin-top: 0;
+}
+
+.sidebar-quick-controls__field > span {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.sidebar-quick-controls__field input,
+.sidebar-quick-controls__select {
+  min-height: 38px;
+  font-size: 0.82rem;
+}
+
+.workspace-disclosure .command-bar--sidebar input,
+.workspace-disclosure .command-bar--sidebar select,
+.workspace-disclosure .command-bar--sidebar textarea {
+  min-height: 38px;
+  font-size: 0.84rem;
+}
+
+.workspace-disclosure .command-bar--sidebar label,
+.workspace-disclosure .command-bar--sidebar .command-bar__label,
+.workspace-disclosure .command-bar--sidebar .sequence-controls__label {
+  font-size: 0.76rem;
+}
+
+.agent-launcher {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #8d3427;
+  border-radius: 999px;
+  color: #fff8eb;
+  background-color: #a54232;
+  box-shadow: 0 10px 24px rgba(88, 44, 28, 0.22);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.agent-launcher:hover {
+  background-color: #813225;
+  box-shadow: 0 12px 28px rgba(88, 44, 28, 0.28);
+  transform: translateY(-1px);
+}
+
+.agent-launcher:focus-visible,
+.agent-popover__close:focus-visible {
+  outline: 2px solid #b8874e;
+  outline-offset: 2px;
+}
+
+.agent-launcher__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #f4d39e;
+  box-shadow: 0 0 0 3px rgba(244, 211, 158, 0.18);
+}
+
+.agent-popover {
+  position: fixed;
+  right: 22px;
+  bottom: 72px;
+  z-index: 89;
+  display: flex;
+  flex-direction: column;
+  width: min(580px, calc(100vw - 32px));
+  max-height: min(700px, calc(100svh - 98px));
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid #d0b98f;
+  border-radius: 18px;
+  background-color: #f7efe1;
+  box-shadow: 0 24px 64px rgba(64, 44, 27, 0.28);
+}
+
+.agent-popover__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #ddc9a5;
+  background-color: #efe2cc;
+}
+
+.agent-popover__chrome > div {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-popover__eyebrow {
+  color: #8a6846;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+}
+
+.agent-popover__chrome strong {
+  color: #4b3022;
+  font-size: 1rem;
+}
+
+.agent-popover__close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #c8ad82;
+  border-radius: 8px;
+  color: #6e4a32;
+  background-color: #fbf5ea;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agent-popover__close:hover {
+  border-color: #a54232;
+  color: #a54232;
+}
+
+.agent-popover > .inspector-tabs {
+  flex: 1;
+  min-height: 0;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.agent-popover .inspector-panel__header {
+  display: none;
+}
+
+.agent-popover .inspector-tabs__content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.agent-popover .inspector-scroll {
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (max-width: 720px) {
+  .agent-launcher {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .agent-popover {
+    right: 12px;
+    bottom: 64px;
+    width: calc(100vw - 24px);
+    max-height: calc(100svh - 84px);
+  }
+}
+
+@media (min-width: 1181px) {
+  .analysis-panel > .canvas-panel {
+    height: auto !important;
+  }
+
+  .analysis-panel > .sidebar-panel {
+    height: 100% !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 /* The in-app preview commonly runs around 1080px wide. Keep the same
    content-led palace sizing in that desktop/tablet band; the old 1181px
    breakpoint left the grid's 1fr track stretching every card vertically. */
@@ -4851,5 +5128,276 @@ body {
   .palace-card__facts dd {
     font-size: 0.94rem;
     line-height: 1.05;
+  }
+}
+
+.canvas-panel {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Authoritative final layout overrides. */
+.canvas-panel__content,
+.canvas-panel__content > .palace-grid-shell,
+.canvas-panel__content > .bazi-panel,
+.canvas-panel__content > .ziwei-panel,
+.canvas-panel__content > .combined-panel,
+.palace-grid-shell,
+.palace-grid {
+  min-height: 0 !important;
+}
+
+.palace-grid-shell {
+  height: auto !important;
+  align-self: start;
+  align-content: start;
+  grid-template-rows: auto auto auto !important;
+}
+
+.palace-grid {
+  height: auto !important;
+  align-self: start;
+  align-items: start;
+  align-content: start;
+  grid-template-rows: repeat(3, max-content) !important;
+}
+
+.palace-card {
+  align-self: start;
+  height: auto;
+  min-height: 0;
+}
+
+.workspace-disclosure--compact > summary {
+  display: none !important;
+}
+
+.sidebar-quick-controls__field > span,
+.workspace-disclosure .command-bar--sidebar label,
+.workspace-disclosure .command-bar--sidebar .command-bar__label,
+.workspace-disclosure .command-bar--sidebar .sequence-controls__label {
+  font-size: 0.76rem;
+}
+
+.sidebar-quick-controls__field input,
+.sidebar-quick-controls__select,
+.workspace-disclosure .command-bar--sidebar input,
+.workspace-disclosure .command-bar--sidebar select,
+.workspace-disclosure .command-bar--sidebar textarea {
+  min-height: 38px;
+  font-size: 0.84rem;
+}
+
+.agent-launcher {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #8d3427;
+  border-radius: 999px;
+  color: #fff8eb;
+  background-color: #a54232;
+  box-shadow: 0 10px 24px rgba(88, 44, 28, 0.22);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agent-launcher:hover {
+  background-color: #813225;
+}
+
+.agent-launcher__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #f4d39e;
+}
+
+.agent-popover {
+  position: fixed;
+  right: 22px;
+  bottom: 72px;
+  z-index: 89;
+  display: flex;
+  flex-direction: column;
+  width: min(580px, calc(100vw - 32px));
+  max-height: min(700px, calc(100svh - 98px));
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid #d0b98f;
+  border-radius: 18px;
+  background-color: #f7efe1;
+  box-shadow: 0 24px 64px rgba(64, 44, 27, 0.28);
+}
+
+.agent-popover__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #ddc9a5;
+  background-color: #efe2cc;
+}
+
+.agent-popover__chrome > div {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-popover__eyebrow {
+  color: #8a6846;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+}
+
+.agent-popover__chrome strong {
+  color: #4b3022;
+  font-size: 1rem;
+}
+
+.agent-popover__close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #c8ad82;
+  border-radius: 8px;
+  color: #6e4a32;
+  background-color: #fbf5ea;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agent-popover__close:hover {
+  border-color: #a54232;
+  color: #a54232;
+}
+
+.agent-popover > .inspector-tabs {
+  flex: 1;
+  min-height: 0;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.agent-popover .inspector-panel__header {
+  display: none;
+}
+
+.agent-popover .inspector-tabs__content,
+.agent-popover .inspector-scroll {
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (min-width: 1181px) {
+  [data-testid="qimen-chart"] {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  [data-testid="qimen-agent"] {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  [data-testid="qimen-agent"] > .analysis-panel {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 0 !important;
+    align-self: stretch !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  [data-testid="qimen-agent"] > .analysis-panel > .sidebar-panel {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    flex: 1 1 0 !important;
+    overflow-y: auto !important;
+  }
+
+  [data-testid="qimen-agent"] > .analysis-panel > .sidebar-panel > .workspace-disclosure {
+    overflow: visible;
+  }
+}
+
+@media (min-width: 1181px) {
+  .analysis-panel:nth-child(1) {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .analysis-panel:nth-child(3) {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .analysis-panel:nth-child(3) > .sidebar-panel {
+    height: auto !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 1181px) {
+  #qimen-chart {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  #qimen-agent {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  .analysis-panel > .canvas-panel {
+    height: auto !important;
+  }
+
+  .analysis-panel > .sidebar-panel {
+    height: 100% !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (min-width: 1181px) {
+  .analysis-panel > .canvas-panel {
+    height: auto !important;
+  }
+
+  .analysis-panel > .sidebar-panel {
+    height: 100% !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 720px) {
+  .agent-launcher {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .agent-popover {
+    right: 12px;
+    bottom: 64px;
+    width: calc(100vw - 24px);
+    max-height: calc(100svh - 84px);
   }
 }

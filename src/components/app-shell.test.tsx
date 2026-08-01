@@ -14,8 +14,8 @@ describe("AppShell", () => {
     expect(screen.getByRole("tab", { name: /八字/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /紫微/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /三盘联合/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "分析" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("调整盘面")).toBeInTheDocument();
     expect(screen.getByText("核验资料")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "打开 Agent 分析" })).toBeInTheDocument();
   }, 30000);
 });

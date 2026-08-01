@@ -49,7 +49,6 @@ export function InspectorPanel({
           <span className="inspector-panel__eyebrow">Agent</span>
           <h2>{modeLabel[mode]}分析</h2>
         </div>
-        <span className="inspector-panel__mode-tag">¥10 / 次</span>
       </div>
 
       <TabsList className="inspector-tabs__list" variant="line">
