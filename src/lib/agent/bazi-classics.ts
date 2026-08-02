@@ -126,14 +126,31 @@ export const BAZI_CLASSIC_EXCERPTS: readonly BaziClassicExcerpt[] = [
 
 const normalizeSearchText = (value: string) => value.toLocaleLowerCase();
 
-const scoreExcerpt = (excerpt: BaziClassicExcerpt, query: string) => {
-  const score = excerpt.keywords.reduce(
-    (total, keyword) => total + (query.includes(normalizeSearchText(keyword)) ? 3 : 0),
+const scoreText = (excerpt: BaziClassicExcerpt, text: string, weight: number) =>
+  excerpt.keywords.reduce(
+    (total, keyword) =>
+      total + (text.includes(normalizeSearchText(keyword)) ? weight : 0),
     0,
   );
 
-  return score;
-};
+const scoreExcerpt = (
+  excerpt: BaziClassicExcerpt,
+  {
+    question,
+    structuredText,
+    jsonPayload,
+  }: {
+    question: string;
+    structuredText: string;
+    jsonPayload: string;
+  },
+) =>
+  // The user's explicit angle is the strongest signal. Serialized chart data
+  // still helps when the question is broad, but its boilerplate must not drown
+  // out a focused request such as "只分析事业" or "只看调候".
+  scoreText(excerpt, normalizeSearchText(question), 10) +
+  scoreText(excerpt, normalizeSearchText(structuredText), 2) +
+  scoreText(excerpt, normalizeSearchText(jsonPayload), 1);
 
 export const selectBaziClassicsContext = ({
   question,
@@ -146,11 +163,10 @@ export const selectBaziClassicsContext = ({
   jsonPayload: string;
   limit?: number;
 }) => {
-  const query = normalizeSearchText([question, structuredText, jsonPayload].join("\n"));
   const safeLimit = Math.max(1, Math.min(6, Math.floor(limit)));
   const ranked = BAZI_CLASSIC_EXCERPTS.map((excerpt, index) => ({
     excerpt,
-    score: scoreExcerpt(excerpt, query),
+    score: scoreExcerpt(excerpt, { question, structuredText, jsonPayload }),
     index,
   })).sort((left, right) => right.score - left.score || left.index - right.index);
 

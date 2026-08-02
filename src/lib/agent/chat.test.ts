@@ -98,6 +98,17 @@ describe("agent chat helpers", () => {
     expect(context).toContain("逐年太岁游行十二宫");
   });
 
+  it("weights the explicit question above serialized chart boilerplate", () => {
+    const context = selectBaziClassicsContext({
+      question: "请只分析事业与官星。",
+      structuredText: "### 大运\n当前大运：丙午\n流年：丙午",
+      jsonPayload: '{"大运":"丙午","流年":"丙午"}',
+      limit: 1,
+    });
+
+    expect(context).toContain("正官论、论七杀");
+  });
+
   it("extracts assistant text from content parts", () => {
     expect(
       extractAssistantText([
