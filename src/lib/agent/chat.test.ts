@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildAgentMessages,
+  buildAgentSystemPrompt,
   DEFAULT_AGENT_QUESTIONS,
   extractAssistantText,
   getAgentConfig,
@@ -30,6 +31,25 @@ describe("agent chat helpers", () => {
     expect(messages[1]?.content).toContain(DEFAULT_AGENT_QUESTIONS.combined);
     expect(messages[1]?.content).toContain("结构化文本：\ncombined text");
     expect(messages[1]?.content).toContain('紧凑 JSON：\n{"ok":true}');
+  });
+
+  it("adds a structured Bazi analysis protocol and bounded literature references", () => {
+    const systemPrompt = buildAgentSystemPrompt("bazi");
+
+    expect(systemPrompt).toContain("【八字分析顺序】");
+    expect(systemPrompt).toContain("《子平真诠》");
+    expect(systemPrompt).toContain("《穷通宝鉴》");
+    expect(systemPrompt).toContain("不得伪造引号、原句、章节、页码");
+    expect(systemPrompt).toContain("当前载荷没有流年或当前大运定位字段时");
+    expect(systemPrompt).toContain("## 传统文献参考");
+  });
+
+  it("keeps non-Bazi prompts focused on their own chart system", () => {
+    const systemPrompt = buildAgentSystemPrompt("qimen");
+
+    expect(systemPrompt).toContain("【奇门分析规则】");
+    expect(systemPrompt).toContain("值符、值使、门星神");
+    expect(systemPrompt).not.toContain("《子平真诠》");
   });
 
   it("extracts assistant text from content parts", () => {
