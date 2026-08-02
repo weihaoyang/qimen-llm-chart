@@ -4608,6 +4608,99 @@ body {
   }
 }
 
+/* Final 16:9 containment pass.
+   The resize-panel library renders an extra .analysis-panel wrapper inside
+   #qimen-chart. Keep that wrapper and each long-form chart mode inside the
+   available workbench height; the chart body owns the scroll instead of
+   pushing the footer below the viewport. */
+@media (min-width: 1181px) {
+  #qimen-chart {
+    /* Let the flex row stretch this panel; a percentage height here is
+       unresolved in the auto-height Group and collapses it to its content. */
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+    overflow: hidden !important;
+  }
+
+  #qimen-chart > .analysis-panel {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    flex-direction: column !important;
+    align-self: stretch !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel {
+    flex: 1 1 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] > .canvas-panel__content {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content > .bazi-panel,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content > .ziwei-panel,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] > .canvas-panel__content > .combined-panel {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+}
+
+/* Keep long chart modes inside the 16:9 reading surface instead of letting
+   their intrinsic height push underneath the footer. */
+@media (min-width: 1181px) {
+  #qimen-chart > .analysis-panel {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: auto !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] > .canvas-panel__content {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content > .bazi-panel,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content > .ziwei-panel,
+  #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] > .canvas-panel__content > .combined-panel {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: auto !important;
+  }
+}
+
 /* At tablet and narrow desktop widths the two sidebar columns leave a large
    empty trough below the quick controls. Stack the controls with the form so
    the reading surface follows its content instead of the taller neighbour. */
