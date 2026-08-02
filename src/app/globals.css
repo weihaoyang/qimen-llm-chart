@@ -4608,6 +4608,34 @@ body {
   }
 }
 
+/* At tablet and narrow desktop widths the two sidebar columns leave a large
+   empty trough below the quick controls. Stack the controls with the form so
+   the reading surface follows its content instead of the taller neighbour. */
+@media (max-width: 960px) {
+  .sidebar-panel {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .sidebar-quick-controls,
+  .workspace-disclosure,
+  .sidebar-panel > .workspace-disclosure {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sidebar-quick-controls {
+    align-self: start;
+  }
+
+  .workspace-disclosure {
+    height: auto;
+    min-height: 0;
+  }
+}
+
 @media (min-width: 1181px) {
   .analysis-panel > .canvas-panel {
     height: auto !important;
