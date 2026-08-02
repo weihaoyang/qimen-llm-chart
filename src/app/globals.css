@@ -4633,6 +4633,35 @@ body {
   }
 }
 
+/* Cross-mode desktop cleanup: keep the Bazi workspace inside its flex column
+   while letting its intentionally wide tables scroll in their own surfaces. */
+@media (min-width: 1181px) and (min-height: 700px) {
+  .bazi-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .bazi-panel > .bazi-panel__overview,
+  .bazi-panel > .bazi-traditional-board,
+  .bazi-panel > .bazi-support-panel,
+  .bazi-panel > .bazi-yun-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .bazi-support-panel,
+  .bazi-support-table {
+    min-width: 0 !important;
+    overflow-x: auto;
+  }
+
+  .bazi-support-table__row {
+    width: 100%;
+    min-width: 0;
+  }
+
+}
+
 /* Final readability pass: the sidebar form used an older 0.5rem label rule,
    which made the controls look like microtext at the 1280×720 workbench size.
    Keep the compact two-column form, but bring labels and method chips back to
@@ -5722,6 +5751,25 @@ body {
     height: 100% !important;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+}
+
+@media (min-width: 1181px) and (min-height: 700px) {
+  .sidebar-panel[data-mode="bazi"],
+  .sidebar-panel[data-mode="ziwei"],
+  .sidebar-panel[data-mode="combined"] {
+    height: auto !important;
+    flex: 0 0 auto !important;
+    align-self: start;
+    overflow-y: visible;
+  }
+
+  #qimen-agent > .analysis-panel > .sidebar-panel[data-mode="bazi"],
+  #qimen-agent > .analysis-panel > .sidebar-panel[data-mode="ziwei"],
+  #qimen-agent > .analysis-panel > .sidebar-panel[data-mode="combined"] {
+    height: auto !important;
+    flex: 0 0 auto !important;
+    overflow-y: visible;
   }
 }
 
