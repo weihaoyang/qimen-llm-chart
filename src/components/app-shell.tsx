@@ -674,6 +674,7 @@ export function AppShell() {
               <label className="sidebar-quick-controls__field sidebar-quick-controls__field--wide">
                 <span>自选时间</span>
                 <Input
+                  aria-label="自选时间"
                   type="datetime-local"
                   value={formState.datetime}
                   onChange={(event) => setFormState({ ...formState, datetime: event.target.value })}
@@ -694,6 +695,7 @@ export function AppShell() {
               <label className="sidebar-quick-controls__field">
                 <span>序列开始</span>
                 <Input
+                  aria-label="序列开始"
                   type="datetime-local"
                   value={sequenceFormState.startDatetime}
                   onChange={(event) =>
@@ -704,6 +706,7 @@ export function AppShell() {
               <label className="sidebar-quick-controls__field">
                 <span>序列结束</span>
                 <Input
+                  aria-label="序列结束"
                   type="datetime-local"
                   value={sequenceFormState.endDatetime}
                   onChange={(event) =>

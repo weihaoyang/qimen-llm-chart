@@ -51,7 +51,7 @@ export function MetadataPanel({ chart }: MetadataPanelProps) {
         <div className="metadata-list">
           <div className="metadata-row">
             <span>输入时间</span>
-            <strong>{chart.input.datetime}</strong>
+            <strong suppressHydrationWarning>{chart.input.datetime}</strong>
           </div>
           <div className="metadata-row">
             <span>时区</span>
@@ -59,7 +59,7 @@ export function MetadataPanel({ chart }: MetadataPanelProps) {
           </div>
           <div className="metadata-row">
             <span>解析时间</span>
-            <strong>{chart.interpretedDateTime}</strong>
+            <strong suppressHydrationWarning>{chart.interpretedDateTime}</strong>
           </div>
           <div className="metadata-row">
             <span>农历</span>

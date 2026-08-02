@@ -4633,6 +4633,35 @@ body {
   }
 }
 
+/* Keep the desktop nine-palace frame content-led.  The resizable group owns
+   the full viewport height for the sidebar, but the chart panel should stop
+   immediately after its summary and palace grid instead of inheriting that
+   height and leaving a blank trough below the grid. */
+@media (min-width: 1181px) {
+  /* The resizable-panel containment rules below this block also use
+     !important.  Keep a higher-specificity selector here so they cannot
+     re-stretch the first panel after the chart sizing pass. */
+  html body #qimen-workbench-layout > #qimen-chart,
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel {
+    align-self: flex-start !important;
+    height: auto !important;
+    max-height: 100% !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
+    align-self: flex-start !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: 100% !important;
+    grid-template-rows: auto auto !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content {
+    height: auto !important;
+    align-content: start !important;
+  }
+}
+
 /* Cross-mode desktop cleanup: keep the Bazi workspace inside its flex column
    while letting its intentionally wide tables scroll in their own surfaces. */
 @media (min-width: 1181px) and (min-height: 700px) {
