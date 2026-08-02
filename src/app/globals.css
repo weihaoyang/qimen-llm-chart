@@ -5399,6 +5399,22 @@ body {
   aspect-ratio: 1 / 1;
 }
 
+.control-field--true-solar {
+  align-content: start;
+}
+
+.control-field--true-solar > label {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.control-field--true-solar small {
+  color: var(--ink-subtle);
+  font-size: 0.62rem;
+  line-height: 1.25;
+}
+
 @media (max-width: 720px) {
   .summary-strip {
     grid-template-columns: repeat(7, minmax(92px, 1fr)) !important;

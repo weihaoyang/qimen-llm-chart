@@ -201,6 +201,7 @@ const toProfileFromSequenceInput = (
   timeZone: nextInput.timeZone,
   gender: source.gender,
   timeBasis: source.timeBasis,
+  location: source.location,
   solar: {
     year: Number(nextInput.startDatetime.slice(0, 4)),
     month: Number(nextInput.startDatetime.slice(5, 7)),
@@ -209,6 +210,13 @@ const toProfileFromSequenceInput = (
     minute: Number(nextInput.startDatetime.slice(14, 16)),
   },
 });
+
+const hasValidTrueSolarLongitude = (input: ProfileInput) =>
+  input.timeBasis !== "true-solar" ||
+  (typeof input.location?.longitude === "number" &&
+    Number.isFinite(input.location.longitude) &&
+    input.location.longitude >= -180 &&
+    input.location.longitude <= 180);
 
 export function AppShell() {
   const [initialState] = useState(getInitialState);
@@ -391,6 +399,11 @@ export function AppShell() {
     setFormState(nextInput);
     setCopyState("idle");
 
+    if (!hasValidTrueSolarLongitude(nextInput)) {
+      setError("真太阳时需要填写有效的出生地经度（-180° 至 180°）。");
+      return;
+    }
+
     try {
       applyWorkbenchCharts(nextInput, qimenSettings);
     } catch (nextError) {
@@ -405,6 +418,11 @@ export function AppShell() {
 
   const handleGenerateSequence = (nextInput: ChartSequenceInput) => {
     setCopyState("idle");
+
+    if (!hasValidTrueSolarLongitude(formState)) {
+      setError("真太阳时需要填写有效的出生地经度（-180° 至 180°）。");
+      return;
+    }
 
     try {
       const nextProfile = toProfileFromSequenceInput(formState, nextInput);
@@ -741,6 +759,7 @@ export function AppShell() {
           onValueChange={setFormState}
           qimenSettings={qimenSettings}
           sequenceValue={sequenceFormState}
+          showSequenceControls={false}
           value={formState}
         />
       </details>

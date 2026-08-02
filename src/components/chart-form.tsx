@@ -72,6 +72,7 @@ type ChartFormProps = {
   copyState: "idle" | "text" | "json";
   layout?: "top" | "sidebar";
   mode?: WorkbenchMode;
+  showSequenceControls?: boolean;
 };
 
 export function ChartForm({
@@ -88,6 +89,7 @@ export function ChartForm({
   copyState,
   layout = "top",
   mode = "qimen",
+  showSequenceControls = true,
 }: ChartFormProps) {
   const updateQimenSettings = (nextValue: Partial<QimenSettings>) => {
     onQimenSettingsChange({ ...qimenSettings, ...nextValue });
@@ -340,20 +342,25 @@ export function ChartForm({
           </label>
 
           {value.timeBasis === "true-solar" ? (
-            <label className="control-field">
-              <span>经度</span>
+            <div className="control-field control-field--true-solar">
+              <label htmlFor="true-solar-longitude">经度</label>
               <Input
+                id="true-solar-longitude"
                 className="control-input"
                 type="number"
                 inputMode="decimal"
+                min="-180"
+                max="180"
                 step="0.01"
+                placeholder="例如 116.40"
                 value={value.location?.longitude?.toString() ?? ""}
                 onChange={(event) => {
                   const nextValue = event.target.value.trim();
                   updateLocation(nextValue === "" ? undefined : Number(nextValue));
                 }}
               />
-            </label>
+              <small>按出生地经度修正，东经为正、西经为负</small>
+            </div>
           ) : null}
 
           {mode === "qimen" ? (
@@ -542,7 +549,7 @@ export function ChartForm({
         </div>
       </div>
 
-      {mode === "qimen" ? (
+      {mode === "qimen" && showSequenceControls ? (
         <div className="command-bar__section command-bar__section--sequence">
           <div className="sequence-controls">
             <label className="control-field">
