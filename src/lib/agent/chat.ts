@@ -40,6 +40,8 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4.1-mini";
+const DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
 const MODE_LABELS: Record<WorkbenchMode, string> = {
   qimen: "奇门遁甲",
@@ -88,15 +90,29 @@ export const buildAgentSystemPrompt = (mode: WorkbenchMode): string =>
   [BASE_SYSTEM_PROMPT, mode === "bazi" ? BAZI_SYSTEM_PROMPT : MODE_SYSTEM_PROMPTS[mode]].join("\n\n");
 
 export const getAgentConfig = (env: AgentEnvironment = process.env): AgentConfig => {
-  const apiKey = env.OPENAI_API_KEY ?? env.AI_API_KEY;
+  const openAiCompatibleKey = env.OPENAI_API_KEY ?? env.AI_API_KEY;
+  const geminiKey = env.GEMINI_API_KEY ?? env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const apiKey = openAiCompatibleKey ?? geminiKey;
   if (!apiKey) {
-    throw new Error("未配置 OPENAI_API_KEY 或 AI_API_KEY。");
+    throw new Error(
+      "未配置 OPENAI_API_KEY、AI_API_KEY、GEMINI_API_KEY 或 GOOGLE_GENERATIVE_AI_API_KEY。",
+    );
   }
+
+  const usingGeminiDefaults = !openAiCompatibleKey && Boolean(geminiKey);
 
   return {
     apiKey,
-    baseUrl: env.OPENAI_BASE_URL ?? env.AI_BASE_URL ?? DEFAULT_BASE_URL,
-    model: env.OPENAI_MODEL ?? env.AI_MODEL ?? DEFAULT_MODEL,
+    baseUrl:
+      env.OPENAI_BASE_URL ??
+      env.AI_BASE_URL ??
+      env.GEMINI_BASE_URL ??
+      (usingGeminiDefaults ? DEFAULT_GEMINI_BASE_URL : DEFAULT_BASE_URL),
+    model:
+      env.OPENAI_MODEL ??
+      env.AI_MODEL ??
+      env.GEMINI_MODEL ??
+      (usingGeminiDefaults ? DEFAULT_GEMINI_MODEL : DEFAULT_MODEL),
   };
 };
 

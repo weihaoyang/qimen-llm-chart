@@ -22,6 +22,18 @@ describe("agent chat helpers", () => {
     });
   });
 
+  it("accepts Gemini-compatible env aliases with Google defaults", () => {
+    expect(
+      getAgentConfig({
+        GEMINI_API_KEY: "gemini-key",
+      }),
+    ).toEqual({
+      apiKey: "gemini-key",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+      model: "gemini-2.5-flash",
+    });
+  });
+
   it("builds mode-specific messages with the default question", () => {
     const messages = buildAgentMessages({
       mode: "combined",

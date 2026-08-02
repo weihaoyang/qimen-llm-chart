@@ -50,6 +50,14 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4.1-mini
 ```
 
+也可以直接使用 Gemini 兼容变量；使用 YYRouter 时将 `GEMINI_BASE_URL` 改为你的供应商地址：
+
+```text
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_BASE_URL=https://yyrouter.cc/v1beta
+GEMINI_MODEL=gemini-2.5-flash
+```
+
 如需接入公司统一用户与支付平台，还需要配置：
 
 ```text
