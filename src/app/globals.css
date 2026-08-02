@@ -3108,6 +3108,31 @@ a {
   background: rgba(255, 251, 246, 0.82);
 }
 
+.inspector-output {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  height: 100%;
+}
+
+.inspector-output__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+}
+
+.inspector-output__toolbar .command-button {
+  width: auto;
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 0.64rem;
+}
+
 .agent-panel {
   display: grid;
   gap: 6px;

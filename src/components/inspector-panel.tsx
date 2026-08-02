@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Sparkles } from "lucide-react";
+import { Clipboard, FileJson2, LoaderCircle, Sparkles } from "lucide-react";
 import { StructuredOutput } from "@/components/structured-output";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,8 +17,11 @@ type InspectorPanelProps = {
   agentModel: string | null;
   agentLoading: boolean;
   agentError: string | null;
+  copyState: "idle" | "text" | "json";
   onAgentQuestionChange: (value: string) => void;
   onAgentAnalyze: () => void;
+  onCopyText: () => Promise<void>;
+  onCopyJson: () => Promise<void>;
   selectedPalace?: Position | null;
 };
 
@@ -31,8 +34,11 @@ export function InspectorPanel({
   agentModel,
   agentLoading,
   agentError,
+  copyState,
   onAgentQuestionChange,
   onAgentAnalyze,
+  onCopyText,
+  onCopyJson,
   selectedPalace = null,
 }: InspectorPanelProps) {
   const modeLabel: Record<WorkbenchMode, string> = {
@@ -58,21 +64,55 @@ export function InspectorPanel({
       </TabsList>
 
       <TabsContent className="inspector-tabs__content" value="text">
-        <ScrollArea className="inspector-scroll inspector-scroll-plain">
-          <StructuredOutput selectedPalace={selectedPalace} structuredText={structuredText} />
-        </ScrollArea>
+        <div className="inspector-output">
+          <div className="inspector-output__toolbar">
+            <span>结构化盘面文本</span>
+            <Button
+              className="command-button"
+              variant="outline"
+              type="button"
+              onClick={() => {
+                void onCopyText();
+              }}
+              disabled={!structuredText}
+            >
+              <Clipboard data-icon="inline-start" />
+              {copyState === "text" ? "已复制文本" : "复制结构化文本"}
+            </Button>
+          </div>
+          <ScrollArea className="inspector-scroll inspector-scroll-plain">
+            <StructuredOutput selectedPalace={selectedPalace} structuredText={structuredText} />
+          </ScrollArea>
+        </div>
       </TabsContent>
 
       <TabsContent className="inspector-tabs__content" value="json">
-        <ScrollArea className="inspector-scroll inspector-scroll-plain">
-          {jsonPayload ? (
-            <pre className="json-block" suppressHydrationWarning>
-              {jsonPayload}
-            </pre>
-          ) : (
-            <div className="empty-panel">等待生成 JSON。</div>
-          )}
-        </ScrollArea>
+        <div className="inspector-output">
+          <div className="inspector-output__toolbar">
+            <span>LLM JSON 输入</span>
+            <Button
+              className="command-button"
+              variant="outline"
+              type="button"
+              onClick={() => {
+                void onCopyJson();
+              }}
+              disabled={!jsonPayload}
+            >
+              <FileJson2 data-icon="inline-start" />
+              {copyState === "json" ? "已复制 JSON" : "复制 JSON"}
+            </Button>
+          </div>
+          <ScrollArea className="inspector-scroll inspector-scroll-plain">
+            {jsonPayload ? (
+              <pre className="json-block" suppressHydrationWarning>
+                {jsonPayload}
+              </pre>
+            ) : (
+              <div className="empty-panel">等待生成 JSON。</div>
+            )}
+          </ScrollArea>
+        </div>
       </TabsContent>
 
       <TabsContent className="inspector-tabs__content" value="agent">

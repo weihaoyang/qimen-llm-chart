@@ -48,6 +48,14 @@ const createProps = (
 });
 
 describe("ChartForm", () => {
+  it("can move copy actions out of the sidebar form", () => {
+    const { unmount } = render(<ChartForm {...createProps()} showCopyActions={false} />);
+
+    expect(screen.queryByRole("button", { name: "复制结构化文本" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "复制 JSON" })).not.toBeInTheDocument();
+    unmount();
+  });
+
   it("shows the unified workbench title in sidebar mode", () => {
     render(<ChartForm {...createProps()} />);
 

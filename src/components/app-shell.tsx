@@ -759,6 +759,7 @@ export function AppShell() {
           onValueChange={setFormState}
           qimenSettings={qimenSettings}
           sequenceValue={sequenceFormState}
+          showCopyActions={false}
           showSequenceControls={false}
           value={formState}
         />
@@ -861,9 +862,12 @@ export function AppShell() {
             agentModel={agentState[mode].model}
             agentQuestion={agentState[mode].question}
             agentResult={agentState[mode].content}
+            copyState={copyState}
             jsonPayload={jsonPayload}
             mode={mode}
             onAgentAnalyze={handleAgentAnalyze}
+            onCopyJson={handleCopyJson}
+            onCopyText={handleCopyText}
             onAgentQuestionChange={handleAgentQuestionChange}
             selectedPalace={mode === "qimen" ? selectedPalace : null}
             structuredText={structuredText}

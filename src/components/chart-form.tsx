@@ -72,6 +72,7 @@ type ChartFormProps = {
   copyState: "idle" | "text" | "json";
   layout?: "top" | "sidebar";
   mode?: WorkbenchMode;
+  showCopyActions?: boolean;
   showSequenceControls?: boolean;
 };
 
@@ -89,6 +90,7 @@ export function ChartForm({
   copyState,
   layout = "top",
   mode = "qimen",
+  showCopyActions = true,
   showSequenceControls = true,
 }: ChartFormProps) {
   const updateQimenSettings = (nextValue: Partial<QimenSettings>) => {
@@ -524,28 +526,32 @@ export function ChartForm({
             <Sparkles data-icon="inline-start" />
             生成盘面
           </Button>
-          <Button
-            className="command-button"
-            variant="outline"
-            type="button"
-            onClick={() => {
-              void onCopyText();
-            }}
-          >
-            <Clipboard data-icon="inline-start" />
-            {copyState === "text" ? "已复制文本" : "复制结构化文本"}
-          </Button>
-          <Button
-            className="command-button"
-            variant="outline"
-            type="button"
-            onClick={() => {
-              void onCopyJson();
-            }}
-          >
-            <FileJson2 data-icon="inline-start" />
-            {copyState === "json" ? "已复制 JSON" : "复制 JSON"}
-          </Button>
+          {showCopyActions ? (
+            <>
+              <Button
+                className="command-button"
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  void onCopyText();
+                }}
+              >
+                <Clipboard data-icon="inline-start" />
+                {copyState === "text" ? "已复制文本" : "复制结构化文本"}
+              </Button>
+              <Button
+                className="command-button"
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  void onCopyJson();
+                }}
+              >
+                <FileJson2 data-icon="inline-start" />
+                {copyState === "json" ? "已复制 JSON" : "复制 JSON"}
+              </Button>
+            </>
+          ) : null}
         </div>
       </div>
 
