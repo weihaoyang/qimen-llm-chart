@@ -4633,6 +4633,68 @@ body {
   }
 }
 
+/* Final readability pass: the sidebar form used an older 0.5rem label rule,
+   which made the controls look like microtext at the 1280×720 workbench size.
+   Keep the compact two-column form, but bring labels and method chips back to
+   normal reading sizes. */
+.workspace-disclosure .command-bar--sidebar .control-field > span,
+.workspace-disclosure .command-bar--sidebar .checkbox-field > span {
+  font-size: 0.74rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.workspace-disclosure .command-bar--sidebar .qimen-method-panel__group > span {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.workspace-disclosure .command-bar--sidebar .qimen-method-chip {
+  min-height: 24px;
+  font-size: 0.72rem;
+}
+
+.workspace-disclosure .command-bar--sidebar .command-button {
+  min-height: 34px;
+  font-size: 0.78rem;
+}
+
+/* Agent output is a reading surface, so dense serialized data gets a
+   slightly larger type scale than the compact workbench chrome. */
+.agent-popover .inspector-output__toolbar {
+  font-size: 0.76rem;
+}
+
+.agent-popover .inspector-output__toolbar .command-button {
+  min-height: 32px;
+  font-size: 0.72rem;
+}
+
+.agent-popover .structured-block__header strong {
+  font-size: 0.84rem;
+}
+
+.agent-popover .structured-block__header span {
+  font-size: 0.62rem;
+}
+
+.agent-popover .structured-row__label {
+  font-size: 0.62rem;
+  line-height: 1.3;
+}
+
+.agent-popover .structured-row__value {
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.agent-popover .json-block {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  padding: 9px 10px;
+}
+
 /* Final 16:9 containment pass.
    The resize-panel library renders an extra .analysis-panel wrapper inside
    #qimen-chart. Keep that wrapper and each long-form chart mode inside the
