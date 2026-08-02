@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { selectBaziClassicsContext } from "./bazi-classics";
 import {
   buildAgentMessages,
   buildAgentSystemPrompt,
@@ -50,6 +51,38 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("【奇门分析规则】");
     expect(systemPrompt).toContain("值符、值使、门星神");
     expect(systemPrompt).not.toContain("《子平真诠》");
+  });
+
+  it("injects source excerpts into Bazi context and keeps them out of Qimen", () => {
+    const baziMessages = buildAgentMessages({
+      mode: "bazi",
+      question: "请重点分析月令、日主和大运。",
+      structuredText: "日主：甲；月令：寅；大运：丙午",
+      jsonPayload: "{}",
+    });
+    const qimenMessages = buildAgentMessages({
+      mode: "qimen",
+      question: "请分析值使和驿马。",
+      structuredText: "值使：景门；驿马：寅",
+      jsonPayload: "{}",
+    });
+
+    expect(baziMessages[1]?.content).toContain("原始古籍摘录上下文：");
+    expect(baziMessages[1]?.content).toContain("《渊海子平》");
+    expect(qimenMessages[1]?.content).not.toContain("原始古籍摘录上下文：");
+  });
+
+  it("ranks excerpts by the user's requested Bazi angle", () => {
+    const context = selectBaziClassicsContext({
+      question: "请只看大运和流年触发。",
+      structuredText: "当前大运：丙午",
+      jsonPayload: "{}",
+      limit: 1,
+    });
+
+    expect(context).toContain("论大运");
+    expect(context).toContain("大运看支");
+    expect(context).toContain("原始语料：八字 - 渊海子平.txt");
   });
 
   it("extracts assistant text from content parts", () => {
