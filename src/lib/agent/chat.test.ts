@@ -42,6 +42,7 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("《穷通宝鉴》");
     expect(systemPrompt).toContain("不得伪造引号、原句、章节、页码");
     expect(systemPrompt).toContain("当前载荷没有流年或当前大运定位字段时");
+    expect(systemPrompt).toContain("结构关系摘要");
     expect(systemPrompt).toContain("## 传统文献参考");
   });
 
