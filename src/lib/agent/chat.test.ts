@@ -85,6 +85,18 @@ describe("agent chat helpers", () => {
     expect(context).toContain("原始语料：八字 - 渊海子平.txt");
   });
 
+  it("selects a Tai Sui excerpt for a current-year question", () => {
+    const context = selectBaziClassicsContext({
+      question: "请分析今年流年和太岁如何触发。",
+      structuredText: "流年：丙午",
+      jsonPayload: "{}",
+      limit: 1,
+    });
+
+    expect(context).toContain("《三命通会》｜论太岁");
+    expect(context).toContain("逐年太岁游行十二宫");
+  });
+
   it("extracts assistant text from content parts", () => {
     expect(
       extractAssistantText([
