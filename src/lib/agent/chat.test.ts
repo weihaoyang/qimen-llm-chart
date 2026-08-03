@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { selectBaziClassicsContext } from "./bazi-classics";
 import {
+  AGENT_ANALYSIS_ANGLES,
   buildAgentMessages,
   buildAgentSystemPrompt,
   DEFAULT_AGENT_QUESTIONS,
@@ -10,6 +11,17 @@ import {
 } from "./chat";
 
 describe("agent chat helpers", () => {
+  it("offers five focused analysis angles for every workbench mode", () => {
+    expect(Object.values(AGENT_ANALYSIS_ANGLES)).toHaveLength(4);
+    for (const angles of Object.values(AGENT_ANALYSIS_ANGLES)) {
+      expect(angles).toHaveLength(5);
+      expect(angles.every((angle) => angle.label && angle.question)).toBe(true);
+    }
+
+    expect(AGENT_ANALYSIS_ANGLES.bazi.at(-1)?.label).toBe("文献对照");
+    expect(AGENT_ANALYSIS_ANGLES.combined.at(-1)?.label).toBe("文献与边界");
+  });
+
   it("falls back to standard OpenAI-compatible env vars", () => {
     expect(
       getAgentConfig({

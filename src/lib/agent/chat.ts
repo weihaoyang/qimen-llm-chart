@@ -9,6 +9,11 @@ export type AgentRequestPayload = {
   jsonPayload: string;
 };
 
+export type AgentAnalysisAngle = {
+  label: string;
+  question: string;
+};
+
 type AgentConfig = {
   apiKey: string;
   baseUrl: string;
@@ -36,6 +41,102 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   bazi: "请基于当前八字盘，先概括盘面事实，再从日主与月令、格局、调候、合冲刑害和大运这几个角度给出可复核的分析，并列出对应传统文献与待核分歧。",
   ziwei: "请基于当前紫微盘，概括命宫、身宫、主星组合、四化与需要重点关注的宫位联动。",
   combined: "请联合奇门、八字、紫微三盘，整理共振点、差异点与需要人工继续判断的部分。",
+};
+
+/**
+ * Short, user-facing starting points for the most common analysis intents.
+ * The full system prompt remains server-side; these only help users ask a
+ * focused question without having to know the domain vocabulary first.
+ */
+export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysisAngle[]> = {
+  qimen: [
+    {
+      label: "盘面总览",
+      question: "请先概括当前奇门盘的盘面事实，再指出最重要的门、星、神、宫位组合和待复核点。",
+    },
+    {
+      label: "事业与决策",
+      question: "请只从事业与当前决策角度分析：用神、值符值使、门星神组合分别提供了哪些支持或阻滞？",
+    },
+    {
+      label: "财务与合作",
+      question: "请只分析财务、交易与合作风险，列出盘面依据、可能的阻滞条件和现实中可验证的信号。",
+    },
+    {
+      label: "关系与沟通",
+      question: "请只分析关系、沟通和对方反馈，区分盘面事实、传统推断与尚需观察的假设。",
+    },
+    {
+      label: "时间触发",
+      question: "请分析当前盘的时间触发条件，包括驿马、空亡、值使和可能需要复盘的时间窗口；不要下绝对吉凶结论。",
+    },
+  ],
+  bazi: [
+    {
+      label: "日主与格局",
+      question: "请只分析日主强弱、月令、透藏和格局成立条件，列出支持证据与矛盾证据。",
+    },
+    {
+      label: "调候与用神",
+      question: "请只分析寒暖燥湿、调候候选与用神路径，并说明调候、格局、制化之间可能的分歧。",
+    },
+    {
+      label: "大运与流年",
+      question: "请只分析当前大运和载荷中已有的流年触发，区分原局结构、时间触发和材料不足之处。",
+    },
+    {
+      label: "事业与财星",
+      question: "请从事业、官杀、财星和食伤输出角度分析，给出盘面依据与现实验证方式，不做确定性断言。",
+    },
+    {
+      label: "文献对照",
+      question: "请选择最相关的 1 至 3 本传统文献，先列原始摘录及出处，再说明它们如何对应当前八字、边界和流派分歧。",
+    },
+  ],
+  ziwei: [
+    {
+      label: "命宫与身宫",
+      question: "请重点分析命宫、身宫及其主星组合，区分本命结构、推断与需要继续核验的部分。",
+    },
+    {
+      label: "三方四正",
+      question: "请重点分析命宫相关三方四正和宫位联动，只使用盘面载荷中实际提供的星曜信息。",
+    },
+    {
+      label: "四化与时间",
+      question: "请重点分析四化、大限、流年或时间触发；如果载荷缺少对应字段，请明确说明材料不足。",
+    },
+    {
+      label: "事业与财帛",
+      question: "请从官禄、财帛及相关宫位联动角度分析事业与财务议题，列出支持和阻滞条件。",
+    },
+    {
+      label: "关系议题",
+      question: "请从夫妻、福德和相关宫位联动角度分析关系议题，避免将单颗星直接等同于确定事件。",
+    },
+  ],
+  combined: [
+    {
+      label: "三盘总览",
+      question: "请先分别列出奇门、八字、紫微的盘面事实，再给出三盘联合的共同信号、差异和待复核点。",
+    },
+    {
+      label: "共振与分歧",
+      question: "请比较三盘对同一问题的共振、互补和冲突，说明每个结论对应哪一盘的哪些字段。",
+    },
+    {
+      label: "事业与财务",
+      question: "请联合分析事业、财务与合作议题，按奇门、八字、紫微分盘列依据，再给出可验证的下一步。",
+    },
+    {
+      label: "关系与选择",
+      question: "请联合分析关系和当前选择，明确三盘时间口径差异，不做绝对吉凶或宿命式裁决。",
+    },
+    {
+      label: "文献与边界",
+      question: "请在八字部分引用最相关的传统文献摘录，并与奇门、紫微的盘面依据分开，说明各自适用边界。",
+    },
+  ],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";

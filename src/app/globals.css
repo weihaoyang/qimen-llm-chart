@@ -3079,7 +3079,7 @@ a {
 .inspector-tabs__list {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-radius: 11px;
   padding: 2px;
 }
@@ -4674,6 +4674,138 @@ body {
     bottom: 64px;
     width: calc(100vw - 24px);
     max-height: calc(100svh - 84px);
+  }
+}
+
+/* Agent workflow: make the question itself actionable instead of leaving the
+   user with a blank prompt box.  These controls intentionally stay flat and
+   use the same xuan-paper / vermilion palette as the workbench. */
+.agent-panel__section--question {
+  gap: 8px;
+}
+
+.agent-panel__section--question .agent-panel__section-head {
+  align-items: baseline;
+}
+
+.agent-panel__section--question .agent-panel__section-head > span {
+  color: var(--ink-subtle);
+  font-size: 0.66rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.agent-panel__angles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.agent-panel__angle {
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid #d8c5a3;
+  border-radius: 999px;
+  color: #6d563e;
+  background-color: #f4ead8;
+  font-size: 0.7rem;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.agent-panel__angle:hover,
+.agent-panel__angle.is-active {
+  border-color: #a54232;
+  color: #fff8eb;
+  background-color: #a54232;
+}
+
+.agent-panel__angle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.agent-panel__question-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink-subtle);
+  font-size: 0.64rem;
+}
+
+.agent-panel__question-meta button {
+  padding: 0;
+  border: 0;
+  color: var(--accent-strong);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.agent-panel__question-meta button:disabled {
+  color: var(--ink-subtle);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.agent-panel__result-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 0;
+}
+
+.agent-panel__result-actions > span {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-panel .agent-result-copy {
+  width: auto;
+  min-height: 28px;
+  padding: 3px 8px;
+  border-color: #d8c5a3;
+  border-radius: 8px;
+  color: #6d563e;
+  background-color: #f4ead8;
+  box-shadow: none;
+  font-size: 0.68rem;
+}
+
+.agent-panel .agent-result-copy:hover {
+  border-color: #a54232;
+  color: #813225;
+  background-color: #f1dfc0;
+}
+
+.literature-block {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #dfcdb0;
+  border-radius: 12px;
+  color: #4b4033;
+  background-color: #fffaf0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .agent-panel__section--question .agent-panel__section-head {
+    align-items: start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .agent-panel__result-actions > span {
+    max-width: 110px;
   }
 }
 

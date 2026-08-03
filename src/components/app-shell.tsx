@@ -8,7 +8,8 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
-import { DEFAULT_AGENT_QUESTIONS } from "@/lib/agent/chat";
+import { AGENT_ANALYSIS_ANGLES, DEFAULT_AGENT_QUESTIONS } from "@/lib/agent/chat";
+import { selectBaziClassicsContext } from "@/lib/agent/bazi-classics";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib/bazi/serializer";
 import type { NormalizedBaziChart } from "@/lib/bazi/types";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
@@ -249,6 +250,7 @@ export function AppShell() {
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [agentResultCopied, setAgentResultCopied] = useState(false);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
   const [platformCheckoutLoading, setPlatformCheckoutLoading] = useState<string | null>(null);
   const [isNarrowLayout, setIsNarrowLayout] = useState(false);
@@ -357,6 +359,19 @@ export function AppShell() {
         });
     }
   }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart]);
+
+  const agentLiteratureContext = useMemo(() => {
+    if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
+      return "";
+    }
+
+    return selectBaziClassicsContext({
+      question: agentState[mode].question,
+      structuredText,
+      jsonPayload,
+      limit: 4,
+    });
+  }, [agentState, jsonPayload, mode, structuredText]);
 
   const applyWorkbenchCharts = (
     nextInput: ProfileInput,
@@ -490,8 +505,23 @@ export function AppShell() {
       [mode]: {
         ...current[mode],
         question: value,
+        content: "",
+        model: null,
+        error: null,
       },
     }));
+    setAgentResultCopied(false);
+  };
+
+  const handleCopyAgentResult = async () => {
+    const content = agentState[mode].content;
+    if (!content) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(content);
+    setAgentResultCopied(true);
+    window.setTimeout(() => setAgentResultCopied(false), 1800);
   };
 
   const handleAgentAnalyze = async () => {
@@ -513,6 +543,7 @@ export function AppShell() {
         error: null,
       },
     }));
+    setAgentResultCopied(false);
 
     try {
       setPlatformCheckoutLoading(planCode);
@@ -862,15 +893,20 @@ export function AppShell() {
             </button>
           </div>
           <InspectorPanel
+            agentAngles={AGENT_ANALYSIS_ANGLES[mode]}
             agentError={agentState[mode].error}
             agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
             agentModel={agentState[mode].model}
             agentQuestion={agentState[mode].question}
+            defaultAgentQuestion={DEFAULT_AGENT_QUESTIONS[mode]}
             agentResult={agentState[mode].content}
+            agentResultCopied={agentResultCopied}
             copyState={copyState}
+            literatureContext={agentLiteratureContext}
             jsonPayload={jsonPayload}
             mode={mode}
             onAgentAnalyze={handleAgentAnalyze}
+            onCopyResult={handleCopyAgentResult}
             onCopyJson={handleCopyJson}
             onCopyText={handleCopyText}
             onAgentQuestionChange={handleAgentQuestionChange}

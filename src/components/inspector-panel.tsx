@@ -5,38 +5,49 @@ import { StructuredOutput } from "@/components/structured-output";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { AgentAnalysisAngle } from "@/lib/agent/chat";
 import type { Position } from "3meta";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
 type InspectorPanelProps = {
+  agentAngles: readonly AgentAnalysisAngle[];
   mode: WorkbenchMode;
   structuredText: string;
   jsonPayload: string;
   agentQuestion: string;
+  defaultAgentQuestion: string;
   agentResult: string;
+  agentResultCopied: boolean;
   agentModel: string | null;
   agentLoading: boolean;
   agentError: string | null;
+  literatureContext: string;
   copyState: "idle" | "text" | "json";
   onAgentQuestionChange: (value: string) => void;
   onAgentAnalyze: () => void;
+  onCopyResult: () => Promise<void>;
   onCopyText: () => Promise<void>;
   onCopyJson: () => Promise<void>;
   selectedPalace?: Position | null;
 };
 
 export function InspectorPanel({
+  agentAngles,
   mode,
   structuredText,
   jsonPayload,
   agentQuestion,
+  defaultAgentQuestion,
   agentResult,
+  agentResultCopied,
   agentModel,
   agentLoading,
   agentError,
+  literatureContext,
   copyState,
   onAgentQuestionChange,
   onAgentAnalyze,
+  onCopyResult,
   onCopyText,
   onCopyJson,
   selectedPalace = null,
@@ -47,6 +58,11 @@ export function InspectorPanel({
     ziwei: "紫微",
     combined: "三盘联合",
   };
+  const literatureTitle = mode === "combined" ? "联合模式 · 八字原始文献" : "八字原始文献上下文";
+  const literatureEmptyMessage =
+    mode === "combined"
+      ? "当前联合模式还没有可匹配的八字文献摘录。"
+      : "切换到八字或三盘联合后，这里会显示按问题匹配的原文摘录。";
 
   return (
     <Tabs className="inspector-tabs" defaultValue="agent">
@@ -61,6 +77,7 @@ export function InspectorPanel({
         <TabsTrigger value="agent">分析</TabsTrigger>
         <TabsTrigger value="text">盘面文本</TabsTrigger>
         <TabsTrigger value="json">JSON</TabsTrigger>
+        <TabsTrigger value="literature">文献</TabsTrigger>
       </TabsList>
 
       <TabsContent className="inspector-tabs__content" value="text">
@@ -115,6 +132,23 @@ export function InspectorPanel({
         </div>
       </TabsContent>
 
+      <TabsContent className="inspector-tabs__content" value="literature">
+        <div className="inspector-output">
+          <div className="inspector-output__toolbar">
+            <span>{literatureTitle}</span>
+          </div>
+          <ScrollArea className="inspector-scroll inspector-scroll-plain">
+            {literatureContext ? (
+              <pre className="literature-block" suppressHydrationWarning>
+                {literatureContext}
+              </pre>
+            ) : (
+              <div className="empty-panel">{literatureEmptyMessage}</div>
+            )}
+          </ScrollArea>
+        </div>
+      </TabsContent>
+
       <TabsContent className="inspector-tabs__content" value="agent">
         <div className="agent-panel">
           <section className="agent-panel__hero">
@@ -137,15 +171,46 @@ export function InspectorPanel({
           <section className="agent-panel__section agent-panel__section--question">
             <div className="agent-panel__section-head">
               <strong>问题</strong>
+              <span>先选角度，再补充你的具体问题</span>
+            </div>
+            <div className="agent-panel__angles" aria-label="分析角度">
+              {agentAngles.map((angle) => (
+                <button
+                  className={
+                    agentQuestion === angle.question
+                      ? "agent-panel__angle is-active"
+                      : "agent-panel__angle"
+                  }
+                  disabled={agentLoading}
+                  key={angle.label}
+                  type="button"
+                  onClick={() => onAgentQuestionChange(angle.question)}
+                >
+                  {angle.label}
+                </button>
+              ))}
             </div>
             <label className="agent-panel__question" htmlFor="agent-question">
               <textarea
                 id="agent-question"
                 className="agent-panel__textarea"
                 value={agentQuestion}
+                maxLength={300}
+                disabled={agentLoading}
+                placeholder="例如：只看事业，列出盘面依据和现实中的验证方式。"
                 onChange={(event) => onAgentQuestionChange(event.target.value)}
               />
             </label>
+            <div className="agent-panel__question-meta">
+              <span>{agentQuestion.length}/300</span>
+              <button
+                type="button"
+                disabled={agentLoading || agentQuestion === defaultAgentQuestion}
+                onClick={() => onAgentQuestionChange(defaultAgentQuestion)}
+              >
+                恢复默认问法
+              </button>
+            </div>
           </section>
 
           <div className="agent-panel__toolbar">
@@ -165,7 +230,22 @@ export function InspectorPanel({
           <section className="agent-panel__section agent-panel__section--result">
             <div className="agent-panel__section-head">
               <strong>结果</strong>
-              {agentModel ? <span>{agentModel}</span> : null}
+              <div className="agent-panel__result-actions">
+                {agentModel ? <span>{agentModel}</span> : null}
+                {agentResult ? (
+                  <Button
+                    className="agent-result-copy"
+                    variant="outline"
+                    type="button"
+                    onClick={() => {
+                      void onCopyResult();
+                    }}
+                  >
+                    <Clipboard data-icon="inline-start" />
+                    {agentResultCopied ? "已复制结果" : "复制结果"}
+                  </Button>
+                ) : null}
+              </div>
             </div>
             <ScrollArea className="inspector-scroll inspector-scroll-plain">
               {agentResult ? (
