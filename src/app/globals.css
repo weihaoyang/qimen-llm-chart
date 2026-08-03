@@ -3924,6 +3924,18 @@ body {
   font-size: 0.64rem;
 }
 
+.sidebar-quick-controls__hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(208, 170, 104, 0.2);
+  border-radius: 9px;
+  color: var(--ink-soft);
+  background-color: rgba(255, 250, 240, 0.72);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
 .sidebar-quick-controls__field {
   display: grid;
   min-width: 0;
@@ -3958,7 +3970,7 @@ body {
 .sidebar-quick-controls__actions {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 6px;
 }
 
@@ -4253,6 +4265,38 @@ body {
 
 .workspace-disclosure .command-bar__title {
   display: none;
+}
+
+.workspace-disclosure--parameters .command-bar__title {
+  display: grid;
+  gap: 2px;
+  padding: 2px 2px 4px;
+}
+
+.workspace-disclosure--parameters .command-bar__title h2 {
+  color: var(--ink);
+  font-size: 0.9rem;
+  letter-spacing: -0.03em;
+}
+
+.workspace-disclosure--parameters .command-bar__eyebrow {
+  color: var(--accent);
+  font-size: 0.58rem;
+}
+
+.workspace-disclosure--parameters .command-bar__actions {
+  grid-template-columns: 1fr;
+}
+
+.workspace-disclosure--parameters .command-button-primary {
+  border-color: #8d3427;
+  color: #fff8eb;
+  background-color: #a54232;
+}
+
+.workspace-disclosure--parameters .command-button-primary:hover {
+  border-color: #6d291f;
+  background-color: #813225;
 }
 
 .workspace-disclosure .command-bar--sidebar,
@@ -4751,6 +4795,34 @@ body {
   font-size: 0.72rem;
   line-height: 1.35;
   padding: 9px 10px;
+}
+
+/* Long-form modes need the full chart column height.  The compact Qimen
+   board is content-led, but Bazi/Ziwei/combined panels own an internal scroll
+   surface and must not collapse to zero inside the resizable group. */
+@media (min-width: 1181px) {
+  #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="bazi"]),
+  #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="ziwei"]),
+  #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="combined"]) {
+    align-self: stretch !important;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="bazi"]) > .analysis-panel,
+  #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="ziwei"]) > .analysis-panel,
+  #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="combined"]) > .analysis-panel {
+    align-self: stretch !important;
+    height: 100% !important;
+  }
+
+  #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
+  #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
+  #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] {
+    align-self: stretch !important;
+    flex: 1 1 0 !important;
+    height: 100% !important;
+  }
 }
 
 /* Final 16:9 containment pass.

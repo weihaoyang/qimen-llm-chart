@@ -74,6 +74,9 @@ type ChartFormProps = {
   mode?: WorkbenchMode;
   showCopyActions?: boolean;
   showSequenceControls?: boolean;
+  showSubmitAction?: boolean;
+  submitLabel?: string;
+  isSequenceMode?: boolean;
 };
 
 export function ChartForm({
@@ -92,6 +95,9 @@ export function ChartForm({
   mode = "qimen",
   showCopyActions = true,
   showSequenceControls = true,
+  showSubmitAction = true,
+  submitLabel = "生成盘面",
+  isSequenceMode = false,
 }: ChartFormProps) {
   const updateQimenSettings = (nextValue: Partial<QimenSettings>) => {
     onQimenSettingsChange({ ...qimenSettings, ...nextValue });
@@ -135,152 +141,156 @@ export function ChartForm({
 
       <div className="command-bar__section command-bar__section--fields">
         <div className="command-bar__group command-bar__group--inputs">
-          <label className="control-field control-field-wide">
-            <span>历法</span>
-            <Select
-              value={value.calendarMode}
-              onValueChange={(calendarMode) =>
-                onValueChange({
-                  ...value,
-                  calendarMode: calendarMode as ProfileInput["calendarMode"],
-                })
-              }
-            >
-              <SelectTrigger className="control-select">
-                <SelectValue placeholder="选择历法" />
-              </SelectTrigger>
-              <SelectContent className="control-select-content">
-                <SelectItem value="solar">公历</SelectItem>
-                <SelectItem value="lunar">农历</SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-
-          {value.calendarMode === "solar" ? (
-            <label className="control-field control-field-wide">
-              <span>日期时间</span>
-              <div className="control-field__input-wrap">
-                <CalendarClock />
-                <Input
-                  className="control-input"
-                  type="datetime-local"
-                  value={value.datetime}
-                  onChange={(event) =>
-                    onValueChange({ ...value, datetime: event.target.value })
-                  }
-                />
-              </div>
-            </label>
-          ) : (
-            <div className="lunar-input-grid">
-              <label className="control-field">
-                <span>农历年</span>
-                <Input
-                  className="control-input"
-                  type="number"
-                  value={String(fallbackLunar.year)}
-                  onChange={(event) =>
+          {!isSequenceMode ? (
+            <>
+              <label className="control-field control-field-wide">
+                <span>历法</span>
+                <Select
+                  value={value.calendarMode}
+                  onValueChange={(calendarMode) =>
                     onValueChange({
                       ...value,
-                      lunar: {
-                        ...fallbackLunar,
-                        year: Number(event.target.value),
-                      },
+                      calendarMode: calendarMode as ProfileInput["calendarMode"],
                     })
                   }
-                />
+                >
+                  <SelectTrigger className="control-select">
+                    <SelectValue placeholder="选择历法" />
+                  </SelectTrigger>
+                  <SelectContent className="control-select-content">
+                    <SelectItem value="solar">公历</SelectItem>
+                    <SelectItem value="lunar">农历</SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
 
-              <label className="control-field">
-                <span>农历月</span>
-                <Input
-                  className="control-input"
-                  type="number"
-                  value={String(fallbackLunar.month)}
-                  onChange={(event) =>
-                    onValueChange({
-                      ...value,
-                      lunar: {
-                        ...fallbackLunar,
-                        month: Number(event.target.value),
-                      },
-                    })
-                  }
-                />
-              </label>
+              {value.calendarMode === "solar" ? (
+                <label className="control-field control-field-wide">
+                  <span>日期时间</span>
+                  <div className="control-field__input-wrap">
+                    <CalendarClock />
+                    <Input
+                      className="control-input"
+                      type="datetime-local"
+                      value={value.datetime}
+                      onChange={(event) =>
+                        onValueChange({ ...value, datetime: event.target.value })
+                      }
+                    />
+                  </div>
+                </label>
+              ) : (
+                <div className="lunar-input-grid">
+                  <label className="control-field">
+                    <span>农历年</span>
+                    <Input
+                      className="control-input"
+                      type="number"
+                      value={String(fallbackLunar.year)}
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          lunar: {
+                            ...fallbackLunar,
+                            year: Number(event.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
 
-              <label className="control-field">
-                <span>农历日</span>
-                <Input
-                  className="control-input"
-                  type="number"
-                  value={String(fallbackLunar.day)}
-                  onChange={(event) =>
-                    onValueChange({
-                      ...value,
-                      lunar: {
-                        ...fallbackLunar,
-                        day: Number(event.target.value),
-                      },
-                    })
-                  }
-                />
-              </label>
+                  <label className="control-field">
+                    <span>农历月</span>
+                    <Input
+                      className="control-input"
+                      type="number"
+                      value={String(fallbackLunar.month)}
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          lunar: {
+                            ...fallbackLunar,
+                            month: Number(event.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
 
-              <label className="control-field">
-                <span>农历时</span>
-                <Input
-                  className="control-input"
-                  type="number"
-                  value={String(fallbackLunar.hour ?? 0)}
-                  onChange={(event) =>
-                    onValueChange({
-                      ...value,
-                      lunar: {
-                        ...fallbackLunar,
-                        hour: Number(event.target.value),
-                      },
-                    })
-                  }
-                />
-              </label>
+                  <label className="control-field">
+                    <span>农历日</span>
+                    <Input
+                      className="control-input"
+                      type="number"
+                      value={String(fallbackLunar.day)}
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          lunar: {
+                            ...fallbackLunar,
+                            day: Number(event.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
 
-              <label className="control-field">
-                <span>农历分</span>
-                <Input
-                  className="control-input"
-                  type="number"
-                  value={String(fallbackLunar.minute ?? 0)}
-                  onChange={(event) =>
-                    onValueChange({
-                      ...value,
-                      lunar: {
-                        ...fallbackLunar,
-                        minute: Number(event.target.value),
-                      },
-                    })
-                  }
-                />
-              </label>
+                  <label className="control-field">
+                    <span>农历时</span>
+                    <Input
+                      className="control-input"
+                      type="number"
+                      value={String(fallbackLunar.hour ?? 0)}
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          lunar: {
+                            ...fallbackLunar,
+                            hour: Number(event.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
 
-              <label className="checkbox-field">
-                <input
-                  checked={Boolean(fallbackLunar.isLeapMonth)}
-                  type="checkbox"
-                  onChange={(event) =>
-                    onValueChange({
-                      ...value,
-                      lunar: {
-                        ...fallbackLunar,
-                        isLeapMonth: event.target.checked,
-                      },
-                    })
-                  }
-                />
-                <span>闰月</span>
-              </label>
-            </div>
-          )}
+                  <label className="control-field">
+                    <span>农历分</span>
+                    <Input
+                      className="control-input"
+                      type="number"
+                      value={String(fallbackLunar.minute ?? 0)}
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          lunar: {
+                            ...fallbackLunar,
+                            minute: Number(event.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label className="checkbox-field">
+                    <input
+                      checked={Boolean(fallbackLunar.isLeapMonth)}
+                      type="checkbox"
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          lunar: {
+                            ...fallbackLunar,
+                            isLeapMonth: event.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span>闰月</span>
+                  </label>
+                </div>
+              )}
+            </>
+          ) : null}
 
           <label className="control-field">
             <span>性别</span>
@@ -520,40 +530,44 @@ export function ChartForm({
         </div>
       ) : null}
 
-      <div className="command-bar__section command-bar__section--actions">
-        <div className="command-bar__group command-bar__actions">
-          <Button className="command-button command-button-primary" type="submit">
-            <Sparkles data-icon="inline-start" />
-            生成盘面
-          </Button>
-          {showCopyActions ? (
-            <>
-              <Button
-                className="command-button"
-                variant="outline"
-                type="button"
-                onClick={() => {
-                  void onCopyText();
-                }}
-              >
-                <Clipboard data-icon="inline-start" />
-                {copyState === "text" ? "已复制文本" : "复制结构化文本"}
+      {showSubmitAction || showCopyActions ? (
+        <div className="command-bar__section command-bar__section--actions">
+          <div className="command-bar__group command-bar__actions">
+            {showSubmitAction ? (
+              <Button className="command-button command-button-primary" type="submit">
+                <Sparkles data-icon="inline-start" />
+                {submitLabel}
               </Button>
-              <Button
-                className="command-button"
-                variant="outline"
-                type="button"
-                onClick={() => {
-                  void onCopyJson();
-                }}
-              >
-                <FileJson2 data-icon="inline-start" />
-                {copyState === "json" ? "已复制 JSON" : "复制 JSON"}
-              </Button>
-            </>
-          ) : null}
+            ) : null}
+            {showCopyActions ? (
+              <>
+                <Button
+                  className="command-button"
+                  variant="outline"
+                  type="button"
+                  onClick={() => {
+                    void onCopyText();
+                  }}
+                >
+                  <Clipboard data-icon="inline-start" />
+                  {copyState === "text" ? "已复制文本" : "复制结构化文本"}
+                </Button>
+                <Button
+                  className="command-button"
+                  variant="outline"
+                  type="button"
+                  onClick={() => {
+                    void onCopyJson();
+                  }}
+                >
+                  <FileJson2 data-icon="inline-start" />
+                  {copyState === "json" ? "已复制 JSON" : "复制 JSON"}
+                </Button>
+              </>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {mode === "qimen" && showSequenceControls ? (
         <div className="command-bar__section command-bar__section--sequence">

@@ -642,11 +642,11 @@ export function AppShell() {
   const workbenchSidebar = (
     <aside className="sidebar-panel" data-mode={mode}>
       {mode === "qimen" ? (
-        <section className="sidebar-quick-controls" aria-label="快速排盘">
+        <section className="sidebar-quick-controls" aria-label="排盘模式与时间范围">
           <div className="sidebar-quick-controls__heading">
             <div>
-              <span>快速排盘</span>
-              <small>单张 / 序列</small>
+              <span>排盘模式</span>
+              <small>先选单张或序列</small>
             </div>
             <div className="quick-chart-toggle" role="tablist" aria-label="排盘类型">
               <button
@@ -671,15 +671,9 @@ export function AppShell() {
           </div>
           {quickChartMode === "single" ? (
             <>
-              <label className="sidebar-quick-controls__field sidebar-quick-controls__field--wide">
-                <span>自选时间</span>
-                <Input
-                  aria-label="自选时间"
-                  type="datetime-local"
-                  value={formState.datetime}
-                  onChange={(event) => setFormState({ ...formState, datetime: event.target.value })}
-                />
-              </label>
+              <p className="sidebar-quick-controls__hint">
+                日期时间与排盘口径统一在下方“参数控制台”填写。
+              </p>
               <div className="sidebar-quick-controls__actions">
                 <Button
                   className="command-button command-button-primary"
@@ -744,10 +738,10 @@ export function AppShell() {
         </section>
       ) : null}
 
-      <details className="workspace-disclosure workspace-disclosure--compact" open>
+      <details className="workspace-disclosure workspace-disclosure--parameters" open>
         <summary>
           <span>调整盘面</span>
-          <small>时间、历法与排盘口径</small>
+          <small>参数控制台 · 日期时间、历法、真太阳时与排盘口径</small>
         </summary>
         <ChartForm
           copyState={copyState}
@@ -758,12 +752,20 @@ export function AppShell() {
           onQimenSettingsChange={handleQimenSettingsChange}
           onSequenceSubmit={handleGenerateSequence}
           onSequenceValueChange={setSequenceFormState}
-          onSubmit={handleGenerate}
+          onSubmit={(value) => {
+            if (mode === "qimen" && quickChartMode === "series") {
+              handleGenerateSequence(sequenceFormState);
+              return;
+            }
+            handleGenerate(value);
+          }}
           onValueChange={setFormState}
           qimenSettings={qimenSettings}
           sequenceValue={sequenceFormState}
           showCopyActions={false}
           showSequenceControls={false}
+          showSubmitAction={mode !== "qimen"}
+          isSequenceMode={mode === "qimen" && quickChartMode === "series"}
           value={formState}
         />
       </details>
