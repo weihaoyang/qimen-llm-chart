@@ -49,6 +49,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "缺少 JSON 载荷。" }, { status: 400 });
     }
 
+    if (body.question !== undefined && (typeof body.question !== "string" || body.question.length > 300)) {
+      return NextResponse.json({ error: "分析问题不能超过 300 字。" }, { status: 400 });
+    }
+
     const reservation = await reserveGuestUsage(guestToken);
     reservationId = reservation.reservation_id;
     if (!reservationId) {

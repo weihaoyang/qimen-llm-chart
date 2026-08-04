@@ -63,6 +63,7 @@ export function InspectorPanel({
     mode === "combined"
       ? "当前联合模式还没有可匹配的八字文献摘录。"
       : "切换到八字或三盘联合后，这里会显示按问题匹配的原文摘录。";
+  const selectedAngle = agentAngles.find((angle) => angle.question === agentQuestion);
 
   return (
     <Tabs className="inspector-tabs" defaultValue="agent">
@@ -181,6 +182,7 @@ export function InspectorPanel({
                       ? "agent-panel__angle is-active"
                       : "agent-panel__angle"
                   }
+                  aria-pressed={agentQuestion === angle.question}
                   disabled={agentLoading}
                   key={angle.label}
                   type="button"
@@ -190,6 +192,28 @@ export function InspectorPanel({
                 </button>
               ))}
             </div>
+            {selectedAngle ? (
+              <div className="agent-panel__angle-detail" aria-label="当前分析依据">
+                <div className="agent-panel__angle-detail-head">
+                  <span>本次分析会优先核对</span>
+                  <strong>{selectedAngle.label}</strong>
+                </div>
+                <p>{selectedAngle.description}</p>
+                <div className="agent-panel__evidence">
+                  {selectedAngle.evidence.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="agent-panel__angle-detail agent-panel__angle-detail--custom" aria-label="自定义分析说明">
+                <div className="agent-panel__angle-detail-head">
+                  <span>自定义问题</span>
+                  <strong>按证据链回答</strong>
+                </div>
+                <p>模型会先核对问题对应的盘面字段，再区分事实、传统推断和待验证假设；缺少字段时会明确标出材料不足。</p>
+              </div>
+            )}
             <label className="agent-panel__question" htmlFor="agent-question">
               <textarea
                 id="agent-question"

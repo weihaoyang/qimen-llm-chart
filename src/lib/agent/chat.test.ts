@@ -20,6 +20,8 @@ describe("agent chat helpers", () => {
 
     expect(AGENT_ANALYSIS_ANGLES.bazi.at(-1)?.label).toBe("文献对照");
     expect(AGENT_ANALYSIS_ANGLES.combined.at(-1)?.label).toBe("文献与边界");
+    expect(AGENT_ANALYSIS_ANGLES.qimen[0]?.evidence).toContain("时令、遁局与局数");
+    expect(AGENT_ANALYSIS_ANGLES.bazi[1]?.description).toContain("调候");
   });
 
   it("falls back to standard OpenAI-compatible env vars", () => {
@@ -68,6 +70,8 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("当前载荷没有流年或当前大运定位字段时");
     expect(systemPrompt).toContain("结构关系摘要");
     expect(systemPrompt).toContain("## 传统文献参考");
+    expect(systemPrompt).toContain("每次判断至少串起两个以上的盘面字段");
+    expect(systemPrompt).toContain("原始摘录每次最多引用两段短句");
   });
 
   it("keeps non-Bazi prompts focused on their own chart system", () => {
@@ -76,6 +80,8 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("【奇门分析规则】");
     expect(systemPrompt).toContain("值符、值使、门星神");
     expect(systemPrompt).not.toContain("《子平真诠》");
+    expect(systemPrompt).toContain("证据优先级与输出契约");
+    expect(systemPrompt).toContain("事实、传统推断和待验证假设");
   });
 
   it("injects source excerpts into Bazi context and keeps them out of Qimen", () => {

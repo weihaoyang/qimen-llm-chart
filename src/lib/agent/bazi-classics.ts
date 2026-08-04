@@ -156,7 +156,7 @@ export const selectBaziClassicsContext = ({
   question,
   structuredText,
   jsonPayload,
-  limit = 4,
+  limit = 3,
 }: {
   question: string;
   structuredText: string;

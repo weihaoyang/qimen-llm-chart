@@ -369,7 +369,7 @@ export function AppShell() {
       question: agentState[mode].question,
       structuredText,
       jsonPayload,
-      limit: 4,
+      limit: 3,
     });
   }, [agentState, jsonPayload, mode, structuredText]);
 

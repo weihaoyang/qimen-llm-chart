@@ -99,6 +99,26 @@ describe("POST /api/agent", () => {
     expect(releaseGuestUsageMock).not.toHaveBeenCalled();
   });
 
+  it("rejects an oversized question before reserving usage", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    const request = new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "X-Guest-Checkout-Token": "token-1" },
+      body: JSON.stringify({
+        mode: "qimen",
+        question: "问".repeat(301),
+        structuredText: "structured",
+        jsonPayload: "{}",
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "分析问题不能超过 300 字。" });
+    expect(reserveGuestUsageMock).not.toHaveBeenCalled();
+  });
+
   it("releases the reserved credit when the model fails", async () => {
     readGuestCheckoutTokenMock.mockReturnValue("token-1");
     reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });

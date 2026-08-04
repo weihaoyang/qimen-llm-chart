@@ -4726,6 +4726,52 @@ body {
   opacity: 0.55;
 }
 
+.agent-panel__angle-detail {
+  display: grid;
+  gap: 5px;
+  padding: 8px 9px;
+  border: 1px solid #dfcdb0;
+  border-radius: 10px;
+  color: #6d563e;
+  background-color: #fbf4e6;
+}
+
+.agent-panel__angle-detail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.64rem;
+}
+
+.agent-panel__angle-detail-head strong {
+  color: #813225;
+  font-size: 0.72rem;
+}
+
+.agent-panel__angle-detail p {
+  margin: 0;
+  color: #756754;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.agent-panel__evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.agent-panel__evidence span {
+  padding: 2px 5px;
+  border: 1px solid #e2d2b8;
+  border-radius: 5px;
+  color: #7a6752;
+  background-color: #f4ead8;
+  font-size: 0.6rem;
+  line-height: 1.2;
+}
+
 .agent-panel__question-meta {
   display: flex;
   align-items: center;
