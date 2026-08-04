@@ -67,7 +67,11 @@ export function BillingResultClient({ orderId }: { orderId: string; productCode:
   }, [orderId]);
 
   useEffect(() => {
-    void finish();
+    const timer = window.setTimeout(() => {
+      void finish();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [finish]);
 
   return (
