@@ -207,6 +207,28 @@ describe("POST /api/agent/bazi-personality", () => {
     expect(body.trait_scores.openness).toBe(70);
   });
 
+  it("normalizes separated, nested, and single-letter MBTI axis shapes", async () => {
+    requestBaziPersonalityPredictionMock.mockResolvedValueOnce({
+      content: JSON.stringify({
+        ...predictionJson,
+        mbti_axes: {
+          "E/I": { score: "67.6" },
+          N: 72,
+          F: 68,
+          P: 59,
+        },
+      }),
+      model: "test-model",
+    });
+
+    const response = await POST(signedRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.mbti_axes).toEqual({ ei: 68, sn: 72, tf: 32, jp: 41 });
+    expect(body.mbti_code).toBe("ENFP");
+  });
+
   it("forwards true-solar time and longitude into the shared chart profile", async () => {
     const response = await POST(signedRequest({
       ...requestBody,

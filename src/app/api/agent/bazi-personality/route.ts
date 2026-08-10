@@ -133,6 +133,29 @@ const parseBoundedInteger = (value: unknown, field: string) => {
 
 const parseConfidence = (value: unknown, field: string) => parseBoundedInteger(value, field);
 
+const unwrapAxisScore = (value: unknown): unknown => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  return record.score ?? record.value ?? record.percentage;
+};
+
+const resolveAxisScore = (
+  source: Record<string, unknown>,
+  axis: (typeof MBTI_AXIS_IDS)[number],
+): number => {
+  const [lowLetter, highLetter] = MBTI_AXIS_LETTERS[axis];
+  const normalized = Object.fromEntries(
+    Object.entries(source).map(([key, value]) => [key.toLowerCase().replace(/[^a-z]/g, ""), value]),
+  );
+  const direct = normalized[axis] ?? normalized[`${highLetter.toLowerCase()}${lowLetter.toLowerCase()}`];
+  if (direct !== undefined) return parseBoundedInteger(unwrapAxisScore(direct), " MBTI 四维");
+  const high = normalized[highLetter.toLowerCase()];
+  if (high !== undefined) return parseBoundedInteger(unwrapAxisScore(high), " MBTI 四维");
+  const low = normalized[lowLetter.toLowerCase()];
+  if (low !== undefined) return 100 - parseBoundedInteger(unwrapAxisScore(low), " MBTI 四维");
+  throw new Error("Agent 返回的 MBTI 四维不符合结构化契约。");
+};
+
 const verifyInternalSignature = (request: Request, rawBody: string) => {
   const secret = process.env.BAZI_AGENT_INTERNAL_SECRET?.trim();
   if (!secret) return "missing-secret" as const;
@@ -163,8 +186,7 @@ const parsePredictionJson = (content: string) => {
   }
   const mbtiAxes = Object.fromEntries(
     MBTI_AXIS_IDS.map((axis) => {
-      const value = (rawMbtiAxes as Record<string, unknown>)[axis];
-      return [axis, parseBoundedInteger(value, " MBTI 四维")];
+      return [axis, resolveAxisScore(rawMbtiAxes as Record<string, unknown>, axis)];
     }),
   ) as Record<(typeof MBTI_AXIS_IDS)[number], number>;
   const mbtiCode = [
