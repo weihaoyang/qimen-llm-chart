@@ -189,6 +189,24 @@ describe("POST /api/agent/bazi-personality", () => {
     }));
   });
 
+  it("normalizes bounded decimal and numeric-string scores from the model", async () => {
+    requestBaziPersonalityPredictionMock.mockResolvedValueOnce({
+      content: JSON.stringify({
+        ...predictionJson,
+        mbti_axes: { ei: 67.6, sn: "72", tf: 31.7, jp: 40.8 },
+        trait_scores: { ...predictionJson.trait_scores, openness: "69.6" },
+      }),
+      model: "test-model",
+    });
+
+    const response = await POST(signedRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.mbti_axes).toEqual({ ei: 68, sn: 72, tf: 32, jp: 41 });
+    expect(body.trait_scores.openness).toBe(70);
+  });
+
   it("forwards true-solar time and longitude into the shared chart profile", async () => {
     const response = await POST(signedRequest({
       ...requestBody,

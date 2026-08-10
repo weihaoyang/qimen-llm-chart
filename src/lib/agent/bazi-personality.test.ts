@@ -33,6 +33,7 @@ describe("Bazi personality request", () => {
     expect(body.messages[0]?.content).toContain("必须严格使用用户消息列出的英文 token");
     expect(body.messages[1]?.content).toContain("从弱/从财/从杀/从儿候选必须检查");
     expect(body.messages[1]?.content).toContain("follow-wealth-candidate");
+    expect(body.messages[1]?.content).toContain("JSON 整数");
     expect(result).toEqual({ content: prediction, model: "mock-model" });
   });
 

@@ -52,6 +52,7 @@ export const requestBaziPersonalityPrediction = async (
       "- day_master_strength 只能是 extreme-strong、strong、balanced、weak、extreme-weak、disputed 之一；",
       "- follow_structure 只能是 not-supported、follow-strong-candidate、follow-weak-candidate、follow-wealth-candidate、follow-officer-killing-candidate、follow-output-candidate、transformation-candidate、disputed 之一；",
       "- mbti_axes（ei、sn、tf、jp，0到100整数；高分端依次为 E、N、T、J，低分端为 I、S、F、P）；",
+      "- 所有 score 与 confidence 必须是 0 到 100 的 JSON 整数，不得使用字符串、百分号或小数；",
       "- mbti_axis_evidence：每轴含 direction、confidence、evidence、contradictions；",
       "- trait_scores（openness、conscientiousness、extraversion、agreeableness、emotional_stability，0到100整数）；",
       "- trait_hypotheses（trait、direction、claim、reason）、narrative、disclaimer。",

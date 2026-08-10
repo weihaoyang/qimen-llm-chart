@@ -119,12 +119,19 @@ const parseEvidence = (value: unknown, field: string, minimum = 0) => {
   return evidence;
 };
 
-const parseConfidence = (value: unknown, field: string) => {
-  if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 100) {
+const parseBoundedInteger = (value: unknown, field: string) => {
+  const numeric = typeof value === "number"
+    ? value
+    : typeof value === "string" && /^\d+(?:\.\d+)?$/.test(value.trim())
+      ? Number(value)
+      : Number.NaN;
+  if (!Number.isFinite(numeric) || numeric < 0 || numeric > 100) {
     throw new Error(`Agent 返回的${field}不符合结构化契约。`);
   }
-  return value;
+  return Math.round(numeric);
 };
+
+const parseConfidence = (value: unknown, field: string) => parseBoundedInteger(value, field);
 
 const verifyInternalSignature = (request: Request, rawBody: string) => {
   const secret = process.env.BAZI_AGENT_INTERNAL_SECRET?.trim();
@@ -157,10 +164,7 @@ const parsePredictionJson = (content: string) => {
   const mbtiAxes = Object.fromEntries(
     MBTI_AXIS_IDS.map((axis) => {
       const value = (rawMbtiAxes as Record<string, unknown>)[axis];
-      if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 100) {
-        throw new Error("Agent 返回的 MBTI 四维不符合结构化契约。");
-      }
-      return [axis, value];
+      return [axis, parseBoundedInteger(value, " MBTI 四维")];
     }),
   ) as Record<(typeof MBTI_AXIS_IDS)[number], number>;
   const mbtiCode = [
@@ -216,10 +220,7 @@ const parsePredictionJson = (content: string) => {
   const traitScores = Object.fromEntries(
     BAZI_TRAIT_IDS.map((trait) => {
       const value = (rawScores as Record<string, unknown>)[trait];
-      if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 100) {
-        throw new Error("Agent 返回的性格分数不符合结构化契约。");
-      }
-      return [trait, value];
+      return [trait, parseBoundedInteger(value, "性格分数")];
     }),
   );
   const rawHypotheses = Array.isArray(parsed.trait_hypotheses) ? parsed.trait_hypotheses : [];
