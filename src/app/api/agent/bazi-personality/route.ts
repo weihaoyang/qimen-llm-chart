@@ -41,6 +41,42 @@ const FOLLOW_STRUCTURES = new Set([
   "transformation-candidate",
   "disputed",
 ]);
+const DAY_MASTER_STRENGTH_ALIASES: Record<string, string> = {
+  "极旺": "extreme-strong",
+  "偏旺": "strong",
+  "身强": "strong",
+  "强": "strong",
+  "中和": "balanced",
+  "平衡": "balanced",
+  "偏弱": "weak",
+  "身弱": "weak",
+  "弱": "weak",
+  "极弱": "extreme-weak",
+  "有争议": "disputed",
+  "争议": "disputed",
+};
+const FOLLOW_STRUCTURE_ALIASES: Record<string, string> = {
+  "不支持从格": "not-supported",
+  "不从": "not-supported",
+  "从强格": "follow-strong-candidate",
+  "从强格候选": "follow-strong-candidate",
+  "从旺格": "follow-strong-candidate",
+  "专旺格候选": "follow-strong-candidate",
+  "从弱格": "follow-weak-candidate",
+  "从弱格候选": "follow-weak-candidate",
+  "从财格": "follow-wealth-candidate",
+  "从财格候选": "follow-wealth-candidate",
+  "从杀格": "follow-officer-killing-candidate",
+  "从杀格候选": "follow-officer-killing-candidate",
+  "从官杀格候选": "follow-officer-killing-candidate",
+  "从儿格": "follow-output-candidate",
+  "从儿格候选": "follow-output-candidate",
+  "从食伤格候选": "follow-output-candidate",
+  "化气格": "transformation-candidate",
+  "化气格候选": "transformation-candidate",
+  "有争议": "disputed",
+  "争议": "disputed",
+};
 const PREDICTION_CACHE_TTL_MS = 10 * 60 * 1000;
 const predictionCache = new Map<string, { expiresAt: number; value: Record<string, unknown> }>();
 const predictionCacheEnabled = process.env.NODE_ENV === "production";
@@ -138,8 +174,10 @@ const parsePredictionJson = (content: string) => {
     throw new Error("Agent 没有返回命局结构诊断。");
   }
   const diagnosis = rawDiagnosis as Record<string, unknown>;
-  const dayMasterStrength = String(diagnosis.day_master_strength ?? "");
-  const followStructure = String(diagnosis.follow_structure ?? "");
+  const rawDayMasterStrength = String(diagnosis.day_master_strength ?? "").trim();
+  const rawFollowStructure = String(diagnosis.follow_structure ?? "").trim();
+  const dayMasterStrength = DAY_MASTER_STRENGTH_ALIASES[rawDayMasterStrength] ?? rawDayMasterStrength;
+  const followStructure = FOLLOW_STRUCTURE_ALIASES[rawFollowStructure] ?? rawFollowStructure;
   const structure = String(diagnosis.structure ?? "").trim();
   if (!DAY_MASTER_STRENGTHS.has(dayMasterStrength) || !FOLLOW_STRUCTURES.has(followStructure) || !structure) {
     throw new Error("Agent 返回的命局结构诊断不符合契约。");

@@ -166,6 +166,29 @@ describe("POST /api/agent/bazi-personality", () => {
     await expect(response.json()).resolves.toEqual({ error: "Agent 返回的性格分数不符合结构化契约。" });
   });
 
+  it("normalizes the documented Chinese structure labels to stable contract tokens", async () => {
+    requestBaziPersonalityPredictionMock.mockResolvedValueOnce({
+      content: JSON.stringify({
+        ...predictionJson,
+        chart_diagnosis: {
+          ...predictionJson.chart_diagnosis,
+          day_master_strength: "极弱",
+          follow_structure: "从财格候选",
+        },
+      }),
+      model: "test-model",
+    });
+
+    const response = await POST(signedRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.chart_diagnosis).toEqual(expect.objectContaining({
+      day_master_strength: "extreme-weak",
+      follow_structure: "follow-wealth-candidate",
+    }));
+  });
+
   it("forwards true-solar time and longitude into the shared chart profile", async () => {
     const response = await POST(signedRequest({
       ...requestBody,

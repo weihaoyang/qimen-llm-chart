@@ -30,7 +30,9 @@ describe("Bazi personality request", () => {
     expect(body.temperature).toBe(0);
     expect(body.messages[0]?.content).toContain("chart_diagnosis");
     expect(body.messages[0]?.content).toContain("从格反证审计");
+    expect(body.messages[0]?.content).toContain("必须严格使用用户消息列出的英文 token");
     expect(body.messages[1]?.content).toContain("从弱/从财/从杀/从儿候选必须检查");
+    expect(body.messages[1]?.content).toContain("follow-wealth-candidate");
     expect(result).toEqual({ content: prediction, model: "mock-model" });
   });
 

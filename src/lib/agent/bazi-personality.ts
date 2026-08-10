@@ -49,6 +49,8 @@ export const requestBaziPersonalityPrediction = async (
       "只输出 JSON，不要 Markdown 代码围栏。JSON 必须包含：",
       "- prediction_version；pillars（year/month/day/hour）；",
       "- chart_diagnosis：day_master_strength、structure、follow_structure、confidence、supporting_evidence、contradicting_evidence；",
+      "- day_master_strength 只能是 extreme-strong、strong、balanced、weak、extreme-weak、disputed 之一；",
+      "- follow_structure 只能是 not-supported、follow-strong-candidate、follow-weak-candidate、follow-wealth-candidate、follow-officer-killing-candidate、follow-output-candidate、transformation-candidate、disputed 之一；",
       "- mbti_axes（ei、sn、tf、jp，0到100整数；高分端依次为 E、N、T、J，低分端为 I、S、F、P）；",
       "- mbti_axis_evidence：每轴含 direction、confidence、evidence、contradictions；",
       "- trait_scores（openness、conscientiousness、extraversion、agreeableness、emotional_stability，0到100整数）；",
@@ -59,7 +61,7 @@ export const requestBaziPersonalityPrediction = async (
   });
   messages[0] = {
     ...messages[0],
-    content: `${messages[0].content}\n\n【内部结构化输出契约】\n只输出合法 JSON；不得输出 Markdown、解释前言或 JSON 之外的字符。必须先完成 chart_diagnosis 和从格反证审计，再输出人格映射。mbti_axes 的高分端必须依次表示 E、N、T、J，低分端必须依次表示 I、S、F、P；mbti_axis_evidence.direction 必须与对应分数方向一致。证据只能引用载荷中存在的月令、透藏、根气、十神、合冲刑害等字段。性格分数只是传统命理叙事映射，不是心理测量，也不是确定性事实。`,
+    content: `${messages[0].content}\n\n【内部结构化输出契约】\n只输出合法 JSON；不得输出 Markdown、解释前言或 JSON 之外的字符。必须先完成 chart_diagnosis 和从格反证审计，再输出人格映射。day_master_strength 与 follow_structure 必须严格使用用户消息列出的英文 token，不得返回中文枚举。mbti_axes 的高分端必须依次表示 E、N、T、J，低分端必须依次表示 I、S、F、P；mbti_axis_evidence.direction 必须与对应分数方向一致。证据只能引用载荷中存在的月令、透藏、根气、十神、合冲刑害等字段。性格分数只是传统命理叙事映射，不是心理测量，也不是确定性事实。`,
   };
 
   const response = await fetchImpl(endpoint, {
