@@ -1,0 +1,8 @@
+# Only actionable debt belongs here.
+items:
+  - id: production-disk-headroom
+    owner: operations
+    severity: high
+    impact: '根文件系统剩余约 514MB；完整 npm 安装曾因 ENOSPC 使 PostgreSQL 停止。'
+    mitigation: 'qmdj 已改为 standalone release，避免生产 npm install。'
+    repayment_condition: '扩容或在运维确认后按保留策略清理历史 release / cache，使可用空间恢复到至少 5GB。'

@@ -1,0 +1,22 @@
+project: 'qmdj'
+profile: 'high-risk'
+updated: '2026-08-12'
+objective: '将胜天半子完善为可持续使用的排盘工具与 Agent 决策工作区'
+success_condition: '排盘保持精密工具属性；登录用户可安全保存、恢复和复盘自己的 Agent 工作区，付费 AI 始终受平台 gate 与用量合同保护'
+phase: 'implementing'
+status: 'partial'
+current_blocker: ''
+next_action: '补齐已登录账户下的 Agent 工作区端到端恢复验证，并继续完善决策树/复盘业务闭环'
+active_workers: []
+recent_evidence:
+  - '2026-08-12: npm.cmd test -- --run: 28 files / 104 tests passed'
+  - '2026-08-12: npm.cmd run build: passed'
+  - '2026-08-12: production HTTPS homepage returned title 胜天半子'
+  - '2026-08-12: production /api/agent/cases without credentials returned 401'
+  - '2026-08-12: product PostgreSQL has 6 agent_* tables; qmdj and PostgreSQL services active'
+last_commit: 'f844b1b'
+remote_state: 'https://qmdj.singseq.com/ active; release /srv/qmdj-releases/20260812-032500-f844b1b'
+adoption:
+  mode: 'adopt'
+  inventory: 'docs/PROJECT_INVENTORY.json'
+  requires_reconciliation: false
