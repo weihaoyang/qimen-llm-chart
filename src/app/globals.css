@@ -11185,3 +11185,212 @@ html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence
     font-size: 12px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Final workbench geometry contract
+
+   The previous responsive experiments left the board with two incompatible
+   sizing sources: a viewport-sized square and a smaller canvas track.  The
+   canvas is now the only source of truth.  On a desktop viewport the chart,
+   its legend and the metadata strip must all live in the available workbench
+   height; the nine palaces then occupy the remaining square exactly once.
+   -------------------------------------------------------------------------- */
+
+html body,
+html body * {
+  background-image: none !important;
+}
+
+/* Keep the product palette flat and classical: ink, bone, ochre, vermilion,
+   celadon and bronze.  These two chips formerly reintroduced lilac/blue. */
+.summary-strip > .summary-chip--metadata {
+  background: #d7bd80 !important;
+}
+
+.summary-strip > .summary-chip--pillars {
+  background: #9eb7a5 !important;
+}
+
+.summary-strip > :nth-child(3),
+.summary-strip > :nth-child(6),
+.palace-card__primary-item--deity {
+  background: #d8b98b !important;
+  color: #4d3721 !important;
+}
+
+.analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__fact--hidden dt,
+.analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__fact--hidden dd {
+  color: #9f3d2d !important;
+}
+
+@media (min-width: 1041px) and (min-height: 700px) {
+  .page-shell:not(.is-agent-workspace) {
+    height: 100svh;
+    min-height: 0;
+    padding: 14px 0 8px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .observatory-hero {
+    position: relative;
+    top: auto;
+    height: 164px;
+    min-height: 164px;
+    grid-template-rows: minmax(0, 1fr) auto;
+    padding: 9px 14px;
+    gap: 8px 14px;
+  }
+
+  .observatory-hero__copy h1 {
+    font-size: 1.65rem;
+  }
+
+  .observatory-hero__manifesto {
+    margin: 3px 0 0;
+  }
+
+  .observatory-hero .workbench-tabs .semi-tabs-bar {
+    display: grid !important;
+    grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 0 !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding-inline: 3px !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+  }
+
+  .observatory-hero .workbench-tabs .semi-tabs-tab-inner {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .qmdj-footer {
+    min-height: 28px;
+    height: 28px;
+    padding: 0 4px;
+    overflow: hidden;
+  }
+
+  .qmdj-footer__brand p,
+  .qmdj-footer__meta {
+    font-size: 10px;
+  }
+
+  .analysis-layout,
+  .analysis-layout.analysis-panel-group,
+  .analysis-layout > .analysis-panel {
+    height: 0;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .analysis-layout > .analysis-panel,
+  .analysis-layout .canvas-panel,
+  .analysis-layout .sidebar-panel {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
+    grid-template-rows: 36px minmax(0, 1fr) auto !important;
+    gap: 7px !important;
+    padding: 8px 10px !important;
+    overflow: hidden !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout {
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
+    display: grid !important;
+    grid-template-rows: 15px minmax(0, 1fr) !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
+    width: auto !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* A palace is read across, not as a stack of tiny labels.  Giving the
+     three principal symbols one row and the six factual values two rows
+     makes every category visually distinct without wasting cell height. */
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
+    gap: 3px !important;
+    padding: 4px !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    gap: 3px !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+    gap: 2px 4px !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
+    font-size: 9px !important;
+    line-height: 1 !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong,
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
+    font-size: 14px !important;
+    line-height: 1.05 !important;
+  }
+
+  /* Match the legacy high-specificity compact rule once, then neutralise it.
+     This is intentionally the last board rule in the stylesheet. */
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__primary-item:last-child {
+    grid-column: auto !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__facts .palace-card__fact--status {
+    grid-column: auto !important;
+  }
+}
