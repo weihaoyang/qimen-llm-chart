@@ -42,6 +42,8 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const [persistenceStatus, setPersistenceStatus] = useState("");
   const [treeSaving, setTreeSaving] = useState(false);
   const [savedTree, setSavedTree] = useState<SavedTree | null>(null);
+  const [selectedBranchKey, setSelectedBranchKey] = useState<string | null>(null);
+  const [branchSaving, setBranchSaving] = useState(false);
   const issueTitle = question.trim() || "尚未命名的人生议题";
   const activeCase = cases.find((item) => item.id === activeCaseId) ?? null;
   const headers = { Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" };
@@ -57,8 +59,10 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     const turnData = await turnResponse.json().catch(() => ({})) as { turns?: Array<{ role:"user"|"assistant"; content:string }>; error?:string };
     if (!turnResponse.ok || !turnData.turns) { setPersistenceStatus(turnData.error || "恢复访谈失败"); return; }
     const treeData = await treeResponse.json().catch(() => ({})) as { version?:number|null; tree?: { root?:DecisionTreeSnapshot["root"]; branches?:DecisionTreeSnapshot["branches"] } | null };
-    if (treeResponse.ok && treeData.version && treeData.tree?.root && Array.isArray(treeData.tree.branches)) setSavedTree({ version: treeData.version, snapshot: { root: treeData.tree.root, branches: treeData.tree.branches } });
-    else setSavedTree(null);
+    if (treeResponse.ok && treeData.version && treeData.tree?.root && Array.isArray(treeData.tree.branches)) {
+      setSavedTree({ version: treeData.version, snapshot: { root: treeData.tree.root, branches: treeData.tree.branches } });
+      setSelectedBranchKey(treeData.tree.branches.find((branch) => branch.selectedAt)?.key ?? null);
+    } else { setSavedTree(null); setSelectedBranchKey(null); }
     const restoredConversation = turnData.turns.map((turn) => ({ role: turn.role, content: turn.content }));
     setActiveCaseId(item.id);
     setSavedTurnCount(restoredConversation.length);
@@ -82,7 +86,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     const response = await fetch("/api/agent/cases", { method:"POST", headers, body:JSON.stringify({ title:issueTitle.slice(0,120), question:question.trim() || "请通过访谈明确当前人生议题。" }) });
     const data = await response.json().catch(() => ({})) as { case?:SavedCase; error?:string };
     if (!response.ok || !data.case) { setPersistenceStatus(data.error || "创建失败"); return null; }
-    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus("工作区已写入服务器");
+    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus("工作区已写入服务器");
     return data.case.id;
   };
 
@@ -108,9 +112,22 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
       const data = await response.json().catch(() => ({})) as { tree?: { version?: number }; error?: string };
       if (response.ok && data.tree?.version) {
         setSavedTree({ version: data.tree.version, snapshot });
+        setSelectedBranchKey(null);
         setPersistenceStatus(`决策树已保存 · V${data.tree.version}`);
       } else setPersistenceStatus(data.error || "保存决策树失败");
     } finally { setTreeSaving(false); }
+  };
+  const selectBranch = async (key: string) => {
+    const branch = savedTree?.snapshot.branches.find((item) => item.key === key);
+    setSelectedBranchKey(key);
+    if (!branch?.id || !activeCaseId || !accessToken) { setPersistenceStatus("已在本地选择；保存决策树后可写入工作区。"); return; }
+    if (branchSaving) return;
+    setBranchSaving(true); setPersistenceStatus("正在写入当前路径…");
+    try {
+      const response = await fetch(`/api/agent/cases/${activeCaseId}/tree/selection`, { method: "POST", headers, body: JSON.stringify({ branchId: branch.id }) });
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) setPersistenceStatus(data.error || "保存当前路径失败"); else setPersistenceStatus("当前路径已写入工作区");
+    } finally { setBranchSaving(false); }
   };
   const evidencePreview = evidenceTab === "reality"
     ? `当前议题：${issueTitle}\n已完成 ${conversationCount} 轮访谈；事实、约束与代价会随回答逐步写入决策树。`
@@ -142,9 +159,9 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
       </section>
       <aside className="agent-command__model">
         <div className="agent-command__model-head"><div><span><GitBranch size={14} /> 可能性树</span><strong>选择不是结论，是可复盘的路径。</strong></div><Orbit size={20} /></div>
-        <DecisionTreePanel life={life} relationshipScales={relationshipScales} question={question} conversation={conversation} embedded savedSnapshot={savedTree?.snapshot} savedVersion={savedTree?.version} onSave={canPersist ? saveDecisionTree : undefined} saveLabel={treeSaving ? "正在存档…" : savedTree ? "保存当前证据为新版本" : "保存这棵树"} />
+        <DecisionTreePanel life={life} relationshipScales={relationshipScales} question={question} conversation={conversation} embedded savedSnapshot={savedTree?.snapshot} savedVersion={savedTree?.version} selectedBranchKey={selectedBranchKey} onSelectBranch={selectBranch} onSave={canPersist ? saveDecisionTree : undefined} saveLabel={treeSaving ? "正在存档…" : savedTree ? "保存当前证据为新版本" : "保存这棵树"} />
         <section className="agent-command__evidence"><div><strong>证据抽屉</strong><span>只有与当前议题有关的字段才会进入树节点。</span></div><div className="agent-command__evidence-tabs"><button type="button" className={evidenceTab === "reality" ? "is-active" : ""} onClick={() => selectEvidence("reality")}>现实事实</button><button type="button" className={evidenceTab === "bazi" ? "is-active" : ""} onClick={() => selectEvidence("bazi")}>八字</button><button type="button" className={evidenceTab === "qimen" ? "is-active" : ""} onClick={() => selectEvidence("qimen")}>奇门</button><button type="button" className={evidenceTab === "ziwei" ? "is-active" : ""} onClick={() => selectEvidence("ziwei")}>紫微</button><button type="button" className={evidenceTab === "kline" ? "is-active" : ""} onClick={() => selectEvidence("kline")}>K 线</button></div><pre className="agent-command__evidence-preview">{evidencePreview}</pre></section>
-        <AgentReviewPanel caseId={activeCaseId} accessToken={accessToken} />
+        <AgentReviewPanel caseId={activeCaseId} accessToken={accessToken} selectedBranchId={savedTree?.snapshot.branches.find((branch) => branch.key === selectedBranchKey)?.id ?? null} />
       </aside>
     </div>
   </main>;

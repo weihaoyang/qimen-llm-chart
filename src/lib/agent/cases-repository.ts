@@ -97,6 +97,18 @@ export const getLatestTreeVersion = async (subject: AccountSubject, caseId: stri
   };
 };
 
+export const selectTreeBranch = async (subject: AccountSubject, caseId: string, branchId: string) => withTransaction(async (client) => {
+  const tree = await client.query<{ id: string }>(`SELECT t.id FROM agent_decision_tree_versions t JOIN agent_cases c ON c.id=t.case_id WHERE t.case_id=$1 AND t.version=(SELECT MAX(version) FROM agent_decision_tree_versions WHERE case_id=$1) AND c.platform_subject_type=$2 AND c.platform_subject_id=$3 AND c.deleted_at IS NULL FOR UPDATE`, [caseId, ...ownership(subject)]);
+  const treeId = tree.rows[0]?.id;
+  if (!treeId) return null;
+  await client.query(`UPDATE agent_decision_branches SET selected_at=NULL WHERE tree_version_id=$1`, [treeId]);
+  const selected = await client.query<{ id:string; branch_key:string; selected_at:Date }>(`UPDATE agent_decision_branches SET selected_at=now() WHERE id=$1 AND tree_version_id=$2 RETURNING id,branch_key,selected_at`, [branchId, treeId]);
+  if (!selected.rowCount) return { invalidBranch: true as const };
+  await client.query(`UPDATE agent_cases SET updated_at=now() WHERE id=$1`, [caseId]);
+  const row = selected.rows[0];
+  return { branch: { id: row.id, key: row.branch_key, selectedAt: row.selected_at.toISOString() } };
+});
+
 export type AgentReview = {
   id: string;
   caseId: string;

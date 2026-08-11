@@ -5,10 +5,10 @@ import type { AgentConversationMessage } from "@/lib/agent/chat";
 
 export type DecisionTreeSnapshot = {
   root: { activeWindow: string; evidence: string; source: string };
-  branches: Array<{ key: string; title: string; assumptions: string[]; firstAction: string; cost: string; risks: string[]; validationDate: string | null; stopCondition: string }>;
+  branches: Array<{ id?: string; key: string; title: string; assumptions: string[]; firstAction: string; cost: string; risks: string[]; validationDate: string | null; stopCondition: string; selectedAt?: string | null }>;
 };
 
-type DecisionTreePanelProps = { life: KlineSeries; relationshipScales?: Partial<Record<KlineScale, KlineSeries>>; question?: string; conversation?: readonly AgentConversationMessage[]; embedded?: boolean; savedSnapshot?: DecisionTreeSnapshot | null; savedVersion?: number | null; onSave?: (snapshot: DecisionTreeSnapshot) => void; saveLabel?: string };
+type DecisionTreePanelProps = { life: KlineSeries; relationshipScales?: Partial<Record<KlineScale, KlineSeries>>; question?: string; conversation?: readonly AgentConversationMessage[]; embedded?: boolean; savedSnapshot?: DecisionTreeSnapshot | null; savedVersion?: number | null; selectedBranchKey?: string | null; onSelectBranch?: (key: string) => void; onSave?: (snapshot: DecisionTreeSnapshot) => void; saveLabel?: string };
 
 const pointWeight = (point: KlinePoint) => Math.abs(point.delta) * 2 + (point.high - point.low) * 0.45 + point.evidence.length * 0.7 + (point.keyPoint ? 4 : 0);
 const strongest = (series: KlineSeries | undefined) => series?.points.reduce<KlinePoint | undefined>((best, point) => !best || pointWeight(point) > pointWeight(best) ? point : best, undefined);
@@ -59,12 +59,13 @@ export const buildDecisionTreeSnapshot = (
   };
 };
 
-function DecisionBranch({ branch, tone }: { branch: DecisionTreeSnapshot["branches"][number]; tone: "advance" | "verify" | "protect" }) {
+function DecisionBranch({ branch, tone, selected, onSelect }: { branch: DecisionTreeSnapshot["branches"][number]; tone: "advance" | "verify" | "protect"; selected: boolean; onSelect?: () => void }) {
   const supportingFact = branch.assumptions[0] || branch.risks[0] || "等待现实反馈补充证据";
-  return <article className={`decision-tree__branch is-${tone}`}><header><span>{branch.title}</span><b>{branch.validationDate ? branch.validationDate.replace("T", " ") : "待验证"}</b></header><strong>{branch.firstAction}</strong><p>{supportingFact} · 停止条件：{branch.stopCondition}</p></article>;
+  const content = <><header><span>{branch.title}</span><b>{selected ? "已选择" : branch.validationDate ? branch.validationDate.replace("T", " ") : "待验证"}</b></header><strong>{branch.firstAction}</strong><p>{supportingFact} · 停止条件：{branch.stopCondition}</p></>;
+  return onSelect ? <button type="button" className={`decision-tree__branch is-${tone}${selected ? " is-selected" : ""}`} aria-pressed={selected} onClick={onSelect}>{content}</button> : <article className={`decision-tree__branch is-${tone}${selected ? " is-selected" : ""}`}>{content}</article>;
 }
 
-export function DecisionTreePanel({ life, relationshipScales, question, conversation, embedded = false, savedSnapshot, savedVersion, onSave, saveLabel }: DecisionTreePanelProps) {
+export function DecisionTreePanel({ life, relationshipScales, question, conversation, embedded = false, savedSnapshot, savedVersion, selectedBranchKey, onSelectBranch, onSave, saveLabel }: DecisionTreePanelProps) {
   const snapshot = buildDecisionTreeSnapshot(life, relationshipScales, question, conversation);
   const displayed = savedSnapshot ?? snapshot;
   const displayedBranches = (["advance", "verify", "protect"] as const).map((key, index) => displayed.branches.find((branch) => branch.key === key) ?? displayed.branches[index] ?? snapshot.branches[index]);
@@ -76,7 +77,7 @@ export function DecisionTreePanel({ life, relationshipScales, question, conversa
         <div className="decision-tree__trunk" aria-hidden="true" />
         <div className="decision-tree__junction"><span>关键窗口</span><strong>{displayed.root.activeWindow}</strong><p>{displayed.root.evidence}</p></div>
         <div className="decision-tree__split" aria-hidden="true" />
-        <div className="decision-tree__branches"><DecisionBranch branch={displayedBranches[0]} tone="advance" /><DecisionBranch branch={displayedBranches[1]} tone="verify" /><DecisionBranch branch={displayedBranches[2]} tone="protect" /></div>
+        <div className="decision-tree__branches" aria-label="选择一条决策路径"><DecisionBranch branch={displayedBranches[0]} tone="advance" selected={selectedBranchKey === displayedBranches[0].key} onSelect={onSelectBranch ? () => onSelectBranch(displayedBranches[0].key) : undefined} /><DecisionBranch branch={displayedBranches[1]} tone="verify" selected={selectedBranchKey === displayedBranches[1].key} onSelect={onSelectBranch ? () => onSelectBranch(displayedBranches[1].key) : undefined} /><DecisionBranch branch={displayedBranches[2]} tone="protect" selected={selectedBranchKey === displayedBranches[2].key} onSelect={onSelectBranch ? () => onSelectBranch(displayedBranches[2].key) : undefined} /></div>
       </div>
       <footer className="decision-tree__footer"><strong>胜天半子，不是逃离命盘。</strong><span>是看清每条路的代价后，仍然选择一条愿意承担的路。</span></footer>
     </section>

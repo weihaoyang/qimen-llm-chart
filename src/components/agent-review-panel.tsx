@@ -5,9 +5,9 @@ import { CheckCircle2, RotateCcw } from "lucide-react";
 
 type Review = { id:string; outcome:string; facts:string; whatChanged:string; nextAdjustment:string; reviewedAt:string };
 
-type AgentReviewPanelProps = { caseId: string; accessToken?: string };
+type AgentReviewPanelProps = { caseId: string; accessToken?: string; selectedBranchId?: string | null };
 
-export function AgentReviewPanel({ caseId, accessToken }: AgentReviewPanelProps) {
+export function AgentReviewPanel({ caseId, accessToken, selectedBranchId }: AgentReviewPanelProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [outcome, setOutcome] = useState("");
   const [facts, setFacts] = useState("");
@@ -31,7 +31,7 @@ export function AgentReviewPanel({ caseId, accessToken }: AgentReviewPanelProps)
     if (!caseId || !accessToken || !outcome.trim() || saving) return;
     setSaving(true); setStatus("正在写入复盘…");
     try {
-      const response = await fetch(`/api/agent/cases/${caseId}/reviews`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ outcome, facts, whatChanged, nextAdjustment }) });
+      const response = await fetch(`/api/agent/cases/${caseId}/reviews`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ branchId: selectedBranchId ?? undefined, outcome, facts, whatChanged, nextAdjustment }) });
       const data = await response.json().catch(() => ({})) as { review?:Review; error?:string };
       if (!response.ok || !data.review) { setStatus(data.error || "保存复盘失败"); return; }
       setReviews((current) => [data.review!, ...current]);
