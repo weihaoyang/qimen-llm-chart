@@ -75,8 +75,13 @@ export const saveTreeVersion = async (subject: AccountSubject, caseId: string, i
   const version = versionResult.rows[0].version;
   const treeId = randomUUID();
   await client.query(`INSERT INTO agent_decision_tree_versions(id,case_id,version,root_json,generated_from_turn_id) VALUES($1,$2,$3,$4::jsonb,$5)`, [treeId,caseId,version,JSON.stringify(input.root),input.generatedFromTurnId ?? null]);
-  for (const branch of input.branches ?? []) await client.query(`INSERT INTO agent_decision_branches(id,tree_version_id,branch_key,title,assumptions_json,first_action,cost,risks_json,validation_date,stop_condition) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8::jsonb,$9,$10)`, [randomUUID(),treeId,branch.key,branch.title,JSON.stringify(branch.assumptions ?? []),branch.firstAction ?? "",branch.cost ?? "",JSON.stringify(branch.risks ?? []),branch.validationDate ?? null,branch.stopCondition ?? ""]);
-  return { id: treeId, version };
+  const branches: Array<{ id: string; key: string }> = [];
+  for (const branch of input.branches ?? []) {
+    const id = randomUUID();
+    await client.query(`INSERT INTO agent_decision_branches(id,tree_version_id,branch_key,title,assumptions_json,first_action,cost,risks_json,validation_date,stop_condition) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8::jsonb,$9,$10)`, [id,treeId,branch.key,branch.title,JSON.stringify(branch.assumptions ?? []),branch.firstAction ?? "",branch.cost ?? "",JSON.stringify(branch.risks ?? []),branch.validationDate ?? null,branch.stopCondition ?? ""]);
+    branches.push({ id, key: branch.key });
+  }
+  return { id: treeId, version, branches };
 });
 
 export const getLatestTreeVersion = async (subject: AccountSubject, caseId: string) => {

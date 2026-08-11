@@ -109,9 +109,10 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     setTreeSaving(true); setPersistenceStatus("正在保存决策树版本…");
     try {
       const response = await fetch(`/api/agent/cases/${caseId}/tree`, { method: "POST", headers, body: JSON.stringify(snapshot) });
-      const data = await response.json().catch(() => ({})) as { tree?: { version?: number }; error?: string };
+      const data = await response.json().catch(() => ({})) as { tree?: { version?: number; branches?: Array<{ id: string; key: string }> }; error?: string };
       if (response.ok && data.tree?.version) {
-        setSavedTree({ version: data.tree.version, snapshot });
+        const branchIds = new Map((data.tree.branches ?? []).map((branch) => [branch.key, branch.id]));
+        setSavedTree({ version: data.tree.version, snapshot: { ...snapshot, branches: snapshot.branches.map((branch) => ({ ...branch, id: branchIds.get(branch.key) })) } });
         setSelectedBranchKey(null);
         setPersistenceStatus(`决策树已保存 · V${data.tree.version}`);
       } else setPersistenceStatus(data.error || "保存决策树失败");
