@@ -42,19 +42,22 @@ export const buildDecisionTreeSnapshot = (
   const relationshipEntries = (["double-hour", "day", "month", "year"] as const).map((scale) => ({ scale, point: strongest(relationshipScales?.[scale]) })).filter((item): item is { scale: KlineScale; point: KlinePoint } => Boolean(item.point));
   const relationshipPoint = relationshipEntries.sort((a, b) => pointWeight(b.point) - pointWeight(a.point))[0]?.point;
   const anchor = lifePoint && relationshipPoint ? (pointWeight(lifePoint) >= pointWeight(relationshipPoint) ? lifePoint : relationshipPoint) : lifePoint ?? relationshipPoint;
-  const scaleLabel = relationshipEntries.find((item) => item.point === relationshipPoint)?.scale;
   const realityFacts = collectRealityFacts(question, conversation);
   const primaryFact = realityFacts.at(-1);
-  const activeWindow = anchor ? dateText(anchor) : "等待生成序列";
-  const rootEvidence = primaryFact ?? anchor?.evidence[0] ?? "序列盘证据将汇聚到这里。";
-  const rootSource = primaryFact ? "现实事实 · 访谈" : scaleLabel ? `感情 · ${scaleLabel}线` : "人生 · 八字运年";
+  // Before the user has supplied a follow-up answer, there is no real-world
+  // evidence to connect to a distant K-line point.  Show the interview state
+  // honestly instead of manufacturing a "key window" from a future year.
+  const isInterviewGrounded = Boolean(primaryFact);
+  const activeWindow = isInterviewGrounded && anchor ? dateText(anchor) : "待访谈定位";
+  const rootEvidence = primaryFact ?? "先补一条能独立核验的现实事实，再让盘面与趋势参与选择。";
+  const rootSource = primaryFact ? "现实事实 · 访谈" : "尚待现实事实";
   const realityAssumptions = realityFacts.map((fact) => `访谈事实：${fact}`);
   return {
     root: { activeWindow, evidence: rootEvidence, source: rootSource },
     branches: [
-      { key: "advance", title: "推进", assumptions: [...realityAssumptions, ...(lifePoint?.evidence.slice(0, 2) ?? [])].slice(0, 4), firstAction: primaryFact ? `围绕“${primaryFact}”做一个可在本周完成的最小动作。` : "把有利条件变成一个可兑现的动作。", cost: "承担推进后的资源与关系投入。", risks: ["把趋势误当作保证"], validationDate: lifePoint?.datetime ?? null, stopCondition: "关键条件连续两次未满足时，暂停扩大投入。" },
-      { key: "verify", title: "验证", assumptions: [...realityAssumptions, ...(relationshipPoint?.evidence.slice(0, 2) ?? [])].slice(0, 4), firstAction: primaryFact ? `先为“${primaryFact}”补一条能被独立核验的事实。` : "先补一个事实，再决定是否承担更大代价。", cost: "接受延后决策带来的机会成本。", risks: ["因等待错过窗口"], validationDate: relationshipPoint?.datetime ?? null, stopCondition: "关键事实无法获得时，切换到保护路径。" },
-      { key: "protect", title: "保护", assumptions: [...realityAssumptions, ...(anchor?.evidence.slice(0, 2) ?? [])].slice(0, 4), firstAction: primaryFact ? `为“${primaryFact}”设定一个不可越过的底线与退出条件。` : "降低不可逆承诺，保留退出与复盘的余地。", cost: "放弃一部分即时收益与确定感。", risks: ["过度防御导致停滞"], validationDate: anchor?.datetime ?? null, stopCondition: "退出条件不再成立且事实改善时，重新进入验证。" },
+      { key: "advance", title: "推进", assumptions: [...realityAssumptions, ...(isInterviewGrounded ? lifePoint?.evidence.slice(0, 2) ?? [] : [])].slice(0, 4), firstAction: primaryFact ? `围绕“${primaryFact}”做一个可在本周完成的最小动作。` : "先说清你已经拥有的条件，再判断是否值得推进。", cost: "承担推进后的资源与关系投入。", risks: ["把趋势误当作保证"], validationDate: isInterviewGrounded ? lifePoint?.datetime ?? null : null, stopCondition: "关键条件连续两次未满足时，暂停扩大投入。" },
+      { key: "verify", title: "验证", assumptions: [...realityAssumptions, ...(isInterviewGrounded ? relationshipPoint?.evidence.slice(0, 2) ?? [] : [])].slice(0, 4), firstAction: primaryFact ? `先为“${primaryFact}”补一条能被独立核验的事实。` : "先补一个事实，再决定是否承担更大代价。", cost: "接受延后决策带来的机会成本。", risks: ["因等待错过窗口"], validationDate: isInterviewGrounded ? relationshipPoint?.datetime ?? null : null, stopCondition: "关键事实无法获得时，切换到保护路径。" },
+      { key: "protect", title: "保护", assumptions: [...realityAssumptions, ...(isInterviewGrounded ? anchor?.evidence.slice(0, 2) ?? [] : [])].slice(0, 4), firstAction: primaryFact ? `为“${primaryFact}”设定一个不可越过的底线与退出条件。` : "先写下不可承受的损失与退出条件。", cost: "放弃一部分即时收益与确定感。", risks: ["过度防御导致停滞"], validationDate: isInterviewGrounded ? anchor?.datetime ?? null : null, stopCondition: "退出条件不再成立且事实改善时，重新进入验证。" },
     ],
   };
 };

@@ -32,4 +32,17 @@ describe("decision tree reality evidence", () => {
     expect(tree.branches.every((branch) => branch.assumptions.some((item) => item.includes("现金储备")))).toBe(true);
     expect(tree.branches.map((branch) => branch.firstAction).join(" ")).toContain("现金储备");
   });
+
+  it("does not present an ungrounded K-line year as a current decision window", () => {
+    const tree = buildDecisionTreeSnapshot({ ...life, points: [{ ...life.points[0], datetime: "2105-01-01T00:00" }] }, undefined, "我要不要换工作", [
+      { role: "user", content: "我要不要换工作？" },
+    ]);
+
+    expect(tree.root).toEqual({
+      activeWindow: "待访谈定位",
+      evidence: "先补一条能独立核验的现实事实，再让盘面与趋势参与选择。",
+      source: "尚待现实事实",
+    });
+    expect(tree.branches.every((branch) => branch.validationDate === null)).toBe(true);
+  });
 });
