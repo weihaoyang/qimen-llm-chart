@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { AgentConversationMessage } from "@/lib/agent/chat";
 import type { KlineScale, KlineSeries } from "@/lib/qimen/kline";
 import type { WorkbenchMode } from "@/lib/workbench/types";
-import { DecisionTreePanel } from "./decision-tree-panel";
+import { DecisionTreePanel, type DecisionTreeSnapshot } from "./decision-tree-panel";
 
 type AgentCommandCenterProps = {
   mode: WorkbenchMode;
@@ -37,6 +37,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const [activeCaseId, setActiveCaseId] = useState("");
   const [savedTurnCount, setSavedTurnCount] = useState(0);
   const [persistenceStatus, setPersistenceStatus] = useState("");
+  const [treeSaving, setTreeSaving] = useState(false);
   const issueTitle = question.trim() || "尚未命名的人生议题";
   const activeCase = cases.find((item) => item.id === activeCaseId) ?? null;
   const headers = { Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" };
@@ -85,6 +86,17 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     }
     setSavedTurnCount(conversation.length); setPersistenceStatus("已保存到正式工作区");
   };
+  const saveDecisionTree = async (snapshot: DecisionTreeSnapshot) => {
+    if (!accessToken) { setPersistenceStatus("请先登录平台账户后保存决策树。"); return; }
+    let caseId = activeCaseId;
+    if (!caseId) { caseId = await createWorkspace() ?? ""; if (!caseId) return; }
+    setTreeSaving(true); setPersistenceStatus("正在保存决策树版本…");
+    try {
+      const response = await fetch(`/api/agent/cases/${caseId}/tree`, { method: "POST", headers, body: JSON.stringify(snapshot) });
+      const data = await response.json().catch(() => ({})) as { tree?: { version?: number }; error?: string };
+      setPersistenceStatus(response.ok ? `决策树已保存 · V${data.tree?.version ?? "?"}` : data.error || "保存决策树失败");
+    } finally { setTreeSaving(false); }
+  };
   const evidencePreview = evidenceTab === "reality"
     ? `当前议题：${issueTitle}\n已完成 ${conversationCount} 轮访谈；事实、约束与代价会随回答逐步写入决策树。`
     : evidenceTab === "kline"
@@ -115,7 +127,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
       </section>
       <aside className="agent-command__model">
         <div className="agent-command__model-head"><div><span><GitBranch size={14} /> 可能性树</span><strong>选择不是结论，是可复盘的路径。</strong></div><Orbit size={20} /></div>
-        <DecisionTreePanel life={life} relationshipScales={relationshipScales} embedded />
+        <DecisionTreePanel life={life} relationshipScales={relationshipScales} embedded onSave={canPersist ? saveDecisionTree : undefined} saveLabel={treeSaving ? "正在存档…" : "保存这棵树"} />
         <section className="agent-command__evidence"><div><strong>证据抽屉</strong><span>只有与当前议题有关的字段才会进入树节点。</span></div><div className="agent-command__evidence-tabs"><button type="button" className={evidenceTab === "reality" ? "is-active" : ""} onClick={() => selectEvidence("reality")}>现实事实</button><button type="button" className={evidenceTab === "bazi" ? "is-active" : ""} onClick={() => selectEvidence("bazi")}>八字</button><button type="button" className={evidenceTab === "qimen" ? "is-active" : ""} onClick={() => selectEvidence("qimen")}>奇门</button><button type="button" className={evidenceTab === "ziwei" ? "is-active" : ""} onClick={() => selectEvidence("ziwei")}>紫微</button><button type="button" className={evidenceTab === "kline" ? "is-active" : ""} onClick={() => selectEvidence("kline")}>K 线</button></div><pre className="agent-command__evidence-preview">{evidencePreview}</pre></section>
       </aside>
     </div>

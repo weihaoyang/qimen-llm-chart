@@ -78,3 +78,21 @@ export const saveTreeVersion = async (subject: AccountSubject, caseId: string, i
   for (const branch of input.branches ?? []) await client.query(`INSERT INTO agent_decision_branches(id,tree_version_id,branch_key,title,assumptions_json,first_action,cost,risks_json,validation_date,stop_condition) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8::jsonb,$9,$10)`, [randomUUID(),treeId,branch.key,branch.title,JSON.stringify(branch.assumptions ?? []),branch.firstAction ?? "",branch.cost ?? "",JSON.stringify(branch.risks ?? []),branch.validationDate ?? null,branch.stopCondition ?? ""]);
   return { id: treeId, version };
 });
+
+export const getLatestTreeVersion = async (subject: AccountSubject, caseId: string) => {
+  const owner = await getCase(subject, caseId);
+  if (!owner) return null;
+  const tree = await query<{ id:string; version:number; root_json:unknown; created_at:Date }>(`SELECT id,version,root_json,created_at FROM agent_decision_tree_versions WHERE case_id=$1 ORDER BY version DESC LIMIT 1`, [caseId]);
+  const latest = tree.rows[0];
+  if (!latest) return { version: null, tree: null };
+  const branches = await query<{ id:string; branch_key:string; title:string; assumptions_json:unknown; first_action:string; cost:string; risks_json:unknown; validation_date:Date|null; stop_condition:string; selected_at:Date|null }>(`SELECT id,branch_key,title,assumptions_json,first_action,cost,risks_json,validation_date,stop_condition,selected_at FROM agent_decision_branches WHERE tree_version_id=$1 ORDER BY branch_key`, [latest.id]);
+  return {
+    version: latest.version,
+    tree: {
+      id: latest.id,
+      root: latest.root_json,
+      createdAt: latest.created_at.toISOString(),
+      branches: branches.rows.map((branch) => ({ id: branch.id, key: branch.branch_key, title: branch.title, assumptions: branch.assumptions_json, firstAction: branch.first_action, cost: branch.cost, risks: branch.risks_json, validationDate: branch.validation_date?.toISOString() ?? null, stopCondition: branch.stop_condition, selectedAt: branch.selected_at?.toISOString() ?? null })),
+    },
+  };
+};
