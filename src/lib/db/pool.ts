@@ -1,6 +1,10 @@
-import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { createRequire } from "node:module";
+import type { Pool as PgPool, PoolClient, QueryResultRow } from "pg";
 
-const globalForDatabase = globalThis as unknown as { qmdjPool?: Pool };
+const require = createRequire(import.meta.url);
+const { Pool } = require("pg") as { Pool: typeof import("pg").Pool };
+
+const globalForDatabase = globalThis as unknown as { qmdjPool?: PgPool };
 
 const createPool = () => {
   const connectionString = process.env.DATABASE_URL?.trim();
