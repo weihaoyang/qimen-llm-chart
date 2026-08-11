@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildChartSequence, buildSequenceInputs } from "./sequence";
+import { buildChartSequence, buildChartSequenceByCount, buildSequenceInputs } from "./sequence";
+
+describe("buildChartSequenceByCount", () => {
+  it("creates 20 points for each relationship scale", () => {
+    for (const step of ["double-hour", "day", "month", "year"] as const) {
+      const result = buildChartSequenceByCount("2026-08-01T10:00", "Asia/Shanghai", step, 20);
+      expect(result).toHaveLength(20);
+      expect(result[0]?.input.datetime).toBe("2026-08-01T10:00");
+    }
+  });
+});
 
 describe("buildSequenceInputs", () => {
   it("creates inclusive double-hour sequence inputs", () => {

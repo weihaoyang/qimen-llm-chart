@@ -1,4 +1,6 @@
 import { requirePlatformServerConfig } from "@/lib/platform/config";
+import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
+export { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 
 export type PlatformGate = {
   allowed: boolean;
@@ -48,11 +50,47 @@ export const readGuestCheckoutToken = (value: string | null) => {
   return token || null;
 };
 
+const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
+
+export const readPlatformCookieHeader = (cookieHeader: string | null) => {
+  const values = (cookieHeader ?? "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => PLATFORM_COOKIE_NAMES.has(part.split("=", 1)[0] ?? ""));
+  return values.length ? values.join("; ") : "";
+};
+
+export const readCookieValue = (cookieHeader: string | null, name: string) => {
+  const prefix = `${name}=`;
+  return (cookieHeader ?? "")
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+    ?.slice(prefix.length) ?? "";
+};
+
+type PlatformRequestOptions = {
+  env?: Record<string, string | undefined>;
+  fetchImpl?: typeof fetch;
+  method?: "GET" | "POST";
+  planCode?: string;
+  cookieHeader?: string;
+  csrfToken?: string;
+};
+
+const buildPlatformHeaders = (accessToken: string | null, options?: PlatformRequestOptions) => ({
+  ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  ...(options?.cookieHeader ? { Cookie: options.cookieHeader } : {}),
+  ...(options?.csrfToken ? { "x-csrf-token": options.csrfToken } : {}),
+});
+
 export const fetchPlatformGate = async (
-  accessToken: string,
+  accessToken: string | null,
   options?: {
     env?: Record<string, string | undefined>;
     fetchImpl?: typeof fetch;
+    cookieHeader?: string;
+    csrfToken?: string;
   },
 ): Promise<PlatformGate> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
@@ -64,9 +102,7 @@ export const fetchPlatformGate = async (
   url.searchParams.set("access_scope", config.accessScope);
 
   const response = await fetchImpl(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: buildPlatformHeaders(accessToken, options),
     cache: "no-store",
   });
 
@@ -97,14 +133,16 @@ export const fetchPlatformGate = async (
 };
 
 const platformUsageRequest = async (
-  accessToken: string,
+  accessToken: string | null,
   path: string,
-  options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; method?: "GET" | "POST" },
+  options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  const response = await (options?.fetchImpl ?? fetch)(new URL(path, config.baseUrl), {
+  const url = new URL(path, config.baseUrl);
+  if (options?.planCode) url.searchParams.set("plan_code", options.planCode);
+  const response = await (options?.fetchImpl ?? fetch)(url, {
     method: options?.method ?? "GET",
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: buildPlatformHeaders(accessToken, options),
     cache: "no-store",
   });
   const body = (await response.json().catch(() => ({}))) as Partial<PlatformUsage> & {
@@ -130,10 +168,19 @@ const platformUsageRequest = async (
 const guestUsageRequest = async (
   checkoutToken: string,
   path: string,
-  options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; method?: "POST" },
+  options?: {
+    env?: Record<string, string | undefined>;
+    fetchImpl?: typeof fetch;
+    method?: "POST";
+    planCode?: string;
+  },
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  const response = await (options?.fetchImpl ?? fetch)(new URL(path, config.baseUrl), {
+  const url = new URL(path, config.baseUrl);
+  if (options?.planCode) {
+    url.searchParams.set("plan_code", options.planCode);
+  }
+  const response = await (options?.fetchImpl ?? fetch)(url, {
     method: options?.method ?? "POST",
     headers: { "X-Guest-Checkout-Token": checkoutToken },
     cache: "no-store",
@@ -151,51 +198,60 @@ const guestUsageRequest = async (
   };
 };
 
-export const reserveGuestUsage = (checkoutToken: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch }) => {
+export const reserveGuestUsage = (checkoutToken: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/reserve`, options);
+  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/reserve`, {
+    ...options,
+    planCode: options?.planCode ?? AGENT_PLAN_CODE,
+  });
 };
 
-export const commitGuestUsage = (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch }) => {
+export const commitGuestUsage = (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/commit`, options);
+  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/commit`, {
+    ...options,
+    planCode: options?.planCode ?? AGENT_PLAN_CODE,
+  });
 };
 
-export const releaseGuestUsage = (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch }) => {
+export const releaseGuestUsage = (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/release`, options);
+  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/release`, {
+    ...options,
+    planCode: options?.planCode ?? AGENT_PLAN_CODE,
+  });
 };
 
 export const fetchPlatformUsage = async (
-  accessToken: string,
-  options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch },
+  accessToken: string | null,
+  options?: PlatformRequestOptions,
 ): Promise<PlatformUsage> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage`, options);
 };
 
 export const reservePlatformUsage = async (
-  accessToken: string,
-  options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch },
+  accessToken: string | null,
+  options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/reserve`, { ...options, method: "POST" });
+  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/reserve`, { ...options, method: "POST", planCode: options?.planCode ?? AGENT_PLAN_CODE });
 };
 
 export const commitPlatformUsage = async (
-  accessToken: string,
+  accessToken: string | null,
   reservationId: string,
-  options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch },
+  options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/commit`, { ...options, method: "POST" });
+  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/commit`, { ...options, method: "POST", planCode: options?.planCode ?? AGENT_PLAN_CODE });
 };
 
 export const releasePlatformUsage = async (
-  accessToken: string,
+  accessToken: string | null,
   reservationId: string,
-  options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch },
+  options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/release`, { ...options, method: "POST" });
+  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/release`, { ...options, method: "POST", planCode: options?.planCode ?? AGENT_PLAN_CODE });
 };

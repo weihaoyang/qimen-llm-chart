@@ -1,0 +1,302 @@
+/* Swiss grid direction: white paper, black rules, one signal red. */
+:root {
+  --background: #f4f4f2;
+  --background-alt: #ededeb;
+  --foreground: #111111;
+  --muted: #eeeeec;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --panel-stroke: #c9c9c6;
+  --accent: #e10600;
+  --accent-strong: #b90000;
+  --accent-soft: #f8d9d7;
+  --ink-soft: #454545;
+  --ink-subtle: #727272;
+  --mode-glow: transparent;
+  --shadow: none;
+  --shadow-soft: none;
+}
+
+html,
+body {
+  background: #f4f4f2 !important;
+  background-image: none !important;
+  color: #111 !important;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.page-shell {
+  width: min(1520px, calc(100vw - 28px)) !important;
+  padding: 12px 0 !important;
+  gap: 0 !important;
+  border: 1px solid #bdbdb9;
+  background: #f4f4f2 !important;
+}
+
+.page-shell::before,
+.page-shell::after {
+  display: none !important;
+}
+
+.observatory-hero {
+  border: 0 !important;
+  border-bottom: 1px solid #bdbdb9 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  animation: none !important;
+  padding: 16px 20px !important;
+}
+
+.observatory-hero__copy h1 {
+  color: #111 !important;
+  font-size: clamp(2rem, 3vw, 3.6rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.06em !important;
+  line-height: 0.95 !important;
+}
+
+.workspace-kicker,
+.observatory-hero__status,
+.observatory-pill__label {
+  color: #111 !important;
+}
+
+.workbench-tabs,
+.workbench-tabs__list {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.workbench-tabs__trigger {
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  color: #555 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.workbench-tabs__trigger[data-state="active"],
+.workbench-tabs__trigger.is-active {
+  color: #fff !important;
+  background: #e10600 !important;
+  border-bottom-color: #e10600 !important;
+}
+
+.analysis-layout,
+.analysis-panel-group {
+  gap: 0 !important;
+  border: 0 !important;
+  background: #fff !important;
+}
+
+.analysis-panel-divider {
+  width: 1px !important;
+  background: #bdbdb9 !important;
+}
+
+.analysis-panel-divider__grip {
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: #111 !important;
+  background: #fff !important;
+}
+
+.canvas-panel,
+.sidebar-panel,
+.workspace-disclosure,
+.sidebar-quick-controls,
+.agent-panel,
+.inspector-panel {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.canvas-panel {
+  padding: 14px !important;
+}
+
+.summary-strip {
+  border-bottom: 1px solid #bdbdb9 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.summary-chip,
+.summary-chip strong,
+.summary-chip__badge {
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #111 !important;
+  box-shadow: none !important;
+}
+
+.summary-chip {
+  border: 1px solid #d2d2cf !important;
+}
+
+.palace-grid-shell {
+  border: 1px solid #bdbdb9 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.palace-grid-shell__hud,
+.palace-grid-shell__intro,
+.palace-grid-shell__focus {
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.palace-grid {
+  gap: 0 !important;
+}
+
+.palace-card {
+  border: 1px solid #222 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.palace-card.is-center,
+.palace-card.is-selected,
+.palace-card:hover {
+  border-color: #e10600 !important;
+  background: #fff5f4 !important;
+  box-shadow: inset 4px 0 0 #e10600 !important;
+}
+
+.palace-card__header h3,
+.palace-card__core strong {
+  color: #111 !important;
+  font-weight: 800 !important;
+}
+
+.palace-card__status strong,
+.palace-card__flags span,
+.palace-grid-shell__legend span {
+  color: #e10600 !important;
+}
+
+.sidebar-quick-controls,
+.workspace-disclosure {
+  border-bottom: 1px solid #bdbdb9 !important;
+  padding: 14px !important;
+}
+
+.sidebar-quick-controls__heading,
+.workspace-disclosure > summary,
+.agent-panel__section-head {
+  border-radius: 0 !important;
+  color: #111 !important;
+}
+
+.quick-chart-toggle,
+.quick-chart-toggle button,
+.control-select,
+button,
+input,
+select,
+textarea {
+  border-radius: 0 !important;
+}
+
+button.command-button-primary,
+.command-button-primary,
+.sidebar-quick-controls__actions button {
+  border: 1px solid #e10600 !important;
+  color: #fff !important;
+  background: #e10600 !important;
+  box-shadow: none !important;
+}
+
+button.command-button-primary:hover,
+.command-button-primary:hover {
+  background: #b90000 !important;
+}
+
+.quick-chart-toggle {
+  border: 1px solid #111 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.quick-chart-toggle button.is-active {
+  border-radius: 0 !important;
+  color: #fff !important;
+  background: #e10600 !important;
+}
+
+.control-field input,
+.control-field select,
+.control-field textarea,
+.sidebar-quick-controls input,
+.sidebar-quick-controls select {
+  border: 1px solid #9d9d99 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.qmdj-footer {
+  border-top: 1px solid #bdbdb9 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 14px 20px !important;
+}
+
+.qmdj-footer__brand span,
+.qmdj-footer__meta a {
+  color: #e10600 !important;
+}
+
+.agent-launcher {
+  border-radius: 0 !important;
+  background: #e10600 !important;
+  box-shadow: none !important;
+}
+
+/* Final Swiss treatment for the high-specificity observatory tab rules. */
+.observatory-hero .workbench-tabs,
+.observatory-hero .workbench-tabs__list {
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.observatory-hero .workbench-tabs__trigger[data-state="active"],
+.observatory-hero .workbench-tabs__trigger[data-mode][data-state="active"] {
+  color: #fff !important;
+  background: #e10600 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.observatory-hero .workbench-tabs__trigger[data-state="inactive"] {
+  color: #111 !important;
+  background: #fff !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 1180px) {
+  .page-shell {
+    width: calc(100vw - 20px) !important;
+  }
+}

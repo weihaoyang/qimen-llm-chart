@@ -3,18 +3,19 @@ import "react-iztro/lib/theme/default.css";
 import "react-iztro/lib/Iztrolabe/Iztrolabe.css";
 import "react-iztro/lib/Izpalace/Izpalace.css";
 import "react-iztro/lib/IzpalaceCenter/IzpalaceCenter.css";
+import "@douyinfe/semi-ui/lib/es/_base/base.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://qmdj.singseq.com"),
   title: "胜天半子",
-  description: "胜天半子的命理三盘统一工作台，支持奇门、八字、紫微与 AI 分析。",
+  description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "胜天半子",
-    description: "胜天半子的命理三盘统一工作台，支持奇门、八字、紫微与 AI 分析。",
+    description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
     url: "/",
     siteName: "胜天半子",
     locale: "zh_CN",
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "胜天半子",
-    description: "胜天半子的命理三盘统一工作台，支持奇门、八字、紫微与 AI 分析。",
+    description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
   },
   robots: {
     index: true,

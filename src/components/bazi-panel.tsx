@@ -161,14 +161,6 @@ export function BaziPanel({ chart }: BaziPanelProps) {
                 </div>
               </div>
             </div>
-            <div className="bazi-headband__pillars">
-              {chart.raw.pillars.map((pillar) => (
-                <div className="bazi-headband__pillar" key={`hero-${pillar.key}`}>
-                  <small>{PILLAR_LABELS[pillar.key]}</small>
-                  <strong>{pillar.pillar}</strong>
-                </div>
-              ))}
-            </div>
           </div>
           <div className="bazi-headband__block bazi-headband__block--ledger">
             <span>起运</span>
@@ -371,6 +363,23 @@ export function BaziPanel({ chart }: BaziPanelProps) {
               <div className="bazi-table__cell bazi-plain-cell" key={`xunkong-${pillar.key}`}>
                 <strong>{pillar.xunKong}</strong>
                 <span>{pillar.xun}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="bazi-table__row">
+            <div className="bazi-table__label">神煞</div>
+            {chart.raw.pillars.map((pillar) => (
+              <div className="bazi-table__cell bazi-plain-cell" key={`shensha-${pillar.key}`}>
+                {pillar.shenSha.length > 0 ? (
+                  <div className="bazi-god-list">
+                    {pillar.shenSha.map((item) => (
+                      <span className="bazi-ten-god-badge" key={item}>{item}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="bazi-stack-cell__empty">无</span>
+                )}
               </div>
             ))}
           </div>

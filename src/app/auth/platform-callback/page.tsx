@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
-import { restorePlatformAccessState, parsePlatformCallbackFragment, toPlatformSession } from "@/lib/platform/browser";
+import {
+  consumePlatformOAuthRequest,
+  parsePlatformOAuthCallback,
+  restorePlatformAccessState,
+} from "@/lib/platform/browser";
 import { savePlatformFlashMessage } from "@/lib/platform/flash";
+import { createPlatformClient } from "@/lib/platform/client";
+import { requirePlatformClientConfig } from "@/lib/platform/config";
 import { clearPlatformSession, savePlatformSession } from "@/lib/platform/session";
 
 export default function PlatformCallbackPage() {
@@ -14,16 +20,35 @@ export default function PlatformCallbackPage() {
     let active = true;
 
     const run = async () => {
-      const callbackSession = parsePlatformCallbackFragment(window.location.hash);
-      if (!callbackSession) {
+      const callback = parsePlatformOAuthCallback(window.location.hash)
+        ?? parsePlatformOAuthCallback(window.location.search);
+      if (!callback) {
         setMessage("登录回跳参数不完整，请返回首页重新发起登录。");
         return;
       }
 
       try {
-        const session = toPlatformSession(callbackSession);
+        const config = requirePlatformClientConfig();
+        const oauthRequest = consumePlatformOAuthRequest(callback.state);
+        if (!oauthRequest) {
+          throw new Error("登录授权已过期或来源校验失败，请返回首页重新登录。");
+        }
+        const redirectUri = `${window.location.origin}/auth/platform-callback`;
+        const result = await createPlatformClient().exchangeOAuthCode(
+          callback.code,
+          config.productCode,
+          redirectUri,
+          oauthRequest.verifier,
+        );
+        const session = {
+          ...result.session,
+          access_token: "",
+          refresh_token: "",
+          csrf_token: result.csrf_token,
+        };
         savePlatformSession(session);
         await restorePlatformAccessState(session);
+        window.history.replaceState({}, document.title, window.location.pathname);
         if (!active) {
           return;
         }

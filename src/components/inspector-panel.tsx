@@ -5,7 +5,7 @@ import { StructuredOutput } from "@/components/structured-output";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { AgentAnalysisAngle } from "@/lib/agent/chat";
+import type { AgentAnalysisAngle, AgentConversationMessage } from "@/lib/agent/chat";
 import type { Position } from "3meta";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
@@ -21,6 +21,12 @@ type InspectorPanelProps = {
   agentModel: string | null;
   agentLoading: boolean;
   agentError: string | null;
+  agentConversation: readonly AgentConversationMessage[];
+  agentFollowUps: readonly string[];
+  agentUsageAvailable: number;
+  agentUsageConsumed: number;
+  agentPurchaseLabel?: string;
+  platformStatus?: "checking" | "guest" | "authenticated" | "error";
   literatureContext: string;
   copyState: "idle" | "text" | "json";
   onAgentQuestionChange: (value: string) => void;
@@ -43,6 +49,12 @@ export function InspectorPanel({
   agentModel,
   agentLoading,
   agentError,
+  agentConversation,
+  agentFollowUps,
+  agentUsageAvailable,
+  agentUsageConsumed,
+  agentPurchaseLabel = "购买 10 轮研究对话 · ¥9.9",
+  platformStatus = "guest",
   literatureContext,
   copyState,
   onAgentQuestionChange,
@@ -57,28 +69,24 @@ export function InspectorPanel({
     bazi: "八字",
     ziwei: "紫微",
     combined: "三盘联合",
+    research: "术数研究",
   };
   const literatureTitle = mode === "combined" ? "联合模式 · 八字原始文献" : "八字原始文献上下文";
   const literatureEmptyMessage =
     mode === "combined"
       ? "当前联合模式还没有可匹配的八字文献摘录。"
       : "切换到八字或三盘联合后，这里会显示按问题匹配的原文摘录。";
-  const selectedAngle = agentAngles.find((angle) => angle.question === agentQuestion);
-
   return (
     <Tabs className="inspector-tabs" defaultValue="agent">
-      <div className="inspector-panel__header">
-        <div>
-          <span className="inspector-panel__eyebrow">Agent</span>
-          <h2>{modeLabel[mode]}分析</h2>
-        </div>
-      </div>
-
-      <TabsList className="inspector-tabs__list" variant="line">
-        <TabsTrigger value="agent">分析</TabsTrigger>
-        <TabsTrigger value="text">盘面文本</TabsTrigger>
-        <TabsTrigger value="json">JSON</TabsTrigger>
-        <TabsTrigger value="literature">文献</TabsTrigger>
+      <TabsList className="inspector-tabs__list" aria-label="Agent 工作区" variant="line">
+        <TabsTrigger value="agent"><Sparkles data-icon="inline-start" />Agent</TabsTrigger>
+        {mode !== "combined" ? (
+          <>
+            <TabsTrigger value="text"><Clipboard data-icon="inline-start" />结构化文本</TabsTrigger>
+            <TabsTrigger value="json"><FileJson2 data-icon="inline-start" />JSON</TabsTrigger>
+            <TabsTrigger value="literature">文献</TabsTrigger>
+          </>
+        ) : null}
       </TabsList>
 
       <TabsContent className="inspector-tabs__content" value="text">
@@ -152,27 +160,10 @@ export function InspectorPanel({
 
       <TabsContent className="inspector-tabs__content" value="agent">
         <div className="agent-panel">
-          <section className="agent-panel__hero">
-            <div className="agent-panel__hero-main">
-              <span>当前模式</span>
-              <strong>{modeLabel[mode]}</strong>
-            </div>
-            <div className="agent-panel__hero-side">
-              <div>
-                <span>购买方式</span>
-                <strong>无需登录</strong>
-              </div>
-              <div>
-                <span>执行方式</span>
-                <strong>支付后自动分析一次</strong>
-              </div>
-            </div>
-          </section>
-
           <section className="agent-panel__section agent-panel__section--question">
             <div className="agent-panel__section-head">
-              <strong>问题</strong>
-              <span>先选角度，再补充你的具体问题</span>
+              <strong>分析角度</strong>
+              <span>{modeLabel[mode]} · 选择一个角度或直接改写问题</span>
             </div>
             <div className="agent-panel__angles" aria-label="分析角度">
               {agentAngles.map((angle) => (
@@ -192,28 +183,6 @@ export function InspectorPanel({
                 </button>
               ))}
             </div>
-            {selectedAngle ? (
-              <div className="agent-panel__angle-detail" aria-label="当前分析依据">
-                <div className="agent-panel__angle-detail-head">
-                  <span>本次分析会优先核对</span>
-                  <strong>{selectedAngle.label}</strong>
-                </div>
-                <p>{selectedAngle.description}</p>
-                <div className="agent-panel__evidence">
-                  {selectedAngle.evidence.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="agent-panel__angle-detail agent-panel__angle-detail--custom" aria-label="自定义分析说明">
-                <div className="agent-panel__angle-detail-head">
-                  <span>自定义问题</span>
-                  <strong>按证据链回答</strong>
-                </div>
-                <p>模型会先核对问题对应的盘面字段，再区分事实、传统推断和待验证假设；缺少字段时会明确标出材料不足。</p>
-              </div>
-            )}
             <label className="agent-panel__question" htmlFor="agent-question">
               <textarea
                 id="agent-question"
@@ -235,17 +204,46 @@ export function InspectorPanel({
                 恢复默认问法
               </button>
             </div>
+            <details className="agent-panel__followups" aria-label="推荐问题">
+              <summary>推荐问题</summary>
+              <div>
+                {agentFollowUps.map((followUp) => (
+                  <button
+                    key={followUp}
+                    type="button"
+                    disabled={agentLoading}
+                    onClick={() => onAgentQuestionChange(followUp)}
+                  >
+                    {followUp}
+                  </button>
+                ))}
+              </div>
+            </details>
           </section>
 
           <div className="agent-panel__toolbar">
+            <div className="agent-panel__entitlement" role="status">
+              <span>{platformStatus === "authenticated" ? "平台账户权益" : platformStatus === "checking" ? "正在读取平台权益" : "游客一次性权益"}</span>
+              <strong>{agentUsageAvailable > 0 ? `剩余 ${agentUsageAvailable} 轮` : "尚未开通"}</strong>
+            </div>
             <Button
               className="command-button command-button-primary"
               type="button"
               onClick={onAgentAnalyze}
-              disabled={agentLoading || !structuredText || !jsonPayload}
+              disabled={
+                agentLoading ||
+                !structuredText ||
+                !jsonPayload
+              }
             >
               {agentLoading ? <LoaderCircle className="agent-spin" /> : <Sparkles />}
-              {agentLoading ? "正在打开支付" : "支付 ¥10 并分析"}
+              {agentLoading
+                ? "正在处理"
+                : agentUsageConsumed > 0
+                  ? agentUsageAvailable > 0
+                    ? "发送问题 · 消耗 1 轮"
+                    : `${agentPurchaseLabel.replace("购买", "再购买")}`
+                  : agentPurchaseLabel}
             </Button>
           </div>
 
@@ -272,14 +270,22 @@ export function InspectorPanel({
               </div>
             </div>
             <ScrollArea className="inspector-scroll inspector-scroll-plain">
-              {agentResult ? (
-                <pre className="agent-result" suppressHydrationWarning>
-                  {agentResult}
-                </pre>
+              {agentConversation.length > 0 ? (
+                <div className="agent-thread">
+                  {agentConversation.map((message, index) => (
+                    <article className={`agent-thread__message agent-thread__message--${message.role}`} key={`${message.role}-${index}`}>
+                      <span>{message.role === "user" ? "你的问题" : "研究回答"}</span>
+                      <pre className="agent-result" suppressHydrationWarning>{message.content}</pre>
+                    </article>
+                  ))}
+                </div>
+              ) : agentResult ? (
+                <pre className="agent-result" suppressHydrationWarning>{agentResult}</pre>
               ) : (
                 <div className="agent-result-empty">
                   <Sparkles />
-                  <span>等待分析结果</span>
+                  <strong>世界线观测待启动</strong>
+                  <span>提交一个问题，在命运收束之前重构选择。</span>
                 </div>
               )}
             </ScrollArea>

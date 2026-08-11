@@ -1,1 +1,1 @@
-export type WorkbenchMode = "qimen" | "bazi" | "ziwei" | "combined";
+export type WorkbenchMode = "qimen" | "bazi" | "ziwei" | "combined" | "research";

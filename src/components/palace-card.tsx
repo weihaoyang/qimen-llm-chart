@@ -35,51 +35,55 @@ export function PalaceCard({
       )}
       onClick={onSelect}
     >
-      <div className="palace-card__header">
-        <div>
-          <p className="palace-card__index">{palace.position} 宫</p>
-          <h3>{palace.trigram}</h3>
+      <div className="palace-card__topline">
+        <div className="palace-card__header">
+          <div className="palace-card__identity">
+            <p className="palace-card__index">{palace.position}宫</p>
+            <h3>{palace.trigram}</h3>
+            <span>{palace.innerOuter}</span>
+          </div>
+          <div className="palace-card__status">
+            {[palace.gatePressure, ...statusFlags].filter(Boolean).map((flag) => (
+              <strong key={flag}>{flag}</strong>
+            ))}
+          </div>
         </div>
-        <div className="palace-card__status">
-          <span>{palace.innerOuter}</span>
-          <strong>{[palace.gatePressure, ...statusFlags].join(" · ")}</strong>
-        </div>
-      </div>
 
-      <div className="palace-card__core">
-        <div>
-          <span>九星</span>
-          <strong>{palace.star}</strong>
-        </div>
-        <div>
-          <span>八门</span>
-          <strong>{palace.gate}</strong>
+        <div className="palace-card__primary">
+          <div className="palace-card__primary-item palace-card__primary-item--star">
+            <span>星</span>
+            <strong>{palace.star}</strong>
+          </div>
+          <div className="palace-card__primary-item palace-card__primary-item--gate">
+            <span>门</span>
+            <strong>{palace.gate}</strong>
+          </div>
+          <div className="palace-card__primary-item palace-card__primary-item--deity">
+            <span>神</span>
+            <strong>{palace.deity}</strong>
+          </div>
         </div>
       </div>
 
       <dl className="palace-card__facts">
-        <div>
-          <dt>八神</dt>
-          <dd>{palace.deity}</dd>
-        </div>
-        <div>
-          <dt>天盘干</dt>
+        <div className="palace-card__fact palace-card__fact--heaven">
+          <dt>天</dt>
           <dd>{Array.isArray(palace.heavenlyStem) ? palace.heavenlyStem.join("/") : palace.heavenlyStem}</dd>
         </div>
-        <div>
-          <dt>地盘干</dt>
+        <div className="palace-card__fact palace-card__fact--earth">
+          <dt>地</dt>
           <dd>{Array.isArray(palace.earthlyStem) ? palace.earthlyStem.join("/") : palace.earthlyStem}</dd>
         </div>
-        <div>
-          <dt>暗干</dt>
+        <div className="palace-card__fact palace-card__fact--hidden">
+          <dt>暗</dt>
           <dd>{hiddenStem ?? "无"}</dd>
         </div>
-        <div>
-          <dt>地支</dt>
+        <div className="palace-card__fact palace-card__fact--branch">
+          <dt>支</dt>
           <dd>{Array.isArray(palace.earthBranch) ? palace.earthBranch.join("/") : palace.earthBranch}</dd>
         </div>
-        <div>
-          <dt>旺衰</dt>
+        <div className="palace-card__fact palace-card__fact--status">
+          <dt>势</dt>
           <dd>{palace.status?.star ?? "无"} / {palace.status?.gate ?? "无"}</dd>
         </div>
       </dl>

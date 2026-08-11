@@ -440,6 +440,7 @@ export const serializeBaziToStructuredText = (
       `十二长生: ${pillar.diShi}`,
       `旬: ${pillar.xun}`,
       `旬空: ${pillar.xunKong}`,
+      `神煞: ${pillar.shenSha.join(" / ") || "无"}`,
     ].join("\n"),
   );
 

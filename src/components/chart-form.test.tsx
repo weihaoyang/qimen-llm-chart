@@ -56,22 +56,20 @@ describe("ChartForm", () => {
     unmount();
   });
 
-  it("shows the unified workbench title in sidebar mode", () => {
+  it("keeps the sidebar form focused on editable controls", () => {
     render(<ChartForm {...createProps()} />);
 
-    expect(screen.getByText("Input")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "参数控制台" })).toBeInTheDocument();
+    expect(screen.queryByText("Input")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "参数控制台" })).not.toBeInTheDocument();
     expect(screen.getAllByText("节气").length).toBeGreaterThan(0);
     expect(screen.getAllByText("阴阳遁").length).toBeGreaterThan(0);
     expect(screen.getAllByText("局数").length).toBeGreaterThan(0);
     expect(screen.getAllByText("年界").length).toBeGreaterThan(0);
     expect(screen.getByText("用局法")).toBeInTheDocument();
-    expect(screen.getByText("已接入")).toBeInTheDocument();
-    expect(screen.getByText("未接入")).toBeInTheDocument();
-    expect(screen.getAllByText("拆补").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("茅山").length).toBeGreaterThan(0);
-    expect(screen.getByText("置闰")).toBeInTheDocument();
-    expect(screen.getByText("飞盘")).toBeInTheDocument();
+    expect(screen.queryByText("已接入")).not.toBeInTheDocument();
+    expect(screen.queryByText("未接入")).not.toBeInTheDocument();
+    expect(screen.queryByText("置闰")).not.toBeInTheDocument();
+    expect(screen.queryByText("飞盘")).not.toBeInTheDocument();
   });
 
   it("submits the edited datetime value", () => {

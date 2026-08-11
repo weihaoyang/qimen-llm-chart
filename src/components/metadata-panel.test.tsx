@@ -70,14 +70,14 @@ const chart: NormalizedQimenChart = {
 };
 
 describe("MetadataPanel", () => {
-  it("shows both supported and unsupported chart-method information", () => {
+  it("shows compact timing and chart context", () => {
     render(<MetadataPanel chart={chart} />);
 
-    expect(screen.getByText("当前口径")).toBeInTheDocument();
-    expect(screen.getByText("算法引擎")).toBeInTheDocument();
-    expect(screen.getByText("用局法")).toBeInTheDocument();
-    expect(screen.getByText("未接入")).toBeInTheDocument();
-    expect(screen.getByText("默认 / 拆补 / 茅山 / 节气 / 阴阳遁 / 局数 / 年界")).toBeInTheDocument();
-    expect(screen.getByText("置闰 / 飞盘")).toBeInTheDocument();
+    expect(screen.getByText("元局")).toBeInTheDocument();
+    expect(screen.getByText("输入时间")).toBeInTheDocument();
+    expect(screen.getByText("农历")).toBeInTheDocument();
+    expect(screen.getByText("四柱")).toBeInTheDocument();
+    expect(screen.queryByText("当前口径")).not.toBeInTheDocument();
+    expect(screen.queryByText("未接入")).not.toBeInTheDocument();
   });
 });

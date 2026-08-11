@@ -15,6 +15,7 @@ export type BaziPillarDetail = {
   diShi: string;
   xun: string;
   xunKong: string;
+  shenSha: string[];
 };
 
 export type BaziYunPreview = {

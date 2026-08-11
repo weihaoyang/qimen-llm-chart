@@ -124,7 +124,7 @@ export const buildPlatformUnifiedLoginUrl = ({
   accessScope: string;
   returnUrl: string;
 }) => {
-  const resolvedLoginUrl = loginUrl || "/login";
+  const resolvedLoginUrl = loginUrl || "https://app.singseq.com/login";
   const url = new URL(
     resolvedLoginUrl,
     /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
@@ -133,5 +133,42 @@ export const buildPlatformUnifiedLoginUrl = ({
   url.searchParams.set("redirect_url", returnUrl);
   url.searchParams.set("product_code", productCode);
   url.searchParams.set("access_scope", accessScope);
+  return url.toString();
+};
+
+export const buildPlatformOAuthLoginUrl = ({
+  baseUrl,
+  loginUrl,
+  clientId,
+  productCode,
+  accessScope,
+  redirectUri,
+  codeChallenge,
+  state,
+}: {
+  baseUrl: string;
+  loginUrl?: string;
+  clientId: string;
+  productCode: string;
+  accessScope: string;
+  redirectUri: string;
+  codeChallenge: string;
+  state: string;
+}) => {
+  const resolvedLoginUrl = loginUrl || "https://app.singseq.com/login";
+  const url = new URL(
+    resolvedLoginUrl,
+    /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
+  );
+  url.searchParams.set("return_url", redirectUri);
+  url.searchParams.set("redirect_url", redirectUri);
+  url.searchParams.set("product_code", productCode);
+  url.searchParams.set("access_scope", accessScope);
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("code_challenge", codeChallenge);
+  url.searchParams.set("code_challenge_method", "S256");
+  url.searchParams.set("state", state);
   return url.toString();
 };

@@ -3,6 +3,7 @@ import { requirePlatformClientConfig } from "@/lib/platform/config";
 
 export const createPlatformClient = (options?: {
   accessToken?: string | null;
+  csrfToken?: string | null;
   onUnauthorized?: () => void;
   getTraceId?: () => string | null;
 }) => {
@@ -11,6 +12,7 @@ export const createPlatformClient = (options?: {
   return new PlatformClient({
     baseUrl: config.baseUrl,
     getAccessToken: () => options?.accessToken ?? null,
+    getCsrfToken: () => options?.csrfToken ?? null,
     getTraceId: options?.getTraceId,
     onUnauthorized: options?.onUnauthorized,
   });

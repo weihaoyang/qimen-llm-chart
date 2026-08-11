@@ -24,6 +24,8 @@ export type LunarInput = {
 };
 
 export type GeoLocationInput = {
+  city?: string;
+  timeZone?: string;
   longitude?: number;
   latitude?: number;
 };

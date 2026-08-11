@@ -6,6 +6,7 @@ import type {
   BaziYunPreview,
   NormalizedBaziChart,
 } from "./types";
+import { buildShenSha } from "./shen-sha";
 
 type EightCharInstance = ReturnType<ReturnType<typeof Lunar.fromDate>["getEightChar"]>;
 
@@ -70,6 +71,7 @@ const getPillarDetail = (
         diShi: eightChar.getYearDiShi(),
         xun: eightChar.getYearXun(),
         xunKong: eightChar.getYearXunKong(),
+        shenSha: [],
       };
     case "month":
       return {
@@ -85,6 +87,7 @@ const getPillarDetail = (
         diShi: eightChar.getMonthDiShi(),
         xun: eightChar.getMonthXun(),
         xunKong: eightChar.getMonthXunKong(),
+        shenSha: [],
       };
     case "day":
       return {
@@ -100,6 +103,7 @@ const getPillarDetail = (
         diShi: eightChar.getDayDiShi(),
         xun: eightChar.getDayXun(),
         xunKong: eightChar.getDayXunKong(),
+        shenSha: [],
       };
     case "time":
       return {
@@ -115,6 +119,7 @@ const getPillarDetail = (
         diShi: eightChar.getTimeDiShi(),
         xun: eightChar.getTimeXun(),
         xunKong: eightChar.getTimeXunKong(),
+        shenSha: [],
       };
   }
 };
@@ -159,6 +164,10 @@ export const buildBaziChartFromProfile = (
   const pillars = (["year", "month", "day", "time"] as const).map((key) =>
     getPillarDetail(key, eightChar),
   );
+  const shenSha = buildShenSha(pillars, eightChar.getDayGan());
+  pillars.forEach((pillar, index) => {
+    pillar.shenSha = shenSha[index] ?? [];
+  });
 
   return {
     input: profile,

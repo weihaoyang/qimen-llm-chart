@@ -48,14 +48,6 @@ export function ZiweiPanel({ value }: ZiweiPanelProps) {
 
   return (
     <div className="ziwei-panel">
-      <div className="panel-heading">
-        <div>
-          <p className="panel-label">Ziwei UI</p>
-          <h2>开源紫微盘面</h2>
-        </div>
-        <p>直接复用 `react-iztro` 的 12 宫盘面展示，避免重复造轮子。</p>
-      </div>
-
       <div className="ziwei-panel__meta">
         <div className="ziwei-meta-chip">
           <span>历法</span>

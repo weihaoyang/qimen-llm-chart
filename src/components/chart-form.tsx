@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarClock, Clipboard, FileJson2, Sparkles, TimerReset } from "lucide-react";
+import { DateTimeStepper } from "@/components/datetime-stepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,13 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BIRTH_CITY_CATALOG, findBirthCity } from "@/lib/profile/cities";
+import { shiftDateTimeInput } from "@/lib/profile";
 import type { ProfileInput } from "@/lib/profile";
 import { getSelectableTimeZones } from "@/lib/qimen/defaults";
 import {
   QIMEN_SOLAR_TERMS,
   SUPPORTED_QIMEN_JU_METHODS,
-  SUPPORTED_QIMEN_METHODS,
-  UNSUPPORTED_QIMEN_METHODS,
   type QimenJuNumber,
   type QimenSettings,
 } from "@/lib/qimen/settings";
@@ -105,16 +106,10 @@ export function ChartForm({
   const updateSequence = (nextValue: Partial<ChartSequenceInput>) => {
     onSequenceValueChange({ ...sequenceValue, ...nextValue });
   };
-  const updateLocation = (longitude?: number) => {
+  const updateLocation = (nextLocation?: ProfileInput["location"]) => {
     onValueChange({
       ...value,
-      location:
-        longitude === undefined
-          ? undefined
-          : {
-              ...value.location,
-              longitude,
-            },
+      location: nextLocation,
     });
   };
   const fallbackLunar = value.lunar ?? {
@@ -123,6 +118,12 @@ export function ChartForm({
   };
   const timeZoneOptions = getSelectableTimeZones(value.timeZone, TIME_ZONES);
   const isSidebar = layout === "sidebar";
+  const shiftSolarDateTime = (hours: number) => {
+    const nextValue = { ...value, datetime: shiftDateTimeInput(value.datetime, hours) };
+    if (nextValue.datetime === value.datetime) return;
+    onValueChange(nextValue);
+    onSubmit(nextValue);
+  };
 
   return (
     <form
@@ -132,13 +133,6 @@ export function ChartForm({
         onSubmit(value);
       }}
     >
-      {isSidebar ? (
-        <div className="command-bar__title">
-          <span className="command-bar__eyebrow">Input</span>
-          <h2>参数控制台</h2>
-        </div>
-      ) : null}
-
       <div className="command-bar__section command-bar__section--fields">
         <div className="command-bar__group command-bar__group--inputs">
           {!isSequenceMode ? (
@@ -178,6 +172,7 @@ export function ChartForm({
                       }
                     />
                   </div>
+                  <DateTimeStepper onShift={shiftSolarDateTime} />
                 </label>
               ) : (
                 <div className="lunar-input-grid">
@@ -354,25 +349,67 @@ export function ChartForm({
           </label>
 
           {value.timeBasis === "true-solar" ? (
-            <div className="control-field control-field--true-solar">
-              <label htmlFor="true-solar-longitude">经度</label>
-              <Input
-                id="true-solar-longitude"
-                className="control-input"
-                type="number"
-                inputMode="decimal"
-                min="-180"
-                max="180"
-                step="0.01"
-                placeholder="例如 116.40"
-                value={value.location?.longitude?.toString() ?? ""}
-                onChange={(event) => {
-                  const nextValue = event.target.value.trim();
-                  updateLocation(nextValue === "" ? undefined : Number(nextValue));
-                }}
-              />
-              <small>按出生地经度修正，东经为正、西经为负</small>
-            </div>
+            <>
+              <label className="control-field control-field--true-solar control-field--city">
+                <span>出生地 / 城市</span>
+                <Select
+                  value={value.location?.city ?? ""}
+                  onValueChange={(cityName) => {
+                    const city = findBirthCity(cityName);
+                    if (!city) {
+                      return;
+                    }
+                    const nextLocation = {
+                      city: city.city,
+                      timeZone: city.timeZone,
+                      longitude: city.longitude,
+                      latitude: city.latitude,
+                    };
+                    onValueChange({ ...value, timeZone: city.timeZone, location: nextLocation });
+                    updateSequence({ timeZone: city.timeZone });
+                  }}
+                >
+                  <SelectTrigger className="control-select">
+                    <SelectValue placeholder="选择出生城市" />
+                  </SelectTrigger>
+                  <SelectContent className="control-select-content">
+                    {BIRTH_CITY_CATALOG.map((city) => (
+                      <SelectItem key={city.city} value={city.city}>
+                        {city.city} · {city.timeZone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <small>
+                  {value.location?.city
+                    ? `已按 ${value.location.city} 的经度换算真太阳时`
+                    : "选择城市后自动带入时区、经度与纬度"}
+                </small>
+              </label>
+              <div className="control-field control-field--true-solar">
+                <label htmlFor="true-solar-longitude">经度</label>
+                <Input
+                  id="true-solar-longitude"
+                  className="control-input"
+                  type="number"
+                  inputMode="decimal"
+                  min="-180"
+                  max="180"
+                  step="0.01"
+                  placeholder="例如 116.40"
+                  value={value.location?.longitude?.toString() ?? ""}
+                  onChange={(event) => {
+                    const nextValue = event.target.value.trim();
+                    updateLocation(
+                      nextValue === ""
+                        ? undefined
+                        : { ...value.location, longitude: Number(nextValue) },
+                    );
+                  }}
+                />
+                <small>可微调；东经为正、西经为负，城市坐标已预填</small>
+              </div>
+            </>
           ) : null}
 
           {mode === "qimen" ? (
@@ -496,39 +533,6 @@ export function ChartForm({
           ) : null}
         </div>
       </div>
-
-      {mode === "qimen" ? (
-        <div className="command-bar__section command-bar__section--methods">
-          <div className="qimen-method-panel">
-            <div className="qimen-method-panel__group">
-              <span>已接入</span>
-              <div className="qimen-method-panel__chips">
-                {SUPPORTED_QIMEN_JU_METHODS.map((item) => (
-                  <strong className="qimen-method-chip" key={item}>
-                    {item}
-                  </strong>
-                ))}
-                {SUPPORTED_QIMEN_METHODS.map((item) => (
-                  <strong className="qimen-method-chip" key={item}>
-                    {item}
-                  </strong>
-                ))}
-              </div>
-            </div>
-
-            <div className="qimen-method-panel__group">
-              <span>未接入</span>
-              <div className="qimen-method-panel__chips">
-                {UNSUPPORTED_QIMEN_METHODS.map((item) => (
-                  <strong className="qimen-method-chip qimen-method-chip--muted" key={item}>
-                    {item}
-                  </strong>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {showSubmitAction || showCopyActions ? (
         <div className="command-bar__section command-bar__section--actions">

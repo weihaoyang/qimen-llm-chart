@@ -2,7 +2,7 @@ import { buildChart } from "./chart";
 import type { QimenSettings } from "./settings";
 import type { NormalizedQimenChart, UserChartInput } from "./types";
 
-export type SequenceStep = "double-hour" | "day";
+export type SequenceStep = "double-hour" | "day" | "month" | "year";
 
 export type ChartSequenceInput = {
   startDatetime: string;
@@ -89,6 +89,19 @@ export const buildSequenceInputs = (
   const stepMs = input.step === "day" ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000;
   const result: UserChartInput[] = [];
 
+  if (input.step === "month" || input.step === "year") {
+    let index = 0;
+    while (true) {
+      const currentDatetime = addCalendarStep(input.startDatetime, input.step, index);
+      const current = toUtcMillis(currentDatetime);
+      if (current > end) break;
+      if (result.length >= MAX_SEQUENCE_ITEMS) throw new Error(`序列最多生成 ${MAX_SEQUENCE_ITEMS} 个盘，请缩短时间范围。`);
+      result.push({ datetime: currentDatetime, timeZone: input.timeZone, qimenSettings });
+      index += 1;
+    }
+    return result;
+  }
+
   for (let current = start; current <= end; current += stepMs) {
     if (result.length >= MAX_SEQUENCE_ITEMS) {
       throw new Error(`序列最多生成 ${MAX_SEQUENCE_ITEMS} 个盘，请缩短时间范围。`);
@@ -113,3 +126,29 @@ export const buildChartSequence = (
     input: nextInput,
     chart: buildChart(nextInput),
   }));
+
+function addCalendarStep(datetime: string, step: SequenceStep, count: number) {
+  const parts = parseDateTimeParts(datetime);
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute));
+  if (step === "double-hour") date.setUTCHours(date.getUTCHours() + count * 2);
+  else if (step === "day") date.setUTCDate(date.getUTCDate() + count);
+  else if (step === "month") date.setUTCMonth(date.getUTCMonth() + count);
+  else date.setUTCFullYear(date.getUTCFullYear() + count);
+  return fromUtcMillis(date.getTime());
+}
+
+export const buildChartSequenceByCount = (
+  startDatetime: string,
+  timeZone: string,
+  step: SequenceStep,
+  count = 20,
+  qimenSettings?: QimenSettings,
+): ChartSequenceItem[] => {
+  if (count < 2 || count > MAX_SEQUENCE_ITEMS) throw new Error("序列点数必须在 2 到 120 之间。");
+  parseDateTimeParts(startDatetime);
+  return Array.from({ length: count }, (_, index) => {
+    const datetime = addCalendarStep(startDatetime, step, index);
+    const input = { datetime, timeZone, qimenSettings };
+    return { index, input, chart: buildChart(input) };
+  });
+};

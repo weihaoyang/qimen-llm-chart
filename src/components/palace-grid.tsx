@@ -26,12 +26,6 @@ export function PalaceGrid({
   return (
     <TooltipProvider delayDuration={180} skipDelayDuration={120}>
       <div className="palace-grid-shell">
-      <div className="palace-grid-shell__hud">
-        <div className="palace-grid-shell__intro">
-          <h2>九宫主盘</h2>
-        </div>
-      </div>
-
       <div className="palace-grid-shell__legend" aria-label="盘面索引">
         <span>
           {chart.raw.ju.type}

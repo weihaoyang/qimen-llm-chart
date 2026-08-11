@@ -14,6 +14,8 @@ const SUMMARY_ITEMS = [
   { label: "值符", key: "zhiFu" },
   { label: "值使", key: "zhiShi" },
   { label: "驿马", key: "postHorse" },
+  { label: "时盘仪表", key: "metadata" },
+  { label: "四柱", key: "pillars" },
 ] as const;
 
 export function SummaryStrip({ chart }: SummaryStripProps) {
@@ -25,6 +27,15 @@ export function SummaryStrip({ chart }: SummaryStripProps) {
     zhiFu: `${chart.raw.zhiFu.star} / ${chart.raw.zhiFu.position}宫`,
     zhiShi: `${chart.raw.zhiShi.gate} / ${chart.raw.zhiShi.position}宫`,
     postHorse: `${chart.raw.postHorse.branch} / ${chart.raw.postHorse.position}宫`,
+    metadata: `${chart.raw.ju.type}${chart.raw.ju.number}局 · ${chart.raw.yuan} · ${chart.raw.season} · ${chart.raw.monthElement}`,
+    pillars: [
+      chart.raw.fourPillars.year,
+      chart.raw.fourPillars.month,
+      chart.raw.fourPillars.day,
+      chart.raw.fourPillars.hour,
+    ]
+      .map((pillar) => `${pillar.stem}${pillar.branch}`)
+      .join(" · "),
   };
 
   return (
@@ -32,7 +43,11 @@ export function SummaryStrip({ chart }: SummaryStripProps) {
       {SUMMARY_ITEMS.map((item) => (
         <Card
           className={
-            item.key === "zhiFu" || item.key === "zhiShi" || item.key === "postHorse"
+            item.key === "metadata"
+              ? "summary-chip summary-chip--metadata"
+              : item.key === "pillars"
+                ? "summary-chip summary-chip--pillars"
+                : item.key === "zhiFu" || item.key === "zhiShi" || item.key === "postHorse"
               ? "summary-chip summary-chip--signal"
               : item.key === "juType" || item.key === "juNumber"
                 ? "summary-chip summary-chip--core"

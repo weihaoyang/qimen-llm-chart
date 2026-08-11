@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@douyinfe/semi-ui": "^2.102.0",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@singularity-sequence/web-sdk": "file:../singularity-sequence-consumer-platform/packages/web-sdk",
     "@tailwindcss/postcss": "^4.3.2",
@@ -28,6 +29,7 @@
     "react-dom": "19.2.4",
     "react-iztro": "^1.4.2",
     "react-resizable-panels": "^4.12.2",
+    "taibu-core": "^3.5.0",
     "tailwindcss": "^4.3.2",
     "taobi": "^0.4.5"
   },
