@@ -68,4 +68,10 @@ describe("/api/agent/cases/[id]/evidence", () => {
       { mode: "qimen", sourceText: "盘面事实", structuredJson: { chart: "snapshot" } },
     );
   });
+
+  it("rejects a mode that the product cannot restore", async () => {
+    const response = await POST(request("POST", { mode: "unknown", sourceText: "盘面事实", structuredJson: {} }), context);
+    expect(response.status).toBe(400);
+    expect(saveEvidenceSnapshotMock).not.toHaveBeenCalled();
+  });
 });
