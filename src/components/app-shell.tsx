@@ -11,6 +11,7 @@ import { BaziPanel } from "@/components/bazi-panel";
 import {
   AGENT_ANALYSIS_ANGLES,
   AGENT_FOLLOW_UP_QUESTIONS,
+  AGENT_INTERVIEW_START_QUESTION,
   DEFAULT_AGENT_QUESTIONS,
   type AgentConversationMessage,
 } from "@/lib/agent/chat";
@@ -904,6 +905,11 @@ export function AppShell() {
     setKlineWorkspaceOpen(false);
     setClassicWorkspace(null);
     setParametersOpen(false);
+    setAgentState((current) => {
+      const currentMode = current[mode];
+      if (currentMode.conversation.length > 0 || (currentMode.question.trim() && currentMode.question !== DEFAULT_AGENT_QUESTIONS[mode])) return current;
+      return { ...current, [mode]: { ...currentMode, question: AGENT_INTERVIEW_START_QUESTION, focus: "人生议题访谈" } };
+    });
   };
 
   const handleAgentEvidenceModeChange = (nextMode: WorkbenchMode) => {

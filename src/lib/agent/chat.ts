@@ -56,6 +56,8 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   research: "请基于当前研究工具的结构化材料，说明最重要的证据、算法边界和下一步可以核验的现实信息。",
 };
 
+export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
+
 /**
  * Short, user-facing starting points for the most common analysis intents.
  * The full system prompt remains server-side; these only help users ask a

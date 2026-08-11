@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { selectBaziClassicsContext } from "./bazi-classics";
 import {
   AGENT_ANALYSIS_ANGLES,
+  AGENT_INTERVIEW_START_QUESTION,
   buildAgentMessages,
   buildAgentSystemPrompt,
   DEFAULT_AGENT_QUESTIONS,
@@ -12,6 +13,11 @@ import {
 } from "./chat";
 
 describe("agent chat helpers", () => {
+  it("starts the dedicated workspace in single-question interview mode", () => {
+    expect(AGENT_INTERVIEW_START_QUESTION).toContain("每次只问我一个最关键的问题");
+    expect(AGENT_INTERVIEW_START_QUESTION).toContain("事实、约束、选项、代价、行动");
+  });
+
   it("offers focused analysis angles for every workbench mode", () => {
     expect(Object.values(AGENT_ANALYSIS_ANGLES)).toHaveLength(5);
     for (const [mode, angles] of Object.entries(AGENT_ANALYSIS_ANGLES)) {
