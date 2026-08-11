@@ -91,6 +91,10 @@ import { PalaceGrid } from "./palace-grid";
 import { SummaryStrip } from "./summary-strip";
 import { ResearchPanel } from "./research-panel";
 import { KlinePanel } from "./kline-panel";
+import { ObservationJournal } from "./observation-journal";
+import { ClassicObservatoryPanel } from "./classic-observatory-panel";
+import { DecisionTreePanel } from "./decision-tree-panel";
+import { AgentCommandCenter } from "./agent-command-center";
 import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
 import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
@@ -359,6 +363,10 @@ const syncSequenceWindowToStart = (sequence: ChartSequenceInput, startDatetime: 
 export function AppShell() {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
+  const [klineWorkspaceOpen, setKlineWorkspaceOpen] = useState(false);
+  const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
+  const [decisionWorkspaceOpen, setDecisionWorkspaceOpen] = useState(false);
+  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(false);
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
   const [partnerFormState, setPartnerFormState] = useState<ProfileInput>(() => ({
     ...initialState.defaultInput,
@@ -867,6 +875,47 @@ export function AppShell() {
 
   const handleModeChange = (nextMode: WorkbenchMode) => {
     setMode(nextMode);
+    setKlineWorkspaceOpen(false);
+    setClassicWorkspace(null);
+    setDecisionWorkspaceOpen(false);
+    setAgentWorkspaceOpen(false);
+    setParametersOpen(false);
+  };
+
+  const handleKlineWorkspaceOpen = () => {
+    setKlineWorkspaceOpen(true);
+    setClassicWorkspace(null);
+    setDecisionWorkspaceOpen(false);
+    setAgentWorkspaceOpen(false);
+    setParametersOpen(false);
+  };
+
+  const handleDecisionWorkspaceOpen = () => {
+    setDecisionWorkspaceOpen(true);
+    setKlineWorkspaceOpen(false);
+    setClassicWorkspace(null);
+    setAgentWorkspaceOpen(false);
+    setParametersOpen(false);
+  };
+
+  const handleAgentWorkspaceOpen = () => {
+    setAgentWorkspaceOpen(true);
+    setDecisionWorkspaceOpen(false);
+    setKlineWorkspaceOpen(false);
+    setClassicWorkspace(null);
+    setParametersOpen(false);
+  };
+
+  const handleAgentEvidenceModeChange = (nextMode: WorkbenchMode) => {
+    setMode(nextMode);
+    setParametersOpen(false);
+  };
+
+  const handleClassicWorkspaceOpen = (kind: "daliuren" | "taiyi") => {
+    setClassicWorkspace(kind);
+    setKlineWorkspaceOpen(false);
+    setDecisionWorkspaceOpen(false);
+    setAgentWorkspaceOpen(false);
     setParametersOpen(false);
   };
 
@@ -1504,21 +1553,6 @@ export function AppShell() {
             ) : (
               <div className="empty-panel">等待生成盘面。</div>
             )}
-            {activeQimenChart ? (
-              <KlinePanel
-                life={lifeKline}
-                relationship={relationshipKline}
-                relationshipScales={relationshipKlines}
-                aiContent={klineAiContent}
-                aiError={klineAiError}
-                loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
-                onAnalyze={handleKlineAnalyze}
-                aiPriceLabel={(() => {
-                  const plan = platformWorkspace.plans.find((item) => item.plan_code === KLINE_PLAN_CODE);
-                  return plan ? `¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
-                })()}
-              />
-            ) : null}
           </>
         ) : null}
 
@@ -1710,14 +1744,15 @@ export function AppShell() {
       <header className="observatory-hero">
         <div className="observatory-hero__copy">
           <span className="workspace-kicker">胜天半子</span>
-          <h1>{activeModeMeta.title}</h1>
+          <h1>胜天半子</h1>
+          <span className="observatory-hero__workspace">{agentWorkspaceOpen ? "人生决策控制室" : decisionWorkspaceOpen ? "关键决策树" : klineWorkspaceOpen ? "K 线观测" : classicWorkspace === "daliuren" ? "大六壬观测" : classicWorkspace === "taiyi" ? "太乙神数观测" : activeModeMeta.title}</span>
           <p className="observatory-hero__manifesto" aria-label="品牌宣言">
-            <strong>世界线是收敛的。</strong>
-            <span>排盘不是预知结局，而是观测与重构。</span>
+            <strong>命盘写下边界，选择决定路径。</strong>
+            <span>从前重构代码，现在重构命运。</span>
           </p>
         </div>
 
-        <ModeTabs mode={mode} onChange={handleModeChange} />
+        <ModeTabs mode={mode} onChange={handleModeChange} klineActive={klineWorkspaceOpen} onKlineSelect={handleKlineWorkspaceOpen} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} decisionActive={decisionWorkspaceOpen} onDecisionSelect={handleDecisionWorkspaceOpen} agentActive={agentWorkspaceOpen} onAgentSelect={handleAgentWorkspaceOpen} />
 
         <div className="platform-account" aria-label="平台账户与 AI 权益">
           {platformWorkspace.status === "checking" ? (
@@ -1748,7 +1783,7 @@ export function AppShell() {
           )}
         </div>
 
-        {mode !== "research" ? (
+        {mode !== "research" && !klineWorkspaceOpen && !classicWorkspace && !decisionWorkspaceOpen && !agentWorkspaceOpen ? (
           <button
             className="hero-action"
             type="button"
@@ -1788,7 +1823,46 @@ export function AppShell() {
 
       {error ? <p className="error-banner">{error}</p> : null}
 
-      {mode === "combined" ? (
+      {agentWorkspaceOpen ? (
+        <AgentCommandCenter
+          mode={mode}
+          onModeChange={handleAgentEvidenceModeChange}
+          inspector={agentInspector}
+          life={lifeKline}
+          relationshipScales={relationshipKlines}
+          question={agentState[mode].question}
+          conversationCount={agentState[mode].conversation.length}
+          canPersist={platformWorkspace.status === "authenticated"}
+          evidenceText={structuredText}
+          conversation={agentState[mode].conversation}
+          accessToken={platformWorkspace.session?.access_token}
+        />
+      ) : decisionWorkspaceOpen ? (
+        <DecisionTreePanel life={lifeKline} relationshipScales={relationshipKlines} />
+      ) : classicWorkspace ? (
+        <main className="analysis-layout analysis-layout--classic" aria-label={classicWorkspace === "daliuren" ? "大六壬观测" : "太乙神数观测"}>
+          <ClassicObservatoryPanel kind={classicWorkspace} value={researchData?.[classicWorkspace] ?? null} />
+        </main>
+      ) : klineWorkspaceOpen ? (
+        <main className="analysis-layout analysis-layout--kline" aria-label="K 线观测">
+          <section className="kline-workspace">
+            <KlinePanel
+              life={lifeKline}
+              relationship={relationshipKline}
+              relationshipScales={relationshipKlines}
+              aiContent={klineAiContent}
+              aiError={klineAiError}
+              loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
+              onAnalyze={handleKlineAnalyze}
+              aiPriceLabel={(() => {
+                const plan = platformWorkspace.plans.find((item) => item.plan_code === KLINE_PLAN_CODE);
+                return plan ? `¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
+              })()}
+            />
+            <ObservationJournal />
+          </section>
+        </main>
+      ) : mode === "combined" ? (
         <main className="analysis-layout analysis-layout--combined-agent" aria-label="三盘联合 Agent 分析">
           <section className="combined-agent-surface">
             <div className="combined-agent-surface__heading">

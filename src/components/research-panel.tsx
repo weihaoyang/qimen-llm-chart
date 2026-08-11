@@ -13,8 +13,6 @@ type ResearchPanelProps = {
 const TOOL_OPTIONS: Array<{ value: ResearchTool; label: string; hint: string }> = [
   { value: "trend", label: "人生趋势", hint: "大运与流年的结构波动" },
   { value: "verification", label: "算法核验", hint: "主引擎与参考引擎逐字段对照" },
-  { value: "daliuren", label: "大六壬", hint: "天地盘 · 四课 · 三传" },
-  { value: "taiyi", label: "太乙", hint: "日盘九星与判断锚点" },
 ];
 
 const statusLabel: Record<VerificationStatus, string> = {
@@ -66,10 +64,6 @@ function TrendChart({ points }: { points: LifeTrendPoint[] }) {
   );
 }
 
-function JsonDisclosure({ value }: { value: unknown }) {
-  return <details className="research-raw"><summary>查看原始 JSON</summary><pre>{JSON.stringify(value, null, 2)}</pre></details>;
-}
-
 export function ResearchPanel({ data, tool, onToolChange }: ResearchPanelProps) {
   if (!data) return <section className="research-panel empty-panel">研究资料暂未生成，请先检查输入的日期时间与地点。</section>;
   return <section className="research-panel" aria-label="术数研究工具">
@@ -80,7 +74,5 @@ export function ResearchPanel({ data, tool, onToolChange }: ResearchPanelProps) 
     <div className="research-panel__hint">{TOOL_OPTIONS.find((option) => option.value === tool)?.hint}</div>
     {tool === "trend" ? <TrendChart points={data.trend.points} /> : null}
     {tool === "verification" ? <div className="research-verification"><div className="research-verification__note">{data.verification.disclaimer}</div><div className="research-verification__table" role="table"><div className="research-verification__row is-head" role="row"><span>系统 / 字段</span><span>主引擎</span><span>参考引擎</span><span>状态</span></div>{data.verification.rows.map((row) => <div className="research-verification__row" role="row" key={`${row.system}-${row.field}`}><span><strong>{row.system}</strong><small>{row.field}</small></span><span>{row.primary}</span><span>{row.reference}</span><span className={`status-${row.status}`}>{statusLabel[row.status]}</span><div className="research-verification__note-cell">{row.note}</div></div>)}</div></div> : null}
-    {tool === "daliuren" ? <div className="research-classic"><div className="research-classic__grid">{Object.entries(data.daliuren?.json as Record<string, unknown> ?? {}).slice(0, 3).map(([key, value]) => <article key={key}><h3>{key}</h3><pre>{JSON.stringify(value, null, 2)}</pre></article>)}</div><JsonDisclosure value={data.daliuren?.json} /></div> : null}
-    {tool === "taiyi" ? <div className="research-classic"><div className="research-classic__grid">{Object.entries(data.taiyi?.json as Record<string, unknown> ?? {}).map(([key, value]) => <article key={key}><h3>{key}</h3><pre>{JSON.stringify(value, null, 2)}</pre></article>)}</div><JsonDisclosure value={data.taiyi?.json} /></div> : null}
   </section>;
 }

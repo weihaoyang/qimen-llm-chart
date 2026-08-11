@@ -120,6 +120,10 @@ export const lifeTrendToKlineSeries = (trend: LifeTrendData): KlineSeries => {
     return {
       index,
       datetime: `${point.year}-01-01T00:00`,
+      open: clamp(point.open, 0, 100),
+      high: clamp(point.high, 0, 100),
+      low: clamp(point.low, 0, 100),
+      close: score,
       score,
       delta,
       phase,

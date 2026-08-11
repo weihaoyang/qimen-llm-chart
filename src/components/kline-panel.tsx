@@ -19,18 +19,18 @@ const width = 920;
 const height = 270;
 const xFor = (index: number, count: number) => (count <= 1 ? width / 2 : 22 + index * ((width - 44) / (count - 1)));
 const yFor = (score: number) => height - 28 - (score / 100) * (height - 55);
+const candleWidthFor = (count: number) => Math.max(3, Math.min(18, ((width - 44) / Math.max(count, 1)) * 0.62));
 
 function TrendPlot({ points, onSelect }: { points: KlinePoint[]; onSelect: (point: KlinePoint) => void }) {
-  const polyline = points.map((point, index) => `${xFor(index, points.length)},${yFor(point.score)}`).join(" ");
+  const candleWidth = candleWidthFor(points.length);
   return (
     <div className="kline-panel__plot-wrap">
-      <svg className="kline-panel__plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="奇门序列盘趋势图">
+      <svg className="kline-panel__plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="奇门序列盘 OHLC 蜡烛图">
         {[20, 40, 60, 80].map((score) => <line key={score} x1="22" x2={width - 22} y1={yFor(score)} y2={yFor(score)} className="kline-panel__grid" />)}
-        <polyline points={polyline} className="kline-panel__line" />
         {points.map((point, index) => (
-          <g key={`${point.datetime}-${index}`} role="button" tabIndex={0} onClick={() => onSelect(point)} onKeyDown={(event) => event.key === "Enter" && onSelect(point)}>
-            <line x1={xFor(index, points.length)} x2={xFor(index, points.length)} y1={yFor(point.score) - 8} y2={yFor(point.score) + 8} className={point.phase === "下行" ? "kline-panel__wick is-down" : "kline-panel__wick"} />
-            <circle cx={xFor(index, points.length)} cy={yFor(point.score)} r="7" className={`kline-panel__dot is-${point.phase === "上行" ? "up" : point.phase === "下行" ? "down" : "flat"}`} />
+          <g key={`${point.datetime}-${index}`} className={`kline-panel__candle ${point.close >= point.open ? "is-up" : "is-down"}`} role="button" tabIndex={0} aria-label={`${point.datetime}：开 ${point.open}，高 ${point.high}，低 ${point.low}，收 ${point.close}`} onClick={() => onSelect(point)} onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onSelect(point)}>
+            <line x1={xFor(index, points.length)} x2={xFor(index, points.length)} y1={yFor(point.high)} y2={yFor(point.low)} className="kline-panel__candle-wick" />
+            <rect x={xFor(index, points.length) - candleWidth / 2} y={Math.min(yFor(point.open), yFor(point.close))} width={candleWidth} height={Math.max(2, Math.abs(yFor(point.open) - yFor(point.close)))} className="kline-panel__candle-body" />
             {index % Math.max(1, Math.ceil(points.length / 8)) === 0 ? <text x={xFor(index, points.length)} y={height - 7} textAnchor="middle" className="kline-panel__axis">{point.datetime.slice(5, 10)}</text> : null}
           </g>
         ))}
@@ -90,7 +90,7 @@ export function KlinePanel({ life, relationship, relationshipScales, aiContent, 
               ))}
             </div>
           ) : <TrendPlot points={visiblePoints} onSelect={(point) => setSelectedIndex(point.index)} />}
-          {selected ? <div className="kline-panel__detail"><div><strong>{selected.label}</strong><span>变化 {selected.delta >= 0 ? "+" : ""}{selected.delta} · {selected.keyPoint || "常规点"}</span></div><p>{selected.prediction}</p><div className="kline-panel__evidence">{selected.evidence.map((item) => <span key={item}>{item}</span>)}</div></div> : null}
+          {selected ? <div className="kline-panel__detail"><div><strong>{selected.label}</strong><span>变化 {selected.delta >= 0 ? "+" : ""}{selected.delta} · {selected.keyPoint || "常规点"}</span></div><div className="kline-panel__ohlc" aria-label="所选 K 线开高低收"><span>开 <b>{selected.open}</b></span><span>高 <b>{selected.high}</b></span><span>低 <b>{selected.low}</b></span><span>收 <b>{selected.close}</b></span></div><p>{selected.prediction}</p><div className="kline-panel__evidence">{selected.evidence.map((item) => <span key={item}>{item}</span>)}</div></div> : null}
           <div className="kline-panel__keypoints"><strong>关键点</strong>{series.keyPoints.map((point) => <button type="button" key={`${point.datetime}-${point.index}`} onClick={() => setSelectedIndex(point.index)}><span>{point.datetime.replace("T", " ")}</span><b>{point.score}</b><em>{point.keyPoint}</em></button>)}</div>
           <div className="kline-panel__ai"><div><strong>AI 精确版</strong><span>逐点引用证据，输出预测窗口、建议与停止/复盘条件</span></div><button type="button" className="kline-panel__ai-button" onClick={() => onAnalyze(kind, kind === "relationship" ? scale : undefined)} disabled={loading}><Sparkles size={16} />{loading ? "正在生成" : `购买 AI 精确分析 · ${aiPriceLabel}`}</button></div>
           {aiError ? <p className="kline-panel__error">{aiError}</p> : null}

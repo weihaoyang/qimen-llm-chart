@@ -26,10 +26,16 @@ describe("buildQimenKline", () => {
     expect(first).toEqual(second);
     expect(first.points).toHaveLength(3);
     expect(first.points.every((point) => point.evidence.length > 0 && point.prediction.length > 0)).toBe(true);
+    first.points.forEach((point, index) => {
+      expect(point.low).toBeLessThanOrEqual(Math.min(point.open, point.close));
+      expect(point.high).toBeGreaterThanOrEqual(Math.max(point.open, point.close));
+      expect(point.low).toBeGreaterThanOrEqual(0);
+      expect(point.high).toBeLessThanOrEqual(100);
+      expect(point.open).toBe(index === 0 ? 50 : first.points[index - 1].close);
+    });
   });
 
   it("requires at least two charts", () => {
     expect(buildQimenKline([], "relationship").points).toEqual([]);
   });
 });
-

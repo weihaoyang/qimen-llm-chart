@@ -76,8 +76,16 @@ export function InspectorPanel({
     mode === "combined"
       ? "当前联合模式还没有可匹配的八字文献摘录。"
       : "切换到八字或三盘联合后，这里会显示按问题匹配的原文摘录。";
+  const interviewStep = Math.min(5, agentConversation.filter((message) => message.role === "assistant").length);
+  const interviewSteps = ["议题", "事实", "约束", "选项", "代价", "行动"];
+  const interviewPrompt = "我正在处理一个现实人生议题。请进入访谈模式：先不要给结论，只问我一个最关键的问题；依次确认议题、已知事实、不可改变的约束、可选路径、愿意承担的代价和下一步行动。每次只问一个问题，等我回答后再继续。";
   return (
     <Tabs className="inspector-tabs" defaultValue="agent">
+      <section className="agent-observatory-head" aria-label="AI 议题访谈状态">
+        <div className="agent-observatory-head__title"><span>AI RESEARCH ROOM · {modeLabel[mode]}</span><h2>把人生问题问到可以选择。</h2><p>AI 不替你宣布结局；它会逐个追问事实、限制与代价，再把答案整理成可复盘的选择结构。</p></div>
+        <div className="agent-observatory-head__action"><span>访谈进度</span><strong>{interviewStep} / 5</strong><button type="button" disabled={agentLoading} onClick={() => onAgentQuestionChange(interviewPrompt)}>开始人生议题访谈</button></div>
+        <div className="agent-observatory-head__steps" aria-label="访谈步骤">{interviewSteps.map((step, index) => <span className={index <= interviewStep ? "is-done" : ""} key={step}><b>{index + 1}</b>{step}</span>)}</div>
+      </section>
       <TabsList className="inspector-tabs__list" aria-label="Agent 工作区" variant="line">
         <TabsTrigger value="agent"><Sparkles data-icon="inline-start" />Agent</TabsTrigger>
         {mode !== "combined" ? (

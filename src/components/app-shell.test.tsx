@@ -9,7 +9,7 @@ describe("AppShell", () => {
   it("renders the chart and Agent-first workspace", async () => {
     render(<AppShell />);
 
-    expect(await screen.findByRole("heading", { name: "奇门主盘" }, { timeout: 30000 })).toBeInTheDocument();
+    expect(await screen.findByText("奇门主盘", { selector: ".observatory-hero__workspace" }, { timeout: 30000 })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /奇门/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /八字/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /紫微/ })).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("dialog", { name: "调整盘面" })).toBeInTheDocument();
     expect(screen.queryByText("核验资料")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "打开 Agent 分析" })).not.toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Agent" })).toBeInTheDocument();
+    expect(screen.getAllByRole("tab", { name: "Agent" }).length).toBeGreaterThan(0);
     expect(screen.getByRole("tab", { name: "结构化文本" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "JSON" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "文献" })).toBeInTheDocument();

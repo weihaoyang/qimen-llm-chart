@@ -8,6 +8,11 @@ export type KlinePhase = "上行" | "下行" | "震荡";
 export type KlinePoint = {
   index: number;
   datetime: string;
+  /** OHLC values make every sequence point a real, reproducible candle. */
+  open: number;
+  high: number;
+  low: number;
+  close: number;
   score: number;
   delta: number;
   phase: KlinePhase;
@@ -129,11 +134,22 @@ export const buildQimenKline = (sequence: ChartSequenceItem[], kind: KlineKind):
   const points = sequence.map((item, index) => {
     const { score, evidence } = scoreChart(item.chart, kind);
     const delta = index === 0 ? 0 : score - previous;
+    const open = previous;
+    const close = score;
+    // The range is derived only from this chart's scored movement and evidence count,
+    // so an identical sequence always produces the same candle geometry.
+    const range = clamp(Math.round(4 + Math.abs(delta) * 0.45 + evidence.length * 0.35), 4, 12);
+    const high = clamp(Math.max(open, close) + Math.ceil(range / 2));
+    const low = clamp(Math.min(open, close) - Math.floor(range / 2));
     const phase = phaseFor(delta);
     const reason = keyPointReason(score, delta, index, sequence.length);
     const point: KlinePoint = {
       index,
       datetime: item.input.datetime,
+      open,
+      high,
+      low,
+      close,
       score,
       delta,
       phase,
