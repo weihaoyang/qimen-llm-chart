@@ -11396,4 +11396,63 @@ html body * {
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__facts .palace-card__fact--status {
     grid-column: auto !important;
   }
+
+  /* Palace reading units: the square is intentionally dense.  Labels stay
+     small, while the actual symbols sit side-by-side and consume the cell. */
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card {
+    border: 2px solid #171717 !important;
+    border-radius: 0 !important;
+    background: #fffaf0 !important;
+    box-shadow: none !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__fact {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    gap: 3px !important;
+    padding: 2px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item {
+    flex-direction: column !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
+    flex: 0 0 auto !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    letter-spacing: .04em !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    font-size: 19px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
+    min-width: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--star strong { color: #b73425 !important; font-family: ui-serif, "Songti SC", serif !important; }
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--gate strong { color: #176c58 !important; font-family: ui-sans-serif, "PingFang SC", sans-serif !important; }
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--deity strong { color: #7a501d !important; font-family: ui-monospace, "SFMono-Regular", monospace !important; }
 }
