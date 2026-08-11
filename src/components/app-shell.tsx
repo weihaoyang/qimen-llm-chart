@@ -1855,6 +1855,7 @@ export function AppShell() {
           conversationCount={agentState[mode].conversation.length}
           canPersist={platformWorkspace.status === "authenticated"}
           evidenceText={structuredText}
+          evidenceJson={jsonPayload}
           conversation={agentState[mode].conversation}
           accessToken={platformWorkspace.session?.access_token}
           onLogin={handlePlatformLogin}

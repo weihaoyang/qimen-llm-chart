@@ -23,7 +23,7 @@ describe("AgentCommandCenter", () => {
 
   it("sends an unauthenticated user to unified login from the save entry", () => {
     const onLogin = vi.fn();
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" conversation={[]} onLogin={onLogin} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={onLogin} onCaseRestore={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: /登录后保存/ }));
 
@@ -42,10 +42,11 @@ describe("AgentCommandCenter", () => {
         { key: "verify", title: "验证", assumptions: ["目标公司业务稳定"], firstAction: "访谈两位在职员工", cost: "延迟一周决定", risks: ["错过窗口"], validationDate: "2026-08-20", stopCondition: "无法获得独立信息" },
         { key: "protect", title: "保护", assumptions: ["当前工作仍可保留"], firstAction: "维持现职并补足现金储备", cost: "短期机会成本", risks: ["继续消耗"], validationDate: null, stopCondition: "现金储备达到六个月" },
       ] } }), { status: 200 });
+      if (url.endsWith("/evidence")) return new Response(JSON.stringify({ evidence: { mode: "qimen", sourceText: "保存时的盘面事实", structuredJson: { source: "saved" } } }), { status: 200 });
       return new Response(JSON.stringify({ error: "unexpected request" }), { status: 500 });
     }));
 
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="临时问题" conversationCount={0} canPersist accessToken="account-token" evidenceText="" conversation={[]} onLogin={vi.fn()} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="临时问题" conversationCount={0} canPersist accessToken="account-token" evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onCaseRestore={vi.fn()} />);
 
     expect(await screen.findByText("已恢复服务器工作区 · 决策树 V2")).toBeInTheDocument();
     expect(screen.getByText("已保存的关键窗口")).toBeInTheDocument();
@@ -59,15 +60,17 @@ describe("AgentCommandCenter", () => {
       const url = String(input);
       if (url === "/api/agent/cases" && !init?.method) return new Response(JSON.stringify({ cases: [] }), { status: 200 });
       if (url === "/api/agent/cases" && init?.method === "POST") return new Response(JSON.stringify({ case: savedCase }), { status: 201 });
+      if (url.endsWith("/evidence") && init?.method === "POST") return new Response(JSON.stringify({ evidence: { id: "evidence-1" } }), { status: 201 });
       if (url.endsWith("/turns") && init?.method === "POST") return new Response(JSON.stringify({ id: "turn", sequenceNo: 1 }), { status: 201 });
       return new Response(JSON.stringify({ error: "unexpected request" }), { status: 500 });
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="" conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="盘面事实" evidenceJson='{"chart":"snapshot"}' conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onCaseRestore={vi.fn()} />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases", expect.objectContaining({ method: "POST" })));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases/case-auto/turns", expect.objectContaining({ method: "POST" })));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases/case-auto/evidence", expect.objectContaining({ method: "POST" })));
     await waitFor(() => expect(fetchMock.mock.calls.filter(([url, init]) => String(url).endsWith("/turns") && init?.method === "POST")).toHaveLength(2));
     const savedPhases = fetchMock.mock.calls
       .filter(([url, init]) => String(url).endsWith("/turns") && init?.method === "POST")

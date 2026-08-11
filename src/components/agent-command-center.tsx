@@ -18,6 +18,7 @@ type AgentCommandCenterProps = {
   conversationCount: number;
   canPersist: boolean;
   evidenceText: string;
+  evidenceJson: string;
   conversation: AgentConversationMessage[];
   accessToken?: string;
   onLogin: () => void;
@@ -34,7 +35,7 @@ const SOURCE_MODES: Array<{ mode: WorkbenchMode; label: string; note: string }> 
   { mode: "combined", label: "三盘", note: "交叉验证" },
 ];
 
-export function AgentCommandCenter({ mode, onModeChange, inspector, life, relationshipScales, question, conversationCount, canPersist, evidenceText, conversation, accessToken, onLogin, onCaseRestore }: AgentCommandCenterProps) {
+export function AgentCommandCenter({ mode, onModeChange, inspector, life, relationshipScales, question, conversationCount, canPersist, evidenceText, evidenceJson, conversation, accessToken, onLogin, onCaseRestore }: AgentCommandCenterProps) {
   const [evidenceTab, setEvidenceTab] = useState<"reality" | "qimen" | "bazi" | "ziwei" | "kline">("reality");
   const [cases, setCases] = useState<SavedCase[]>([]);
   const [activeCaseId, setActiveCaseId] = useState("");
@@ -44,6 +45,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const [savedTree, setSavedTree] = useState<SavedTree | null>(null);
   const [selectedBranchKey, setSelectedBranchKey] = useState<string | null>(null);
   const [branchSaving, setBranchSaving] = useState(false);
+  const [savedEvidence, setSavedEvidence] = useState<{ mode:string; sourceText:string; structuredJson:unknown } | null>(null);
   const autoSavingRef = useRef(false);
   const persistedQuestion = question.trim() || conversation.find((message) => message.role === "user")?.content.trim() || "请通过访谈明确当前人生议题。";
   const issueTitle = persistedQuestion === "请通过访谈明确当前人生议题。" ? "尚未命名的人生议题" : persistedQuestion;
@@ -55,9 +57,10 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     if (!accessToken) return;
     setPersistenceStatus("正在恢复工作区…");
     const authorization = { Authorization: `Bearer ${accessToken}` };
-    const [turnResponse, treeResponse] = await Promise.all([
+    const [turnResponse, treeResponse, evidenceResponse] = await Promise.all([
       fetch(`/api/agent/cases/${item.id}/turns`, { headers: authorization, cache: "no-store" }),
       fetch(`/api/agent/cases/${item.id}/tree`, { headers: authorization, cache: "no-store" }),
+      fetch(`/api/agent/cases/${item.id}/evidence`, { headers: authorization, cache: "no-store" }),
     ]);
     const turnData = await turnResponse.json().catch(() => ({})) as { turns?: Array<{ role:"user"|"assistant"; content:string }>; error?:string };
     if (!turnResponse.ok || !turnData.turns) { setPersistenceStatus(turnData.error || "恢复访谈失败"); return; }
@@ -66,6 +69,8 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
       setSavedTree({ version: treeData.version, snapshot: { root: treeData.tree.root, branches: treeData.tree.branches } });
       setSelectedBranchKey(treeData.tree.branches.find((branch) => branch.selectedAt)?.key ?? null);
     } else { setSavedTree(null); setSelectedBranchKey(null); }
+    const evidenceData = await evidenceResponse.json().catch(() => ({})) as { evidence?: { mode:string; sourceText:string; structuredJson:unknown } | null };
+    setSavedEvidence(evidenceResponse.ok ? evidenceData.evidence ?? null : null);
     const restoredConversation = turnData.turns.map((turn) => ({ role: turn.role, content: turn.content }));
     setActiveCaseId(item.id);
     setSavedTurnCount(restoredConversation.length);
@@ -89,9 +94,16 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     const response = await fetch("/api/agent/cases", { method:"POST", headers, body:JSON.stringify({ title:issueTitle.slice(0,120), question:persistedQuestion.slice(0,2000) }) });
     const data = await response.json().catch(() => ({})) as { case?:SavedCase; error?:string };
     if (!response.ok || !data.case) { setPersistenceStatus(data.error || "创建失败"); return null; }
-    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); if (!preserveConversation) onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus("工作区已写入服务器");
+    let snapshotSaved = false;
+    try {
+      const structuredJson = JSON.parse(evidenceJson);
+      const evidenceResponse = await fetch(`/api/agent/cases/${data.case.id}/evidence`, { method: "POST", headers, body: JSON.stringify({ mode, sourceText: evidenceText, structuredJson }) });
+      snapshotSaved = evidenceResponse.ok;
+      if (snapshotSaved) setSavedEvidence({ mode, sourceText: evidenceText, structuredJson });
+    } catch { snapshotSaved = false; }
+    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); if (!preserveConversation) onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus(snapshotSaved ? "工作区与盘面证据已写入服务器" : "工作区已建立，盘面证据尚未保存");
     return data.case.id;
-  }, [accessToken, headers, issueTitle, onCaseRestore, persistedQuestion]);
+  }, [accessToken, evidenceJson, evidenceText, headers, issueTitle, mode, onCaseRestore, persistedQuestion]);
 
   const saveWorkspace = useCallback(async () => {
     if (!accessToken) { setPersistenceStatus("请先登录平台账户。"); return; }
@@ -144,7 +156,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     ? `当前议题：${issueTitle}\n已完成 ${interviewRound} 轮访谈；事实、约束与代价会随回答逐步写入决策树。`
     : evidenceTab === "kline"
       ? [`人生 K 线：${life.points.length} 个运年点`, ...life.keyPoints.slice(0, 3).map((point) => `${point.datetime.slice(0, 10)} · ${point.phase} · ${point.keyPoint || "结构变化"}`)].join("\n")
-      : evidenceText.split("\n").filter(Boolean).slice(0, 8).join("\n") || "当前盘面尚无可用证据。";
+      : (savedEvidence?.sourceText ?? evidenceText).split("\n").filter(Boolean).slice(0, 8).join("\n") || "当前盘面尚无可用证据。";
   const selectEvidence = (tab: "reality" | "qimen" | "bazi" | "ziwei" | "kline") => {
     setEvidenceTab(tab);
     if (tab === "qimen" || tab === "bazi" || tab === "ziwei") onModeChange(tab);

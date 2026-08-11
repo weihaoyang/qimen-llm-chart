@@ -68,6 +68,12 @@ export const saveEvidenceSnapshot = async (subject: AccountSubject, caseId: stri
   return { id };
 };
 
+export const getLatestEvidenceSnapshot = async (subject: AccountSubject, caseId: string) => {
+  const result = await query<{ id:string; mode:string; source_text:string; structured_json:unknown; created_at:Date }>(`SELECT e.id,e.mode,e.source_text,e.structured_json,e.created_at FROM agent_evidence_snapshots e JOIN agent_cases c ON c.id=e.case_id WHERE e.case_id=$1 AND c.platform_subject_type=$2 AND c.platform_subject_id=$3 AND c.deleted_at IS NULL ORDER BY e.created_at DESC LIMIT 1`, [caseId, ...ownership(subject)]);
+  const row = result.rows[0];
+  return row ? { id: row.id, mode: row.mode, sourceText: row.source_text, structuredJson: row.structured_json, createdAt: row.created_at.toISOString() } : null;
+};
+
 export const saveTreeVersion = async (subject: AccountSubject, caseId: string, input: { root:unknown; generatedFromTurnId?:string|null; branches?:Array<{ key:string; title:string; assumptions?:unknown; firstAction?:string; cost?:string; risks?:unknown; validationDate?:string|null; stopCondition?:string }> }) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT id FROM agent_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 AND deleted_at IS NULL FOR UPDATE`, [caseId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
