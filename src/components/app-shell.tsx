@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Position } from "3meta";
 import { GripVertical } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -1455,6 +1455,21 @@ export function AppShell() {
     />
   );
 
+  const restoreAgentCase = useCallback(({ question, conversation }: { question: string; conversation: AgentConversationMessage[] }) => {
+    const assistantResult = [...conversation].reverse().find((message) => message.role === "assistant")?.content ?? "";
+    setAgentState((current) => ({
+      ...current,
+      [mode]: {
+        ...current[mode],
+        question,
+        conversation,
+        content: assistantResult,
+        error: null,
+        loading: false,
+      },
+    }));
+  }, [mode]);
+
   const shiftChartDateTime = (hours: number) => {
     const nextDatetime = shiftDateTimeInput(formState.datetime, hours);
     if (nextDatetime === formState.datetime) return;
@@ -1836,6 +1851,7 @@ export function AppShell() {
           evidenceText={structuredText}
           conversation={agentState[mode].conversation}
           accessToken={platformWorkspace.session?.access_token}
+          onCaseRestore={restoreAgentCase}
         />
       ) : decisionWorkspaceOpen ? (
         <DecisionTreePanel life={lifeKline} relationshipScales={relationshipKlines} />
