@@ -68,5 +68,11 @@ describe("AgentCommandCenter", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases", expect.objectContaining({ method: "POST" })));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases/case-auto/turns", expect.objectContaining({ method: "POST" })));
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url, init]) => String(url).endsWith("/turns") && init?.method === "POST")).toHaveLength(2));
+    const savedPhases = fetchMock.mock.calls
+      .filter(([url, init]) => String(url).endsWith("/turns") && init?.method === "POST")
+      .map(([, init]) => JSON.parse(String(init?.body)).phase);
+    expect(savedPhases).toEqual(["issue", "issue"]);
+    expect(screen.getByText("1", { selector: ".agent-command__interview-head > strong" })).toBeInTheDocument();
   });
 });

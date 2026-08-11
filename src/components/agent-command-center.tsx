@@ -49,6 +49,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const issueTitle = persistedQuestion === "请通过访谈明确当前人生议题。" ? "尚未命名的人生议题" : persistedQuestion;
   const activeCase = cases.find((item) => item.id === activeCaseId) ?? null;
   const headers = useMemo(() => ({ Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" }), [accessToken]);
+  const interviewRound = Math.floor(conversationCount / 2);
 
   const restoreCase = useCallback(async (item: SavedCase) => {
     if (!accessToken) return;
@@ -97,12 +98,14 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     let caseId = activeCaseId;
     if (!caseId) { caseId = await createWorkspace(true) ?? ""; if (!caseId) return; }
     setPersistenceStatus("正在保存访谈…");
-    for (const message of conversation.slice(savedTurnCount)) {
-      const response = await fetch(`/api/agent/cases/${caseId}/turns`, { method:"POST", headers, body:JSON.stringify({ role:message.role, content:message.content, phase:["issue","facts","constraints","options","costs","action"][Math.min(5, conversationCount)] }) });
+    for (const [offset, message] of conversation.slice(savedTurnCount).entries()) {
+      const absoluteIndex = savedTurnCount + offset;
+      const phase = ["issue", "facts", "constraints", "options", "costs", "action"][Math.min(5, Math.floor(absoluteIndex / 2))];
+      const response = await fetch(`/api/agent/cases/${caseId}/turns`, { method:"POST", headers, body:JSON.stringify({ role:message.role, content:message.content, phase }) });
       if (!response.ok) { const body = await response.json().catch(() => ({})) as { error?:string }; setPersistenceStatus(body.error || "保存访谈失败"); return; }
     }
     setSavedTurnCount(conversation.length); setPersistenceStatus("已保存到正式工作区");
-  }, [accessToken, activeCaseId, conversation, conversationCount, createWorkspace, headers, savedTurnCount]);
+  }, [accessToken, activeCaseId, conversation, createWorkspace, headers, savedTurnCount]);
   useEffect(() => {
     if (!canPersist || !accessToken || conversation.length === 0 || autoSavingRef.current || (activeCaseId && conversation.length <= savedTurnCount)) return;
     autoSavingRef.current = true;
@@ -138,7 +141,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     } finally { setBranchSaving(false); }
   };
   const evidencePreview = evidenceTab === "reality"
-    ? `当前议题：${issueTitle}\n已完成 ${conversationCount} 轮访谈；事实、约束与代价会随回答逐步写入决策树。`
+    ? `当前议题：${issueTitle}\n已完成 ${interviewRound} 轮访谈；事实、约束与代价会随回答逐步写入决策树。`
     : evidenceTab === "kline"
       ? [`人生 K 线：${life.points.length} 个运年点`, ...life.keyPoints.slice(0, 3).map((point) => `${point.datetime.slice(0, 10)} · ${point.phase} · ${point.keyPoint || "结构变化"}`)].join("\n")
       : evidenceText.split("\n").filter(Boolean).slice(0, 8).join("\n") || "当前盘面尚无可用证据。";
@@ -161,8 +164,8 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
         <div className="agent-command__privacy"><LockKeyhole size={15} /><span>{canPersist ? "已登录：议题、访谈与决策树可保存" : "当前为临时工作区；登录后才可保存议题"}</span></div>
       </aside>
       <section className="agent-command__interview">
-        <div className="agent-command__interview-head"><div><span>AI 访谈</span><h1>先把问题问清楚。</h1><p>每次只处理一个问题。事实、限制、选项与代价会逐步成为右侧的选择结构。</p></div><strong>{conversationCount}<small>轮对话</small></strong></div>
-        <div className="agent-command__steps" aria-label="人生议题访谈步骤">{["议题", "事实", "约束", "选项", "代价", "行动"].map((label, index) => <span className={index <= Math.min(5, conversationCount) ? "is-active" : ""} key={label}><b>{index + 1}</b>{label}</span>)}</div>
+        <div className="agent-command__interview-head"><div><span>AI 访谈</span><h1>先把问题问清楚。</h1><p>每次只处理一个问题。事实、限制、选项与代价会逐步成为右侧的选择结构。</p></div><strong>{interviewRound}<small>轮对话</small></strong></div>
+        <div className="agent-command__steps" aria-label="人生议题访谈步骤">{["议题", "事实", "约束", "选项", "代价", "行动"].map((label, index) => <span className={index <= Math.min(5, interviewRound) ? "is-active" : ""} key={label}><b>{index + 1}</b>{label}</span>)}</div>
         <div className="agent-command__conversation">{inspector}</div>
       </section>
       <aside className="agent-command__model">
