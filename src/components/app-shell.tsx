@@ -1461,15 +1461,19 @@ export function AppShell() {
     />
   );
 
-  const restoreAgentCase = useCallback(({ question, conversation }: { question: string; conversation: AgentConversationMessage[] }) => {
+  const restoreAgentCase = useCallback(({ question, conversation, mode: restoredMode, evidence }: { question: string; conversation: AgentConversationMessage[]; mode?: WorkbenchMode; evidence?: { sourceText:string; structuredJson:unknown } | null }) => {
     const assistantResult = [...conversation].reverse().find((message) => message.role === "assistant")?.content ?? "";
+    const targetMode = restoredMode ?? mode;
+    if (restoredMode) setMode(restoredMode);
     setAgentState((current) => ({
       ...current,
-      [mode]: {
-        ...current[mode],
+      [targetMode]: {
+        ...current[targetMode],
         question,
         conversation,
         content: assistantResult,
+        sessionStructuredText: evidence?.sourceText ?? "",
+        sessionJsonPayload: evidence ? JSON.stringify(evidence.structuredJson) : "",
         error: null,
         loading: false,
       },

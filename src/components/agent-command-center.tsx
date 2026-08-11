@@ -22,7 +22,7 @@ type AgentCommandCenterProps = {
   conversation: AgentConversationMessage[];
   accessToken?: string;
   onLogin: () => void;
-  onCaseRestore: (value: { question: string; conversation: AgentConversationMessage[] }) => void;
+  onCaseRestore: (value: { question: string; conversation: AgentConversationMessage[]; mode?: WorkbenchMode; evidence?: { sourceText:string; structuredJson:unknown } | null }) => void;
 };
 
 type SavedCase = { id:string; title:string; question:string; status:"active"|"decided"|"archived"; deadline:string|null; createdAt:string; updatedAt:string };
@@ -74,9 +74,10 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     const restoredConversation = turnData.turns.map((turn) => ({ role: turn.role, content: turn.content }));
     setActiveCaseId(item.id);
     setSavedTurnCount(restoredConversation.length);
-    onCaseRestore({ question: item.question, conversation: restoredConversation });
+    const restoredMode = (["qimen", "bazi", "ziwei", "combined", "research"] as WorkbenchMode[]).includes(evidenceData.evidence?.mode as WorkbenchMode) ? evidenceData.evidence?.mode as WorkbenchMode : mode;
+    onCaseRestore({ question: item.question, conversation: restoredConversation, mode: restoredMode, evidence: evidenceData.evidence ?? null });
     setPersistenceStatus(treeData.version ? `已恢复服务器工作区 · 决策树 V${treeData.version}` : "已恢复服务器工作区");
-  }, [accessToken, onCaseRestore]);
+  }, [accessToken, mode, onCaseRestore]);
 
   useEffect(() => {
     if (!canPersist || !accessToken) return;
@@ -95,13 +96,17 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     const data = await response.json().catch(() => ({})) as { case?:SavedCase; error?:string };
     if (!response.ok || !data.case) { setPersistenceStatus(data.error || "创建失败"); return null; }
     let snapshotSaved = false;
+    let savedSnapshot: { sourceText: string; structuredJson: unknown } | null = null;
     try {
       const structuredJson = JSON.parse(evidenceJson);
       const evidenceResponse = await fetch(`/api/agent/cases/${data.case.id}/evidence`, { method: "POST", headers, body: JSON.stringify({ mode, sourceText: evidenceText, structuredJson }) });
       snapshotSaved = evidenceResponse.ok;
-      if (snapshotSaved) setSavedEvidence({ mode, sourceText: evidenceText, structuredJson });
+      if (snapshotSaved) {
+        savedSnapshot = { sourceText: evidenceText, structuredJson };
+        setSavedEvidence({ mode, ...savedSnapshot });
+      }
     } catch { snapshotSaved = false; }
-    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); if (!preserveConversation) onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus(snapshotSaved ? "工作区与盘面证据已写入服务器" : "工作区已建立，盘面证据尚未保存");
+    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); if (!preserveConversation) onCaseRestore({ question: data.case.question, conversation: [], mode, evidence: savedSnapshot }); setPersistenceStatus(snapshotSaved ? "工作区与盘面证据已写入服务器" : "工作区已建立，盘面证据尚未保存");
     return data.case.id;
   }, [accessToken, evidenceJson, evidenceText, headers, issueTitle, mode, onCaseRestore, persistedQuestion]);
 
