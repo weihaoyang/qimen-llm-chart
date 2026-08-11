@@ -21,8 +21,12 @@ const compactFact = (value: string) => value.replace(/\s+/g, " ").trim().slice(0
  * Only the user's own words can become a reality fact.  Model output may
  * illuminate a question, but it is never treated as evidence for a branch.
  */
-export const collectRealityFacts = (question?: string, conversation: readonly AgentConversationMessage[] = []) => {
-  const facts = [question ?? "", ...conversation.filter((message) => message.role === "user").map((message) => message.content)]
+export const collectRealityFacts = (_question?: string, conversation: readonly AgentConversationMessage[] = []) => {
+  const userMessages = conversation.filter((message) => message.role === "user");
+  // The first user message names the issue.  Only later answers are facts;
+  // the current unsent question is intentionally excluded from the tree.
+  const facts = userMessages.slice(1)
+    .map((message) => message.content)
     .map(compactFact)
     .filter(Boolean);
   return facts.filter((fact, index) => facts.indexOf(fact) === index).slice(-3);

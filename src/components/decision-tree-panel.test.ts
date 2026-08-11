@@ -15,14 +15,16 @@ const life: KlineSeries = {
 describe("decision tree reality evidence", () => {
   it("uses only the user's interview words as reality evidence", () => {
     expect(collectRealityFacts("我要不要换工作", [
+      { role: "user", content: "我要不要换工作？" },
       { role: "assistant", content: "请说明现金储备。" },
       { role: "user", content: "我的现金储备只够三个月。" },
       { role: "assistant", content: "模型推断不应被当作事实。" },
-    ])).toEqual(["我要不要换工作", "我的现金储备只够三个月。"]);
+    ])).toEqual(["我的现金储备只够三个月。"]);
   });
 
   it("turns current interview facts into the root and every decision branch", () => {
     const tree = buildDecisionTreeSnapshot(life, undefined, "我要不要换工作", [
+      { role: "user", content: "我要不要换工作？" },
       { role: "user", content: "我已经拿到书面 offer，但现金储备只够三个月。" },
     ]);
 
