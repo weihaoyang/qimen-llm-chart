@@ -7,18 +7,19 @@ export type DecisionTreeSnapshot = {
   branches: Array<{ key: string; title: string; assumptions: string[]; firstAction: string; cost: string; risks: string[]; validationDate: string | null; stopCondition: string }>;
 };
 
-type DecisionTreePanelProps = { life: KlineSeries; relationshipScales?: Partial<Record<KlineScale, KlineSeries>>; embedded?: boolean; onSave?: (snapshot: DecisionTreeSnapshot) => void; saveLabel?: string };
+type DecisionTreePanelProps = { life: KlineSeries; relationshipScales?: Partial<Record<KlineScale, KlineSeries>>; embedded?: boolean; savedSnapshot?: DecisionTreeSnapshot | null; savedVersion?: number | null; onSave?: (snapshot: DecisionTreeSnapshot) => void; saveLabel?: string };
 
 const pointWeight = (point: KlinePoint) => Math.abs(point.delta) * 2 + (point.high - point.low) * 0.45 + point.evidence.length * 0.7 + (point.keyPoint ? 4 : 0);
 const strongest = (series: KlineSeries | undefined) => series?.points.reduce<KlinePoint | undefined>((best, point) => !best || pointWeight(point) > pointWeight(best) ? point : best, undefined);
 
 const dateText = (point?: KlinePoint) => point ? point.datetime.replace("T", " ") : "等待序列";
 
-function DecisionBranch({ title, detail, tone, point }: { title: string; detail: string; tone: "advance" | "verify" | "protect"; point?: KlinePoint }) {
-  return <article className={`decision-tree__branch is-${tone}`}><header><span>{title}</span><b>{point ? dateText(point) : "—"}</b></header><strong>{detail}</strong><p>{point ? `${point.phase} · ${point.keyPoint || "结构变化"} · 条件分 ${point.score}` : "生成足够序列后出现"}</p></article>;
+function DecisionBranch({ branch, tone }: { branch: DecisionTreeSnapshot["branches"][number]; tone: "advance" | "verify" | "protect" }) {
+  const supportingFact = branch.assumptions[0] || branch.risks[0] || "等待现实反馈补充证据";
+  return <article className={`decision-tree__branch is-${tone}`}><header><span>{branch.title}</span><b>{branch.validationDate ? branch.validationDate.replace("T", " ") : "待验证"}</b></header><strong>{branch.firstAction}</strong><p>{supportingFact} · 停止条件：{branch.stopCondition}</p></article>;
 }
 
-export function DecisionTreePanel({ life, relationshipScales, embedded = false, onSave, saveLabel }: DecisionTreePanelProps) {
+export function DecisionTreePanel({ life, relationshipScales, embedded = false, savedSnapshot, savedVersion, onSave, saveLabel }: DecisionTreePanelProps) {
   const lifePoint = strongest(life);
   const relationshipEntries = (["double-hour", "day", "month", "year"] as const).map((scale) => ({ scale, point: strongest(relationshipScales?.[scale]) })).filter((item): item is { scale: KlineScale; point: KlinePoint } => Boolean(item.point));
   const relationshipPoint = relationshipEntries.sort((a, b) => pointWeight(b.point) - pointWeight(a.point))[0]?.point;
@@ -33,15 +34,17 @@ export function DecisionTreePanel({ life, relationshipScales, embedded = false, 
       { key: "protect", title: "保护", assumptions: anchor?.evidence.slice(0, 3) ?? [], firstAction: "降低不可逆承诺，保留退出与复盘的余地。", cost: "放弃一部分即时收益与确定感。", risks: ["过度防御导致停滞"], validationDate: anchor?.datetime ?? null, stopCondition: "退出条件不再成立且事实改善时，重新进入验证。" },
     ],
   };
+  const displayed = savedSnapshot ?? snapshot;
+  const displayedBranches = (["advance", "verify", "protect"] as const).map((key, index) => displayed.branches.find((branch) => branch.key === key) ?? displayed.branches[index] ?? snapshot.branches[index]);
   return <section className={embedded ? "decision-tree-page decision-tree-page--embedded" : "decision-tree-page"} aria-label="命运决策树">
     <section className="decision-tree" aria-label="关键选择树">
-      <header className="decision-tree__hero"><div><span>DECISION TREE / 选择结构</span><h2>命运给出条件，落子由你完成。</h2><p>这里不输出一个宿命答案。它把八字的长期结构、奇门的时间窗口和现实选择放到同一棵树上，让你看到每一步需要承担什么。</p></div><div className="decision-tree__anchor"><span>当前关键窗口</span><strong>{activeWindow}</strong><small>{scaleLabel ? `感情 · ${scaleLabel === "double-hour" ? "时辰" : scaleLabel === "day" ? "日" : scaleLabel === "month" ? "月" : "年"}线` : "人生 · 八字运年"}</small>{onSave ? <button type="button" onClick={() => onSave(snapshot)}>{saveLabel ?? "保存这棵树"}</button> : null}</div></header>
+      <header className="decision-tree__hero"><div><span>DECISION TREE / 选择结构{savedVersion ? ` · V${savedVersion}` : ""}</span><h2>命运给出条件，落子由你完成。</h2><p>这里不输出一个宿命答案。它把八字的长期结构、奇门的时间窗口和现实选择放到同一棵树上，让你看到每一步需要承担什么。</p></div><div className="decision-tree__anchor"><span>{savedSnapshot ? "已保存的关键窗口" : "当前关键窗口"}</span><strong>{displayed.root.activeWindow}</strong><small>{displayed.root.source}</small>{onSave ? <button type="button" onClick={() => onSave(snapshot)}>{saveLabel ?? (savedSnapshot ? "保存当前证据为新版本" : "保存这棵树")}</button> : null}</div></header>
       <div className="decision-tree__diagram">
-        <div className="decision-tree__root"><span>初始常量</span><strong>八字 · 你从哪里出发</strong><p>{lifePoint ? `长期结构在 ${lifePoint.datetime.slice(0, 10)} 附近出现高权重节点。` : "先生成八字与人生趋势。"}</p></div>
+        <div className="decision-tree__root"><span>证据起点</span><strong>{displayed.root.source}</strong><p>{displayed.root.evidence}</p></div>
         <div className="decision-tree__trunk" aria-hidden="true" />
-        <div className="decision-tree__junction"><span>关键窗口</span><strong>{anchor ? anchor.datetime.slice(0, 10) : "—"}</strong><p>{anchor?.evidence[0] ?? "序列盘证据将汇聚到这里。"}</p></div>
+        <div className="decision-tree__junction"><span>关键窗口</span><strong>{displayed.root.activeWindow}</strong><p>{displayed.root.evidence}</p></div>
         <div className="decision-tree__split" aria-hidden="true" />
-        <div className="decision-tree__branches"><DecisionBranch title="推进" detail="把有利条件变成一个可兑现的动作。" tone="advance" point={lifePoint} /><DecisionBranch title="验证" detail="先补一个事实，再决定是否承担更大代价。" tone="verify" point={relationshipPoint} /><DecisionBranch title="保护" detail="降低不可逆承诺，保留退出与复盘的余地。" tone="protect" point={anchor} /></div>
+        <div className="decision-tree__branches"><DecisionBranch branch={displayedBranches[0]} tone="advance" /><DecisionBranch branch={displayedBranches[1]} tone="verify" /><DecisionBranch branch={displayedBranches[2]} tone="protect" /></div>
       </div>
       <footer className="decision-tree__footer"><strong>胜天半子，不是逃离命盘。</strong><span>是看清每条路的代价后，仍然选择一条愿意承担的路。</span></footer>
     </section>

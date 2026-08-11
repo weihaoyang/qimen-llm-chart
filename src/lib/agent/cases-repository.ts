@@ -96,3 +96,32 @@ export const getLatestTreeVersion = async (subject: AccountSubject, caseId: stri
     },
   };
 };
+
+export type AgentReview = {
+  id: string;
+  caseId: string;
+  branchId: string | null;
+  outcome: string;
+  facts: string;
+  whatChanged: string;
+  nextAdjustment: string;
+  reviewedAt: string;
+};
+
+export const listReviews = async (subject: AccountSubject, caseId: string) => {
+  const result = await query<{ id:string; case_id:string; branch_id:string|null; outcome:string; facts:string; what_changed:string; next_adjustment:string; reviewed_at:Date }>(`SELECT r.id,r.case_id,r.branch_id,r.outcome,r.facts,r.what_changed,r.next_adjustment,r.reviewed_at FROM agent_reviews r JOIN agent_cases c ON c.id=r.case_id WHERE r.case_id=$1 AND c.platform_subject_type=$2 AND c.platform_subject_id=$3 AND c.deleted_at IS NULL ORDER BY r.reviewed_at DESC LIMIT 50`, [caseId, ...ownership(subject)]);
+  return result.rows.map((row): AgentReview => ({ id: row.id, caseId: row.case_id, branchId: row.branch_id, outcome: row.outcome, facts: row.facts, whatChanged: row.what_changed, nextAdjustment: row.next_adjustment, reviewedAt: row.reviewed_at.toISOString() }));
+};
+
+export const createReview = async (subject: AccountSubject, caseId: string, input: { branchId?: string | null; outcome: string; facts?: string; whatChanged?: string; nextAdjustment?: string }) => withTransaction(async (client) => {
+  const owner = await client.query(`SELECT id FROM agent_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 AND deleted_at IS NULL FOR UPDATE`, [caseId, ...ownership(subject)]);
+  if (!owner.rowCount) return null;
+  if (input.branchId) {
+    const branch = await client.query(`SELECT b.id FROM agent_decision_branches b JOIN agent_decision_tree_versions t ON t.id=b.tree_version_id WHERE b.id=$1 AND t.case_id=$2`, [input.branchId, caseId]);
+    if (!branch.rowCount) return { invalidBranch: true as const };
+  }
+  const result = await client.query<{ id:string; case_id:string; branch_id:string|null; outcome:string; facts:string; what_changed:string; next_adjustment:string; reviewed_at:Date }>(`INSERT INTO agent_reviews(id,case_id,branch_id,outcome,facts,what_changed,next_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id,case_id,branch_id,outcome,facts,what_changed,next_adjustment,reviewed_at`, [randomUUID(), caseId, input.branchId ?? null, input.outcome, input.facts ?? "", input.whatChanged ?? "", input.nextAdjustment ?? ""]);
+  await client.query(`UPDATE agent_cases SET updated_at=now() WHERE id=$1`, [caseId]);
+  const row = result.rows[0];
+  return { review: { id: row.id, caseId: row.case_id, branchId: row.branch_id, outcome: row.outcome, facts: row.facts, whatChanged: row.what_changed, nextAdjustment: row.next_adjustment, reviewedAt: row.reviewed_at.toISOString() } satisfies AgentReview };
+});

@@ -1755,7 +1755,7 @@ export function AppShell() {
   );
 
   return (
-    <div className="page-shell" data-mode={mode}>
+    <div className={`page-shell${agentWorkspaceOpen ? " is-agent-workspace" : ""}`} data-mode={mode}>
       <header className="observatory-hero">
         <div className="observatory-hero__copy">
           <span className="workspace-kicker">胜天半子</span>
@@ -1851,6 +1851,7 @@ export function AppShell() {
           evidenceText={structuredText}
           conversation={agentState[mode].conversation}
           accessToken={platformWorkspace.session?.access_token}
+          onLogin={handlePlatformLogin}
           onCaseRestore={restoreAgentCase}
         />
       ) : decisionWorkspaceOpen ? (
