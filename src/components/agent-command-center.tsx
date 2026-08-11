@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClock, ChevronRight, CircleDot, GitBranch, LockKeyhole, Orbit, PanelRightOpen } from "lucide-react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AgentConversationMessage } from "@/lib/agent/chat";
 import type { KlineScale, KlineSeries } from "@/lib/qimen/kline";
 import type { WorkbenchMode } from "@/lib/workbench/types";
@@ -44,9 +44,11 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const [savedTree, setSavedTree] = useState<SavedTree | null>(null);
   const [selectedBranchKey, setSelectedBranchKey] = useState<string | null>(null);
   const [branchSaving, setBranchSaving] = useState(false);
-  const issueTitle = question.trim() || "尚未命名的人生议题";
+  const autoSavingRef = useRef(false);
+  const persistedQuestion = question.trim() || conversation.find((message) => message.role === "user")?.content.trim() || "请通过访谈明确当前人生议题。";
+  const issueTitle = persistedQuestion === "请通过访谈明确当前人生议题。" ? "尚未命名的人生议题" : persistedQuestion;
   const activeCase = cases.find((item) => item.id === activeCaseId) ?? null;
-  const headers = { Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" };
+  const headers = useMemo(() => ({ Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" }), [accessToken]);
 
   const restoreCase = useCallback(async (item: SavedCase) => {
     if (!accessToken) return;
@@ -80,27 +82,32 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     return () => { cancelled = true; };
   }, [accessToken, canPersist, restoreCase]);
 
-  const createWorkspace = async (): Promise<string | null> => {
+  const createWorkspace = useCallback(async (preserveConversation = false): Promise<string | null> => {
     if (!accessToken) { setPersistenceStatus("请先登录平台账户。"); return null; }
     setPersistenceStatus("正在建立安全工作区…");
-    const response = await fetch("/api/agent/cases", { method:"POST", headers, body:JSON.stringify({ title:issueTitle.slice(0,120), question:question.trim() || "请通过访谈明确当前人生议题。" }) });
+    const response = await fetch("/api/agent/cases", { method:"POST", headers, body:JSON.stringify({ title:issueTitle.slice(0,120), question:persistedQuestion.slice(0,2000) }) });
     const data = await response.json().catch(() => ({})) as { case?:SavedCase; error?:string };
     if (!response.ok || !data.case) { setPersistenceStatus(data.error || "创建失败"); return null; }
-    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus("工作区已写入服务器");
+    setCases((current) => [data.case!, ...current]); setActiveCaseId(data.case.id); setSavedTurnCount(0); setSavedTree(null); setSelectedBranchKey(null); if (!preserveConversation) onCaseRestore({ question: data.case.question, conversation: [] }); setPersistenceStatus("工作区已写入服务器");
     return data.case.id;
-  };
+  }, [accessToken, headers, issueTitle, onCaseRestore, persistedQuestion]);
 
-  const saveWorkspace = async () => {
+  const saveWorkspace = useCallback(async () => {
     if (!accessToken) { setPersistenceStatus("请先登录平台账户。"); return; }
     let caseId = activeCaseId;
-    if (!caseId) { caseId = await createWorkspace() ?? ""; if (!caseId) return; }
+    if (!caseId) { caseId = await createWorkspace(true) ?? ""; if (!caseId) return; }
     setPersistenceStatus("正在保存访谈…");
     for (const message of conversation.slice(savedTurnCount)) {
       const response = await fetch(`/api/agent/cases/${caseId}/turns`, { method:"POST", headers, body:JSON.stringify({ role:message.role, content:message.content, phase:["issue","facts","constraints","options","costs","action"][Math.min(5, conversationCount)] }) });
       if (!response.ok) { const body = await response.json().catch(() => ({})) as { error?:string }; setPersistenceStatus(body.error || "保存访谈失败"); return; }
     }
     setSavedTurnCount(conversation.length); setPersistenceStatus("已保存到正式工作区");
-  };
+  }, [accessToken, activeCaseId, conversation, conversationCount, createWorkspace, headers, savedTurnCount]);
+  useEffect(() => {
+    if (!canPersist || !accessToken || conversation.length === 0 || autoSavingRef.current || (activeCaseId && conversation.length <= savedTurnCount)) return;
+    autoSavingRef.current = true;
+    void saveWorkspace().finally(() => { autoSavingRef.current = false; });
+  }, [accessToken, activeCaseId, canPersist, conversation.length, savedTurnCount, saveWorkspace]);
   const saveDecisionTree = async (snapshot: DecisionTreeSnapshot) => {
     if (treeSaving) return;
     if (!accessToken) { setPersistenceStatus("请先登录平台账户后保存决策树。"); return; }
@@ -146,7 +153,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     </header>
     <div className="agent-command__grid">
       <aside className="agent-command__cases">
-        <div className="agent-command__section-title"><span>人生议题</span><button type="button" aria-label="新建人生议题" onClick={createWorkspace}>+</button></div>
+        <div className="agent-command__section-title"><span>人生议题</span><button type="button" aria-label="新建人生议题" onClick={() => { void createWorkspace(); }}>+</button></div>
         <article className="agent-command__case is-current"><small>{activeCaseId ? "服务器工作区" : "当前临时工作区"}</small><strong>{activeCase?.title ?? issueTitle}</strong><p><CalendarClock size={13} /> {activeCase?.deadline ? new Date(activeCase.deadline).toLocaleDateString("zh-CN") : "尚未设置决策期限"}</p></article>
         {(canPersist ? cases : []).filter((item) => item.id !== activeCaseId).slice(0,4).map((item) => <button type="button" className="agent-command__case agent-command__case-button" key={item.id} onClick={() => { void restoreCase(item); }}><small>{new Date(item.updatedAt).toLocaleDateString("zh-CN")}</small><strong>{item.title}</strong></button>)}
         <div className="agent-command__section-title is-secondary"><span>证据来源</span><PanelRightOpen size={14} /></div>

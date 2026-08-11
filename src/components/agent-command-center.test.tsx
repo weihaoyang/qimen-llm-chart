@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentCommandCenter } from "./agent-command-center";
 
@@ -51,5 +51,22 @@ describe("AgentCommandCenter", () => {
     expect(screen.getByText("已保存的关键窗口")).toBeInTheDocument();
     expect(screen.getAllByText("现实事实 · 访谈")).toHaveLength(2);
     expect(screen.getByText("核验薪资与试用期条款")).toBeInTheDocument();
+  });
+
+  it("automatically creates and incrementally saves an authenticated conversation", async () => {
+    const savedCase = { id: "case-auto", title: "是否换工作", question: "我要不要换工作", status: "active", deadline: null, createdAt: "2026-08-12T00:00:00.000Z", updatedAt: "2026-08-12T00:00:00.000Z" };
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/agent/cases" && !init?.method) return new Response(JSON.stringify({ cases: [] }), { status: 200 });
+      if (url === "/api/agent/cases" && init?.method === "POST") return new Response(JSON.stringify({ case: savedCase }), { status: 201 });
+      if (url.endsWith("/turns") && init?.method === "POST") return new Response(JSON.stringify({ id: "turn", sequenceNo: 1 }), { status: 201 });
+      return new Response(JSON.stringify({ error: "unexpected request" }), { status: 500 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="" conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onCaseRestore={vi.fn()} />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases", expect.objectContaining({ method: "POST" })));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases/case-auto/turns", expect.objectContaining({ method: "POST" })));
   });
 });
