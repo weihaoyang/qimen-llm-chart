@@ -298,8 +298,8 @@ export function InspectorPanel({
               ) : (
                 <div className="agent-result-empty">
                   <Sparkles />
-                  <strong>世界线观测待启动</strong>
-                  <span>提交一个问题，在命运收束之前重构选择。</span>
+                  <strong>访谈尚未开始</strong>
+                  <span>先回答一个问题：你现在最想改变的现实选择是什么？</span>
                 </div>
               )}
             </ScrollArea>

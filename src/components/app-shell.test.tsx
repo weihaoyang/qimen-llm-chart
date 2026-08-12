@@ -11,6 +11,9 @@ describe("AppShell", () => {
   it("renders the chart and Agent-first workspace", async () => {
     render(<AppShell />);
 
+    expect(await screen.findByRole("main", { name: "胜天半子 Agent 决策控制室" }, { timeout: 30000 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "排盘工具" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "排盘工具" }));
     expect(await screen.findByText("奇门主盘", { selector: ".observatory-hero__workspace" }, { timeout: 30000 })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /奇门/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /八字/ })).toBeInTheDocument();
@@ -33,9 +36,6 @@ describe("AppShell", () => {
 
   it("opens the interview as a clean user-facing zero state", async () => {
     render(<AppShell />);
-    await screen.findByText("奇门主盘", { selector: ".observatory-hero__workspace" }, { timeout: 30000 });
-
-    fireEvent.click(screen.getAllByRole("tab", { name: "Agent" })[0]);
 
     expect(await screen.findByRole("main", { name: "胜天半子 Agent 决策控制室" })).toBeInTheDocument();
     expect(screen.getByText("新的决策议题")).toBeInTheDocument();

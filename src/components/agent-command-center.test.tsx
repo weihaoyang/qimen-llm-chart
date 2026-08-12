@@ -23,7 +23,7 @@ describe("AgentCommandCenter", () => {
 
   it("sends an unauthenticated user to unified login from the save entry", () => {
     const onLogin = vi.fn();
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={onLogin} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={onLogin} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: /登录后保存/ }));
 
@@ -47,7 +47,7 @@ describe("AgentCommandCenter", () => {
       return new Response(JSON.stringify({ error: "unexpected request" }), { status: 500 });
     }));
 
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="临时问题" conversationCount={0} canPersist accessToken="account-token" evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onCaseRestore={onCaseRestore} />);
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="临时问题" conversationCount={0} canPersist accessToken="account-token" evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={onCaseRestore} />);
 
     expect(await screen.findByText("已恢复服务器工作区 · 决策树 V2")).toBeInTheDocument();
     expect(screen.getByText("已保存的关键窗口")).toBeInTheDocument();
@@ -68,7 +68,7 @@ describe("AgentCommandCenter", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="盘面事实" evidenceJson='{"chart":"snapshot"}' conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="盘面事实" evidenceJson='{"chart":"snapshot"}' conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases", expect.objectContaining({ method: "POST" })));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases/case-auto/turns", expect.objectContaining({ method: "POST" })));

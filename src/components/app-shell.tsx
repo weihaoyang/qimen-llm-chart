@@ -140,8 +140,8 @@ type PlatformWorkspaceState = {
 
 const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
   qimen: {
-    question: DEFAULT_AGENT_QUESTIONS.qimen,
-    focus: "按问题综合取证",
+    question: "",
+    focus: "人生议题访谈",
     content: "",
     model: null,
     error: null,
@@ -368,7 +368,7 @@ export function AppShell() {
   const [klineWorkspaceOpen, setKlineWorkspaceOpen] = useState(false);
   const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
   const [decisionWorkspaceOpen, setDecisionWorkspaceOpen] = useState(false);
-  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(false);
+  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(true);
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
   const [partnerFormState, setPartnerFormState] = useState<ProfileInput>(() => ({
     ...initialState.defaultInput,
@@ -1869,6 +1869,7 @@ export function AppShell() {
           conversation={agentState[mode].conversation}
           accessToken={platformWorkspace.session?.access_token}
           onLogin={handlePlatformLogin}
+          onOpenWorkbench={() => setAgentWorkspaceOpen(false)}
           onCaseRestore={restoreAgentCase}
         />
       ) : decisionWorkspaceOpen ? (
