@@ -953,7 +953,19 @@ a {
 .agent-command__conversation .agent-panel__section,
 .agent-command__conversation .agent-panel__toolbar { border-color: #3d3931 !important; border-radius: 6px !important; background: #181715 !important; }
 .agent-command__conversation .semi-tabs-tab { color: #b8b0a2 !important; }
-.agent-command__conversation .semi-tabs-tab-active { color: #f4e5c4 !important; }
+.agent-command__conversation .semi-tabs-tab-active { color: #f4e5c4 !important; border-bottom-color: var(--agent-gold) !important; }
+.agent-command__conversation .semi-tabs-tab-active::after { background: var(--agent-gold) !important; }
+.agent-command__conversation .semi-tabs-tab-active .semi-tabs-tab-inner { color: #f4e5c4 !important; }
+.agent-command__conversation .semi-tabs-bar-line .semi-tabs-ink-bar,
+.agent-command__conversation .semi-tabs-bar-line .semi-tabs-ink-bar[style] { background: var(--agent-gold) !important; }
+.agent-command__conversation .agent-panel__section-head span,
+.agent-command__conversation .agent-panel__question-meta,
+.agent-command__conversation .agent-panel__question-meta span { color: #c7bca9 !important; }
+.agent-command__conversation .agent-panel__section-head strong,
+.agent-command__conversation .agent-panel__question-meta button { color: #d49a2f !important; }
+.agent-command__conversation .agent-panel__angle,
+.agent-command__conversation .agent-panel__followups summary { border-color: #4a453b !important; background: #201f1b !important; color: #ddd4c4 !important; }
+.agent-command__conversation .agent-panel__angle.is-active { border-color: #a97e2d !important; background: #2e2412 !important; color: #f0cf84 !important; }
 
 .agent-command__model { padding: 18px !important; background: #121211 !important; }
 .agent-command__model-head { padding: 2px 0 15px !important; }
