@@ -11189,6 +11189,33 @@ html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence
   }
 }
 
+/* Tablet-width navigation keeps every primary workspace reachable.  The
+   desktop grid only begins once all ten labels can be shown at once; before
+   that, the tab rail deliberately scrolls instead of silently clipping the
+   Agent and classical research tools. */
+@media (min-width: 721px) and (max-width: 1040px) {
+  .observatory-hero .workbench-tabs {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .observatory-hero .workbench-tabs .semi-tabs-bar {
+    display: flex !important;
+    width: max-content !important;
+    min-width: 100% !important;
+  }
+
+  .observatory-hero .workbench-tabs .semi-tabs-tab {
+    flex: 0 0 auto !important;
+    min-width: 82px !important;
+    margin-inline: 0 !important;
+    padding-inline: 9px !important;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Final workbench geometry contract
 
