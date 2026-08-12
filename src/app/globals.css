@@ -11527,9 +11527,23 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
 
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: minmax(0, 1fr) !important;
+    min-width: 0 !important;
     gap: 1px !important;
+  }
+
+  /* A 110px palace cannot hold three label/value pairs side by side without
+     collisions.  On phones the three principal symbols become three dense
+     horizontal reading lines; their values stay large and never overlap. */
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary,
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
 
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact--status {
@@ -11538,8 +11552,16 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
 
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
     gap: 1px !important;
     padding: 0 !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item {
+    justify-content: flex-start !important;
+    padding-inline: 3px !important;
   }
 
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
@@ -11548,10 +11570,76 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
   }
 
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong {
-    font-size: clamp(13px, 4vw, 16px) !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    font-size: clamp(14px, 4.25vw, 17px) !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
-    font-size: clamp(12px, 3.55vw, 15px) !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    font-size: clamp(10px, 3.1vw, 13px) !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* The mobile renderer intentionally drops the desktop panel IDs.  Keep a
+     class-based contract for that DOM instead of relying on desktop-only
+     selectors; otherwise legacy stacked-layout rules silently win. */
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary-item,
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__fact {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary-item {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    padding-inline: 3px !important;
+  }
+
+  /* Facts remain a 3 × 2 instrument field; a compact vertical key/value
+     treatment gives every stem its own real column instead of squeezing a
+     label and value into five pixels. */
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__fact {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts dt {
+    font-size: 8px !important;
+  }
+
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts dd {
+    font-size: clamp(11px, 3.1vw, 13px) !important;
+  }
+
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary-item strong,
+  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts dd {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 }
