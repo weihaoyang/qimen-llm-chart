@@ -110,7 +110,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
         structuredText: pending.structuredText,
         jsonPayload: pending.jsonPayload,
         messages: [
-          { role: "user", content: pending.question },
+          { role: "user", content: pending.displayQuestion ?? pending.question },
           { role: "assistant", content: result.content },
         ],
         usageAvailable: Number(result.usage?.available ?? AGENT_SESSION_TURNS - 1),

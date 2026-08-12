@@ -11,6 +11,7 @@ import { BaziPanel } from "@/components/bazi-panel";
 import {
   AGENT_ANALYSIS_ANGLES,
   AGENT_FOLLOW_UP_QUESTIONS,
+  AGENT_INTERVIEW_START_LABEL,
   AGENT_INTERVIEW_START_QUESTION,
   DEFAULT_AGENT_QUESTIONS,
   type AgentConversationMessage,
@@ -908,7 +909,7 @@ export function AppShell() {
     setAgentState((current) => {
       const currentMode = current[mode];
       if (currentMode.conversation.length > 0 || (currentMode.question.trim() && currentMode.question !== DEFAULT_AGENT_QUESTIONS[mode])) return current;
-      return { ...current, [mode]: { ...currentMode, question: AGENT_INTERVIEW_START_QUESTION, focus: "人生议题访谈" } };
+      return { ...current, [mode]: { ...currentMode, question: "", focus: "人生议题访谈" } };
     });
   };
 
@@ -1250,8 +1251,9 @@ export function AppShell() {
     const sharedState = canUseAgentState(currentState)
       ? currentState
       : Object.values(agentState).find((state) => canUseAgentState(state)) ?? currentState;
-    const currentQuestion = currentState.question.trim();
-    if (!currentQuestion) {
+    const enteredQuestion = currentState.question.trim();
+    const isInterviewStart = !enteredQuestion && currentState.focus === "人生议题访谈" && currentState.conversation.length === 0;
+    if (!enteredQuestion && !isInterviewStart) {
       setAgentState((current) => ({
         ...current,
         [mode]: { ...current[mode], error: "先写下你想核对的具体问题。" },
@@ -1259,8 +1261,10 @@ export function AppShell() {
       return;
     }
 
-    const selectedAngle = AGENT_ANALYSIS_ANGLES[mode].find((angle) => angle.question === currentQuestion);
-    const focus = selectedAngle?.label ?? "自定义问题";
+    const currentQuestion = enteredQuestion || AGENT_INTERVIEW_START_QUESTION;
+    const conversationQuestion = enteredQuestion || AGENT_INTERVIEW_START_LABEL;
+    const selectedAngle = AGENT_ANALYSIS_ANGLES[mode].find((angle) => angle.question === enteredQuestion);
+    const focus = selectedAngle?.label ?? (isInterviewStart ? "人生议题访谈" : "自定义问题");
     const planCode = AGENT_PLAN_CODE;
     if (!platformConfig || typeof window === "undefined") {
       setAgentState((current) => ({ ...current, [mode]: { ...current[mode], error: "支付暂不可用。" } }));
@@ -1307,7 +1311,7 @@ export function AppShell() {
 
         const nextConversation: AgentConversationMessage[] = [
           ...currentState.conversation,
-          { role: "user", content: currentQuestion },
+          { role: "user", content: conversationQuestion },
           { role: "assistant", content: result.content },
         ];
         const nextState = {
@@ -1361,6 +1365,7 @@ export function AppShell() {
       await beginPaidCheckout(planCode, {
         mode,
         question: currentQuestion,
+        displayQuestion: conversationQuestion,
         focus,
         structuredText,
         jsonPayload,

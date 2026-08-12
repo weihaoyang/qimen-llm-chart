@@ -57,6 +57,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
+export const AGENT_INTERVIEW_START_LABEL = "开始人生议题访谈";
 
 /**
  * Short, user-facing starting points for the most common analysis intents.

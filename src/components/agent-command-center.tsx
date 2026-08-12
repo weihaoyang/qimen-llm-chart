@@ -2,7 +2,7 @@
 
 import { CalendarClock, ChevronRight, CircleDot, GitBranch, LockKeyhole, Orbit, PanelRightOpen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { AgentConversationMessage } from "@/lib/agent/chat";
+import { AGENT_INTERVIEW_START_LABEL, type AgentConversationMessage } from "@/lib/agent/chat";
 import type { KlineScale, KlineSeries } from "@/lib/qimen/kline";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 import { DecisionTreePanel, type DecisionTreeSnapshot } from "./decision-tree-panel";
@@ -47,8 +47,9 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const [branchSaving, setBranchSaving] = useState(false);
   const [savedEvidence, setSavedEvidence] = useState<{ mode:string; sourceText:string; structuredJson:unknown } | null>(null);
   const autoSavingRef = useRef(false);
-  const persistedQuestion = question.trim() || conversation.find((message) => message.role === "user")?.content.trim() || "请通过访谈明确当前人生议题。";
-  const issueTitle = persistedQuestion === "请通过访谈明确当前人生议题。" ? "尚未命名的人生议题" : persistedQuestion;
+  const firstUserQuestion = conversation.find((message) => message.role === "user")?.content.trim();
+  const persistedQuestion = question.trim() || (firstUserQuestion === AGENT_INTERVIEW_START_LABEL ? "" : firstUserQuestion) || "未命名人生议题";
+  const issueTitle = persistedQuestion === "未命名人生议题" ? "新的决策议题" : persistedQuestion;
   const activeCase = cases.find((item) => item.id === activeCaseId) ?? null;
   const headers = useMemo(() => ({ Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" }), [accessToken]);
   const interviewRound = Math.floor(conversationCount / 2);

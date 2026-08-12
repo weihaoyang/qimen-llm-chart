@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { AppShell } from "./app-shell";
 
 describe("AppShell", () => {
+  afterEach(() => cleanup());
+
   it("renders the chart and Agent-first workspace", async () => {
     render(<AppShell />);
 
@@ -27,5 +29,17 @@ describe("AppShell", () => {
     expect(screen.getByRole("tab", { name: "结构化文本" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "JSON" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "文献" })).toBeInTheDocument();
+  }, 30000);
+
+  it("opens the interview as a clean user-facing zero state", async () => {
+    render(<AppShell />);
+    await screen.findByText("奇门主盘", { selector: ".observatory-hero__workspace" }, { timeout: 30000 });
+
+    fireEvent.click(screen.getAllByRole("tab", { name: "Agent" })[0]);
+
+    expect(await screen.findByRole("main", { name: "胜天半子 Agent 决策控制室" })).toBeInTheDocument();
+    expect(screen.getByText("新的决策议题")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("例如：只看事业，列出盘面依据和现实中的验证方式。")).toHaveValue("");
+    expect(screen.queryByText("请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。")).not.toBeInTheDocument();
   }, 30000);
 });

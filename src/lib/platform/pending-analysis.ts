@@ -14,6 +14,8 @@ export type PendingPaidAnalysis = {
   checkoutToken: string;
   checkoutMode?: "account" | "guest";
   mode: WorkbenchMode;
+  /** User-facing label for the turn. May differ from an internal orchestration prompt. */
+  displayQuestion?: string;
   question: string;
   focus: string;
   structuredText: string;
