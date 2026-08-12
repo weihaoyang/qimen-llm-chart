@@ -31,6 +31,25 @@ describe("AgentCommandCenter", () => {
     expect(screen.getByText("当前为临时工作区；登录后才可保存议题")).toBeInTheDocument();
   });
 
+  it("uses the top navigation as a real workspace state, not a decorative tab rail", () => {
+    const onOpenWorkbench = vi.fn();
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
+    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={onOpenWorkbench} onCaseRestore={vi.fn()} />);
+
+    const issue = screen.getByRole("button", { name: "人生议题" });
+    const decision = screen.getByRole("button", { name: "决策树" });
+    expect(issue).toHaveAttribute("aria-current", "page");
+
+    fireEvent.click(decision);
+    expect(decision).toHaveAttribute("aria-current", "page");
+    expect(issue).not.toHaveAttribute("aria-current");
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+
+    fireEvent.click(screen.getByRole("button", { name: "排盘工具" }));
+    expect(onOpenWorkbench).toHaveBeenCalledOnce();
+  });
+
   it("restores the latest saved decision tree with the selected server case", async () => {
     const savedCase = { id: "case-1", title: "是否换工作", question: "我要不要换工作", status: "active", deadline: null, createdAt: "2026-08-12T00:00:00.000Z", updatedAt: "2026-08-12T00:00:00.000Z" };
     const onCaseRestore = vi.fn();

@@ -42,6 +42,8 @@ const WORKSPACE_STAGES = [
   { label: "复盘", target: "agent-review" },
 ] as const;
 
+type WorkspaceStageTarget = (typeof WORKSPACE_STAGES)[number]["target"] | "workbench";
+
 export function AgentCommandCenter({ mode, onModeChange, inspector, life, relationshipScales, question, conversationCount, canPersist, evidenceText, evidenceJson, conversation, accessToken, onLogin, onOpenWorkbench, onCaseRestore }: AgentCommandCenterProps) {
   const [evidenceTab, setEvidenceTab] = useState<"reality" | "qimen" | "bazi" | "ziwei" | "kline">("reality");
   const [cases, setCases] = useState<SavedCase[]>([]);
@@ -53,6 +55,7 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const [selectedBranchKey, setSelectedBranchKey] = useState<string | null>(null);
   const [branchSaving, setBranchSaving] = useState(false);
   const [savedEvidence, setSavedEvidence] = useState<{ mode:string; sourceText:string; structuredJson:unknown } | null>(null);
+  const [activeStage, setActiveStage] = useState<WorkspaceStageTarget>("agent-interview");
   const autoSavingRef = useRef(false);
   const firstUserQuestion = conversation.find((message) => message.role === "user")?.content.trim();
   const persistedQuestion = question.trim() || (firstUserQuestion === AGENT_INTERVIEW_START_LABEL ? "" : firstUserQuestion) || "未命名人生议题";
@@ -60,7 +63,15 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   const activeCase = cases.find((item) => item.id === activeCaseId) ?? null;
   const headers = useMemo(() => ({ Authorization: `Bearer ${accessToken ?? ""}`, "Content-Type": "application/json" }), [accessToken]);
   const interviewRound = Math.floor(conversationCount / 2);
-  const moveTo = (target: string) => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const moveTo = (target: Exclude<WorkspaceStageTarget, "workbench">) => {
+    setActiveStage(target);
+    document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const openWorkbench = () => {
+    setActiveStage("workbench");
+    onOpenWorkbench();
+  };
 
   const restoreCase = useCallback(async (item: SavedCase) => {
     if (!accessToken) return;
@@ -179,8 +190,8 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
     <header className="agent-command__bar">
       <div className="agent-command__brand"><span>胜天半子</span><strong>人生决策控制室</strong></div>
       <nav className="agent-command__nav" aria-label="决策工作区导航">
-        {WORKSPACE_STAGES.map((stage, index) => <button type="button" className={index === 0 ? "is-active" : ""} key={stage.target} onClick={() => moveTo(stage.target)}>{stage.label}</button>)}
-        <button type="button" onClick={onOpenWorkbench}>排盘工具</button>
+        {WORKSPACE_STAGES.map((stage) => <button type="button" className={activeStage === stage.target ? "is-active" : ""} aria-current={activeStage === stage.target ? "page" : undefined} key={stage.target} onClick={() => moveTo(stage.target)}>{stage.label}</button>)}
+        <button type="button" className={activeStage === "workbench" ? "is-active" : ""} aria-current={activeStage === "workbench" ? "page" : undefined} onClick={openWorkbench}>排盘工具</button>
       </nav>
       <div className="agent-command__bar-status"><span><CircleDot size={14} /> {persistenceStatus || "观测进行中"}</span>{canPersist ? <button type="button" onClick={saveWorkspace}>落下这一子 <ChevronRight size={15} /></button> : <button type="button" onClick={onLogin}>登录后保存 <ChevronRight size={15} /></button>}</div>
     </header>
