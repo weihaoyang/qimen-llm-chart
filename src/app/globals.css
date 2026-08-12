@@ -11483,3 +11483,103 @@ html body * {
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--gate strong { color: #176c58 !important; font-family: ui-sans-serif, "PingFang SC", sans-serif !important; }
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--deity strong { color: #7a501d !important; font-family: ui-monospace, "SFMono-Regular", monospace !important; }
 }
+
+/* --------------------------------------------------------------------------
+   Palace reading contract
+
+   One palace is a compact line-by-line instrument: labels and their symbols
+   share a line, so the symbol is never a tiny caption floating inside a large
+   cell.  This deliberately lives at the end of the cascade: the old mobile
+   fallback made the nine-grid a single vertical list, which defeated both the
+   square-board geometry and legibility at the same time.
+   -------------------------------------------------------------------------- */
+html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
+html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact {
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: clamp(3px, 0.42vw, 6px) !important;
+}
+
+html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
+html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
+  font-size: clamp(10px, 0.75vw, 12px) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong {
+  font-size: clamp(18px, 1.28vw, 23px) !important;
+}
+
+html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
+  font-size: clamp(16px, 1.05vw, 20px) !important;
+}
+
+@media (max-width: 720px) {
+  html body #qimen-workbench-layout > #qimen-chart .canvas-panel__content.qimen-board-layout,
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid-shell {
+    min-width: 0 !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid-shell > .palace-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+    width: min(100%, calc(100svw - 20px)) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 1 / 1 !important;
+    margin-inline: auto !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 3px !important;
+    gap: 2px !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__header {
+    gap: 2px !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__index,
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__status span {
+    font-size: 9px !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__header h3,
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__status strong {
+    font-size: 12px !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary,
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    gap: 1px !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact--status {
+    grid-column: auto !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact {
+    gap: 1px !important;
+    padding: 0 !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
+    font-size: 9px !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong {
+    font-size: clamp(13px, 4vw, 16px) !important;
+  }
+
+  html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
+    font-size: clamp(12px, 3.55vw, 15px) !important;
+  }
+}
