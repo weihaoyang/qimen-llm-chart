@@ -10963,34 +10963,6 @@ html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence
   }
 }
 
-/* On a phone the complete square still needs a readable minimum measure.
-   Keep the board square and let its own canvas scroll horizontally instead of
-   squeezing three fields into 110px cards where values become unreadable. */
-@media (max-width: 720px) {
-  html body .analysis-layout .canvas-panel .canvas-panel__content {
-    overflow-x: auto !important;
-    overscroll-behavior-x: contain;
-  }
-
-  html body .analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell {
-    width: max(100%, 560px) !important;
-    min-width: 560px !important;
-  }
-
-  html body .analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
-    width: 540px !important;
-    min-width: 540px !important;
-    height: 540px !important;
-    min-height: 540px !important;
-    aspect-ratio: 1 / 1 !important;
-  }
-
-  html body .analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card {
-    min-width: 0 !important;
-    min-height: 0 !important;
-  }
-}
-
 /* Qimen layout contract: the board owns this surface; K-line is a separate
    title-bar workspace and must never consume the board's grid track. */
 .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout {
