@@ -40,6 +40,7 @@ describe("AppShell", () => {
     expect(await screen.findByRole("main", { name: "胜天半子 Agent 决策控制室" })).toBeInTheDocument();
     expect(screen.getByText("新的决策议题")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("例如：只看事业，列出盘面依据和现实中的验证方式。")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "开通后开始访谈" })).toBeInTheDocument();
     expect(screen.queryByText("请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。")).not.toBeInTheDocument();
   }, 30000);
 });

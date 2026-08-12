@@ -25,6 +25,7 @@ type InspectorPanelProps = {
   agentFollowUps: readonly string[];
   agentUsageAvailable: number;
   agentUsageConsumed: number;
+  isInterviewZeroState?: boolean;
   agentPurchaseLabel?: string;
   platformStatus?: "checking" | "guest" | "authenticated" | "error";
   literatureContext: string;
@@ -53,6 +54,7 @@ export function InspectorPanel({
   agentFollowUps,
   agentUsageAvailable,
   agentUsageConsumed,
+  isInterviewZeroState = false,
   agentPurchaseLabel = "购买 10 轮研究对话 · ¥9.9",
   platformStatus = "guest",
   literatureContext,
@@ -247,11 +249,15 @@ export function InspectorPanel({
               {agentLoading ? <LoaderCircle className="agent-spin" /> : <Sparkles />}
               {agentLoading
                 ? "正在处理"
-                : agentUsageConsumed > 0
+                : isInterviewZeroState
                   ? agentUsageAvailable > 0
-                    ? "发送问题 · 消耗 1 轮"
-                    : `${agentPurchaseLabel.replace("购买", "再购买")}`
-                  : agentPurchaseLabel}
+                    ? "开始访谈 · 消耗 1 轮"
+                    : "开通后开始访谈"
+                  : agentUsageConsumed > 0
+                    ? agentUsageAvailable > 0
+                      ? "发送问题 · 消耗 1 轮"
+                      : `${agentPurchaseLabel.replace("购买", "再购买")}`
+                    : agentPurchaseLabel}
             </Button>
           </div>
 

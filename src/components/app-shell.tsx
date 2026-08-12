@@ -1442,6 +1442,7 @@ export function AppShell() {
       agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
       agentModel={agentState[mode].model}
       agentQuestion={agentState[mode].question}
+      isInterviewZeroState={agentState[mode].focus === "人生议题访谈" && !agentState[mode].question.trim() && agentState[mode].conversation.length === 0}
       agentUsageAvailable={(Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState[mode]).usageAvailable}
       agentUsageConsumed={(Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState[mode]).usageConsumed}
       agentPurchaseLabel={(() => {
