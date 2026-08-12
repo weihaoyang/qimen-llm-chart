@@ -35,6 +35,8 @@ const SOURCE_MODES: Array<{ mode: WorkbenchMode; label: string; note: string }> 
   { mode: "combined", label: "三盘", note: "交叉验证" },
 ];
 
+const WORKSPACE_STAGES = ["人生议题", "决策树", "复盘", "排盘工具"];
+
 export function AgentCommandCenter({ mode, onModeChange, inspector, life, relationshipScales, question, conversationCount, canPersist, evidenceText, evidenceJson, conversation, accessToken, onLogin, onCaseRestore }: AgentCommandCenterProps) {
   const [evidenceTab, setEvidenceTab] = useState<"reality" | "qimen" | "bazi" | "ziwei" | "kline">("reality");
   const [cases, setCases] = useState<SavedCase[]>([]);
@@ -169,25 +171,27 @@ export function AgentCommandCenter({ mode, onModeChange, inspector, life, relati
   };
   return <main className="agent-command" aria-label="胜天半子 Agent 决策控制室">
     <header className="agent-command__bar">
-      <div><span>胜天半子 / AGENT</span><strong>人生决策控制室</strong></div>
-      <div className="agent-command__bar-status"><span><CircleDot size={14} /> {persistenceStatus || "观测进行中"}</span>{canPersist ? <button type="button" onClick={saveWorkspace}>保存这一局 <ChevronRight size={15} /></button> : <button type="button" onClick={onLogin}>登录后保存 <ChevronRight size={15} /></button>}</div>
+      <div className="agent-command__brand"><span>胜天半子</span><strong>人生决策控制室</strong></div>
+      <nav className="agent-command__nav" aria-label="决策工作区导航">{WORKSPACE_STAGES.map((stage, index) => <span className={index === 0 ? "is-active" : ""} key={stage}>{stage}</span>)}</nav>
+      <div className="agent-command__bar-status"><span><CircleDot size={14} /> {persistenceStatus || "观测进行中"}</span>{canPersist ? <button type="button" onClick={saveWorkspace}>落下这一子 <ChevronRight size={15} /></button> : <button type="button" onClick={onLogin}>登录后保存 <ChevronRight size={15} /></button>}</div>
     </header>
     <div className="agent-command__grid">
       <aside className="agent-command__cases">
-        <div className="agent-command__section-title"><span>人生议题</span><button type="button" aria-label="新建人生议题" onClick={() => { void createWorkspace(); }}>+</button></div>
+        <div className="agent-command__section-title"><span>我的人生议题</span><button type="button" aria-label="新建人生议题" onClick={() => { void createWorkspace(); }}>＋ 新建议题</button></div>
         <article className="agent-command__case is-current"><small>{activeCaseId ? "服务器工作区" : "当前临时工作区"}</small><strong>{activeCase?.title ?? issueTitle}</strong><p><CalendarClock size={13} /> {activeCase?.deadline ? new Date(activeCase.deadline).toLocaleDateString("zh-CN") : "尚未设置决策期限"}</p></article>
         {(canPersist ? cases : []).filter((item) => item.id !== activeCaseId).slice(0,4).map((item) => <button type="button" className="agent-command__case agent-command__case-button" key={item.id} onClick={() => { void restoreCase(item); }}><small>{new Date(item.updatedAt).toLocaleDateString("zh-CN")}</small><strong>{item.title}</strong></button>)}
-        <div className="agent-command__section-title is-secondary"><span>证据来源</span><PanelRightOpen size={14} /></div>
+        <div className="agent-command__case-meta"><span>议题概览</span><dl><div><dt>截止时间</dt><dd>{activeCase?.deadline ? new Date(activeCase.deadline).toLocaleDateString("zh-CN") : "待设定"}</dd></div><div><dt>当前阶段</dt><dd>访谈 · {Math.min(6, interviewRound + 1)} / 6</dd></div><div><dt>证据进度</dt><dd>{conversation.length ? `${Math.max(0, interviewRound)} 条对话` : "等待事实"}</dd></div></dl></div>
+        <div className="agent-command__section-title is-secondary"><span>术数证据</span><PanelRightOpen size={14} /></div>
         <nav className="agent-command__sources" aria-label="选择 Agent 证据来源">{SOURCE_MODES.map((source) => <button type="button" key={source.mode} className={mode === source.mode ? "is-active" : ""} onClick={() => onModeChange(source.mode)}><strong>{source.label}</strong><span>{source.note}</span></button>)}</nav>
         <div className="agent-command__privacy"><LockKeyhole size={15} /><span>{canPersist ? "已登录：议题、访谈与决策树可保存" : "当前为临时工作区；登录后才可保存议题"}</span></div>
       </aside>
       <section className="agent-command__interview">
-        <div className="agent-command__interview-head"><div><span>AI 访谈</span><h1>先把问题问清楚。</h1><p>每次只处理一个问题。事实、限制、选项与代价会逐步成为右侧的选择结构。</p></div><strong>{interviewRound}<small>轮对话</small></strong></div>
+        <div className="agent-command__interview-head"><div><span>AI 访谈 · 深度厘清真实约束与选择</span><h1>{question.trim() || "先把问题问清楚。"}</h1><p>每次只处理一个问题。事实、限制、选项与代价会逐步成为右侧的选择结构。</p></div><strong>{interviewRound}<small>轮对话</small></strong></div>
         <div className="agent-command__steps" aria-label="人生议题访谈步骤">{["议题", "事实", "约束", "选项", "代价", "行动"].map((label, index) => <span className={index <= Math.min(5, interviewRound) ? "is-active" : ""} key={label}><b>{index + 1}</b>{label}</span>)}</div>
         <div className="agent-command__conversation">{inspector}</div>
       </section>
       <aside className="agent-command__model">
-        <div className="agent-command__model-head"><div><span><GitBranch size={14} /> 可能性树</span><strong>选择不是结论，是可复盘的路径。</strong></div><Orbit size={20} /></div>
+        <div className="agent-command__model-head"><div><span><GitBranch size={14} /> 决策树 · 动态迭代</span><strong>方案视图</strong></div><Orbit size={20} /></div>
         <DecisionTreePanel life={life} relationshipScales={relationshipScales} question={question} conversation={conversation} embedded savedSnapshot={savedTree?.snapshot} savedVersion={savedTree?.version} selectedBranchKey={selectedBranchKey} onSelectBranch={selectBranch} onSave={canPersist ? saveDecisionTree : undefined} saveLabel={treeSaving ? "正在存档…" : savedTree ? "保存当前证据为新版本" : "保存这棵树"} />
         <section className="agent-command__evidence"><div><strong>证据抽屉</strong><span>只有与当前议题有关的字段才会进入树节点。</span></div><div className="agent-command__evidence-tabs"><button type="button" className={evidenceTab === "reality" ? "is-active" : ""} onClick={() => selectEvidence("reality")}>现实事实</button><button type="button" className={evidenceTab === "bazi" ? "is-active" : ""} onClick={() => selectEvidence("bazi")}>八字</button><button type="button" className={evidenceTab === "qimen" ? "is-active" : ""} onClick={() => selectEvidence("qimen")}>奇门</button><button type="button" className={evidenceTab === "ziwei" ? "is-active" : ""} onClick={() => selectEvidence("ziwei")}>紫微</button><button type="button" className={evidenceTab === "kline" ? "is-active" : ""} onClick={() => selectEvidence("kline")}>K 线</button></div><pre className="agent-command__evidence-preview">{evidencePreview}</pre></section>
         <AgentReviewPanel caseId={activeCaseId} accessToken={accessToken} selectedBranchId={savedTree?.snapshot.branches.find((branch) => branch.key === selectedBranchKey)?.id ?? null} />
