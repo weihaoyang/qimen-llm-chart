@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
       },
     ],
-    sitemap: "https://qmdj.singseq.com/sitemap.xml",
-    host: "https://qmdj.singseq.com",
+    sitemap: "https://shengtian.singseq.com/sitemap.xml",
+    host: "https://shengtian.singseq.com",
   };
 }

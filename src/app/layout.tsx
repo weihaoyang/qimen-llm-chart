@@ -7,7 +7,7 @@ import "@douyinfe/semi-ui/lib/es/_base/base.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://qmdj.singseq.com"),
+  metadataBase: new URL("https://shengtian.singseq.com"),
   title: "胜天半子",
   description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
   alternates: {

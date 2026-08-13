@@ -6,6 +6,7 @@ import type { WorkbenchMode } from "@/lib/workbench/types";
 type ModeTabsProps = {
   mode: WorkbenchMode;
   onChange: (mode: WorkbenchMode) => void;
+  product?: "shengtian" | "chart";
   klineActive?: boolean;
   onKlineSelect?: () => void;
   classicActive?: "daliuren" | "taiyi" | null;
@@ -27,11 +28,11 @@ const MODE_OPTIONS: Array<{
   { value: "research", label: "术数研究" },
 ];
 
-export function ModeTabs({ mode, onChange, klineActive = false, onKlineSelect, classicActive = null, onClassicSelect, decisionActive = false, onDecisionSelect, agentActive = false, onAgentSelect }: ModeTabsProps) {
+export function ModeTabs({ mode, onChange, product = "shengtian", klineActive = false, onKlineSelect, classicActive = null, onClassicSelect, decisionActive = false, onDecisionSelect, agentActive = false, onAgentSelect }: ModeTabsProps) {
   return (
     <Tabs
       className="workbench-tabs"
-      activeKey={agentActive ? "agent" : decisionActive ? "decision" : klineActive ? "kline" : classicActive ?? mode}
+      activeKey={product === "shengtian" && agentActive ? "agent" : product === "shengtian" && decisionActive ? "decision" : product === "shengtian" && klineActive ? "kline" : classicActive ?? mode}
       onChange={(value) => {
         if (value === "kline") {
           onKlineSelect?.();
@@ -60,9 +61,9 @@ export function ModeTabs({ mode, onChange, klineActive = false, onKlineSelect, c
           tab={<strong>{item.label}</strong>}
         />
       ))}
-      <Tabs.TabPane itemKey="kline" tab={<strong>K 线</strong>} />
-      <Tabs.TabPane itemKey="decision" tab={<strong>决策树</strong>} />
-      <Tabs.TabPane itemKey="agent" tab={<strong>Agent</strong>} />
+      {product === "shengtian" ? <Tabs.TabPane itemKey="kline" tab={<strong>K 线</strong>} /> : null}
+      {product === "shengtian" ? <Tabs.TabPane itemKey="decision" tab={<strong>决策树</strong>} /> : null}
+      {product === "shengtian" ? <Tabs.TabPane itemKey="agent" tab={<strong>Agent</strong>} /> : null}
       <Tabs.TabPane itemKey="daliuren" tab={<strong>大六壬</strong>} />
       <Tabs.TabPane itemKey="taiyi" tab={<strong>太乙</strong>} />
     </Tabs>

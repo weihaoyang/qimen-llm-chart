@@ -362,13 +362,19 @@ const syncSequenceWindowToStart = (sequence: ChartSequenceInput, startDatetime: 
   return { ...sequence, startDatetime, endDatetime: nextEnd };
 };
 
-export function AppShell() {
+type ProductSurface = "shengtian" | "chart";
+
+type AppShellProps = {
+  product?: ProductSurface;
+};
+
+export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
   const [klineWorkspaceOpen, setKlineWorkspaceOpen] = useState(false);
   const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
   const [decisionWorkspaceOpen, setDecisionWorkspaceOpen] = useState(false);
-  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(true);
+  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(product === "shengtian");
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
   const [partnerFormState, setPartnerFormState] = useState<ProfileInput>(() => ({
     ...initialState.defaultInput,
@@ -1602,7 +1608,7 @@ export function AppShell() {
 
   const workbenchSidebar = (
     <aside className="sidebar-panel" data-mode={mode}>
-      {mode !== "combined" ? agentInspector : null}
+      {product === "shengtian" && mode !== "combined" ? agentInspector : null}
 
       {mode !== "research" ? null : <div className="research-sidebar-note">研究工具与 Agent 已在同一工作区显示；选择工具后，Agent 会收到对应的结构化文本和 JSON。</div>}
     </aside>
@@ -1771,19 +1777,18 @@ export function AppShell() {
   );
 
   return (
-    <div className={`page-shell${agentWorkspaceOpen ? " is-agent-workspace" : ""}`} data-mode={mode}>
+    <div className={`page-shell product-${product}${agentWorkspaceOpen ? " is-agent-workspace" : ""}`} data-mode={mode}>
       <header className="observatory-hero">
         <div className="observatory-hero__copy">
-          <span className="workspace-kicker">胜天半子</span>
-          <h1>胜天半子</h1>
-          <span className="observatory-hero__workspace">{agentWorkspaceOpen ? "人生决策控制室" : decisionWorkspaceOpen ? "关键决策树" : klineWorkspaceOpen ? "K 线观测" : classicWorkspace === "daliuren" ? "大六壬观测" : classicWorkspace === "taiyi" ? "太乙神数观测" : activeModeMeta.title}</span>
-          <p className="observatory-hero__manifesto" aria-label="品牌宣言">
-            <strong>命盘写下边界，选择决定路径。</strong>
-            <span>从前重构代码，现在重构命运。</span>
+          <span className="workspace-kicker">{product === "shengtian" ? "胜天半子" : "术数排盘工具"}</span>
+          <h1>{product === "shengtian" ? "胜天半子" : "术数排盘工作台"}</h1>
+          <span className="observatory-hero__workspace">{product === "shengtian" ? (agentWorkspaceOpen ? "人生决策控制室" : decisionWorkspaceOpen ? "关键决策树" : klineWorkspaceOpen ? "K 线观测" : classicWorkspace === "daliuren" ? "大六壬观测" : classicWorkspace === "taiyi" ? "太乙神数观测" : activeModeMeta.title) : (classicWorkspace === "daliuren" ? "大六壬排盘研究" : classicWorkspace === "taiyi" ? "太乙神数排盘研究" : activeModeMeta.title)}</span>
+          <p className="observatory-hero__manifesto" aria-label="产品说明">
+            {product === "shengtian" ? <><strong>命盘写下边界，选择决定路径。</strong><span>从前重构代码，现在重构命运。</span></> : <><strong>准确排盘，可复核的术数研究。</strong><span>奇门、八字、紫微与三式研究工具。</span></>}
           </p>
         </div>
 
-        <ModeTabs mode={mode} onChange={handleModeChange} klineActive={klineWorkspaceOpen} onKlineSelect={handleKlineWorkspaceOpen} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} decisionActive={decisionWorkspaceOpen} onDecisionSelect={handleDecisionWorkspaceOpen} agentActive={agentWorkspaceOpen} onAgentSelect={handleAgentWorkspaceOpen} />
+        <ModeTabs mode={mode} onChange={handleModeChange} product={product} klineActive={klineWorkspaceOpen} onKlineSelect={handleKlineWorkspaceOpen} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} decisionActive={decisionWorkspaceOpen} onDecisionSelect={handleDecisionWorkspaceOpen} agentActive={agentWorkspaceOpen} onAgentSelect={handleAgentWorkspaceOpen} />
 
         <div className="platform-account" aria-label="平台账户与 AI 权益">
           {platformWorkspace.status === "checking" ? (
@@ -1854,7 +1859,7 @@ export function AppShell() {
 
       {error ? <p className="error-banner">{error}</p> : null}
 
-      {agentWorkspaceOpen ? (
+      {product === "shengtian" && agentWorkspaceOpen ? (
         <AgentCommandCenter
           mode={mode}
           onModeChange={handleAgentEvidenceModeChange}
@@ -1872,13 +1877,13 @@ export function AppShell() {
           onOpenWorkbench={() => setAgentWorkspaceOpen(false)}
           onCaseRestore={restoreAgentCase}
         />
-      ) : decisionWorkspaceOpen ? (
+      ) : product === "shengtian" && decisionWorkspaceOpen ? (
         <DecisionTreePanel life={lifeKline} relationshipScales={relationshipKlines} />
       ) : classicWorkspace ? (
         <main className="analysis-layout analysis-layout--classic" aria-label={classicWorkspace === "daliuren" ? "大六壬观测" : "太乙神数观测"}>
           <ClassicObservatoryPanel kind={classicWorkspace} value={researchData?.[classicWorkspace] ?? null} />
         </main>
-      ) : klineWorkspaceOpen ? (
+      ) : product === "shengtian" && klineWorkspaceOpen ? (
         <main className="analysis-layout analysis-layout--kline" aria-label="K 线观测">
           <section className="kline-workspace">
             <KlinePanel
@@ -1911,6 +1916,10 @@ export function AppShell() {
             {agentInspector}
           </section>
         </main>
+      ) : product === "chart" ? (
+        <main className="analysis-layout analysis-layout--chart-only" data-layout="chart-only">
+          {workbenchCanvas}
+        </main>
       ) : isNarrowLayout || !resizablePanelsReady ? (
         <main className="analysis-layout analysis-layout--stacked" data-layout="agent-sidebar">
           {workbenchCanvas}
@@ -1939,8 +1948,8 @@ export function AppShell() {
 
       <footer className="qmdj-footer">
         <div className="qmdj-footer__brand">
-          <span>胜天半子</span>
-          <p>以身入局，落下你选择的一子。</p>
+          <span>{product === "shengtian" ? "胜天半子" : "术数排盘工作台"}</span>
+          <p>{product === "shengtian" ? "以身入局，落下你选择的一子。" : "准确计算，清晰阅读，保留每一项盘面依据。"}</p>
         </div>
         <div className="qmdj-footer__meta">
           <span>© 2026 胜天半子</span>

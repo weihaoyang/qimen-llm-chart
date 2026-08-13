@@ -5,10 +5,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     {
-      url: "https://qmdj.singseq.com/",
+      url: "https://shengtian.singseq.com/",
       lastModified,
       changeFrequency: "weekly",
       priority: 1,
+    },
+    {
+      url: "https://paipan.singseq.com/",
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
   ];
 }
