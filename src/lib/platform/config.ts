@@ -124,7 +124,10 @@ export const buildPlatformUnifiedLoginUrl = ({
   accessScope: string;
   returnUrl: string;
 }) => {
-  const resolvedLoginUrl = loginUrl || "https://app.singseq.com/login";
+  // The unified identity entrypoint is hosted by the canonical website.
+  // app.singseq.com is not a production DNS route and must never be used as
+  // an implicit fallback for product OAuth redirects.
+  const resolvedLoginUrl = loginUrl || "https://singseq.com/oauth/authorize";
   const url = new URL(
     resolvedLoginUrl,
     /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
@@ -155,7 +158,10 @@ export const buildPlatformOAuthLoginUrl = ({
   codeChallenge: string;
   state: string;
 }) => {
-  const resolvedLoginUrl = loginUrl || "https://app.singseq.com/login";
+  // Keep OAuth on the canonical, deployed authorization endpoint. A stale
+  // app.singseq.com fallback makes every unauthenticated paid flow fail before
+  // Captcha, order creation, or payment can even be reached.
+  const resolvedLoginUrl = loginUrl || "https://singseq.com/oauth/authorize";
   const url = new URL(
     resolvedLoginUrl,
     /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
