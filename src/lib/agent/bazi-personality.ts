@@ -37,17 +37,18 @@ export const requestBaziPersonalityPrediction = async (
   const messages = buildAgentMessages({
     mode: "bazi",
     question: [
-      "请基于当前已排好的八字盘，先完成命局结构审计，再输出机器可读的性格假设。不要复述出生日期。",
+      "请基于当前已排好的八字盘和【子平与禄命规则审计】输出机器可读的性格假设。不要复述出生日期。",
       "【强制分析顺序】",
-      "1. 核对四柱、日主、月令、藏干、透干和合冲刑害；只能使用载荷中的盘面事实。",
-      "2. 分别列出日主得令、得地、透干、生扶与克泄耗证据，判断极旺、偏旺、中和、偏弱、极弱或有争议。",
+      "1. 规则审计中的日主强弱、从格候选、支持证据、反证与禄命特征是锁定事实；不得改写或越过这些结论。",
+      "2. chart_diagnosis 的 day_master_strength、follow_structure、confidence、supporting_evidence、contradicting_evidence 必须逐项照抄规则审计；structure 仅能补充普通格局的描述。",
       "3. 先评估普通格局，再独立核验特殊格局。不得因为日主弱就直接判从弱，也不得因为日主旺就直接判从强。",
       "4. 从弱/从财/从杀/从儿候选必须检查：日主是否无有效根、无有效印比救应、全局主导力量是否成势，以及合冲是否改变根气；有有效根或逆势救应时必须列为反证并降级为假从或有争议。",
       "5. 从强/专旺候选必须检查：比劫印星是否形成一致旺势、财官食伤是否有力破势；存在有效逆神时不得判纯从。化气格另列，不得与从格混用。",
       "6. 格局有流派分歧时返回候选、支持证据、反证和置信度，不得强行给唯一结论。",
-      "7. 完成格局判断后再映射人格。每个 MBTI 轴至少引用两条相互独立的盘面证据，并列出反向证据；禁止用单一五行、单个十神或生肖直接等同于一个字母。",
+      "7. 完成格局判断后再映射人格。每个 MBTI 轴至少引用两条相互独立的盘面或禄命证据，并列出反向证据；禁止用单一五行、单个十神、神煞或生肖直接等同于一个字母。若证据冲突或不足，分数必须落在 45-55，direction 必须为 X。",
       "只输出 JSON，不要 Markdown 代码围栏。JSON 必须包含：",
       "- prediction_version；pillars（year/month/day/hour）；",
+      "- chart_audit：将载荷中【子平与禄命规则审计】原样回传；",
       "- chart_diagnosis：day_master_strength、structure、follow_structure、confidence、supporting_evidence、contradicting_evidence；",
       "- day_master_strength 只能是 extreme-strong、strong、balanced、weak、extreme-weak、disputed 之一；",
       "- follow_structure 只能是 not-supported、follow-strong-candidate、follow-weak-candidate、follow-wealth-candidate、follow-officer-killing-candidate、follow-output-candidate、transformation-candidate、disputed 之一；",
@@ -62,7 +63,7 @@ export const requestBaziPersonalityPrediction = async (
   });
   messages[0] = {
     ...messages[0],
-    content: `${messages[0].content}\n\n【内部结构化输出契约】\n只输出合法 JSON；不得输出 Markdown、解释前言或 JSON 之外的字符。必须先完成 chart_diagnosis 和从格反证审计，再输出人格映射。day_master_strength 与 follow_structure 必须严格使用用户消息列出的英文 token，不得返回中文枚举。mbti_axes 的高分端必须依次表示 E、N、T、J，低分端必须依次表示 I、S、F、P；mbti_axis_evidence.direction 必须与对应分数方向一致。证据只能引用载荷中存在的月令、透藏、根气、十神、合冲刑害等字段。性格分数只是传统命理叙事映射，不是心理测量，也不是确定性事实。`,
+    content: `${messages[0].content}\n\n【内部结构化输出契约】\n只输出合法 JSON；不得输出 Markdown、解释前言或 JSON 之外的字符。必须将载荷内【子平与禄命规则审计】完整、原样回传至 chart_audit；必须使用其中的 dayMasterStrength、followStructure、confidence、supportingEvidence、contradictingEvidence 填入 chart_diagnosis，不得自行重判。mbti_axes 的高分端必须依次表示 E、N、T、J，低分端必须依次表示 I、S、F、P；45-55 属于不确定区，mbti_axis_evidence.direction 必须为 X，低于45或高于55才可用字母。证据只能引用载荷中存在的月令、透藏、根气、十神、合冲刑害、规则审计与禄命特征。性格分数只是传统命理叙事映射，不是心理测量，也不是确定性事实。`,
   };
 
   const response = await fetchImpl(endpoint, {

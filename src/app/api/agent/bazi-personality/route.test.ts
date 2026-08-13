@@ -7,12 +7,14 @@ const {
   buildBaziChartFromProfileMock,
   serializeBaziToCompactJsonMock,
   serializeBaziToStructuredTextMock,
+  getActiveResearchRuleReleaseMock,
 } = vi.hoisted(() => ({
   requestBaziPersonalityPredictionMock: vi.fn(),
   normalizeProfileInputMock: vi.fn((profile) => profile),
   buildBaziChartFromProfileMock: vi.fn(),
   serializeBaziToCompactJsonMock: vi.fn(),
   serializeBaziToStructuredTextMock: vi.fn(),
+  getActiveResearchRuleReleaseMock: vi.fn(),
 }));
 
 vi.mock("@/lib/agent/bazi-personality", () => ({
@@ -30,6 +32,10 @@ vi.mock("@/lib/profile", () => ({
 vi.mock("@/lib/bazi/serializer", () => ({
   serializeBaziToCompactJson: serializeBaziToCompactJsonMock,
   serializeBaziToStructuredText: serializeBaziToStructuredTextMock,
+}));
+
+vi.mock("@/lib/bazi/research-rule-repository", () => ({
+  getActiveResearchRuleRelease: getActiveResearchRuleReleaseMock,
 }));
 
 import { POST } from "./route";
@@ -102,6 +108,8 @@ describe("POST /api/agent/bazi-personality", () => {
     buildBaziChartFromProfileMock.mockReset();
     serializeBaziToCompactJsonMock.mockReset();
     serializeBaziToStructuredTextMock.mockReset();
+    getActiveResearchRuleReleaseMock.mockReset();
+    getActiveResearchRuleReleaseMock.mockResolvedValue(null);
     buildBaziChartFromProfileMock.mockReturnValue({
       raw: {
         pillars: [
@@ -110,6 +118,24 @@ describe("POST /api/agent/bazi-personality", () => {
           { key: "day", pillar: "戊辰" },
           { key: "time", pillar: "己未" },
         ],
+        structureAudit: {
+          engineVersion: "ziping-luming-rules-v1",
+          dayMasterStrength: "weak",
+          followStructure: "not-supported",
+          confidence: 72,
+          supportingEvidence: ["月令失令", "日主在辰中仍有根气"],
+          contradictingEvidence: ["印星透干，不支持纯从"],
+        },
+        boundaryAudit: {
+          engineVersion: "bazi-boundary-audit-v1",
+          windowMinutes: 30,
+          sensitive: false,
+          changedPillars: [],
+          before: ["乙亥", "甲申", "戊辰", "己未"],
+          current: ["乙亥", "甲申", "戊辰", "己未"],
+          after: ["乙亥", "甲申", "戊辰", "己未"],
+          note: "出生时间前后30分钟四柱未变化。",
+        },
       },
     });
     serializeBaziToCompactJsonMock.mockReturnValue('{"pillars":"compact"}');
@@ -134,16 +160,20 @@ describe("POST /api/agent/bazi-personality", () => {
     const response = await POST(signedRequest());
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual(expect.objectContaining({
-      prediction_version: "bazi-v2-structure-first",
+    const responseBody = await response.json();
+    expect(responseBody).toEqual(expect.objectContaining({
+      prediction_version: "bazi-v3-ziping-luming-rules",
       pillars: { year: "乙亥", month: "甲申", day: "戊辰", hour: "己未" },
       mbti_code: "ENFP",
       ...predictionJson,
       provider: "qmdj-agent",
       model: "test-model",
       cache_hit: false,
-      prompt_version: "bazi-personality-v3-structure-first",
+      prompt_version: "bazi-personality-v4-ziping-luming-rules",
     }));
+    expect(responseBody.chart_diagnosis.day_master_strength).toBe(responseBody.chart_audit.dayMasterStrength);
+    expect(responseBody.chart_diagnosis.follow_structure).toBe(responseBody.chart_audit.followStructure);
+    expect(responseBody.chart_diagnosis.supporting_evidence).toEqual(responseBody.chart_audit.supportingEvidence);
     expect(buildBaziChartFromProfileMock).toHaveBeenCalledTimes(1);
     expect(serializeBaziToStructuredTextMock).toHaveBeenCalledTimes(1);
     expect(serializeBaziToCompactJsonMock).toHaveBeenCalledTimes(1);
@@ -166,7 +196,7 @@ describe("POST /api/agent/bazi-personality", () => {
     await expect(response.json()).resolves.toEqual({ error: "Agent 返回的性格分数不符合结构化契约。" });
   });
 
-  it("normalizes the documented Chinese structure labels to stable contract tokens", async () => {
+  it("does not let an agent override the deterministic structure audit", async () => {
     requestBaziPersonalityPredictionMock.mockResolvedValueOnce({
       content: JSON.stringify({
         ...predictionJson,
@@ -184,8 +214,8 @@ describe("POST /api/agent/bazi-personality", () => {
 
     expect(response.status).toBe(200);
     expect(body.chart_diagnosis).toEqual(expect.objectContaining({
-      day_master_strength: "extreme-weak",
-      follow_structure: "follow-wealth-candidate",
+      day_master_strength: "weak",
+      follow_structure: "not-supported",
     }));
   });
 
@@ -241,6 +271,27 @@ describe("POST /api/agent/bazi-personality", () => {
       timeBasis: "true-solar",
       location: { longitude: 116.4074 },
     }));
+  });
+
+  it("applies only an active rule for the matching base version and emits a reversible version", async () => {
+    getActiveResearchRuleReleaseMock.mockResolvedValue({
+      ruleHash: "a".repeat(64),
+      experimentId: "experiment-1",
+      basePredictionVersion: "bazi-v3-ziping-luming-rules",
+      ruleDefinition: { dsl_version: "bazi-axis-rule-v1", rules: [{ id: "weak-ei", all: [{ field: "chart.day_master_strength", op: "equals", value: "weak" }], adjustments: { ei: -20 } }] },
+      status: "active",
+      activatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+
+    const response = await POST(signedRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.prediction_version).toBe("bazi-v4-ziping-luming-rules+aaaaaaaaaaaa");
+    expect(body.mbti_axes.ei).toBe(48);
+    expect(body.mbti_code).toBe("XNFP");
+    expect(body.applied_research_rules).toEqual(expect.objectContaining({ rule_hash: "a".repeat(64), base_mbti_axes: predictionJson.mbti_axes }));
   });
 
   it("rejects malformed MBTI axes instead of deriving a misleading code", async () => {

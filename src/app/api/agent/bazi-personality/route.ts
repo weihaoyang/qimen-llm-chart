@@ -7,6 +7,9 @@ import {
   serializeBaziToStructuredText,
 } from "@/lib/bazi/serializer";
 import { normalizeProfileInput, type ProfileInput } from "@/lib/profile";
+import { buildResearchFeatureSnapshot } from "@/lib/bazi/research-feature-snapshot";
+import { getActiveResearchRuleRelease } from "@/lib/bazi/research-rule-repository";
+import { applyResearchRules } from "@/lib/bazi/research-rules";
 
 const MAX_CLOCK_SKEW_SECONDS = 300;
 const BAZI_TRAIT_IDS = [
@@ -23,6 +26,8 @@ const MBTI_AXIS_LETTERS = {
   tf: ["F", "T"],
   jp: ["P", "J"],
 } as const;
+const mbtiDirectionForScore = (axis: (typeof MBTI_AXIS_IDS)[number], score: number) =>
+  score >= 55 ? MBTI_AXIS_LETTERS[axis][1] : score <= 45 ? MBTI_AXIS_LETTERS[axis][0] : "X";
 const DAY_MASTER_STRENGTHS = new Set([
   "extreme-strong",
   "strong",
@@ -82,6 +87,7 @@ const predictionCache = new Map<string, { expiresAt: number; value: Record<strin
 const predictionCacheEnabled = process.env.NODE_ENV === "production";
 const REQUEST_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 120;
+const BASE_PREDICTION_VERSION = "bazi-v3-ziping-luming-rules";
 let requestWindowStartedAt = Date.now();
 let requestCountInWindow = 0;
 
@@ -189,12 +195,7 @@ const parsePredictionJson = (content: string) => {
       return [axis, resolveAxisScore(rawMbtiAxes as Record<string, unknown>, axis)];
     }),
   ) as Record<(typeof MBTI_AXIS_IDS)[number], number>;
-  const mbtiCode = [
-    mbtiAxes.ei >= 50 ? "E" : "I",
-    mbtiAxes.sn >= 50 ? "N" : "S",
-    mbtiAxes.tf >= 50 ? "T" : "F",
-    mbtiAxes.jp >= 50 ? "J" : "P",
-  ].join("");
+  const mbtiCode = MBTI_AXIS_IDS.map((axis) => mbtiDirectionForScore(axis, mbtiAxes[axis])).join("");
   const rawDiagnosis = parsed.chart_diagnosis;
   if (!rawDiagnosis || typeof rawDiagnosis !== "object") {
     throw new Error("Agent 没有返回命局结构诊断。");
@@ -225,7 +226,7 @@ const parsePredictionJson = (content: string) => {
       const item = (rawAxisEvidence as Record<string, unknown>)[axis];
       if (!item || typeof item !== "object") throw new Error("Agent 返回的 MBTI 四维证据不符合契约。");
       const record = item as Record<string, unknown>;
-      const expectedDirection = MBTI_AXIS_LETTERS[axis][mbtiAxes[axis] >= 50 ? 1 : 0];
+      const expectedDirection = mbtiDirectionForScore(axis, mbtiAxes[axis]);
       if (record.direction !== expectedDirection) throw new Error("Agent 返回的 MBTI 四维证据方向不一致。");
       return [axis, {
         direction: expectedDirection,
@@ -267,6 +268,7 @@ const parsePredictionJson = (content: string) => {
   return {
     mbti_code: mbtiCode,
     mbti_axes: mbtiAxes,
+    chart_audit: parsed.chart_audit && typeof parsed.chart_audit === "object" ? parsed.chart_audit : {},
     chart_diagnosis: chartDiagnosis,
     mbti_axis_evidence: mbtiAxisEvidence,
     trait_scores: traitScores,
@@ -327,8 +329,14 @@ export async function POST(request: Request) {
       solar: { year, month, day, hour, minute },
     };
     const chart = buildBaziChartFromProfile(normalizeProfileInput(profile));
+    let activeRelease = null;
+    try {
+      activeRelease = await getActiveResearchRuleRelease();
+    } catch {
+      activeRelease = null;
+    }
     const cacheKey = createHmac("sha256", process.env.BAZI_AGENT_INTERNAL_SECRET ?? "")
-      .update(JSON.stringify({ birthDate, birthTime, timezone, gender, timeBasis, longitude }))
+      .update(JSON.stringify({ birthDate, birthTime, timezone, gender, timeBasis, longitude, researchRuleHash: activeRelease?.ruleHash ?? "" }))
       .digest("hex");
     const cached = predictionCacheEnabled ? predictionCache.get(cacheKey) : undefined;
     if (cached && cached.expiresAt > Date.now()) {
@@ -339,6 +347,37 @@ export async function POST(request: Request) {
       jsonPayload: serializeBaziToCompactJson(chart),
     });
     const prediction = parsePredictionJson(analysis.content);
+    const auditedDiagnosis = {
+      ...prediction.chart_diagnosis,
+      day_master_strength: chart.raw.structureAudit.dayMasterStrength,
+      follow_structure: chart.raw.structureAudit.followStructure,
+      confidence: chart.raw.structureAudit.confidence,
+      supporting_evidence: chart.raw.structureAudit.supportingEvidence,
+      contradicting_evidence: chart.raw.structureAudit.contradictingEvidence,
+    };
+    // Research releases are an additive, reversible layer. A missing release
+    // table during a rolling migration must not turn a valid baseline reading
+    // into a user-facing 502; staging/activation endpoints themselves remain
+    // fail-closed.
+    if (activeRelease?.basePredictionVersion !== BASE_PREDICTION_VERSION) activeRelease = null;
+    const featureSnapshot = buildResearchFeatureSnapshot(
+      chart.raw.structureAudit,
+      chart.raw.boundaryAudit,
+      prediction.mbti_axes,
+      prediction.mbti_axis_evidence,
+    );
+    const adjusted = activeRelease
+      ? applyResearchRules(prediction.mbti_axes, featureSnapshot, activeRelease.ruleDefinition)
+      : { axes: prediction.mbti_axes, applied: [] };
+    const adjustedPrediction = {
+      ...prediction,
+      mbti_axes: adjusted.axes,
+      mbti_code: MBTI_AXIS_IDS.map((axis) => mbtiDirectionForScore(axis, adjusted.axes[axis])).join(""),
+      mbti_axis_evidence: Object.fromEntries(MBTI_AXIS_IDS.map((axis) => [axis, {
+        ...prediction.mbti_axis_evidence[axis],
+        direction: mbtiDirectionForScore(axis, adjusted.axes[axis]),
+      }])),
+    };
     const generatedAtIso = new Date().toISOString();
     const predictionHash = createHmac("sha256", process.env.BAZI_AGENT_INTERNAL_SECRET ?? "")
       .update(`${cacheKey}.${analysis.model}.${analysis.content}`)
@@ -347,15 +386,28 @@ export async function POST(request: Request) {
       chart.raw.pillars.map((pillar) => [pillar.key === "time" ? "hour" : pillar.key, pillar.pillar]),
     );
     const response = {
-      prediction_version: "bazi-v2-structure-first",
+      prediction_version: activeRelease
+        ? `bazi-v4-ziping-luming-rules+${activeRelease.ruleHash.slice(0, 12)}`
+        : BASE_PREDICTION_VERSION,
       pillars,
-      ...prediction,
+      ...adjustedPrediction,
+      chart_audit: chart.raw.structureAudit,
+      boundary_audit: chart.raw.boundaryAudit,
+      chart_diagnosis: auditedDiagnosis,
+      applied_research_rules: activeRelease ? {
+        release_contract_version: "qmdj-research-release-v1",
+        rule_hash: activeRelease.ruleHash,
+        experiment_id: activeRelease.experimentId,
+        base_prediction_version: activeRelease.basePredictionVersion,
+        base_mbti_axes: prediction.mbti_axes,
+        applied: adjusted.applied,
+      } : { applied: [] },
       provider: "qmdj-agent",
       model: analysis.model,
       chart_fingerprint: cacheKey,
       prediction_hash: predictionHash,
       generated_at_iso: generatedAtIso,
-      prompt_version: "bazi-personality-v3-structure-first",
+      prompt_version: "bazi-personality-v4-ziping-luming-rules",
       cache_hit: false,
     };
     if (predictionCacheEnabled) predictionCache.set(cacheKey, { expiresAt: Date.now() + PREDICTION_CACHE_TTL_MS, value: response });

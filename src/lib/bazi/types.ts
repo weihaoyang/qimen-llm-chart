@@ -39,6 +39,24 @@ export type BaziYunPreview = {
   }>;
 };
 
+/** Reproducible traditional-analysis inputs; not a claim of one canonical school. */
+export type BaziStructureAudit = {
+  engineVersion: "ziping-luming-rules-v1";
+  dayMasterElement: string;
+  monthCommandElement: string;
+  elementWeights: Record<"wood" | "fire" | "earth" | "metal" | "water", number>;
+  supportWeight: number;
+  drainWeight: number;
+  rootCount: number;
+  visibleSupportCount: number;
+  dayMasterStrength: "extreme-strong" | "strong" | "balanced" | "weak" | "extreme-weak" | "disputed";
+  followStructure: "not-supported" | "follow-strong-candidate" | "follow-weak-candidate" | "follow-wealth-candidate" | "follow-officer-killing-candidate" | "follow-output-candidate" | "transformation-candidate" | "disputed";
+  confidence: number;
+  supportingEvidence: string[];
+  contradictingEvidence: string[];
+  luMingFeatures: Array<{ name: string; positions: string[]; evidence: string }>;
+};
+
 export type NormalizedBaziChart = {
   input: NormalizedProfileInput;
   interpretedDateTime: string;
@@ -69,6 +87,17 @@ export type NormalizedBaziChart = {
     shenGong: {
       pillar: string;
       naYin: string;
+    };
+    structureAudit: BaziStructureAudit;
+    boundaryAudit: {
+      engineVersion: "bazi-boundary-audit-v1";
+      windowMinutes: 30;
+      sensitive: boolean;
+      changedPillars: BaziPillarKey[];
+      before: string[];
+      current: string[];
+      after: string[];
+      note: string;
     };
     yun: BaziYunPreview;
   };

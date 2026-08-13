@@ -7,6 +7,7 @@ import type {
   NormalizedBaziChart,
 } from "./types";
 import { buildShenSha } from "./shen-sha";
+import { buildBaziStructureAudit } from "./structure-audit";
 
 type EightCharInstance = ReturnType<ReturnType<typeof Lunar.fromDate>["getEightChar"]>;
 
@@ -50,6 +51,34 @@ const buildLunarFromProfile = (profile: NormalizedProfileInput) => {
   }
 
   return Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar();
+};
+
+const shiftedLunar = (datetime: string, minuteDelta: number) => {
+  const { year, month, day, hour, minute } = parseNormalizedDateTime(datetime);
+  const shifted = new Date(Date.UTC(year, month - 1, day, hour, minute + minuteDelta));
+  return Solar.fromYmdHms(
+    shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate(),
+    shifted.getUTCHours(), shifted.getUTCMinutes(), 0,
+  ).getLunar();
+};
+
+const buildBoundaryAudit = (datetime: string, current: string[]) => {
+  const before = shiftedLunar(datetime, -30).getBaZi();
+  const after = shiftedLunar(datetime, 30).getBaZi();
+  const keys: BaziPillarKey[] = ["year", "month", "day", "time"];
+  const changedPillars = keys.filter((_, index) => before[index] !== current[index] || after[index] !== current[index]);
+  return {
+    engineVersion: "bazi-boundary-audit-v1" as const,
+    windowMinutes: 30 as const,
+    sensitive: changedPillars.length > 0,
+    changedPillars,
+    before,
+    current,
+    after,
+    note: changedPillars.length
+      ? "出生时间前后30分钟会改变柱位；盲测失配时应优先按相邻盘回放，不能直接归因于人格映射。"
+      : "出生时间前后30分钟四柱未变化。",
+  };
 };
 
 const getPillarDetail = (
@@ -168,6 +197,12 @@ export const buildBaziChartFromProfile = (
   pillars.forEach((pillar, index) => {
     pillar.shenSha = shenSha[index] ?? [];
   });
+  const taiYuan = { pillar: eightChar.getTaiYuan(), naYin: eightChar.getTaiYuanNaYin() };
+  const taiXi = { pillar: eightChar.getTaiXi(), naYin: eightChar.getTaiXiNaYin() };
+  const mingGong = { pillar: eightChar.getMingGong(), naYin: eightChar.getMingGongNaYin() };
+  const shenGong = { pillar: eightChar.getShenGong(), naYin: eightChar.getShenGongNaYin() };
+  const structureAudit = buildBaziStructureAudit(pillars, eightChar.getDayGan(), lunar.getBaZiNaYin(), mingGong.pillar, shenGong.pillar);
+  const boundaryAudit = buildBoundaryAudit(profile.normalized.datetime, lunar.getBaZi());
 
   return {
     input: profile,
@@ -184,22 +219,12 @@ export const buildBaziChartFromProfile = (
       shiShenGan: lunar.getBaZiShiShenGan(),
       shiShenZhi: lunar.getBaZiShiShenZhi(),
       pillars,
-      taiYuan: {
-        pillar: eightChar.getTaiYuan(),
-        naYin: eightChar.getTaiYuanNaYin(),
-      },
-      taiXi: {
-        pillar: eightChar.getTaiXi(),
-        naYin: eightChar.getTaiXiNaYin(),
-      },
-      mingGong: {
-        pillar: eightChar.getMingGong(),
-        naYin: eightChar.getMingGongNaYin(),
-      },
-      shenGong: {
-        pillar: eightChar.getShenGong(),
-        naYin: eightChar.getShenGongNaYin(),
-      },
+      taiYuan,
+      taiXi,
+      mingGong,
+      shenGong,
+      structureAudit,
+      boundaryAudit,
       yun: buildYunPreview(profile.original.gender, eightChar),
     },
   };

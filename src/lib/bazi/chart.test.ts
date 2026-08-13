@@ -50,6 +50,13 @@ describe("buildBaziChartFromProfile", () => {
     expect(chartFor("2024-02-11T00:30").raw.baZi).toEqual(["甲辰", "丙寅", "乙巳", "丙子"]);
   });
 
+  it("marks a birth time close to an hour-pillar boundary for replay", () => {
+    const chart = chartFor("2024-02-10T22:50");
+    expect(chart.raw.boundaryAudit.sensitive).toBe(true);
+    expect(chart.raw.boundaryAudit.changedPillars).toContain("time");
+    expect(chart.raw.boundaryAudit.before).not.toEqual(chart.raw.boundaryAudit.after);
+  });
+
   it("keeps gender-dependent 大运 direction and historical input coverage stable", () => {
     const male = chartFor("1990-01-01T12:00", "male");
     const female = chartFor("1990-01-01T12:00", "female");
