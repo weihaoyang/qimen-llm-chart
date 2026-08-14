@@ -10,6 +10,7 @@ import type { Position } from "3meta";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
 type InspectorPanelProps = {
+  surface?: "chart" | "shengtian";
   agentAngles: readonly AgentAnalysisAngle[];
   mode: WorkbenchMode;
   structuredText: string;
@@ -39,6 +40,7 @@ type InspectorPanelProps = {
 };
 
 export function InspectorPanel({
+  surface = "shengtian",
   agentAngles,
   mode,
   structuredText,
@@ -66,6 +68,7 @@ export function InspectorPanel({
   onCopyJson,
   selectedPalace = null,
 }: InspectorPanelProps) {
+  const isChartSurface = surface === "chart";
   const modeLabel: Record<WorkbenchMode, string> = {
     qimen: "奇门",
     bazi: "八字",
@@ -82,12 +85,12 @@ export function InspectorPanel({
   const interviewSteps = ["议题", "事实", "约束", "选项", "代价", "行动"];
   const interviewPrompt = "我正在处理一个现实人生议题。请进入访谈模式：先不要给结论，只问我一个最关键的问题；依次确认议题、已知事实、不可改变的约束、可选路径、愿意承担的代价和下一步行动。每次只问一个问题，等我回答后再继续。";
   return (
-    <Tabs className="inspector-tabs" defaultValue="agent">
-      <section className="agent-observatory-head" aria-label="AI 议题访谈状态">
+    <Tabs className={isChartSurface ? "inspector-tabs inspector-tabs--chart" : "inspector-tabs"} defaultValue="agent">
+      {!isChartSurface ? <section className="agent-observatory-head" aria-label="AI 议题访谈状态">
         <div className="agent-observatory-head__title"><span>AI RESEARCH ROOM · {modeLabel[mode]}</span><h2>把人生问题问到可以选择。</h2><p>AI 不替你宣布结局；它会逐个追问事实、限制与代价，再把答案整理成可复盘的选择结构。</p></div>
         <div className="agent-observatory-head__action"><span>访谈进度</span><strong>{interviewStep} / 5</strong><button type="button" disabled={agentLoading} onClick={() => onAgentQuestionChange(interviewPrompt)}>开始人生议题访谈</button></div>
         <div className="agent-observatory-head__steps" aria-label="访谈步骤">{interviewSteps.map((step, index) => <span className={index <= interviewStep ? "is-done" : ""} key={step}><b>{index + 1}</b>{step}</span>)}</div>
-      </section>
+      </section> : null}
       <TabsList className="inspector-tabs__list" aria-label="Agent 工作区" variant="line">
         <TabsTrigger value="agent"><Sparkles data-icon="inline-start" />Agent</TabsTrigger>
         {mode !== "combined" ? (
@@ -169,11 +172,20 @@ export function InspectorPanel({
       </TabsContent>
 
       <TabsContent className="inspector-tabs__content" value="agent">
-        <div className="agent-panel">
+        <div className={isChartSurface ? "agent-panel agent-panel--chart" : "agent-panel"}>
+          {isChartSurface ? (
+            <header className="chart-inspector-head">
+              <span>AI ANALYSIS DESK</span>
+              <div>
+                <strong>{modeLabel[mode]}盘面分析</strong>
+                <small>基于当前盘面、所选宫位与可追溯依据</small>
+              </div>
+            </header>
+          ) : null}
           <section className="agent-panel__section agent-panel__section--question">
             <div className="agent-panel__section-head">
-              <strong>分析角度</strong>
-              <span>{modeLabel[mode]} · 选择一个角度或直接改写问题</span>
+              <strong>{isChartSurface ? "所问事项" : "分析角度"}</strong>
+              <span>{isChartSurface ? "选择切入点，或直接写下要问的事" : `${modeLabel[mode]} · 选择一个角度或直接改写问题`}</span>
             </div>
             <div className="agent-panel__angles" aria-label="分析角度">
               {agentAngles.map((angle) => (
@@ -249,10 +261,14 @@ export function InspectorPanel({
               {agentLoading ? <LoaderCircle className="agent-spin" /> : <Sparkles />}
               {agentLoading
                 ? "正在处理"
-                : isInterviewZeroState
+                : !isChartSurface && isInterviewZeroState
                   ? agentUsageAvailable > 0
                     ? "开始访谈 · 消耗 1 轮"
                     : "开通后开始访谈"
+                  : isChartSurface
+                    ? agentUsageAvailable > 0
+                      ? agentUsageConsumed > 0 ? "继续分析 · 消耗 1 次" : "发起盘面分析 · 消耗 1 次"
+                      : "开通 AI 分析"
                   : agentUsageConsumed > 0
                     ? agentUsageAvailable > 0
                       ? "发送问题 · 消耗 1 轮"
@@ -298,8 +314,8 @@ export function InspectorPanel({
               ) : (
                 <div className="agent-result-empty">
                   <Sparkles />
-                  <strong>访谈尚未开始</strong>
-                  <span>先回答一个问题：你现在最想改变的现实选择是什么？</span>
+                  <strong>{isChartSurface ? "尚未发起盘面分析" : "访谈尚未开始"}</strong>
+                  <span>{isChartSurface ? "先选一个分析角度，或写下具体所问事项；结果会引用当前盘面的可核对依据。" : "先回答一个问题：你现在最想改变的现实选择是什么？"}</span>
                 </div>
               )}
             </ScrollArea>

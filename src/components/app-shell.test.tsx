@@ -48,8 +48,12 @@ describe("AppShell", () => {
     render(<AppShell product="chart" />);
 
     expect(await screen.findByText("奇门主盘", { selector: ".observatory-hero__workspace" }, { timeout: 30000 })).toBeInTheDocument();
-    expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).toBeInTheDocument();
-    expect(document.querySelector('[data-mode="qimen"] .sidebar-panel')).toBeInTheDocument();
+    expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-layout="chart-analysis-drawer"]')).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /盘面分析/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /盘面分析/ }));
+    expect(screen.getByRole("dialog", { name: "盘面分析台" })).toBeInTheDocument();
+    expect(screen.queryByText("开始人生议题访谈")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "调整盘面" }));
     expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();

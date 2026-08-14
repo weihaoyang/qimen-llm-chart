@@ -10108,6 +10108,445 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   grid-template-rows: auto auto auto !important;
   align-content: start !important;
 }
+
+/* Four pillars are a reading table, not a field of equal-weight cards.
+   The major stems and branches own the visual hierarchy; all relationships
+   remain available as concise annotations in the same column. */
+.bazi-panel .bazi-traditional-board {
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid #2a2723 !important;
+  border-radius: 2px !important;
+  background: #fffdf7 !important;
+  box-shadow: none !important;
+}
+
+.bazi-panel .bazi-traditional-board__header {
+  margin: 0 !important;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid #2a2723;
+  background: #f3ede2;
+}
+
+.bazi-panel .bazi-traditional-board__header h2 {
+  color: #171513;
+  font-family: var(--display-font), "STKaiti", KaiTi, serif;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.bazi-panel .bazi-traditional-board__viewport {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: #b8afa1 #f3ede2;
+  scrollbar-width: thin;
+}
+
+.bazi-panel .bazi-table {
+  display: grid !important;
+  min-width: 780px;
+  gap: 0 !important;
+  background: #2a2723;
+}
+
+.bazi-panel .bazi-table__row {
+  display: grid !important;
+  grid-template-columns: 88px repeat(4, minmax(0, 1fr)) !important;
+  gap: 1px !important;
+  background: #2a2723;
+}
+
+.bazi-panel .bazi-table__label,
+.bazi-panel .bazi-table__cell {
+  min-width: 0;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #fffdf7 !important;
+}
+
+.bazi-panel .bazi-table__label {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 7px 10px !important;
+  color: #5d574f;
+  font-size: 0.71rem !important;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-align: left;
+  background: #f3ede2 !important;
+}
+
+.bazi-panel .bazi-table__row--head .bazi-table__label {
+  color: #fffdf7;
+  background: #2a2723 !important;
+}
+
+.bazi-panel .bazi-table__cell {
+  padding: 6px 10px !important;
+}
+
+.bazi-panel .bazi-table__cell--head {
+  display: flex !important;
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 42px;
+  gap: 10px;
+  color: #171513;
+  background: #f9f4eb !important;
+}
+
+.bazi-panel .bazi-table__cell--head span {
+  color: #5d574f;
+  font-size: 0.72rem !important;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.bazi-panel .bazi-table__cell--head strong {
+  color: #171513;
+  font-family: var(--display-font), "STKaiti", KaiTi, serif;
+  font-size: 1.3rem !important;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.bazi-panel .bazi-table__row--head .bazi-table__cell:nth-child(4) {
+  border-top: 4px solid #c9422e !important;
+  padding-top: 2px !important;
+  background: #fff1e8 !important;
+}
+
+.bazi-panel .bazi-glyph-cell {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "glyph meta relation";
+  align-items: center;
+  justify-items: start;
+  min-height: 76px;
+  gap: 9px;
+  position: relative;
+}
+
+.bazi-panel .bazi-glyph-cell--day-master {
+  border-left: 4px solid #c9422e !important;
+  padding-left: 6px !important;
+  background: #fff1e8 !important;
+  box-shadow: none !important;
+}
+
+.bazi-panel .bazi-glyph-cell__glyph {
+  grid-area: glyph;
+  color: #171513;
+  font-family: var(--display-font), "STKaiti", KaiTi, serif;
+  font-size: clamp(2.45rem, 4vw, 3.45rem) !important;
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: 0;
+}
+
+.bazi-panel .bazi-glyph-cell__meta {
+  grid-area: meta;
+  color: #5d574f !important;
+  font-size: 0.78rem !important;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.bazi-panel .bazi-glyph-cell .bazi-relation-badge {
+  grid-area: relation;
+}
+
+.bazi-panel .bazi-relation-badge,
+.bazi-panel .bazi-ten-god-badge {
+  min-height: 20px;
+  padding: 0 6px;
+  border: 1px solid currentColor !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  font-size: 0.66rem !important;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bazi-panel .bazi-plain-cell {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 38px;
+  gap: 5px;
+}
+
+.bazi-panel .bazi-plain-cell strong {
+  color: #24211e;
+  font-size: 0.82rem !important;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.bazi-panel .bazi-plain-cell span {
+  color: #6a635a !important;
+  font-size: 0.68rem !important;
+}
+
+.bazi-panel .bazi-god-list {
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.bazi-panel .bazi-stack-cell {
+  display: grid !important;
+  align-content: start;
+  gap: 0 !important;
+  min-height: 88px;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+
+.bazi-panel .bazi-stack-cell__item {
+  display: grid !important;
+  grid-template-columns: 34px 1.1rem minmax(0, 1fr) auto;
+  grid-template-areas: "qi stem god relation";
+  align-items: center;
+  min-height: 25px;
+  gap: 5px;
+  padding: 3px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #ddd5c8 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.bazi-panel .bazi-stack-cell__item:last-child {
+  border-bottom: 0 !important;
+}
+
+.bazi-panel .bazi-stack-cell__item small {
+  grid-area: qi;
+  color: #8b8174 !important;
+  font-size: 0.62rem !important;
+  font-weight: 800;
+}
+
+.bazi-panel .bazi-stack-cell__item strong {
+  grid-area: stem;
+  color: #171513;
+  font-family: var(--display-font), "STKaiti", KaiTi, serif;
+  font-size: 1.1rem !important;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.bazi-panel .bazi-stack-cell__item .bazi-ten-god-badge {
+  grid-area: god;
+  justify-self: start;
+}
+
+.bazi-panel .bazi-stack-cell__item span {
+  display: none;
+}
+
+.bazi-panel .bazi-stack-cell__item em {
+  grid-area: relation;
+  color: inherit !important;
+  font-style: normal;
+}
+
+.bazi-panel .bazi-stack-cell__empty {
+  display: flex;
+  align-items: center;
+  min-height: 100%;
+  color: #8b8174;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 720px) {
+  .bazi-panel .bazi-traditional-board {
+    border-width: 1px !important;
+  }
+
+  .bazi-panel .bazi-traditional-board__header {
+    padding: 9px 12px 7px;
+  }
+
+  .bazi-panel .bazi-table {
+    min-width: 760px;
+  }
+
+  .bazi-panel .bazi-table__row {
+    grid-template-columns: 78px repeat(4, minmax(160px, 1fr)) !important;
+  }
+
+  .bazi-panel .bazi-glyph-cell {
+    min-height: 82px;
+  }
+
+  .bazi-panel .bazi-glyph-cell__glyph {
+    font-size: 3rem !important;
+  }
+}
+
+/* The qimen surface is deliberately height-bound because its nine palaces
+   form a square. Other disciplines are document-like reading tools: they
+   must own a real scroll region rather than inherit that square constraint. */
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="research"] {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content,
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content,
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="research"] > .canvas-panel__content {
+  display: block !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] .bazi-panel {
+  height: auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+}
+
+/* Three-method research is a dense reference sheet.  The original shared
+   observatory rhythm was designed for an editorial product page and left too
+   much dead space between the actual Daliuren structures. */
+.analysis-layout--classic {
+  padding: 10px !important;
+}
+
+.analysis-layout--classic .classic-observatory {
+  width: min(1280px, 100%) !important;
+  padding: 14px !important;
+  border-width: 2px !important;
+  box-shadow: 5px 5px 0 #171717 !important;
+}
+
+.analysis-layout--classic .classic-observatory__header {
+  gap: 12px;
+}
+
+.analysis-layout--classic .classic-observatory h2 {
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+}
+
+.analysis-layout--classic .classic-observatory__header p {
+  max-width: 580px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.analysis-layout--classic .classic-observatory__protocol {
+  min-width: 160px;
+  padding: 8px 10px;
+  border-width: 2px;
+}
+
+.analysis-layout--classic .classic-observatory__summary {
+  margin-top: 10px;
+}
+
+.analysis-layout--classic .classic-observatory__summary > div {
+  gap: 2px;
+  min-height: 64px;
+  padding: 7px 9px;
+}
+
+.analysis-layout--classic .classic-observatory__summary strong {
+  font-size: 0.92rem;
+  line-height: 1.28;
+}
+
+.analysis-layout--classic .classic-observatory__section-head {
+  align-items: end;
+  gap: 12px;
+  margin: 13px 0 6px;
+}
+
+.analysis-layout--classic .classic-observatory__section-head h3 {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.analysis-layout--classic .classic-observatory__section-head p {
+  max-width: 500px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.analysis-layout--classic .daliuren-board {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.analysis-layout--classic .daliuren-palace {
+  min-height: 108px;
+  padding: 6px 8px;
+}
+
+.analysis-layout--classic .daliuren-palace > div {
+  gap: 0;
+}
+
+.analysis-layout--classic .daliuren-palace > div strong {
+  font-size: 1.6rem;
+}
+
+.analysis-layout--classic .daliuren-palace > div em {
+  font-size: 0.76rem;
+}
+
+.analysis-layout--classic .daliuren-courses__grid {
+  gap: 5px;
+}
+
+.analysis-layout--classic .daliuren-courses__grid article {
+  gap: 2px;
+  padding: 7px;
+}
+
+.analysis-layout--classic .daliuren-transmissions {
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.analysis-layout--classic .daliuren-transmissions article {
+  gap: 3px;
+  padding: 8px 10px;
+}
+
+.analysis-layout--classic .classic-observatory__anchors {
+  gap: 5px;
+  margin-top: 8px;
+  padding: 8px 10px;
+}
+
+@media (max-width: 820px) {
+  .analysis-layout--classic {
+    padding: 7px !important;
+  }
+
+  .analysis-layout--classic .classic-observatory {
+    padding: 10px !important;
+    box-shadow: 3px 3px 0 #171717 !important;
+  }
+
+  .analysis-layout--classic .classic-observatory__summary > div {
+    min-height: 56px;
+  }
+
+  .analysis-layout--classic .daliuren-palace {
+    min-height: 96px;
+  }
+}
 .analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
   width: auto !important;
   height: 100% !important;

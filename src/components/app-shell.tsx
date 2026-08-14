@@ -438,7 +438,11 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [klineAiError, setKlineAiError] = useState<string | null>(null);
   const [klineAiLoading, setKlineAiLoading] = useState(false);
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
+  // Keep the initial tree deterministic across SSR and hydration.  The CSS
+  // breakpoint owns the first paint; the effect below switches to the drawer
+  // only after React has mounted, avoiding a server/client layout mismatch.
   const [isNarrowLayout, setIsNarrowLayout] = useState(false);
+  const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
   // The server and supported browsers render the final split surface from the
   // first paint. Test/legacy runtimes without ResizeObserver still use the
   // stacked fallback and never attempt to mount resizable panels.
@@ -1495,6 +1499,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
 
   const agentInspector = (
     <InspectorPanel
+      surface={product === "chart" ? "chart" : "shengtian"}
       agentAngles={AGENT_ANALYSIS_ANGLES[mode]}
       agentError={agentState[mode].error}
       agentConversation={agentState[mode].conversation}
@@ -1568,6 +1573,17 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     mediaQuery.addEventListener("change", syncLayout);
     return () => mediaQuery.removeEventListener("change", syncLayout);
   }, []);
+
+  useEffect(() => {
+    if (!chartAnalysisOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setChartAnalysisOpen(false);
+    };
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [chartAnalysisOpen]);
 
   useEffect(() => {
     if (!parametersOpen) {
@@ -1975,9 +1991,41 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         </main>
       ) : product === "chart" ? (
         isNarrowLayout || !resizablePanelsReady ? (
-          <main className="analysis-layout analysis-layout--stacked" data-layout="chart-agent-sidebar">
-            {workbenchCanvas}
-            {workbenchSidebar}
+          <main className="analysis-layout analysis-layout--chart-compact" data-layout="chart-analysis-drawer">
+            <div className="chart-compact-canvas">
+              {workbenchCanvas}
+              <button
+                type="button"
+                className="chart-analysis-toggle"
+                aria-controls="chart-analysis-drawer"
+                aria-expanded={chartAnalysisOpen}
+                onClick={() => setChartAnalysisOpen(true)}
+              >
+                <span>AI</span>
+                盘面分析
+              </button>
+            </div>
+            <div
+              className="chart-analysis-drawer"
+              id="chart-analysis-drawer"
+              aria-hidden={!chartAnalysisOpen}
+              data-open={chartAnalysisOpen}
+            >
+              <button
+                type="button"
+                className="chart-analysis-drawer__backdrop"
+                aria-label="关闭盘面分析"
+                tabIndex={chartAnalysisOpen ? 0 : -1}
+                onClick={() => setChartAnalysisOpen(false)}
+              />
+              <section className="chart-analysis-drawer__panel" role="dialog" aria-label="盘面分析台" aria-modal="true">
+                <header className="chart-analysis-drawer__header">
+                  <span>AI ANALYSIS DESK</span>
+                  <button type="button" onClick={() => setChartAnalysisOpen(false)} aria-label="关闭盘面分析">×</button>
+                </header>
+                {workbenchSidebar}
+              </section>
+            </div>
           </main>
         ) : (
           <Group

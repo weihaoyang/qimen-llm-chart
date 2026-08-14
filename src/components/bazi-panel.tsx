@@ -222,6 +222,7 @@ export function BaziPanel({ chart }: BaziPanelProps) {
           </div>
         </div>
 
+        <div className="bazi-traditional-board__viewport">
         <div className="bazi-table">
           <div className="bazi-table__row bazi-table__row--head">
             <div className="bazi-table__label">项目</div>
@@ -383,6 +384,7 @@ export function BaziPanel({ chart }: BaziPanelProps) {
               </div>
             ))}
           </div>
+        </div>
         </div>
       </section>
 
