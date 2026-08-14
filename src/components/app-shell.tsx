@@ -129,6 +129,9 @@ type AgentModeState = {
 
 type PlatformWorkspaceState = {
   status: "checking" | "guest" | "authenticated" | "error";
+  /** The catalog is separate from identity: a transient catalog failure must
+   * never masquerade as a genuinely unavailable payment provider. */
+  catalogStatus: "loading" | "ready" | "error";
   session: PlatformSession | null;
   profile: PlatformProfile | null;
   gate: { allowed: boolean; mode: string; reason_code: string; message: string } | null;
@@ -422,6 +425,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [invitationCodeError, setInvitationCodeError] = useState<string | null>(null);
   const [platformWorkspace, setPlatformWorkspace] = useState<PlatformWorkspaceState>({
     status: "checking",
+    catalogStatus: "loading",
     session: null,
     profile: null,
     gate: null,
@@ -499,12 +503,27 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         return;
       }
 
-      const plansPromise = listPlatformPlans(platformConfig.productCode).catch(() => ({ items: [], channels: [] }));
+      const plansPromise = listPlatformPlans(platformConfig.productCode);
       const session = loadPlatformSession();
       if (!session) {
-        const plans = await plansPromise;
-        if (cancelled) return;
-        setPlatformWorkspace({ status: "guest", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: null });
+        try {
+          const plans = await plansPromise;
+          if (cancelled) return;
+          setPlatformWorkspace({ status: "guest", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: null });
+        } catch (nextError) {
+          if (cancelled) return;
+          setPlatformWorkspace({
+            status: "guest",
+            catalogStatus: "error",
+            session: null,
+            profile: null,
+            gate: null,
+            usage: null,
+            plans: [],
+            channels: [],
+            error: nextError instanceof Error ? `无法读取支付方式：${nextError.message}` : "无法读取支付方式，请稍后重试。",
+          });
+        }
         return;
       }
 
@@ -517,7 +536,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
           plansPromise,
         ]);
         if (cancelled) return;
-        setPlatformWorkspace({ status: "authenticated", session: access.session, profile: access.profile, gate, usage, plans: plans.items, channels: plans.channels, error: null });
+        setPlatformWorkspace({ status: "authenticated", catalogStatus: "ready", session: access.session, profile: access.profile, gate, usage, plans: plans.items, channels: plans.channels, error: null });
         setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
           key,
           { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
@@ -525,8 +544,22 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       } catch (nextError) {
         if (cancelled) return;
         clearPlatformSession();
-        const plans = await plansPromise;
-        setPlatformWorkspace({ status: "guest", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: nextError instanceof Error ? nextError.message : "平台登录状态已失效。" });
+        try {
+          const plans = await plansPromise;
+          setPlatformWorkspace({ status: "guest", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: nextError instanceof Error ? nextError.message : "平台登录状态已失效。" });
+        } catch (catalogError) {
+          setPlatformWorkspace({
+            status: "guest",
+            catalogStatus: "error",
+            session: null,
+            profile: null,
+            gate: null,
+            usage: null,
+            plans: [],
+            channels: [],
+            error: catalogError instanceof Error ? `无法读取支付方式：${catalogError.message}` : "无法读取支付方式，请稍后重试。",
+          });
+        }
       }
     };
 
@@ -1103,8 +1136,29 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     if (platformWorkspace.status !== "authenticated" && platformWorkspace.status !== "guest") {
       throw new Error(platformWorkspace.error || "平台状态异常，请刷新后重试。");
     }
-    if (!platformSelectedChannel) {
-      throw new Error("当前没有可用的支付渠道，请稍后重试。");
+    let paymentChannel = platformSelectedChannel;
+    if (!paymentChannel) {
+      if (platformWorkspace.catalogStatus === "loading") {
+        throw new Error("正在读取支付方式，请稍候再发起支付。");
+      }
+      try {
+        const catalog = await listPlatformPlans(platformConfig.productCode);
+        paymentChannel = catalog.channels.find((channel) => channel.ready)?.channel ?? "";
+        setPlatformWorkspace((current) => ({
+          ...current,
+          catalogStatus: "ready",
+          plans: catalog.items,
+          channels: catalog.channels,
+          error: current.status === "error" ? null : current.error,
+        }));
+      } catch (nextError) {
+        const message = nextError instanceof Error ? nextError.message : "未知网络错误";
+        setPlatformWorkspace((current) => ({ ...current, catalogStatus: "error", error: `无法读取支付方式：${message}` }));
+        throw new Error(`无法读取支付方式，请检查网络后重试。${message}`);
+      }
+      if (!paymentChannel) {
+        throw new Error("当前支付方式暂不可用，请稍后重试。");
+      }
     }
     const returnUrl = (orderId: string) => `${window.location.origin}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(platformConfig.productCode)}`;
     checkoutInFlightRef.current = true;
@@ -1119,7 +1173,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         const checkout = await createAccountCheckout(
           access.session.access_token,
           planCode,
-          platformSelectedChannel,
+          paymentChannel,
           returnUrl,
           { csrfToken: access.session.csrf_token },
         );
@@ -1133,10 +1187,10 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         return;
       }
 
-      const checkout = await createGuestCheckout(planCode, platformSelectedChannel);
+      const checkout = await createGuestCheckout(planCode, paymentChannel);
       const payment = await createGuestPaymentAttempt(
         checkout,
-        platformSelectedChannel,
+        paymentChannel,
         returnUrl(checkout.order.order_id),
       );
       savePendingPaidAnalysis({
