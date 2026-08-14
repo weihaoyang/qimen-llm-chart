@@ -43,4 +43,18 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "开通后开始访谈" })).toBeInTheDocument();
     expect(screen.queryByText("请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。")).not.toBeInTheDocument();
   }, 30000);
+
+  it("keeps single-chart and sequence analysis in the chart product", async () => {
+    render(<AppShell product="chart" />);
+
+    expect(await screen.findByText("奇门主盘", { selector: ".observatory-hero__workspace" }, { timeout: 30000 })).toBeInTheDocument();
+    expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-mode="qimen"] .sidebar-panel')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "调整盘面" }));
+    expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "序列" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "结构化文本" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "JSON" })).toBeInTheDocument();
+  }, 30000);
 });

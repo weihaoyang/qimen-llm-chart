@@ -1662,7 +1662,10 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
 
   const workbenchSidebar = (
     <aside className="sidebar-panel" data-mode={mode}>
-      {product === "shengtian" && mode !== "combined" ? agentInspector : null}
+      {/* The split only moves the life-decision control room to Shengtian.
+          The chart product keeps the original per-chart Agent analysis beside
+          Qimen/Bazi/Ziwei, including single-chart and sequence evidence. */}
+      {(product === "chart" || product === "shengtian") && mode !== "combined" ? agentInspector : null}
 
       {mode !== "research" ? null : <div className="research-sidebar-note">研究工具与 Agent 已在同一工作区显示；选择工具后，Agent 会收到对应的结构化文本和 JSON。</div>}
     </aside>
@@ -1971,9 +1974,31 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
           </section>
         </main>
       ) : product === "chart" ? (
-        <main className="analysis-layout analysis-layout--chart-only" data-layout="chart-only">
-          {workbenchCanvas}
-        </main>
+        isNarrowLayout || !resizablePanelsReady ? (
+          <main className="analysis-layout analysis-layout--stacked" data-layout="chart-agent-sidebar">
+            {workbenchCanvas}
+            {workbenchSidebar}
+          </main>
+        ) : (
+          <Group
+            id="qimen-workbench-layout"
+            orientation="horizontal"
+            className="analysis-layout analysis-panel-group"
+            aria-label="排盘主盘与智能分析分栏"
+          >
+            <Panel id="qimen-chart" defaultSize="68%" minSize="54%" className="analysis-panel">
+              {workbenchCanvas}
+            </Panel>
+            <Separator id="qimen-workbench-separator" className="analysis-panel-divider">
+              <span className="analysis-panel-divider__grip" aria-hidden="true">
+                <GripVertical size={17} strokeWidth={1.8} />
+              </span>
+            </Separator>
+            <Panel id="qimen-agent" defaultSize="32%" minSize="360px" className="analysis-panel">
+              {workbenchSidebar}
+            </Panel>
+          </Group>
+        )
       ) : isNarrowLayout || !resizablePanelsReady ? (
         <main className="analysis-layout analysis-layout--stacked" data-layout="agent-sidebar">
           {workbenchCanvas}
