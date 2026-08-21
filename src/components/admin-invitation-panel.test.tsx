@@ -50,6 +50,15 @@ describe("AdminInvitationPanel", () => {
     expect(client.listAdminInvitationCodes).not.toHaveBeenCalled();
   });
 
+  it("fails closed when the platform returns a non-admin role", async () => {
+    client.getAdminSession.mockResolvedValue({ authorized: true, role: "support" });
+    render(<AdminInvitationPanel accessToken="support-token" productCode="shengtian-banzi" planCode="shengtian-banzi-analysis-10" />);
+
+    await waitFor(() => expect(client.getAdminSession).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: /管理员 · 邀请码/ })).not.toBeInTheDocument();
+    expect(client.listAdminInvitationCodes).not.toHaveBeenCalled();
+  });
+
   it("creates a product-scoped code and displays plaintext only in the current view", async () => {
     render(<AdminInvitationPanel accessToken="token" productCode="shengtian-banzi" planCode="shengtian-banzi-analysis-10" />);
     fireEvent.click(await screen.findByRole("button", { name: /管理员 · 邀请码/ }));

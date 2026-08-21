@@ -12,6 +12,7 @@ const {
   releasePlatformUsageMock,
   requestAgentAnalysisMock,
   agentPlanCode,
+  klinePlanCode,
 } = vi.hoisted(() => ({
   readGuestCheckoutTokenMock: vi.fn(),
   readBearerTokenMock: vi.fn(),
@@ -24,6 +25,7 @@ const {
   releasePlatformUsageMock: vi.fn(),
   requestAgentAnalysisMock: vi.fn(),
   agentPlanCode: "shengtian-banzi-analysis-10",
+  klinePlanCode: "shengtian-banzi-kline-precise-1",
 }));
 
 vi.mock("@/lib/platform/server", () => ({
@@ -37,6 +39,7 @@ vi.mock("@/lib/platform/server", () => ({
   releaseGuestUsage: releaseGuestUsageMock,
   releasePlatformUsage: releasePlatformUsageMock,
   AGENT_PLAN_CODE: agentPlanCode,
+  KLINE_PLAN_CODE: klinePlanCode,
 }));
 
 vi.mock("@/lib/agent/chat", () => ({
@@ -146,6 +149,33 @@ describe("POST /api/agent", () => {
     expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
+  it("accepts the restored paid conversation and forwards it before committing the next turn", async () => {
+    readBearerTokenMock.mockReturnValue("account-token");
+    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "ok" });
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "follow-up-reservation" });
+    requestAgentAnalysisMock.mockResolvedValue({ content: "基于上一轮继续分析", model: "mock-model" });
+    commitPlatformUsageMock.mockResolvedValue({ product_code: "shengtian-banzi", available: 8, reserved: 0, consumed: 2 });
+    const history = [
+      { role: "user", content: "第一轮问题" },
+      { role: "assistant", content: "第一轮结果" },
+    ];
+    const response = await POST(new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { Authorization: "Bearer account-token" },
+      body: JSON.stringify({
+        mode: "bazi",
+        question: "追问：下一步怎么做？",
+        history,
+        structuredText: "同一份已锁定盘面证据",
+        jsonPayload: "{}",
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(requestAgentAnalysisMock).toHaveBeenCalledWith(expect.objectContaining({ history }));
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "follow-up-reservation", { planCode: agentPlanCode });
+  });
+
   it("blocks an authenticated account before reserving when gate is denied", async () => {
     readBearerTokenMock.mockReturnValue("account-token");
     fetchPlatformGateMock.mockResolvedValue({ allowed: false, reason_code: "entitlement_missing", message: "请先购买。" });
@@ -195,6 +225,29 @@ describe("POST /api/agent", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "无效的分析产品。" });
     expect(reserveGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts a Bazi life K line and reserves the dedicated K line entitlement", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "kline-reservation" });
+    requestAgentAnalysisMock.mockResolvedValue({ content: "人生 K 线深度报告", model: "mock-model" });
+    commitGuestUsageMock.mockResolvedValue({ product_code: "shengtian-banzi", available: 0, reserved: 0, consumed: 1 });
+
+    const response = await POST(new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "X-Guest-Checkout-Token": "token-1" },
+      body: JSON.stringify({
+        mode: "bazi",
+        analysisProduct: "kline",
+        structuredText: "八字大运与流年结构化材料",
+        jsonPayload: "{}",
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(reserveGuestUsageMock).toHaveBeenCalledWith("token-1", { planCode: klinePlanCode });
+    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "kline-reservation", { planCode: klinePlanCode });
+    expect(requestAgentAnalysisMock).toHaveBeenCalledWith(expect.objectContaining({ mode: "bazi", analysisProduct: "kline" }));
   });
 
   it("releases the reserved credit when the model fails", async () => {

@@ -14,6 +14,7 @@ import {
 import { BIRTH_CITY_CATALOG, findBirthCity } from "@/lib/profile/cities";
 import { shiftDateTimeInput } from "@/lib/profile";
 import type { ProfileInput } from "@/lib/profile";
+import { DEFAULT_BAZI_SETTINGS } from "@/lib/bazi/settings";
 import { getSelectableTimeZones } from "@/lib/qimen/defaults";
 import {
   QIMEN_SOLAR_TERMS,
@@ -116,6 +117,7 @@ export function ChartForm({
     ...parseDateTime(value.datetime),
     isLeapMonth: false,
   };
+  const baziSettings = { ...DEFAULT_BAZI_SETTINGS, ...value.baziSettings };
   const timeZoneOptions = getSelectableTimeZones(value.timeZone, TIME_ZONES);
   const isSidebar = layout === "sidebar";
   const shiftSolarDateTime = (hours: number) => {
@@ -347,6 +349,48 @@ export function ChartForm({
               </SelectContent>
             </Select>
           </label>
+
+          {mode === "bazi" || mode === "combined" || mode === "research" ? (
+            <>
+              <label className="control-field">
+                <span>八字换年</span>
+                <Select
+                  value={baziSettings.yearBoundary}
+                  onValueChange={(yearBoundary) =>
+                    onValueChange({
+                      ...value,
+                      baziSettings: { ...baziSettings, yearBoundary: yearBoundary as typeof baziSettings.yearBoundary },
+                    })
+                  }
+                >
+                  <SelectTrigger className="control-select"><SelectValue /></SelectTrigger>
+                  <SelectContent className="control-select-content">
+                    <SelectItem value="li-chun">立春换年（默认）</SelectItem>
+                    <SelectItem value="lunar-new-year">春节换年</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+
+              <label className="control-field">
+                <span>八字换日</span>
+                <Select
+                  value={baziSettings.dayBoundary}
+                  onValueChange={(dayBoundary) =>
+                    onValueChange({
+                      ...value,
+                      baziSettings: { ...baziSettings, dayBoundary: dayBoundary as typeof baziSettings.dayBoundary },
+                    })
+                  }
+                >
+                  <SelectTrigger className="control-select"><SelectValue /></SelectTrigger>
+                  <SelectContent className="control-select-content">
+                    <SelectItem value="midnight">子正换日（默认）</SelectItem>
+                    <SelectItem value="zi-start">子初换日（23时）</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            </>
+          ) : null}
 
           {value.timeBasis === "true-solar" ? (
             <>

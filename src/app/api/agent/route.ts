@@ -96,8 +96,11 @@ export async function POST(request: Request) {
     if (!analysisProduct) {
       return NextResponse.json({ error: "无效的分析产品。" }, { status: 400 });
     }
-    if (analysisProduct === "kline" && body.mode !== "qimen") {
-      return NextResponse.json({ error: "K 线 AI 目前只支持奇门序列盘。" }, { status: 400 });
+    // Life K lines are derived from Bazi dayun/liunian, while relationship
+    // K lines are derived from Qimen sequences. Keep this boundary explicit
+    // so the model can never receive the wrong source contract.
+    if (analysisProduct === "kline" && body.mode !== "qimen" && body.mode !== "bazi") {
+      return NextResponse.json({ error: "K 线 AI 仅支持八字人生线或奇门感情线。" }, { status: 400 });
     }
 
     if (!isWorkbenchMode(body.mode)) {

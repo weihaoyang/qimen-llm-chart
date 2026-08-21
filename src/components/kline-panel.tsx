@@ -3,12 +3,14 @@
 import { useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import type { KlineKind, KlinePoint, KlineScale, KlineSeries } from "@/lib/qimen/kline";
+import { groupLifeKlineBands, movingAverage } from "@/lib/kline/life-kline-reading";
 
 type KlinePanelProps = {
   life: KlineSeries;
   relationship: KlineSeries;
   relationshipScales?: Partial<Record<KlineScale, KlineSeries>>;
   aiContent: string;
+  aiKind?: KlineKind | null;
   aiError?: string | null;
   loading: boolean;
   onAnalyze: (kind: KlineKind, scale?: KlineScale) => void;
@@ -21,12 +23,29 @@ const xFor = (index: number, count: number) => (count <= 1 ? width / 2 : 22 + in
 const yFor = (score: number) => height - 28 - (score / 100) * (height - 55);
 const candleWidthFor = (count: number) => Math.max(3, Math.min(18, ((width - 44) / Math.max(count, 1)) * 0.62));
 
-function TrendPlot({ points, onSelect }: { points: KlinePoint[]; onSelect: (point: KlinePoint) => void }) {
+const pathFor = (values: readonly (number | null)[], count: number) => values
+  .map((value, index) => value === null ? null : `${index === 0 || values[index - 1] === null ? "M" : "L"} ${xFor(index, count)} ${yFor(value)}`)
+  .filter(Boolean)
+  .join(" ");
+
+function TrendPlot({ points, onSelect, life = false }: { points: KlinePoint[]; onSelect: (point: KlinePoint) => void; life?: boolean }) {
   const candleWidth = candleWidthFor(points.length);
+  const ma5 = useMemo(() => movingAverage(points, 5), [points]);
+  const ma10 = useMemo(() => movingAverage(points, 10), [points]);
+  const bands = useMemo(() => life ? groupLifeKlineBands(points) : [], [life, points]);
   return (
     <div className="kline-panel__plot-wrap">
-      <svg className="kline-panel__plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="奇门序列盘 OHLC 蜡烛图">
+      <svg className="kline-panel__plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={life ? "八字人生趋势 OHLC 蜡烛图" : "奇门序列盘感情 OHLC 蜡烛图"}>
+        {bands.map((band, index) => {
+          const start = xFor(band.startIndex, points.length);
+          const end = xFor(band.endIndex, points.length);
+          return <g key={`${band.label}-${band.startIndex}`}>
+            <rect x={Math.max(22, start - candleWidth)} y="18" width={Math.max(candleWidth * 2, end - start + candleWidth * 2)} height={height - 46} className={`kline-panel__dayun-band is-${index % 2}`} />
+            <text x={start + Math.max(candleWidth, (end - start) / 2)} y="15" textAnchor="middle" className="kline-panel__dayun-label">{band.label}</text>
+          </g>;
+        })}
         {[20, 40, 60, 80].map((score) => <line key={score} x1="22" x2={width - 22} y1={yFor(score)} y2={yFor(score)} className="kline-panel__grid" />)}
+        {life ? <><path d={pathFor(ma10, points.length)} className="kline-panel__ma kline-panel__ma--10" /><path d={pathFor(ma5, points.length)} className="kline-panel__ma kline-panel__ma--5" /></> : null}
         {points.map((point, index) => (
           <g key={`${point.datetime}-${index}`} className={`kline-panel__candle ${point.close >= point.open ? "is-up" : "is-down"}`} role="button" tabIndex={0} aria-label={`${point.datetime}：开 ${point.open}，高 ${point.high}，低 ${point.low}，收 ${point.close}`} onClick={() => onSelect(point)} onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onSelect(point)}>
             <line x1={xFor(index, points.length)} x2={xFor(index, points.length)} y1={yFor(point.high)} y2={yFor(point.low)} className="kline-panel__candle-wick" />
@@ -39,7 +58,7 @@ function TrendPlot({ points, onSelect }: { points: KlinePoint[]; onSelect: (poin
   );
 }
 
-export function KlinePanel({ life, relationship, relationshipScales, aiContent, aiError, loading, onAnalyze, aiPriceLabel = "¥29.90" }: KlinePanelProps) {
+export function KlinePanel({ life, relationship, relationshipScales, aiContent, aiKind, aiError, loading, onAnalyze, aiPriceLabel = "¥29.90" }: KlinePanelProps) {
   const [kind, setKind] = useState<KlineKind>("life");
   const [scale, setScale] = useState<KlineScale>("double-hour");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -89,12 +108,12 @@ export function KlinePanel({ life, relationship, relationshipScales, aiContent, 
                 </article>
               ))}
             </div>
-          ) : <TrendPlot points={visiblePoints} onSelect={(point) => setSelectedIndex(point.index)} />}
+          ) : <TrendPlot points={visiblePoints} life onSelect={(point) => setSelectedIndex(point.index)} />}
           {selected ? <div className="kline-panel__detail"><div><strong>{selected.label}</strong><span>变化 {selected.delta >= 0 ? "+" : ""}{selected.delta} · {selected.keyPoint || "常规点"}</span></div><div className="kline-panel__ohlc" aria-label="所选 K 线开高低收"><span>开 <b>{selected.open}</b></span><span>高 <b>{selected.high}</b></span><span>低 <b>{selected.low}</b></span><span>收 <b>{selected.close}</b></span></div><p>{selected.prediction}</p><div className="kline-panel__evidence">{selected.evidence.map((item) => <span key={item}>{item}</span>)}</div></div> : null}
           <div className="kline-panel__keypoints"><strong>关键点</strong>{series.keyPoints.map((point) => <button type="button" key={`${point.datetime}-${point.index}`} onClick={() => setSelectedIndex(point.index)}><span>{point.datetime.replace("T", " ")}</span><b>{point.score}</b><em>{point.keyPoint}</em></button>)}</div>
-          <div className="kline-panel__ai"><div><strong>AI 精确版</strong><span>逐点引用证据，输出预测窗口、建议与停止/复盘条件</span></div><button type="button" className="kline-panel__ai-button" onClick={() => onAnalyze(kind, kind === "relationship" ? scale : undefined)} disabled={loading}><Sparkles size={16} />{loading ? "正在生成" : `购买 AI 精确分析 · ${aiPriceLabel}`}</button></div>
+          <div className="kline-panel__ai"><div><strong>AI 三线取象</strong><span>{kind === "life" ? "从大运、流年与阶段趋势推演上／中／下三档人生世界线" : "从奇门关系结构推演上／中／下三档感情世界线"}</span><small>每条世界线都给出触发条件、时间窗、行动建议与复盘边界。</small></div><button type="button" className="kline-panel__ai-button" onClick={() => onAnalyze(kind, kind === "relationship" ? scale : undefined)} disabled={loading}><Sparkles size={16} />{loading ? "正在生成" : `解锁三条世界线 · ${aiPriceLabel}`}</button></div>
           {aiError ? <p className="kline-panel__error">{aiError}</p> : null}
-          {aiContent ? <pre className="kline-panel__ai-result">{aiContent}</pre> : null}
+          {aiContent && aiKind === kind ? <section className="kline-panel__ai-report" aria-label={`${kind === "life" ? "人生" : "感情"} K线 AI 三条世界线报告`}><div><span>AI WORLDLINE REPORT · 上／中／下</span><strong>{kind === "life" ? "人生 K 线 · 三条世界线" : "感情 K 线 · 三条世界线"}</strong></div><pre className="kline-panel__ai-result">{aiContent}</pre></section> : null}
           <p className="kline-panel__disclaimer">{series.disclaimer}</p>
         </>
       )}

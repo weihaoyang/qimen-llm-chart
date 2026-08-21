@@ -1,4 +1,7 @@
-import type { CSSProperties } from "react";
+"use client";
+
+import { useState, type CSSProperties } from "react";
+import { Solar } from "lunar-typescript";
 import type { NormalizedBaziChart } from "@/lib/bazi/types";
 import type { FiveElement, TenGodGroup } from "@/lib/bazi/relations";
 import {
@@ -12,6 +15,20 @@ import {
 
 type BaziPanelProps = {
   chart: NormalizedBaziChart | null;
+};
+
+type CorePillar = {
+  id: string;
+  label: string;
+  ganZhi: string;
+  heavenlyStem: string;
+  earthlyBranch: string;
+  stemTenGod: string;
+  timing: string;
+  naYin: string;
+  shenSha: string[];
+  isDayMaster?: boolean;
+  isTiming?: boolean;
 };
 
 const PILLAR_LABELS: Record<
@@ -60,6 +77,18 @@ const splitGanZhi = (ganZhi: string) => ({
   stem: ganZhi.slice(0, 1),
   branch: ganZhi.slice(1, 2),
 });
+
+const getLiuNianGanZhi = (year: number) => {
+  // Use a date well after 立春 so a selected civil year always maps to that
+  // year's 干支, rather than inheriting today's position around the boundary.
+  const solar = Solar.fromYmd(year, 7, 1);
+  return solar.getLunar().getYearInGanZhiExact();
+};
+
+const getLiuYueGanZhi = (year: number, month: number) =>
+  Solar.fromYmd(year, month, 15).getLunar().getMonthInGanZhiExact();
+
+const MONTH_LABELS = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"] as const;
 
 const formatStartOffset = (
   offset: NormalizedBaziChart["raw"]["yun"]["startOffset"],
@@ -118,6 +147,10 @@ const buildElementCounts = (chart: NormalizedBaziChart) => {
 };
 
 export function BaziPanel({ chart }: BaziPanelProps) {
+  const [selectedDaYunIndex, setSelectedDaYunIndex] = useState(0);
+  const [selectedLiuNianYear, setSelectedLiuNianYear] = useState<number | null>(null);
+  const [selectedLiuYueMonth, setSelectedLiuYueMonth] = useState<number | null>(null);
+
   if (!chart) {
     return <div className="empty-panel">等待生成八字盘。</div>;
   }
@@ -132,6 +165,73 @@ export function BaziPanel({ chart }: BaziPanelProps) {
   const elementCounts = buildElementCounts(chart);
   const startOffsetText = formatStartOffset(chart.raw.yun.startOffset);
   const supportPillars = buildSupportPillars(chart);
+  const selectedDaYun = chart.raw.yun.daYun[Math.min(selectedDaYunIndex, chart.raw.yun.daYun.length - 1)] ?? null;
+  const availableLiuNianYears = selectedDaYun
+    ? Array.from(
+        { length: selectedDaYun.endYear - selectedDaYun.startYear + 1 },
+        (_, index) => selectedDaYun.startYear + index,
+      )
+    : [];
+  const currentYear = new Date().getFullYear();
+  const activeLiuNianYear = availableLiuNianYears.includes(selectedLiuNianYear ?? currentYear)
+    ? (selectedLiuNianYear ?? currentYear)
+    : (availableLiuNianYears[0] ?? currentYear);
+  const activeLiuNian = getLiuNianGanZhi(activeLiuNianYear);
+  const currentMonth = new Date().getMonth() + 1;
+  const activeLiuYueMonth = selectedLiuYueMonth ?? (activeLiuNianYear === currentYear ? currentMonth : 1);
+  const activeLiuYue = getLiuYueGanZhi(activeLiuNianYear, activeLiuYueMonth);
+  const dayunPillar: CorePillar = selectedDaYun
+    ? {
+        id: "dayun",
+        label: "大运",
+        ganZhi: selectedDaYun.ganZhi,
+        heavenlyStem: selectedDaYun.ganZhi.slice(0, 1),
+        earthlyBranch: selectedDaYun.ganZhi.slice(1, 2),
+      stemTenGod: getTenGod(chart.raw.dayMaster, selectedDaYun.ganZhi.slice(0, 1)) ?? "无",
+      timing: `${selectedDaYun.startAge}-${selectedDaYun.endAge}岁`,
+      naYin: "—",
+      shenSha: [],
+        isTiming: true,
+      }
+    : {
+        id: "dayun",
+        label: "大运",
+        ganZhi: "—",
+        heavenlyStem: "—",
+        earthlyBranch: "—",
+        stemTenGod: "无",
+        timing: "暂无资料",
+        naYin: "—",
+        shenSha: [],
+        isTiming: true,
+      };
+  const corePillars: CorePillar[] = [
+    ...chart.raw.pillars.map((pillar) => ({
+      id: pillar.key,
+      label: PILLAR_LABELS[pillar.key],
+      ganZhi: pillar.pillar,
+      heavenlyStem: pillar.heavenlyStem,
+      earthlyBranch: pillar.earthlyBranch,
+      stemTenGod: pillar.shiShenGan,
+      timing: pillar.key === "day" ? "日主" : pillar.diShi,
+      naYin: pillar.naYin,
+      shenSha: pillar.shenSha,
+      isDayMaster: pillar.key === "day",
+    })),
+    dayunPillar,
+    {
+      id: "liunian",
+      label: "流年",
+      ganZhi: activeLiuNian,
+      heavenlyStem: activeLiuNian.slice(0, 1),
+      earthlyBranch: activeLiuNian.slice(1, 2),
+      stemTenGod: getTenGod(chart.raw.dayMaster, activeLiuNian.slice(0, 1)) ?? "无",
+      timing: `${activeLiuNianYear}年 · ${MONTH_LABELS[activeLiuYueMonth - 1]}`,
+      naYin: "—",
+      shenSha: [],
+      isTiming: true,
+    },
+  ];
 
   return (
     <div className="bazi-panel">
@@ -218,11 +318,69 @@ export function BaziPanel({ chart }: BaziPanelProps) {
       <section className="bazi-traditional-board">
         <div className="bazi-traditional-board__header">
           <div>
-            <h2>四柱并列盘</h2>
+            <h2>六柱核心盘</h2>
           </div>
         </div>
 
-        <div className="bazi-traditional-board__viewport">
+        <div className="bazi-reading-workspace">
+          <div className="bazi-six-pillars" aria-label="四柱、大运与流年六柱核心信息">
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--head">
+              <span>柱位</span>
+              {corePillars.map((pillar) => <strong className={pillar.isTiming ? "is-timing" : pillar.isDayMaster ? "is-day-master" : ""} key={`${pillar.id}-head`}><small>{pillar.label}</small>{pillar.ganZhi}</strong>)}
+            </div>
+            <div className="bazi-six-pillars__row">
+              <span>十神</span>
+              {corePillars.map((pillar) => <div key={`${pillar.id}-god`}>{renderTenGodBadge(pillar.stemTenGod)}</div>)}
+            </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--glyph">
+              <span>天干</span>
+              {corePillars.map((pillar) => {
+                const trait = getStemTrait(pillar.heavenlyStem);
+                return <strong data-element={trait?.element ?? "未知"} className={pillar.isDayMaster ? "is-day-master" : ""} key={`${pillar.id}-stem`}>{pillar.heavenlyStem}</strong>;
+              })}
+            </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--glyph">
+              <span>地支</span>
+              {corePillars.map((pillar) => {
+                const trait = getBranchTrait(pillar.earthlyBranch);
+                return <strong data-element={trait?.element ?? "未知"} key={`${pillar.id}-branch`}>{pillar.earthlyBranch}</strong>;
+              })}
+            </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--timing">
+              <span>定位</span>
+              {corePillars.map((pillar) => <small key={`${pillar.id}-timing`}>{pillar.timing}</small>)}
+            </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--nayin">
+              <span>纳音</span>
+              {corePillars.map((pillar) => <small key={`${pillar.id}-nayin`}>{pillar.naYin}</small>)}
+            </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--shensha">
+              <span>神煞</span>
+              {corePillars.map((pillar) => <div key={`${pillar.id}-shensha`}>{pillar.shenSha.length > 0 ? pillar.shenSha.map((item) => <small key={item}>{item}</small>) : <small>—</small>}</div>)}
+            </div>
+          </div>
+
+          <section className="bazi-timing-rail" aria-label="大运、流年与流月时间轴">
+            <div className="bazi-timing-rail__head"><strong>时间轴</strong><span>大运 → 流年 → 流月</span></div>
+            <div className="bazi-timing-track">
+              <span>大运</span>
+              <div>{chart.raw.yun.daYun.map((item, index) => <button type="button" className={selectedDaYunIndex === index ? "is-active" : ""} key={`${item.index}-${item.ganZhi}`} onClick={() => { setSelectedDaYunIndex(index); setSelectedLiuNianYear(null); setSelectedLiuYueMonth(null); }}><small>{item.startYear}</small><strong>{item.ganZhi}</strong><em>{item.startAge}岁</em></button>)}</div>
+            </div>
+            <div className="bazi-timing-track">
+              <span>流年</span>
+              <div>{availableLiuNianYears.map((year) => <button type="button" className={activeLiuNianYear === year ? "is-active" : ""} key={year} onClick={() => { setSelectedLiuNianYear(year); setSelectedLiuYueMonth(null); }}><small>{year}</small><strong>{getLiuNianGanZhi(year)}</strong></button>)}</div>
+            </div>
+            <div className="bazi-timing-track bazi-timing-track--month">
+              <span>流月</span>
+              <div>{MONTH_LABELS.map((label, index) => { const month = index + 1; return <button type="button" className={activeLiuYueMonth === month ? "is-active" : ""} key={label} onClick={() => setSelectedLiuYueMonth(month)}><small>{label}</small><strong>{getLiuYueGanZhi(activeLiuNianYear, month)}</strong></button>; })}</div>
+            </div>
+            <p>当前：{selectedDaYun?.ganZhi ?? "暂无大运"} · {activeLiuNian}年 · {activeLiuYue}月</p>
+          </section>
+        </div>
+
+        <details className="bazi-details">
+          <summary>展开四柱详细信息（藏干、五行、长生、旬空）</summary>
+          <div className="bazi-traditional-board__viewport">
         <div className="bazi-table">
           <div className="bazi-table__row bazi-table__row--head">
             <div className="bazi-table__label">项目</div>
@@ -332,15 +490,6 @@ export function BaziPanel({ chart }: BaziPanelProps) {
           </div>
 
           <div className="bazi-table__row">
-            <div className="bazi-table__label">纳音</div>
-            {chart.raw.pillars.map((pillar) => (
-              <div className="bazi-table__cell bazi-plain-cell" key={`nayin-${pillar.key}`}>
-                <strong>{pillar.naYin}</strong>
-              </div>
-            ))}
-          </div>
-
-          <div className="bazi-table__row">
             <div className="bazi-table__label">柱五行</div>
             {chart.raw.pillars.map((pillar) => (
               <div className="bazi-table__cell bazi-plain-cell" key={`wuxing-${pillar.key}`}>
@@ -368,26 +517,13 @@ export function BaziPanel({ chart }: BaziPanelProps) {
             ))}
           </div>
 
-          <div className="bazi-table__row">
-            <div className="bazi-table__label">神煞</div>
-            {chart.raw.pillars.map((pillar) => (
-              <div className="bazi-table__cell bazi-plain-cell" key={`shensha-${pillar.key}`}>
-                {pillar.shenSha.length > 0 ? (
-                  <div className="bazi-god-list">
-                    {pillar.shenSha.map((item) => (
-                      <span className="bazi-ten-god-badge" key={item}>{item}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="bazi-stack-cell__empty">无</span>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
         </div>
+        </details>
       </section>
 
+      <details className="bazi-details bazi-details--secondary">
+        <summary>展开辅助盘与完整大运表</summary>
       <section className="bazi-support-panel">
         <div className="bazi-support-panel__header">
           <h2>辅助盘</h2>
@@ -520,6 +656,7 @@ export function BaziPanel({ chart }: BaziPanelProps) {
           })}
         </div>
       </section>
+      </details>
     </div>
   );
 }

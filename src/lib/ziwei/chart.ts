@@ -1,6 +1,7 @@
 import { astro } from "iztro";
 import { getMutagensByHeavenlyStem } from "iztro/lib/utils";
 import type { NormalizedProfileInput } from "@/lib/profile";
+import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import type {
   NormalizedZiweiChart,
   ZiweiPalaceSummary,
@@ -131,6 +132,10 @@ export const buildZiweiChartFromProfile = (
   const [lu, quan, ke, ji] = getMutagensByHeavenlyStem(
     astrolabe.rawDates.chineseDate.yearly[0] as never,
   );
+  // iztro's display string uses lunar-month text. The product's cross-panel
+  // four-pillar truth is the deterministic Bazi engine and the user-selected
+  // year/day conventions, so never expose two incompatible pillar strings.
+  const bazi = buildBaziChartFromProfile(profile);
 
   return {
     input: profile,
@@ -138,7 +143,7 @@ export const buildZiweiChartFromProfile = (
     raw: {
       solarDate: astrolabe.solarDate,
       lunarDate: astrolabe.lunarDate,
-      chineseDate: astrolabe.chineseDate,
+      chineseDate: bazi.raw.baZi.join(" "),
       rawDates: astrolabe.rawDates,
       time: astrolabe.time,
       timeRange: astrolabe.timeRange,

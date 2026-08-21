@@ -1,4 +1,5 @@
 import type { QimenSettings } from "@/lib/qimen/settings";
+import type { BaziSettings } from "@/lib/bazi/settings";
 
 export type CalendarMode = "solar" | "lunar";
 
@@ -36,6 +37,7 @@ export type ProfileInput = {
   timeZone: string;
   gender: Gender;
   timeBasis: TimeBasis;
+  baziSettings?: BaziSettings;
   qimenSettings?: QimenSettings;
   solar?: SolarInput;
   lunar?: LunarInput;

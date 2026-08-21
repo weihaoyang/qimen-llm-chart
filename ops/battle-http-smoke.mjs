@@ -1,0 +1,48 @@
+const base = "http://127.0.0.1:3216";
+const results = [];
+const expect = (label, actual, wanted) => { if (actual !== wanted) throw new Error(`${label}: expected ${wanted}, got ${actual}`); results.push(`${label}: ${actual}`); };
+const call = async (path, { token = "owner-token", method = "GET", body } = {}) => {
+  const response = await fetch(`${base}${path}`, { method, headers: { authorization: `Bearer ${token}`, ...(body ? { "content-type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  let payload = null; try { payload = await response.json(); } catch {}
+  return { status: response.status, payload };
+};
+
+const created = await call("/api/battles", { method: "POST", body: { title: "HTTP 闭环战局", objective: "在现金跑道内完成首个可验证突破", minimumOutcome: "保住现金与合同", idealOutcome: "拿到付费试点", opponentSummary: "有限资源与时间窗口", hardDeadline: new Date(Date.now() + 20 * 86400000).toISOString() } });
+expect("create battle", created.status, 201);
+const battleId = created.payload.battle.id;
+expect("owner read", (await call(`/api/battles/${battleId}`)).status, 200);
+expect("third-party read denied", (await call(`/api/battles/${battleId}`, { token: "third-party-token" })).status, 404);
+expect("facts", (await call(`/api/battles/${battleId}/facts`, { method: "POST", body: { facts: [{ kind: "fact", content: "已有一名愿意试用的客户", source: "user", confidence: 80 }, { kind: "goal", content: "目标是两周内拿到试点", source: "user", confidence: 90 }] } })).status, 201);
+expect("constraints", (await call(`/api/battles/${battleId}/constraints`, { method: "PUT", body: { constraints: [{ kind: "cash", label: "现金跑道", description: "不能透支下月房租", hard: true, severity: 5, threshold: { maxRunwayDays: 30 }, source: { type: "user" } }] } })).status, 200);
+expect("inventory", (await call(`/api/battles/${battleId}/inventory`, { method: "PUT", body: { inventory: [{ category: "relationship", label: "试用客户联系人", description: "可在本周引荐", availability: "available", quantity: 1, unit: "人", cost: {}, evidence: {} }] } })).status, 200);
+expect("resources", (await call(`/api/battles/${battleId}/resources`, { method: "PUT", body: { snapshot: { cashAvailable: 30000, monthlyFixedCost: 30000, weeklyHoursAvailable: 40, weeklyHoursCommitted: 12, consecutiveHighPressureDays: 3, maxHighPressureDays: 14 } } })).status, 200);
+const analysis = await call(`/api/battles/${battleId}/analysis`, { method: "POST", body: {} });
+expect("generate analysis", analysis.status, 201); expect("analysis has junction", analysis.payload.junctions.length > 0 ? 200 : 500, 200);
+const restored = await call(`/api/battles/${battleId}/analysis`); expect("restore analysis", restored.status, 200); expect("restored junctions", restored.payload.junctions.length > 0 ? 200 : 500, 200);
+const move = analysis.payload.moves[0];
+expect("commit move", (await call(`/api/battles/${battleId}/commitments`, { method: "POST", body: { moveId: move.id } })).status, 201);
+expect("change line requires reason", (await call(`/api/battles/${battleId}/commitments`, { method: "POST", body: { moveId: analysis.payload.moves[1].id } })).status, 409);
+const dueAt = new Date(Date.now() + 2 * 86400000).toISOString();
+const execution = await call(`/api/battles/${battleId}/moves/${move.id}/execution`, { method: "PUT", body: { actions: [{ title: "完成客户试点探针", description: "发送试点方案并记录回复", owner: "owner-1", dueAt, successSignal: "客户确认试点时间", failureSignal: "客户明确拒绝" }], breakers: [{ kind: "cash", label: "跑道低于 20 天", threshold: { maxRunwayDays: 20 }, actionOnTrigger: "停止扩大投入并切换对冲", enabled: true }] } }); expect("save execution", execution.status, 200);
+const actionId = execution.payload.actions[0].id; expect("update action", (await call(`/api/battles/${battleId}/moves/${move.id}/execution`, { method: "PATCH", body: { actionId, status: "in_progress", actualCost: { hours: 2 } } })).status, 200);
+const breakerId = execution.payload.breakers[0].id; expect("trigger breaker", (await call(`/api/battles/${battleId}/moves/${move.id}/execution`, { method: "PATCH", body: { action: "trigger_breaker", breakerId } })).status, 200);
+const timelineFirst = await call(`/api/battles/${battleId}/timeline`, { method: "POST", body: { nodes: [{ kind: "fact", title: "客户明确了试点预算", description: "邮件确认", startsAt: new Date().toISOString(), endsAt: null, truthStatus: "observed", importance: 5, source: { source: "user" } }], edges: [] } }); expect("timeline first node", timelineFirst.status, 201);
+const timelineSecond = await call(`/api/battles/${battleId}/timeline`, { method: "POST", body: { nodes: [{ kind: "action", title: "提交试点方案", description: "下一步", startsAt: dueAt, endsAt: null, truthStatus: "projected", importance: 4, source: { source: "user" } }], edges: [] } }); expect("timeline second node", timelineSecond.status, 201);
+expect("timeline counterfactual edge", (await call(`/api/battles/${battleId}/timeline`, { method: "POST", body: { nodes: [], edges: [{ fromNodeId: timelineFirst.payload.nodes[0].id, toNodeId: timelineSecond.payload.nodes[0].id, relation: "counterfactual", confidence: 30, evidence: { source: "user" } }] } })).status, 201);
+const opportunity = await call(`/api/battles/${battleId}/opportunities`, { method: "PUT", body: { opportunities: [{ title: "试点申报窗口", description: "公开申报", source: { source: "user" }, opensAt: null, bestActionAt: dueAt, closesAt: new Date(Date.now() + 3 * 86400000).toISOString(), decay: { reason: "评审席位用尽", missedCost: "只能等待下一批" }, status: "open" }] } }); expect("opportunity", opportunity.status, 200);
+expect("attachment metadata", (await call(`/api/battles/${battleId}/attachments`, { method: "POST", body: { targetType: "battle", targetId: null, filename: "客户邮件.pdf", mediaType: "application/pdf", storageKey: "https://storage.example.test/evidence/client-email.pdf", byteSize: 128, checksum: "sha256:test", source: { source: "user" } } })).status, 201);
+const invite = await call(`/api/battles/${battleId}/collaborators`, { method: "POST", body: { subjectType: "user", subjectId: "advisor-1", role: "advisor", permissions: {} } }); expect("invite advisor", invite.status, 201);
+expect("advisor accepts", (await call(`/api/battles/${battleId}/collaborators`, { token: "advisor-token", method: "PATCH", body: { collaboratorId: invite.payload.collaborator.id, action: "accept" } })).status, 200);
+expect("advisor reads battle", (await call(`/api/battles/${battleId}`, { token: "advisor-token" })).status, 200);
+expect("advisor cannot write facts", (await call(`/api/battles/${battleId}/facts`, { token: "advisor-token", method: "POST", body: { facts: [{ kind: "fact", content: "越权", source: "user", confidence: 50 }] } })).status, 404);
+const advice = await call(`/api/battles/${battleId}/advice`, { token: "advisor-token", method: "POST", body: { targetType: "battle", opinion: "先做小探针", rationale: "验证成本低", uncertainty: "客户可能延迟" } }); expect("advisor adds advice", advice.status, 201);
+expect("owner adopts advice as fact", (await call(`/api/battles/${battleId}/advice`, { method: "PATCH", body: { adviceId: advice.payload.advice.id, action: "adopt", adoptedAs: "fact" } })).status, 200);
+const review = await call(`/api/battles/${battleId}/reviews`, { method: "POST", body: { commitmentId: null, outcome: "客户同意下周试点", facts: "预算和时间已确认", whatChanged: "原先的决策权未知已补齐", nextAdjustment: "下一局先验证决策人", diagnosis: { information: { expected: 30, actual: 70, note: "信息不足被低估" }, execution: { expected: 60, actual: 55, note: "执行如期" } } } }); expect("review and calibration", review.status, 201); expect("review calibration event", review.payload.calibration.length > 0 ? 200 : 500, 200);
+const report = await call(`/api/battles/${battleId}/report`); expect("json report", report.status, 200); expect("report includes timeline", report.payload.timeline.nodes.length > 0 ? 200 : 500, 200);
+const markdown = await fetch(`${base}/api/battles/${battleId}/report?format=markdown`, { headers: { authorization: "Bearer owner-token" } }); const markdownBody = await markdown.text(); expect("markdown report", markdown.status, 200); expect("markdown report is complete", markdownBody.includes("## 三手策略与验证") && markdownBody.includes("## 时间—因果图") ? 200 : 500, 200);
+const poolEntry = await call(`/api/battles/playbook`, { method: "POST", body: { battleId, visibility: "anonymous_pool", category: "cash", pattern: "短跑道先试局", adjustment: "先验证再扩大", evidenceCount: 1, source: { type: "review" } } }); expect("anonymous playbook write", poolEntry.status, 201); expect("anonymous playbook hides battle", poolEntry.payload.entry.battleId === undefined ? 200 : 500, 200);
+expect("owner revokes advisor", (await call(`/api/battles/${battleId}/collaborators`, { method: "PATCH", body: { collaboratorId: invite.payload.collaborator.id, status: "revoked" } })).status, 200);
+expect("revoked advisor denied", (await call(`/api/battles/${battleId}`, { token: "advisor-token" })).status, 404);
+expect("delete battle", (await call(`/api/battles/${battleId}`, { method: "DELETE", body: { confirmation: "DELETE" } })).status, 200);
+expect("deleted battle unavailable", (await call(`/api/battles/${battleId}`)).status, 404);
+console.log(results.join("\n"));

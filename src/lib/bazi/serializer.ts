@@ -251,6 +251,7 @@ const buildTimingSummary = (
     referenceDate.getDate(),
   );
   const lunar = solar.getLunar();
+  const useLunarNewYear = chart.raw.conventions.yearBoundary === "lunar-new-year";
   const currentDaYun =
     chart.raw.yun.daYun.find(
       (item) => calendarYear >= item.startYear && calendarYear <= item.endYear,
@@ -260,12 +261,12 @@ const buildTimingSummary = (
     referenceDate: formatReferenceDate(referenceDate),
     liuNian: {
       calendarYear,
-      ganZhi: lunar.getYearInGanZhiExact(),
-      xun: lunar.getYearXunExact(),
-      xunKong: lunar.getYearXunKongExact(),
+      ganZhi: useLunarNewYear ? lunar.getYearInGanZhi() : lunar.getYearInGanZhiExact(),
+      xun: useLunarNewYear ? lunar.getYearXun() : lunar.getYearXunExact(),
+      xunKong: useLunarNewYear ? lunar.getYearXunKong() : lunar.getYearXunKongExact(),
     },
     currentDaYun,
-    note: "流年按参考日期的节气年干支提供；当前大运按起止年份近似定位，交运临界日仍需复核。",
+    note: `${useLunarNewYear ? "流年按农历春节年干支" : "流年按参考日期的节气年干支"}提供；当前大运按起止年份近似定位，交运临界日仍需复核。`,
   };
 };
 
@@ -339,6 +340,7 @@ export const serializeBaziToCompactJson = (
         "解析后的本地时间",
         "公历信息",
         "农历信息",
+        "排盘口径",
         "四柱",
         "日主",
         "五行",
@@ -366,6 +368,7 @@ export const serializeBaziToCompactJson = (
         text: chart.raw.lunar,
         fullText: chart.raw.lunarFull,
       }),
+      normalizeValue(chart.raw.conventions),
       normalizeValue(chart.raw.baZi),
       chart.raw.dayMaster,
       normalizeValue(chart.raw.wuXing),
@@ -398,6 +401,7 @@ export const serializeBaziToStructuredText = (
     `解析后的本地时间: ${chart.interpretedDateTime}`,
     `公历: ${chart.raw.solar}`,
     `农历: ${chart.raw.lunar}`,
+    `排盘口径: ${chart.raw.conventions.yearBoundary === "li-chun" ? "立春换年" : "春节换年"}；${chart.raw.conventions.dayBoundary === "midnight" ? "子正换日" : "子初换日（23时）"}`,
     `四柱: ${chart.raw.baZi.join(" / ")}`,
     `日主: ${chart.raw.dayMaster}`,
     `五行: ${chart.raw.wuXing.join(" / ")}`,

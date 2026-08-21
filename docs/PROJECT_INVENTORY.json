@@ -1,0 +1,109 @@
+{
+  "inventory_version": 1,
+  "adopted_at": "2026-08-09",
+  "root": "E:\\qmdj",
+  "top_level": [
+    ".agents",
+    ".codex",
+    ".codex-dev-3011.log",
+    ".codex-dev.err.log",
+    ".codex-dev.log",
+    ".codex-devserver.pid",
+    ".codex-platform-api.err.log",
+    ".codex-platform-api.out.log",
+    ".codex-preview.err.log",
+    ".codex-preview.out.log",
+    ".codex-qmdj-dev-3002.err.log",
+    ".codex-qmdj-dev-3002.out.log",
+    ".codex-qmdj-dev.err.log",
+    ".codex-qmdj-dev.out.log",
+    ".codex-visual-fix.err.log",
+    ".codex-visual-fix.out.log",
+    ".env.example",
+    ".env.local",
+    ".gitignore",
+    ".next",
+    ".superpowers",
+    "AGENTS.md",
+    "LICENSE",
+    "README.md",
+    "components.json",
+    "docs",
+    "eslint.config.mjs",
+    "next-env.d.ts",
+    "next.config.ts",
+    "package-lock.json",
+    "package.json",
+    "postcss.config.mjs",
+    "public",
+    "src",
+    "taobi-0.4.5.tgz",
+    "tsconfig.json",
+    "tsconfig.tsbuildinfo",
+    "vendor",
+    "vitest.config.ts"
+  ],
+  "manifests": [
+    "package-lock.json",
+    "package.json"
+  ],
+  "source_dirs": [
+    "docs",
+    "src"
+  ],
+  "git": {
+    "is_git": true,
+    "branch": "main",
+    "dirty_files": 67,
+    "recent_commits": [
+      {
+        "commit": "793672e2af5a931e3e206b7bc1a633c00f86a5df",
+        "timestamp": "2026-08-05T01:10:09+08:00",
+        "subject": "fix: defer billing result recovery effect"
+      },
+      {
+        "commit": "82667b36290f02a8fe917d1d5463d1b464da5f1f",
+        "timestamp": "2026-08-04T23:20:16+08:00",
+        "subject": "feat: strengthen agent analysis evidence chain"
+      },
+      {
+        "commit": "afb8bf9949f5c98ddaefc8b4df679c78cd0e6305",
+        "timestamp": "2026-08-04T02:29:52+08:00",
+        "subject": "feat: enrich agent analysis workflow"
+      },
+      {
+        "commit": "21d0b839039ff8176bb55f0aa8dc014abd7bc264",
+        "timestamp": "2026-08-03T18:16:47+08:00",
+        "subject": "refactor: streamline chart workbench menu"
+      },
+      {
+        "commit": "6e7ea6c779c6044fc39b264d2882cd7e125e67ab",
+        "timestamp": "2026-08-03T00:51:30+08:00",
+        "subject": "fix: tighten nine-palace chart frame"
+      },
+      {
+        "commit": "e636c264845d9b59c6f45e292b1f0243ea66ebba",
+        "timestamp": "2026-08-02T23:56:29+08:00",
+        "subject": "fix: tighten cross-mode workbench layout"
+      },
+      {
+        "commit": "0be05003744e1c9bf1e9708be48c6fda78fe7b31",
+        "timestamp": "2026-08-02T23:09:33+08:00",
+        "subject": "fix: improve workbench readability"
+      },
+      {
+        "commit": "cb7ab924216beebccaf8e4b7ad04fabead815e7b",
+        "timestamp": "2026-08-02T22:10:17+08:00",
+        "subject": "feat: move chart outputs into agent panel"
+      }
+    ],
+    "tracked_files": 104
+  },
+  "existing_workflow_files": [
+    "AGENTS.md"
+  ],
+  "recommended_profile": "standard",
+  "limitations": [
+    "Inventory is structural evidence only; it does not infer feature completeness or project intent."
+  ]
+}

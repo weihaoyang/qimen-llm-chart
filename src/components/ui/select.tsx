@@ -38,19 +38,12 @@ type SelectItemProps = {
   children?: ReactNode;
 };
 
-type SelectGroupProps = { children?: ReactNode };
-type SelectLabelProps = { children?: ReactNode };
+type SelectMarker<T> = (props: T) => null;
 
-const SelectValue = (_props: SelectValueProps) => null;
-const SelectTrigger = (_props: SelectTriggerProps) => null;
-const SelectContent = (_props: SelectContentProps) => null;
-const SelectGroup = (_props: SelectGroupProps) => null;
-const SelectLabel = (_props: SelectLabelProps) => null;
-const SelectSeparator = () => null;
-const SelectScrollUpButton = () => null;
-const SelectScrollDownButton = () => null;
-
-const SelectItem = (_props: SelectItemProps) => null;
+const SelectValue: SelectMarker<SelectValueProps> = () => null;
+const SelectTrigger: SelectMarker<SelectTriggerProps> = () => null;
+const SelectContent: SelectMarker<SelectContentProps> = () => null;
+const SelectItem: SelectMarker<SelectItemProps> = () => null;
 
 const findChild = <T,>(children: ReactNode, component: (props: T) => null): ReactElement<T> | null => {
   let found: ReactElement<T> | null = null;
@@ -97,12 +90,7 @@ function Select({ value, defaultValue, onValueChange, disabled, className, child
 export {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 };

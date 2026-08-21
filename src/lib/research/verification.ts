@@ -5,6 +5,7 @@ import type { NormalizedProfileInput } from "@/lib/profile";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 import type { NormalizedZiweiChart } from "@/lib/ziwei/types";
 import type { VerificationData, VerificationRow } from "./types";
+import { TAIBU_CORE_REFERENCE } from "./provenance";
 
 const parseDateTime = (datetime: string) => {
   const match = datetime.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
@@ -64,6 +65,7 @@ export const buildVerificationData = ({ profile, qimen, bazi, ziwei }: { profile
     rows,
     generatedAt: new Date().toISOString(),
     disclaimer: "核验层只报告不同算法源的输入和输出差异，不把某一算法自动认定为唯一正确。",
+    referenceEngine: TAIBU_CORE_REFERENCE,
   };
 };
 

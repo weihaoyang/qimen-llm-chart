@@ -20,5 +20,6 @@ describe("buildZiweiChartFromProfile", () => {
     });
 
     expect(chart.raw.palaces).toHaveLength(12);
+    expect(chart.raw.chineseDate).toBe("丙午 甲午 戊寅 戊午");
   });
 });

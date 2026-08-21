@@ -11,5 +11,6 @@ describe("buildVerificationData", () => {
     const result = buildVerificationData({ profile, qimen: null, bazi: null, ziwei: null });
     expect(result.rows.some((row) => row.status === "unavailable")).toBe(true);
     expect(result.disclaimer).toContain("不把某一算法");
+    expect(result.referenceEngine).toMatchObject({ package: "taibu-core", role: "reference_only" });
   });
 });

@@ -11,10 +11,12 @@ describe("research extensions", () => {
     const result = buildDaliurenResearch(profile);
     expect(result.text).toContain("三传");
     expect(result.json).toBeTruthy();
+    expect(result.referenceEngine.version).toBe("3.5.0");
   });
   it("builds Taiyi day-scale output", () => {
     const result = buildTaiyiResearch(profile);
     expect(result.text).toContain("日盘");
     expect(result.json).toBeTruthy();
+    expect(result.referenceEngine.license).toBe("MIT");
   });
 });

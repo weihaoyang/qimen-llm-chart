@@ -90,4 +90,27 @@ describe("serializeBaziToCompactJson", () => {
     expect(structuredText).toContain("### 流年与当前大运");
     expect(structuredText).toContain("当前大运: 癸酉");
   });
+
+  it("serializes the selected year/day boundary convention for the AI", () => {
+    const chart = buildBaziChartFromProfile({
+      original: {
+        calendarMode: "solar",
+        datetime: "1988-02-15T16:50",
+        timeZone: "Asia/Shanghai",
+        gender: "female",
+        timeBasis: "civil",
+        baziSettings: { yearBoundary: "lunar-new-year", dayBoundary: "zi-start" },
+      },
+      normalized: {
+        datetime: "1988-02-15T16:50",
+        timeZone: "Asia/Shanghai",
+        calendarMode: "solar",
+        timeBasis: "civil",
+      },
+    });
+
+    expect(chart.raw.baZi[0]).toBe("丁卯");
+    expect(serializeBaziToStructuredText(chart)).toContain("春节换年；子初换日（23时）");
+    expect(serializeBaziToCompactJson(chart)).toContain('"yearBoundary":"lunar-new-year"');
+  });
 });

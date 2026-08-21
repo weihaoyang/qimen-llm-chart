@@ -23,7 +23,7 @@ describe("AgentCommandCenter", () => {
 
   it("sends an unauthenticated user to unified login from the save entry", () => {
     const onLogin = vi.fn();
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={onLogin} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={onLogin} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: /登录后保存/ }));
 
@@ -31,23 +31,42 @@ describe("AgentCommandCenter", () => {
     expect(screen.getByText("当前为临时工作区；登录后才可保存议题")).toBeInTheDocument();
   });
 
-  it("uses the top navigation as a real workspace state, not a decorative tab rail", () => {
+  it("keeps the decision tree and evidence dock visible beside the interview", () => {
+    render(<AgentCommandCenter mode="qimen" inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
+
+    expect(screen.getByText("术数证据")).toBeInTheDocument();
+    expect(screen.getByText("决策树 · 动态迭代")).toBeInTheDocument();
+    expect(screen.getByText("现实事实")).toBeInTheDocument();
+    expect(screen.getAllByText("先补一条能独立核验的现实事实，再让盘面与趋势参与选择。").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("lets the user choose which evidence system supports an interview", () => {
+    const onModeChange = vi.fn();
+    render(<AgentCommandCenter mode="qimen" onModeChange={onModeChange} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /八字长期结构/ }));
+    expect(onModeChange).toHaveBeenCalledWith("bazi");
+  });
+
+  it("uses navigation to move between the interview, tree, review, and workbench", () => {
     const onOpenWorkbench = vi.fn();
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={0} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={onOpenWorkbench} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要换工作" conversationCount={2} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "先核对约束" }]} onLogin={vi.fn()} onOpenWorkbench={onOpenWorkbench} onCaseRestore={vi.fn()} />);
 
-    const issue = screen.getByRole("button", { name: "人生议题" });
-    const decision = screen.getByRole("button", { name: "决策树" });
-    expect(issue).toHaveAttribute("aria-current", "page");
-
-    fireEvent.click(decision);
-    expect(decision).toHaveAttribute("aria-current", "page");
-    expect(issue).not.toHaveAttribute("aria-current");
+    fireEvent.click(screen.getByRole("button", { name: "决策树" }));
+    fireEvent.click(screen.getByRole("button", { name: "复盘" }));
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
-
     fireEvent.click(screen.getByRole("button", { name: "排盘工具" }));
     expect(onOpenWorkbench).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the interview separate from the decision evidence", () => {
+    render(<AgentCommandCenter mode="qimen" inspector={<div>访谈内容</div>} life={emptyLife} question="我要不要离职" conversationCount={4} canPersist={false} evidenceText="" evidenceJson="{}" conversation={[{ role: "user", content: "我要不要离职" }, { role: "assistant", content: "你的命运已经注定" }, { role: "user", content: "存款只能支撑三个月" }, { role: "assistant", content: "继续补充" }]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
+
+    expect(screen.getAllByText("存款只能支撑三个月").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("现实事实 · 访谈").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("胜天半子，不是替你做选择。")).toBeInTheDocument();
   });
 
   it("restores the latest saved decision tree with the selected server case", async () => {
@@ -56,7 +75,7 @@ describe("AgentCommandCenter", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url === "/api/agent/cases") return new Response(JSON.stringify({ cases: [savedCase] }), { status: 200 });
-      if (url.endsWith("/turns")) return new Response(JSON.stringify({ turns: [{ role: "user", content: "我担心现金流" }] }), { status: 200 });
+      if (url.endsWith("/turns")) return new Response(JSON.stringify({ turns: [{ role: "user", content: "我担心现金流" }, { role: "assistant", content: "我已按三盘给出判断" }] }), { status: 200 });
       if (url.endsWith("/tree")) return new Response(JSON.stringify({ version: 2, tree: { root: { activeWindow: "2026-09-01", evidence: "现金储备只能支撑三个月", source: "现实事实 · 访谈" }, branches: [
         { key: "advance", title: "推进", assumptions: ["已拿到书面 offer"], firstAction: "核验薪资与试用期条款", cost: "放弃当前稳定性", risks: ["试用期不确定"], validationDate: "2026-09-01", stopCondition: "书面条款低于底线" },
         { key: "verify", title: "验证", assumptions: ["目标公司业务稳定"], firstAction: "访谈两位在职员工", cost: "延迟一周决定", risks: ["错过窗口"], validationDate: "2026-08-20", stopCondition: "无法获得独立信息" },
@@ -66,12 +85,9 @@ describe("AgentCommandCenter", () => {
       return new Response(JSON.stringify({ error: "unexpected request" }), { status: 500 });
     }));
 
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="临时问题" conversationCount={0} canPersist accessToken="account-token" evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={onCaseRestore} />);
+    render(<AgentCommandCenter mode="qimen" inspector={<div>访谈内容</div>} life={emptyLife} question="临时问题" conversationCount={0} canPersist accessToken="account-token" evidenceText="" evidenceJson="{}" conversation={[]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={onCaseRestore} />);
 
     expect(await screen.findByText("已恢复服务器工作区 · 决策树 V2")).toBeInTheDocument();
-    expect(screen.getByText("已保存的关键窗口")).toBeInTheDocument();
-    expect(screen.getAllByText("现实事实 · 访谈")).toHaveLength(2);
-    expect(screen.getByText("核验薪资与试用期条款")).toBeInTheDocument();
     expect(onCaseRestore).toHaveBeenCalledWith(expect.objectContaining({ mode: "qimen", evidence: { mode: "qimen", sourceText: "保存时的盘面事实", structuredJson: { source: "saved" } } }));
   });
 
@@ -87,7 +103,7 @@ describe("AgentCommandCenter", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<AgentCommandCenter mode="qimen" onModeChange={vi.fn()} inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="盘面事实" evidenceJson='{"chart":"snapshot"}' conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
+    render(<AgentCommandCenter mode="qimen" inspector={<div>访谈内容</div>} life={emptyLife} question="" conversationCount={2} canPersist accessToken="account-token" evidenceText="盘面事实" evidenceJson='{"chart":"snapshot"}' conversation={[{ role: "user", content: "我要不要换工作" }, { role: "assistant", content: "请说明现金储备" }]} onLogin={vi.fn()} onOpenWorkbench={vi.fn()} onCaseRestore={vi.fn()} />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases", expect.objectContaining({ method: "POST" })));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agent/cases/case-auto/turns", expect.objectContaining({ method: "POST" })));

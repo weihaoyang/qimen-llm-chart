@@ -6,3 +6,9 @@ items:
     impact: '根文件系统剩余约 514MB；完整 npm 安装曾因 ENOSPC 使 PostgreSQL 停止。'
     mitigation: 'qmdj 已改为 standalone release，避免生产 npm install。'
     repayment_condition: '扩容或在运维确认后按保留策略清理历史 release / cache，使可用空间恢复到至少 5GB。'
+  - id: qimen-three-style-ground-truth-gap
+    owner: research
+    severity: medium
+    impact: '目前找到的公开命理赛事集主要覆盖八字与紫微；奇门、大六壬、太乙缺少同时公开出生/起局口径、完整盘面、真实结果和许可的可评分真值集，不能声称其预测准确率已被外部验证。'
+    mitigation: '对奇门仅运行排盘字段/序列确定性/规则 evidence 完整性测试；AI 历史题 runner 保持显式 dry-run/execute 分界，不把八字赛事结果外推到三式。'
+    repayment_condition: '取得至少一套许可清晰、起局口径完整且结果可复核的奇门/大六壬/太乙样本集，并新增独立审计脚本与盲测协议。'

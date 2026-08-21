@@ -15,9 +15,11 @@ type TabsListProps = { className?: string; variant?: "default" | "line"; childre
 type TabsTriggerProps = { value: string; children?: ReactNode };
 type TabsContentProps = { value: string; className?: string; children?: ReactNode };
 
-const TabsList = (_props: TabsListProps) => null;
-const TabsTrigger = (_props: TabsTriggerProps) => null;
-const TabsContent = (_props: TabsContentProps) => null;
+type TabsMarker<T> = (props: T) => null;
+
+const TabsList: TabsMarker<TabsListProps> = () => null;
+const TabsTrigger: TabsMarker<TabsTriggerProps> = () => null;
+const TabsContent: TabsMarker<TabsContentProps> = () => null;
 
 const findChild = <T,>(children: ReactNode, component: (props: T) => null): ReactElement<T> | null => {
   let found: ReactElement<T> | null = null;

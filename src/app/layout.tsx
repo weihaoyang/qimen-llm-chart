@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "react-iztro/lib/theme/default.css";
 import "react-iztro/lib/Iztrolabe/Iztrolabe.css";
 import "react-iztro/lib/Izpalace/Izpalace.css";
@@ -37,6 +37,15 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+};
+
+// Without this declaration mobile browsers use a desktop layout viewport and
+// shrink the whole workbench. Responsive breakpoints must operate on the real
+// device width so the chart switches to its compact canvas before hydration.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

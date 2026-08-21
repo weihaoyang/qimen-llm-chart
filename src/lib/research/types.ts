@@ -33,6 +33,18 @@ export type LifeTrendData = {
 
 export type VerificationStatus = "match" | "difference" | "unavailable";
 
+/**
+ * Research-only provenance. This is deliberately kept out of the public
+ * analysis narrative so a user sees evidence, not package internals.
+ */
+export type ReferenceEngineProvenance = {
+  package: "taibu-core";
+  version: "3.5.0";
+  license: "MIT";
+  source: "https://github.com/hhszzzz/taibu";
+  role: "reference_only";
+};
+
 export type VerificationRow = {
   system: "八字" | "奇门" | "紫微";
   field: string;
@@ -46,6 +58,7 @@ export type VerificationData = {
   rows: VerificationRow[];
   generatedAt: string;
   disclaimer: string;
+  referenceEngine: ReferenceEngineProvenance;
 };
 
 export type ResearchWorkspaceData = {
@@ -54,10 +67,12 @@ export type ResearchWorkspaceData = {
   daliuren: {
     text: string;
     json: unknown;
+    referenceEngine: ReferenceEngineProvenance;
   } | null;
   taiyi: {
     text: string;
     json: unknown;
+    referenceEngine: ReferenceEngineProvenance;
   } | null;
 };
 

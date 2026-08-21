@@ -8,6 +8,7 @@ import {
   DEFAULT_AGENT_QUESTIONS,
   extractAssistantText,
   getAgentConfig,
+  parseChoiceDecision,
   requestAgentAnalysis,
   requestBaziPersonalityPrediction,
 } from "./chat";
@@ -113,6 +114,29 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).not.toContain("《子平真诠》");
     expect(systemPrompt).toContain("证据优先级与输出契约");
     expect(systemPrompt).toContain("事实、传统推断和待验证假设");
+    expect(systemPrompt).toContain("上档/中档/下档是条件场景，不是概率、准确率或世界线发生频率");
+    expect(systemPrompt).toContain("一个可使该判断失效的现实观察");
+    expect(systemPrompt).toContain("不可检验机制");
+  });
+
+  it("uses a separate reality-battle copilot contract", () => {
+    const prompt = buildAgentSystemPrompt("research", { researchTool: "battle", focus: "现实极限博弈" });
+    expect(prompt).toContain("【胜天半子现实推演官规则】");
+    expect(prompt).toContain("不改事实、不替你落子");
+    expect(prompt).toContain("材料不足");
+    expect(prompt).toContain("三种落子");
+  });
+
+  it("uses the dedicated deep-generation contract for Bazi life K lines", () => {
+    const systemPrompt = buildAgentSystemPrompt("bazi", { analysisProduct: "kline" });
+
+    expect(systemPrompt).toContain("【人生 / 感情 K 线 AI 深度生成规则】");
+    expect(systemPrompt).toContain("人生 K 线基于八字大运、流年");
+    expect(systemPrompt).toContain("停止条件与复盘条件");
+    expect(systemPrompt).toContain("三条可能路径");
+    expect(systemPrompt).toContain("人生与感情 K 线都必须输出");
+    expect(systemPrompt).toContain("每一条 evidence 都是必须吸收的取象输入");
+    expect(systemPrompt).not.toContain("【八字分析顺序】");
   });
 
   it("injects source excerpts into Bazi context and keeps them out of Qimen", () => {
@@ -179,6 +203,49 @@ describe("agent chat helpers", () => {
     ).toBe("第一段\n第二段");
   });
 
+  it("makes bounded choice questions use a JSON-only decision contract", () => {
+    const messages = buildAgentMessages({
+      mode: "combined",
+      question: "请从 A、B、C、D 中选择。",
+      outputContract: "choice_json",
+      structuredText: "四柱：甲子",
+      jsonPayload: "{}",
+    });
+
+    expect(messages[0]?.content).toContain("【有界选择题输出契约】");
+    expect(messages[0]?.content).toContain("decision.choice");
+    expect(messages[0]?.content).toContain("不得同时列出多个候选");
+    expect(messages[0]?.content).toContain("先分别核对八字、紫微、奇门");
+    expect(messages[0]?.content).not.toContain("默认用 4 至 7 个短小节收束答案");
+  });
+
+  it("keeps forced choices confined to the offline benchmark contract", () => {
+    const messages = buildAgentMessages({
+      mode: "bazi",
+      outputContract: "choice_json_forced",
+      structuredText: "四柱：甲子",
+      jsonPayload: "{}",
+    });
+
+    expect(messages[0]?.content).toContain("【离线历史题强制选择契约】");
+    expect(messages[0]?.content).toContain("不代表真实未来预测");
+  });
+
+  it("parses a valid choice decision and fails closed on malformed output", () => {
+    expect(parseChoiceDecision(JSON.stringify({
+      analysis_markdown: "## 结论\n选择 B。",
+      decision: { choice: "b", confidence: 1.2, basis: ["流年：丙午"], abstentionReason: "" },
+    }))).toEqual({
+      analysisMarkdown: "## 结论\n选择 B。",
+      decision: { choice: "B", confidence: 1, basis: ["流年：丙午"] },
+    });
+    expect(parseChoiceDecision("答案：B").decision).toMatchObject({
+      choice: null,
+      confidence: 0,
+      abstentionReason: "模型没有返回符合选择题契约的 JSON。",
+    });
+  });
+
   it("requests a completion through the backend-compatible chat endpoint", async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: true,
@@ -214,6 +281,34 @@ describe("agent chat helpers", () => {
     expect(fetchImpl.mock.calls[0]?.[0].toString()).toBe("https://example.com/v1/chat/completions");
     expect(result).toEqual({
       content: "分析完成",
+      model: "mock-model",
+    });
+  });
+
+  it("requests and returns a structured decision for bounded choice research", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        model: "mock-model",
+        choices: [{ message: { content: JSON.stringify({
+          analysis_markdown: "## 结论\n选择 C。",
+          decision: { choice: "C", confidence: 0.72, basis: ["值使：开门"] },
+        }) } }],
+      }),
+    });
+
+    const result = await requestAgentAnalysis(
+      { mode: "qimen", outputContract: "choice_json", structuredText: "值使：开门", jsonPayload: "{}" },
+      { env: { OPENAI_API_KEY: "test-key", OPENAI_BASE_URL: "https://example.com/v1", OPENAI_MODEL: "mock-model" }, fetchImpl },
+    );
+
+    const body = JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
+    expect(body.temperature).toBe(0);
+    expect(body.max_tokens).toBe(900);
+    expect(body.response_format).toEqual({ type: "json_object" });
+    expect(result).toEqual({
+      content: "## 结论\n选择 C。",
+      decision: { choice: "C", confidence: 0.72, basis: ["值使：开门"] },
       model: "mock-model",
     });
   });

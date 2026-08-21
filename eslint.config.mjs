@@ -9,7 +9,11 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Isolated local verification builds use NEXT_DIST_DIR=.next-<name>.
+    // They contain generated bundles, never source files.
+    ".next-*/**",
     "out/**",
+    "outputs/**",
     "build/**",
     "node_modules/**",
     ".superpowers/**",

@@ -8,6 +8,14 @@ export type DecisionTreeSnapshot = {
   branches: Array<{ id?: string; key: string; title: string; assumptions: string[]; firstAction: string; cost: string; risks: string[]; validationDate: string | null; stopCondition: string; selectedAt?: string | null }>;
 };
 
+export type DecisionReadiness = {
+  label: string;
+  headline: string;
+  nextStep: string;
+  facts: string[];
+  canChoose: boolean;
+};
+
 type DecisionTreePanelProps = { life: KlineSeries; relationshipScales?: Partial<Record<KlineScale, KlineSeries>>; question?: string; conversation?: readonly AgentConversationMessage[]; embedded?: boolean; savedSnapshot?: DecisionTreeSnapshot | null; savedVersion?: number | null; selectedBranchKey?: string | null; onSelectBranch?: (key: string) => void; onSave?: (snapshot: DecisionTreeSnapshot) => void; saveLabel?: string };
 
 const pointWeight = (point: KlinePoint) => Math.abs(point.delta) * 2 + (point.high - point.low) * 0.45 + point.evidence.length * 0.7 + (point.keyPoint ? 4 : 0);
@@ -30,6 +38,47 @@ export const collectRealityFacts = (_question?: string, conversation: readonly A
     .map(compactFact)
     .filter(Boolean);
   return facts.filter((fact, index) => facts.indexOf(fact) === index).slice(-3);
+};
+
+/**
+ * A decision is only ready when the user has supplied independently checkable
+ * reality facts. This keeps the product useful without treating a chart or an
+ * assistant answer as a substitute for evidence.
+ */
+export const buildDecisionReadiness = (
+  question?: string,
+  conversation: readonly AgentConversationMessage[] = [],
+): DecisionReadiness => {
+  const facts = collectRealityFacts(question, conversation);
+  if (facts.length === 0) {
+    return {
+      label: "还不能下结论",
+      headline: "先补一条现实事实，再谈哪条路更好。",
+      nextStep: "回答对话里的第一个问题：现在已经确定发生了什么？",
+      facts,
+      canChoose: false,
+    };
+  }
+  if (facts.length === 1) {
+    return {
+      label: "先验证，不急着选",
+      headline: "已有一个事实；再找一条独立证据，判断会更可靠。",
+      nextStep: "把这条事实交叉核验，或补充它会改变什么。",
+      facts,
+      canChoose: false,
+    };
+  }
+  return {
+    label: facts.length >= 3 ? "可以选择一条路" : "可以开始比较路径",
+    headline: facts.length >= 3
+      ? "条件已经足够具体，可以选一条愿意承担代价的路径。"
+      : "已有两条事实；比较三条路的代价后，再决定是否落子。",
+    nextStep: facts.length >= 3
+      ? "打开判断树，选定一个本周能完成的最小动作，并设好停止条件。"
+      : "再补一条会改变决定的关键事实，或先进入判断树做情景比较。",
+    facts,
+    canChoose: facts.length >= 3,
+  };
 };
 
 export const buildDecisionTreeSnapshot = (
@@ -64,7 +113,8 @@ export const buildDecisionTreeSnapshot = (
 
 function DecisionBranch({ branch, tone, selected, onSelect }: { branch: DecisionTreeSnapshot["branches"][number]; tone: "advance" | "verify" | "protect"; selected: boolean; onSelect?: () => void }) {
   const supportingFact = branch.assumptions[0] || branch.risks[0] || "等待现实反馈补充证据";
-  const content = <><header><span>{branch.title}</span><b>{selected ? "已选择" : branch.validationDate ? branch.validationDate.replace("T", " ") : "待验证"}</b></header><strong>{branch.firstAction}</strong><p>{supportingFact} · 停止条件：{branch.stopCondition}</p></>;
+  const detail = <details className="decision-tree__branch-detail"><summary>条件、代价与风险</summary><dl><div><dt>成立条件</dt><dd>{branch.assumptions.length ? branch.assumptions.join("；") : "等待现实反馈补充条件"}</dd></div><div><dt>需要承担</dt><dd>{branch.cost}</dd></div><div><dt>主要风险</dt><dd>{branch.risks.join("；") || "尚待补充"}</dd></div><div><dt>停止条件</dt><dd>{branch.stopCondition}</dd></div></dl></details>;
+  const content = <><header><span>{branch.title}</span><b>{selected ? "已选择" : branch.validationDate ? branch.validationDate.replace("T", " ") : "待验证"}</b></header><strong>{branch.firstAction}</strong><p>{supportingFact}</p>{detail}</>;
   return onSelect ? <button type="button" className={`decision-tree__branch is-${tone}${selected ? " is-selected" : ""}`} aria-pressed={selected} onClick={onSelect}>{content}</button> : <article className={`decision-tree__branch is-${tone}${selected ? " is-selected" : ""}`}>{content}</article>;
 }
 
@@ -72,17 +122,17 @@ export function DecisionTreePanel({ life, relationshipScales, question, conversa
   const snapshot = buildDecisionTreeSnapshot(life, relationshipScales, question, conversation);
   const displayed = savedSnapshot ?? snapshot;
   const displayedBranches = (["advance", "verify", "protect"] as const).map((key, index) => displayed.branches.find((branch) => branch.key === key) ?? displayed.branches[index] ?? snapshot.branches[index]);
-  return <section className={embedded ? "decision-tree-page decision-tree-page--embedded" : "decision-tree-page"} aria-label="命运决策树">
+  return <section className={embedded ? "decision-tree-page decision-tree-page--embedded" : "decision-tree-page"} aria-label="三种可能路径">
     <section className="decision-tree" aria-label="关键选择树">
-      <header className="decision-tree__hero"><div><span>DECISION TREE / 选择结构{savedVersion ? ` · V${savedVersion}` : ""}</span><h2>命运给出条件，落子由你完成。</h2><p>这里不输出一个宿命答案。它把八字的长期结构、奇门的时间窗口和现实选择放到同一棵树上，让你看到每一步需要承担什么。</p></div><div className="decision-tree__anchor"><span>{savedSnapshot ? "已保存的关键窗口" : "当前关键窗口"}</span><strong>{displayed.root.activeWindow}</strong><small>{displayed.root.source}</small>{onSave ? <button type="button" onClick={() => onSave(snapshot)}>{saveLabel ?? (savedSnapshot ? "保存当前证据为新版本" : "保存这棵树")}</button> : null}</div></header>
+      <header className="decision-tree__hero"><div><span>可能路径{savedVersion ? ` · 已保存 ${savedVersion} 次` : ""}</span><h2>看清条件，再决定怎样走。</h2><p>这里不替你宣布结果。它把长期趋势、当下时机与现实选择放在一起，让你看到每一步要承担什么。</p></div><div className="decision-tree__anchor"><span>{savedSnapshot ? "上次保存的关键时间" : "当前关键时间"}</span><strong>{displayed.root.activeWindow}</strong><small>{displayed.root.source}</small>{onSave ? <button type="button" onClick={() => onSave(snapshot)}>{saveLabel ?? (savedSnapshot ? "保存当前判断" : "保存判断")}</button> : null}</div></header>
       <div className="decision-tree__diagram">
-        <div className="decision-tree__root"><span>证据起点</span><strong>{displayed.root.source}</strong><p>{displayed.root.evidence}</p></div>
+        <div className="decision-tree__root"><span>从你的现实开始</span><strong>{displayed.root.source}</strong><p>{displayed.root.evidence}</p></div>
         <div className="decision-tree__trunk" aria-hidden="true" />
         <div className="decision-tree__junction"><span>关键窗口</span><strong>{displayed.root.activeWindow}</strong><p>{displayed.root.evidence}</p></div>
         <div className="decision-tree__split" aria-hidden="true" />
         <div className="decision-tree__branches" aria-label="选择一条决策路径"><DecisionBranch branch={displayedBranches[0]} tone="advance" selected={selectedBranchKey === displayedBranches[0].key} onSelect={onSelectBranch ? () => onSelectBranch(displayedBranches[0].key) : undefined} /><DecisionBranch branch={displayedBranches[1]} tone="verify" selected={selectedBranchKey === displayedBranches[1].key} onSelect={onSelectBranch ? () => onSelectBranch(displayedBranches[1].key) : undefined} /><DecisionBranch branch={displayedBranches[2]} tone="protect" selected={selectedBranchKey === displayedBranches[2].key} onSelect={onSelectBranch ? () => onSelectBranch(displayedBranches[2].key) : undefined} /></div>
       </div>
-      <footer className="decision-tree__footer"><strong>胜天半子，不是逃离命盘。</strong><span>是看清每条路的代价后，仍然选择一条愿意承担的路。</span></footer>
+      <footer className="decision-tree__footer"><strong>胜天半子，不是替你做选择。</strong><span>是看清每条路的代价后，选择一条愿意承担的路。</span></footer>
     </section>
   </section>;
 }

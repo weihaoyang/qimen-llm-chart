@@ -9,6 +9,12 @@ export type AgentRequestPayload = {
   focus?: string;
   researchTool?: string;
   analysisProduct?: "agent" | "kline";
+  /**
+   * Narrative remains the product default. The choice contract exists for
+   * bounded research questions (for example, reproducible benchmark items),
+   * where an unambiguous answer and abstention must be distinguishable.
+   */
+  outputContract?: "narrative" | "choice_json" | "choice_json_forced";
   history?: readonly AgentConversationMessage[];
   structuredText: string;
   jsonPayload: string;
@@ -46,6 +52,13 @@ type ChatCompletionResponse = {
       content?: string | Array<{ type?: string; text?: string } | { text?: string }>;
     };
   }>;
+};
+
+export type AgentChoiceDecision = {
+  choice: "A" | "B" | "C" | "D" | "E" | null;
+  confidence: number;
+  basis: string[];
+  abstentionReason?: string;
 };
 
 export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
@@ -325,6 +338,8 @@ const COMMON_ANALYSIS_PROTOCOL = [
   "如果用户问题有歧义，先用一句话声明本次采用的理解和时间口径，再继续分析，不要假装问题不存在。",
   "每个核心判断都要就近给出具体字段依据；至少区分‘盘面事实’、‘传统推断’和‘待验证假设’，并在依据不足时明确写‘材料不足’。",
   "输出中必须出现并清楚区分：事实、传统推断和待验证假设。",
+  "【校准与反过度断言】上档/中档/下档是条件场景，不是概率、准确率或世界线发生频率；除非载荷提供可审计的回测统计，否则不得输出百分比、胜率或‘准确率’。所有趋势判断都必须写成‘在某条件成立时更可能出现某类信号’，并给出一个可使该判断失效的现实观察。",
+  "不得用‘磁场、量子塌缩、潜意识必然改变结果’等不可检验机制替盘面依据；用户提出这类解释时，只能标为假设，并说明当前材料无法验证。",
   "涉及情感婚恋时，不替第三方断言真实想法、忠诚或必然结果；必须把互动事实、关系结构、传统推断和需要双方沟通验证的信号分开。",
   "默认用 4 至 7 个短小节收束答案：先说结论、盘面事实、证据链、分歧与边界、可验证的下一步；只有与用户问题相关的字段才展开。",
   "涉及时间时，明确区分原局/本命结构与大运、流年、流月或当前时刻的触发；载荷没有对应字段时不得自行补算。",
@@ -381,13 +396,55 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
 };
 
 const KLINE_SYSTEM_PROMPT = [
-  "【奇门序列盘 K 线 AI 深度分析规则】",
-  "这是基于多张奇门序列盘字段计算的结构化趋势可视化，不是金融市场 K 线，也不是确定预言。",
-  "只能使用 K 线点的 score、delta、phase、evidence、prediction 与原始序列 JSON；不得伪造缺失字段或把分数改写成事件概率。",
+  "【人生 / 感情 K 线 AI 深度生成规则】",
+  "人生 K 线基于八字大运、流年、十二长生、干支关系和神煞的规则底图；感情 K 线基于奇门序列盘。它们都是结构化趋势可视化，不是金融市场 K 线，也不是确定预言。",
+  "只能使用 K 线点的 score、delta、phase、evidence、prediction 以及随附的八字或奇门原始 JSON；规则层的每一条 evidence 都是必须吸收的取象输入，不得遗漏后用泛泛叙述替代。不得伪造缺失字段、补造人生事件，或把分数改写成事件概率。",
+  "先识别 K 线种类与时间粒度。人生线必须分开说明原局/大运/流年；感情线必须分开说明盘面互动条件与现实沟通事实。",
   "必须逐条引用关键点证据，区分盘面事实、传统推断、待验证假设，并给出明确的观察窗口、可执行建议、停止条件与复盘条件。",
   "感情 K 线不得断言第三方真实想法、忠诚或必然结果，只能描述互动条件、阻力与需要双方沟通验证的信号。",
-  "严格输出：## 总体判断、## K线关键点、## 时间段预测、## 盘面依据、## 现实建议、## 风险与边界、## 下一步可以问。",
+  "人生与感情 K 线都必须输出三条可能路径／世界线：## 上档路径（条件兑现）、## 中档路径（反复/待验证）、## 下档路径（阻滞扩大）。每条路径必须逐项写出：触发条件、观察时间窗、引用的规则证据、现实行动建议、停止条件和复盘条件；三条路径不得只是同一段话换正负词。",
+  "严格输出：## 总体判断、## 阶段与关键点、## 上档路径、## 中档路径、## 下档路径、## 时间窗口、## 证据链、## 现实建议、## 停止与复盘条件、## 风险与边界、## 下一步可以问。",
 ].join("\n");
+
+const BATTLE_COPILOT_SYSTEM_PROMPT = [
+  "【胜天半子现实推演官规则】",
+  "你是后台推演官，不是算命师、心理安慰者或替用户做决定的人。只使用战局上下文中的事实、约束、底牌、默认重力线、交叉点、策略、行动和结果；没有的数据必须明确写材料不足。",
+  "必须把输出分成：已知事实、默认重力线、关键交叉点、可选行动、验证信号、风险断路器、未知变量。任何 AI 推断都标为推演，不得写成事实或成功概率。",
+  "策略必须合法、可逆优先、可执行，并明确执行人、期限、资源投入、证伪条件和停止条件。禁止欺骗、胁迫、违法、侵犯隐私和操纵他人。",
+  "不改事实、不替你落子，不静默修改战局。输出只是待审查的推演批注；只有用户明确保存或采纳才进入领域对象。",
+  "当战局的最低结果、理想结果、硬期限或对手盘为空，或用户明确说不确定时，进入‘澄清访谈’而不是直接给策略：先用此前对话和已有事实总结已知与未知，然后每次只问一个最能改变决策的具体问题，并说明为什么这一个问题重要。不得替用户填写空白字段，不得把价值判断伪装成目标。",
+  "在澄清访谈阶段，只有用户明确给出可观察的结果、不可承受的损失或时间边界后，才能把它称作暂定目标、暂定底线或暂定期限；仍需标明它可随新事实修正。",
+  "如果用户问题与当前战局目标无关，先指出脱离范围，再要求一个能改变决策的现实变量。",
+  "建议结构：## 结论边界 / ## 已知事实 / ## 默认重力线 / ## 交叉点 / ## 三种落子 / ## 验证与断路器 / ## 还缺什么。",
+].join("\n");
+
+const CHOICE_JSON_OUTPUT_CONTRACT = [
+  "【有界选择题输出契约】",
+  "本轮是有固定选项的研究问题。先按证据优先级完成判断，再只输出一个合法 JSON 对象，不要 Markdown 围栏或 JSON 外文字。",
+  "JSON 必须包含：analysis_markdown（给人阅读的简短分析）、decision（对象）。decision.choice 只能是 A、B、C、D、E 或 null；confidence 是 0 到 1 的数字；basis 是 1 到 4 条实际盘面字段依据；当选择 null 时，必须给出 abstentionReason。",
+  "不得同时列出多个候选后再把它们称作结论。证据不足时选择 null，而不是猜测或伪造时间字段。",
+].join("\n");
+
+const FORCED_CHOICE_JSON_OUTPUT_CONTRACT = [
+  "【离线历史题强制选择契约】",
+  "本轮用于公开历史选择题回归，不代表真实未来预测。即使证据不完整，也必须在 A、B、C、D、E 中选择相对支持最强的一项，并将 confidence 降低；只有输入缺失、损坏或选项无法读取时才允许 choice 为 null。",
+  "只输出一个合法 JSON 对象：analysis_markdown（简短可读分析）与 decision（choice、confidence、basis、abstentionReason）。不得列出多个候选作为结论，不得伪造缺失字段。",
+].join("\n");
+
+const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
+  qimen: "仅围绕问题相关宫位取证：时令/遁局、值符值使、门星神、天盘地盘干、空亡驿马与旺衰。缺少用神或时间字段时必须在 abstentionReason 说明。",
+  bazi: "仅围绕原局、月令日主、十神、合冲刑害及载荷中实际给出的当前大运/流年取证。没有运年字段时不得自行补算具体年份事件。",
+  ziwei: "仅围绕命身宫、相关宫位、主辅星、四化及载荷中实际给出的运限/流年字段取证。不得将本命静态星曜直接等同于具体事件。",
+  combined: "先分别核对八字、紫微、奇门中实际存在的同层级字段；只有同一议题、同一时间层级的独立证据才能合并为选择依据。",
+  research: "先识别材料所属工具与时间尺度，只引用实际存在的计算字段、规则证据或外部核验结果。",
+};
+
+const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [
+  BASE_SYSTEM_PROMPT,
+  "本轮使用有界选择题决策协议。结构化文本与 JSON 是唯一证据源；不要展示隐藏思考过程、不要引用未载入的资料、不要补造任何盘面或时间字段。",
+  CHOICE_MODE_RULES[mode],
+  outputContract === "choice_json_forced" ? FORCED_CHOICE_JSON_OUTPUT_CONTRACT : CHOICE_JSON_OUTPUT_CONTRACT,
+].join("\n\n");
 
 export const buildAgentSystemPrompt = (mode: WorkbenchMode, context?: { question?: string; focus?: string; researchTool?: string; analysisProduct?: "agent" | "kline" }): string => {
   const skills = selectAgentSkills({ mode, question: context?.question, focus: context?.focus, tool: context?.researchTool });
@@ -395,6 +452,7 @@ export const buildAgentSystemPrompt = (mode: WorkbenchMode, context?: { question
     BASE_SYSTEM_PROMPT,
     COMMON_ANALYSIS_PROTOCOL,
     context?.analysisProduct === "kline" ? KLINE_SYSTEM_PROMPT : mode === "bazi" ? BAZI_SYSTEM_PROMPT : MODE_SYSTEM_PROMPTS[mode],
+    context?.researchTool === "battle" ? BATTLE_COPILOT_SYSTEM_PROMPT : "",
     formatAgentSkillsPrompt(skills),
   ].join("\n\n");
 };
@@ -451,12 +509,58 @@ export const extractAssistantText = (content: unknown): string => {
   return "";
 };
 
+const isChoice = (value: unknown): value is NonNullable<AgentChoiceDecision["choice"]> =>
+  typeof value === "string" && /^[A-E]$/.test(value);
+
+export const parseChoiceDecision = (content: string): { analysisMarkdown: string; decision: AgentChoiceDecision } => {
+  try {
+    const parsed = JSON.parse(content) as {
+      analysis_markdown?: unknown;
+      decision?: { choice?: unknown; confidence?: unknown; basis?: unknown; abstentionReason?: unknown };
+    };
+    const rawChoice = typeof parsed.decision?.choice === "string" ? parsed.decision.choice.toUpperCase() : null;
+    const choice = isChoice(rawChoice) ? rawChoice : null;
+    const rawConfidence = typeof parsed.decision?.confidence === "number" ? parsed.decision.confidence : 0;
+    const basis = Array.isArray(parsed.decision?.basis)
+      ? parsed.decision.basis.filter((item): item is string => typeof item === "string" && Boolean(item.trim())).map((item) => item.trim()).slice(0, 4)
+      : [];
+    const abstentionReason = typeof parsed.decision?.abstentionReason === "string" && parsed.decision.abstentionReason.trim()
+      ? parsed.decision.abstentionReason.trim()
+      : undefined;
+    const analysisMarkdown = typeof parsed.analysis_markdown === "string" && parsed.analysis_markdown.trim()
+      ? parsed.analysis_markdown.trim()
+      : choice
+        ? "模型已给出选择，但没有提供可展示的分析正文。"
+        : abstentionReason ?? "材料不足以支持单一选择。";
+    return {
+      analysisMarkdown,
+      decision: {
+        choice,
+        confidence: Math.min(1, Math.max(0, rawConfidence)),
+        basis,
+        ...(choice ? {} : { abstentionReason: abstentionReason ?? "模型未给出可验证的单一选择。" }),
+      },
+    };
+  } catch {
+    return {
+      analysisMarkdown: content,
+      decision: {
+        choice: null,
+        confidence: 0,
+        basis: [],
+        abstentionReason: "模型没有返回符合选择题契约的 JSON。",
+      },
+    };
+  }
+};
+
 export const buildAgentMessages = ({
   mode,
   question,
   focus,
   researchTool,
   analysisProduct,
+  outputContract,
   history,
   structuredText,
   jsonPayload,
@@ -503,7 +607,9 @@ export const buildAgentMessages = ({
   const messages: ChatMessage[] = [
     {
       role: "system",
-    content: buildAgentSystemPrompt(mode, { question: resolvedQuestion, focus, researchTool, analysisProduct }),
+      content: outputContract === "choice_json" || outputContract === "choice_json_forced"
+        ? buildChoiceSystemPrompt(mode, outputContract)
+        : buildAgentSystemPrompt(mode, { question: resolvedQuestion, focus, researchTool, analysisProduct }),
     },
     {
       role: "user",
@@ -534,6 +640,10 @@ export const requestAgentAnalysis = async (
   const config = getAgentConfig(env);
   const baseUrl = config.baseUrl.endsWith("/") ? config.baseUrl : `${config.baseUrl}/`;
   const endpoint = new URL("chat/completions", baseUrl);
+  const isChoiceContract = payload.outputContract === "choice_json" || payload.outputContract === "choice_json_forced";
+  // Keep narrative analysis readable and bound K-line generation separately;
+  // the research choice contract should never spend tokens on prose.
+  const maxTokens = isChoiceContract ? 900 : payload.analysisProduct === "kline" ? 3_800 : 2_600;
 
   const response = await fetchImpl(endpoint, {
     method: "POST",
@@ -543,7 +653,9 @@ export const requestAgentAnalysis = async (
     },
     body: JSON.stringify({
       model: config.model,
-      temperature: 0.4,
+      max_tokens: maxTokens,
+      temperature: isChoiceContract ? 0 : 0.4,
+      ...(isChoiceContract ? { response_format: { type: "json_object" } } : {}),
       messages: buildAgentMessages(payload),
     }),
   });
@@ -559,10 +671,16 @@ export const requestAgentAnalysis = async (
     throw new Error("模型接口返回成功，但没有可展示的文本内容。");
   }
 
-  return {
-    content,
-    model: data.model ?? config.model,
-  };
+  if (payload.outputContract === "choice_json" || payload.outputContract === "choice_json_forced") {
+    const parsed = parseChoiceDecision(content);
+    return {
+      content: parsed.analysisMarkdown,
+      decision: parsed.decision,
+      model: data.model ?? config.model,
+    };
+  }
+
+  return { content, model: data.model ?? config.model };
 };
 
 /**

@@ -1,0 +1,2230 @@
+/*
+ * /paipan visual contract
+ *
+ * This route owns the finished Fauvist workbench surface.  It is imported by
+ * the route layout so the browser receives it as a render-blocking page
+ * stylesheet, rather than repainting a generic global surface after hydration.
+ * Keep product-specific visual changes here; globals.css is not an override
+ * target for this route.
+ */
+
+html:has(.product-chart),
+body:has(.product-chart),
+.product-chart {
+  --paipan-ink: #171717;
+  --paipan-paper: #fffaf0;
+  --paipan-ground: #e9e3d9;
+  --paipan-yellow: #f2bd3f;
+  --paipan-red: #df4d32;
+  --paipan-violet: #55418c;
+}
+
+/* Classic methods share the existing gated research Agent. The board stays
+   primary; this rail owns questions, evidence and the answer. */
+@media (min-width: 1041px) {
+  body .product-chart .analysis-layout.analysis-layout--classic {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 0.34fr) !important;
+    gap: 10px;
+    min-height: 0;
+    height: 100%;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  body .product-chart .analysis-layout--classic .classic-observatory,
+  body .product-chart .analysis-layout--classic .classic-agent-rail {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+  }
+
+  body .product-chart .analysis-layout--classic .classic-observatory {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+body .product-chart .classic-agent-rail {
+  border: 2px solid var(--paipan-ink);
+  background: var(--paipan-paper);
+  box-shadow: 5px 5px 0 var(--paipan-ink);
+}
+
+body .product-chart .classic-agent-rail .inspector-tabs {
+  min-height: 100%;
+  height: auto;
+  border: 0;
+  box-shadow: none;
+}
+
+body .product-chart .classic-agent-rail .chart-inspector-head {
+  border-bottom: 2px solid var(--paipan-ink);
+}
+
+/* The default surface is a six-column reading sheet. The exhaustive table
+   remains available under details instead of competing with selected timing. */
+body .product-chart .bazi-panel { gap: 6px; }
+body .product-chart .bazi-panel__overview { padding: 6px !important; }
+body .product-chart .bazi-panel__overview .panel-heading,
+body .product-chart .bazi-relation-scale,
+body .product-chart .bazi-ten-god-meter,
+body .product-chart .bazi-element-meter { display: none !important; }
+
+body .product-chart .bazi-headband {
+  grid-template-columns: minmax(190px, 1.5fr) repeat(2, minmax(0, 1fr));
+  gap: 3px;
+}
+
+body .product-chart .bazi-headband__block {
+  min-height: 56px;
+  padding: 6px 8px;
+  border: 1px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: #fffdf7 !important;
+}
+
+body .product-chart .bazi-headband__block--hero { gap: 0; }
+body .product-chart .bazi-headband__hero-top { grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+body .product-chart .bazi-headband__hero-main strong { font-size: 2rem !important; }
+body .product-chart .bazi-headband__hero-calendar { gap: 2px; padding-left: 7px; }
+body .product-chart .bazi-headband__hero-calendar-row strong,
+body .product-chart .bazi-headband__block--ledger strong { font-size: 0.76rem !important; }
+
+body .product-chart .bazi-traditional-board { display: grid; gap: 0; }
+body .product-chart .bazi-traditional-board__header { align-items: center; padding: 7px 10px !important; }
+
+body .product-chart .bazi-reading-workspace { display: grid; grid-template-columns: minmax(0, 1.28fr) minmax(330px, .92fr); gap: 8px; align-items: stretch; }
+
+body .product-chart .bazi-six-pillars { display: grid; gap: 1px; padding: 1px; background: var(--paipan-ink); }
+body .product-chart .bazi-six-pillars__row { display: grid; grid-template-columns: 48px repeat(6, minmax(0, 1fr)); gap: 1px; }
+body .product-chart .bazi-six-pillars__row > * {
+  display: grid;
+  min-width: 0;
+  min-height: 26px;
+  place-items: center;
+  padding: 3px 4px;
+  background: #fffdf7;
+  color: var(--paipan-ink);
+  text-align: center;
+}
+body .product-chart .bazi-six-pillars__row > span { background: #f3ede2; color: #5d574f; font-size: 10px; font-weight: 900; }
+body .product-chart .bazi-six-pillars__row--head > strong {
+  align-content: center;
+  gap: 1px;
+  min-height: 47px;
+  font-family: ui-serif, "Songti SC", serif;
+  font-size: clamp(1.18rem, 1.7vw, 1.65rem);
+  line-height: 1;
+}
+body .product-chart .bazi-six-pillars__row--head small { color: #6b645c; font-family: var(--mono-font); font-size: 9px; font-weight: 900; }
+body .product-chart .bazi-six-pillars__row--head .is-day-master { border-top: 4px solid var(--paipan-red); background: #fff1e8; }
+body .product-chart .bazi-six-pillars__row--head .is-timing { background: #f2bd3f; }
+body .product-chart .bazi-six-pillars__row--glyph > strong {
+  min-height: 52px;
+  font-family: ui-serif, "Songti SC", serif;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1;
+}
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="木"] { color: #176c58; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="火"] { color: #b73425; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="土"] { color: #8b5a20; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="金"] { color: #555049; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="水"] { color: #55418c; }
+body .product-chart .bazi-six-pillars__row--glyph > strong.is-day-master { background: #fff1e8; }
+body .product-chart .bazi-six-pillars__row--timing small { font-size: 10px; font-weight: 800; }
+body .product-chart .bazi-six-pillars__row--nayin small { font-size: 10px; font-weight: 850; }
+body .product-chart .bazi-six-pillars__row--shensha > div { display: flex; min-height: 54px; align-content: center; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px 4px; padding: 5px; }
+body .product-chart .bazi-six-pillars__row--shensha > div small { color: #8b5a20; font-size: 9px; font-weight: 850; line-height: 1.15; }
+
+body .product-chart .bazi-timing-rail { display: grid; grid-template-rows: auto repeat(3, minmax(0, 1fr)) auto; min-height: 0; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); }
+body .product-chart .bazi-timing-rail__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 7px 9px; border-bottom: 2px solid var(--paipan-ink); background: var(--paipan-yellow); }
+body .product-chart .bazi-timing-rail__head strong { font-size: 13px; font-weight: 950; }
+body .product-chart .bazi-timing-rail__head span { color: var(--paipan-violet); font: 850 10px/1 var(--mono-font); }
+body .product-chart .bazi-timing-track { display: grid; grid-template-columns: 38px minmax(0, 1fr); min-height: 69px; border-bottom: 1px solid var(--paipan-ink); }
+body .product-chart .bazi-timing-track > span { display: grid; place-items: center; border-right: 1px solid var(--paipan-ink); background: #f3ede2; color: var(--paipan-ink); font: 950 11px/1 var(--mono-font); writing-mode: vertical-rl; }
+body .product-chart .bazi-timing-track > div { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+body .product-chart .bazi-timing-track button { display: grid; min-width: 61px; flex: 1 0 61px; align-content: center; gap: 2px; padding: 4px 5px; border: 0; border-right: 1px solid #ded6c8; border-radius: 0; color: var(--paipan-ink); background: #fffdf7; cursor: pointer; }
+body .product-chart .bazi-timing-track button:hover { background: #f5e6bf; }
+body .product-chart .bazi-timing-track button.is-active { background: var(--paipan-yellow); box-shadow: inset 0 -4px 0 var(--paipan-red); }
+body .product-chart .bazi-timing-track button small { color: #5d574f; font: 800 9px/1 var(--mono-font); }
+body .product-chart .bazi-timing-track button strong { font-family: ui-serif, "Songti SC", serif; font-size: 22px; line-height: 1; }
+body .product-chart .bazi-timing-track button em { color: var(--paipan-red); font-size: 9px; font-style: normal; font-weight: 900; }
+body .product-chart .bazi-timing-track--month button { min-width: 48px; flex-basis: 48px; }
+body .product-chart .bazi-timing-track--month button strong { font-size: 18px; }
+body .product-chart .bazi-timing-rail > p { margin: 0; padding: 7px 9px; background: var(--paipan-ink); color: var(--paipan-paper); font: 800 10px/1.2 var(--mono-font); }
+
+body .product-chart .bazi-details { border-top: 1px solid var(--paipan-ink); background: #fffdf7; }
+body .product-chart .bazi-details > summary { cursor: pointer; padding: 7px 10px; color: #5d574f; font-size: 11px; font-weight: 900; }
+body .product-chart .bazi-details--secondary { border: 2px solid var(--paipan-ink); background: #f3ede2; }
+
+body .product-chart .bazi-compatibility-disclosure { margin-top: 6px; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); }
+body .product-chart .bazi-compatibility-disclosure > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 38px; align-items: center; gap: 10px; padding: 7px 10px; cursor: pointer; list-style: none; }
+body .product-chart .bazi-compatibility-disclosure > summary::-webkit-details-marker { display: none; }
+body .product-chart .bazi-compatibility-disclosure > summary strong { color: var(--paipan-ink); font-size: 13px; font-weight: 950; }
+body .product-chart .bazi-compatibility-disclosure > summary span { color: var(--paipan-violet); font-size: 10px; font-weight: 850; }
+body .product-chart .bazi-compatibility-disclosure > summary::after { content: "+"; color: var(--paipan-red); font: 950 18px/1 var(--mono-font); }
+body .product-chart .bazi-compatibility-disclosure[open] > summary { border-bottom: 2px solid var(--paipan-ink); background: var(--paipan-yellow); }
+body .product-chart .bazi-compatibility-disclosure[open] > summary::after { content: "−"; }
+body .product-chart .bazi-compatibility-disclosure:not([open]) > .bazi-compatibility-panel { display: none !important; }
+body .product-chart .bazi-compatibility-disclosure .bazi-compatibility-panel { margin-top: 0; border: 0; box-shadow: none; }
+
+/* K-line is a first-class workbench, not an unstyled SVG fallback.  Keep the
+   Chinese market convention invariant: red means close >= open; green means
+   close < open.  Scope every rule to the chart product so shengtian keeps its
+   own product surface. */
+body .product-chart .kline-panel {
+  margin: 0;
+  padding: 16px;
+  border: 3px solid var(--paipan-ink);
+  background: var(--paipan-paper);
+  box-shadow: 7px 7px 0 var(--paipan-ink);
+}
+
+body .product-chart .kline-panel__header,
+body .product-chart .kline-panel__ai {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body .product-chart .kline-panel__eyebrow {
+  color: var(--paipan-red);
+  font: 800 11px/1.2 var(--mono-font);
+  letter-spacing: .1em;
+}
+
+body .product-chart .kline-panel h2 {
+  margin: 5px 0 4px;
+  color: var(--paipan-ink);
+  font-size: clamp(22px, 2.4vw, 31px);
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+
+body .product-chart .kline-panel__header p,
+body .product-chart .kline-panel__ai span,
+body .product-chart .kline-panel__disclaimer {
+  margin: 0;
+  color: #655d53;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+body .product-chart .kline-panel__ai small {
+  color: var(--paipan-red);
+  font: 800 10px/1.35 var(--mono-font);
+  letter-spacing: .025em;
+}
+
+body .product-chart .kline-panel__switch,
+body .product-chart .kline-panel__scales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+body .product-chart .kline-panel__switch button,
+body .product-chart .kline-panel__scales button {
+  border: 2px solid var(--paipan-ink);
+  border-radius: 0;
+  background: #fffdf7;
+  color: var(--paipan-ink);
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+body .product-chart .kline-panel__switch button.is-active,
+body .product-chart .kline-panel__scales button.is-active {
+  background: var(--paipan-yellow);
+  box-shadow: 3px 3px 0 var(--paipan-red);
+}
+
+body .product-chart .kline-panel__scales { margin-top: 11px; }
+body .product-chart .kline-panel__stats { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 10px; margin-top: 13px; }
+body .product-chart .kline-panel__stats > strong { color: var(--paipan-ink); font: 950 30px/.85 var(--mono-font); }
+body .product-chart .kline-panel__stats > span,
+body .product-chart .kline-panel__stats > small { color: #655d53; font: 800 11px/1.2 var(--mono-font); }
+body .product-chart .kline-panel__stats em { border: 2px solid var(--paipan-ink); padding: 4px 7px; font-style: normal; font-weight: 900; }
+body .product-chart .kline-panel__stats em.is-up { background: var(--paipan-red); color: #fffaf0; }
+body .product-chart .kline-panel__stats em.is-down { background: #196b58; color: #fffaf0; }
+body .product-chart .kline-panel__stats em.is-flat { background: #c5b4e3; }
+
+body .product-chart .kline-panel__plot-wrap {
+  min-height: 190px;
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink);
+  background: #fff;
+  aspect-ratio: 3.4 / 1;
+}
+
+body .product-chart .kline-panel__plot { display: block; width: 100%; height: 100%; }
+body .product-chart .kline-panel__grid { stroke: #d9d0c2; stroke-width: 1; stroke-dasharray: 4 5; }
+body .product-chart .kline-panel__candle { cursor: pointer; outline: none; }
+body .product-chart .kline-panel__candle:focus-visible .kline-panel__candle-body { stroke: var(--paipan-ink); stroke-width: 3; }
+body .product-chart .kline-panel__candle-wick { stroke: var(--paipan-ink); stroke-width: 2; }
+body .product-chart .kline-panel__candle-body { stroke: var(--paipan-ink); stroke-width: 1.5; }
+body .product-chart .kline-panel__candle.is-up .kline-panel__candle-body { fill: var(--paipan-red); }
+body .product-chart .kline-panel__candle.is-down .kline-panel__candle-body { fill: #196b58; }
+body .product-chart .kline-panel__axis { fill: #655d53; font: 11px var(--mono-font); }
+
+body .product-chart .kline-panel__scale-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+body .product-chart .kline-panel__scale-card { min-width: 0; border: 2px solid var(--paipan-ink); background: #fff; padding: 8px; }
+body .product-chart .kline-panel__scale-card.is-selected { background: #fff6dc; box-shadow: 4px 4px 0 var(--paipan-red); }
+body .product-chart .kline-panel__scale-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+body .product-chart .kline-panel__scale-card-head strong { font-size: 16px; letter-spacing: .02em; }
+body .product-chart .kline-panel__scale-card-head span { color: #655d53; font: 11px var(--mono-font); white-space: nowrap; }
+body .product-chart .kline-panel__scale-card .kline-panel__plot-wrap { min-height: 132px; margin-top: 7px; }
+
+body .product-chart .kline-panel__detail { display: grid; gap: 8px; margin-top: 10px; padding: 11px; border: 2px solid var(--paipan-ink); background: var(--paipan-yellow); }
+body .product-chart .kline-panel__detail > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; }
+body .product-chart .kline-panel__detail span { font-size: 12px; }
+body .product-chart .kline-panel__detail p { margin: 0; font-size: 14px; line-height: 1.5; }
+body .product-chart .kline-panel__ohlc { display: flex; flex-wrap: wrap; gap: 4px; }
+body .product-chart .kline-panel__ohlc span { border: 1px solid var(--paipan-ink); background: #fffaf0; padding: 3px 6px; }
+body .product-chart .kline-panel__evidence { display: flex; flex-wrap: wrap; gap: 5px; }
+body .product-chart .kline-panel__evidence span { border: 1px solid var(--paipan-ink); background: #fffaf0; padding: 3px 6px; font-size: 11px; }
+body .product-chart .kline-panel__keypoints { display: grid; gap: 5px; margin-top: 12px; }
+body .product-chart .kline-panel__keypoints > strong { color: var(--paipan-violet); font: 900 11px var(--mono-font); letter-spacing: .08em; }
+body .product-chart .kline-panel__keypoints button { display: grid; grid-template-columns: 1.3fr .35fr 1fr; align-items: center; gap: 8px; border: 1px solid var(--paipan-ink); border-radius: 0; background: #fffdf7; padding: 7px 8px; color: var(--paipan-ink); text-align: left; cursor: pointer; }
+body .product-chart .kline-panel__keypoints button:hover { background: #f5e6bf; }
+body .product-chart .kline-panel__keypoints button b { color: var(--paipan-red); font-family: var(--mono-font); }
+body .product-chart .kline-panel__keypoints button em { color: #655d53; font-size: 11px; font-style: normal; }
+
+body .product-chart .kline-panel__ai { margin-top: 13px; padding-top: 12px; border-top: 2px solid var(--paipan-ink); }
+body .product-chart .kline-panel__ai > div { display: grid; gap: 2px; }
+body .product-chart .kline-panel__ai > div > strong { color: var(--paipan-ink); font-size: 16px; font-weight: 950; }
+body .product-chart .kline-panel__ai-button { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--paipan-ink); border-radius: 0; background: var(--paipan-ink); color: #fffaf0; padding: 9px 12px; font-weight: 900; cursor: pointer; }
+body .product-chart .kline-panel__ai-button:disabled { opacity: .6; cursor: wait; }
+body .product-chart .kline-panel__error { margin: 9px 0 0; color: #b32316; font-weight: 800; }
+body .product-chart .kline-panel__disclaimer { margin: 11px 0 0; }
+body .product-chart .kline-panel__empty { margin-top: 12px; padding: 18px; border: 2px dashed var(--paipan-ink); color: #655d53; }
+
+@media (max-width: 680px) {
+  body .product-chart .kline-panel { padding: 11px; box-shadow: 4px 4px 0 var(--paipan-ink); }
+  body .product-chart .kline-panel__header,
+  body .product-chart .kline-panel__ai { flex-direction: column; }
+  body .product-chart .kline-panel__switch,
+  body .product-chart .kline-panel__scales { width: 100%; }
+  body .product-chart .kline-panel__switch button,
+  body .product-chart .kline-panel__scales button { flex: 1 1 auto; }
+  body .product-chart .kline-panel__plot-wrap { min-height: 170px; aspect-ratio: auto; }
+  body .product-chart .kline-panel__scale-grid { grid-template-columns: 1fr; }
+  body .product-chart .kline-panel__scale-card .kline-panel__plot-wrap { min-height: 150px; }
+  body .product-chart .kline-panel__keypoints button { grid-template-columns: 1fr .35fr; }
+  body .product-chart .kline-panel__keypoints button em { grid-column: 1 / -1; }
+  body .product-chart .kline-panel__ai-button { width: 100%; justify-content: center; }
+}
+
+/* AI reports extend the deterministic rule chart; they never replace the
+   underlying OHLC points or their evidence. */
+body .product-chart .kline-panel__ai-report {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink);
+  background: var(--paipan-paper);
+  box-shadow: 5px 5px 0 var(--paipan-red);
+}
+
+body .product-chart .kline-panel__ai-report > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-yellow);
+}
+
+body .product-chart .kline-panel__ai-report > div > span {
+  color: var(--paipan-violet);
+  font: 900 10px/1 ui-monospace, monospace;
+  letter-spacing: .08em;
+}
+
+body .product-chart .kline-panel__ai-report > div > strong {
+  color: var(--paipan-ink);
+  font: 950 14px/1 ui-sans-serif, system-ui, sans-serif;
+}
+
+body .product-chart .kline-panel__ai-report .kline-panel__ai-result {
+  margin: 0;
+  padding: 0 12px 12px;
+  white-space: pre-wrap;
+  color: var(--paipan-ink);
+  font: 700 13px/1.65 ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Imported K-line reading layer: Bazi's deterministic OHLC remains primary;
+   dayun bands and MAs only make the already-calculated chronology legible. */
+body .product-chart .kline-panel__dayun-band { fill: rgb(242 189 63 / 14%); }
+body .product-chart .kline-panel__dayun-band.is-1 { fill: rgb(223 77 50 / 8%); }
+body .product-chart .kline-panel__dayun-label { fill: var(--paipan-ink); font: 900 10px/1 var(--mono-font); }
+body .product-chart .kline-panel__ma { fill: none; stroke-width: 2.25; stroke-linecap: square; stroke-linejoin: bevel; pointer-events: none; }
+body .product-chart .kline-panel__ma--5 { stroke: var(--paipan-ink); }
+body .product-chart .kline-panel__ma--10 { stroke: var(--paipan-red); stroke-dasharray: 5 4; }
+
+body .product-chart .ziwei-panel__canvas {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: #fffdf7 !important;
+  box-shadow: 5px 5px 0 var(--paipan-ink) !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-astrolabe-theme-default {
+  --iztro-color-major: #761f16;
+  --iztro-color-minor: #145845;
+  --iztro-color-adjective: #3f2f78;
+  --iztro-color-brightness: #8a4f16;
+  --iztro-color-horoscope: #7f2b1f;
+  --iztro-color-mutagen: #111111;
+  --iztro-color-palace: #111111;
+  --iztro-color-tianma: #6b3511;
+  --iztro-color-line: #171717;
+  --iztro-color-text: #171717;
+  --iztro-color-border: #171717;
+  --iztro-star-font-size-big: 14px;
+  --iztro-star-font-size-small: 12px;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace,
+body .product-chart .ziwei-panel__canvas .iztro-center-palace {
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: #fffdf7 !important;
+  color: var(--paipan-ink) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-name,
+body .product-chart .ziwei-panel__canvas .iztro-palace-name-body,
+body .product-chart .ziwei-panel__canvas .iztro-palace-heavenly-stem,
+body .product-chart .ziwei-panel__canvas .iztro-palace-earthly-branch,
+body .product-chart .ziwei-panel__canvas .iztro-palace-decadal,
+body .product-chart .ziwei-panel__canvas .iztro-palace-range,
+body .product-chart .ziwei-panel__canvas .iztro-palace-ages,
+body .product-chart .ziwei-panel__canvas .iztro-star,
+body .product-chart .ziwei-panel__canvas .iztro-star span,
+body .product-chart .ziwei-panel__canvas .iztro-palace-center-item,
+body .product-chart .ziwei-panel__canvas .iztro-palace-center-item span {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-name,
+body .product-chart .ziwei-panel__canvas .iztro-palace-name-body {
+  color: #111111 !important;
+  font-weight: 950 !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-name-taichi,
+body .product-chart .ziwei-panel__canvas .iztro-palace-fate span {
+  background: var(--paipan-yellow) !important;
+  color: var(--paipan-ink) !important;
+  border: 1px solid var(--paipan-ink) !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-major,
+body .product-chart .ziwei-panel__canvas .major-star {
+  color: #761f16 !important;
+  font-weight: 950 !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-minor,
+body .product-chart .ziwei-panel__canvas .minor-star {
+  color: #145845 !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-adjective,
+body .product-chart .ziwei-panel__canvas .iztro-palace-ages,
+body .product-chart .ziwei-panel__canvas .iztro-palace-decadal,
+body .product-chart .ziwei-panel__canvas .adjective-star {
+  color: #3f2f78 !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-copyright {
+  color: rgb(23 23 23 / .48) !important;
+}
+
+@media (max-width: 1040px) {
+  body .product-chart .analysis-layout.analysis-layout--classic { display: grid !important; gap: 10px; padding: 0 !important; }
+  body .product-chart .classic-agent-rail { min-height: 540px; }
+}
+
+/* Landscape workbench geometry has one owner. Header + board + footer must
+   resolve to exactly one viewport; the square is sized from the remaining
+   height and the metadata strip scrolls horizontally instead of adding rows. */
+@media (min-width: 900px) and (min-height: 700px) {
+  body .page-shell.product-chart {
+    height: 100svh !important;
+    min-height: 100svh !important;
+    grid-template-rows: 76px minmax(0, 1fr) 28px !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart .observatory-hero {
+    grid-template-columns: max-content minmax(0, 1fr) max-content !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    min-height: 76px !important;
+    height: 76px !important;
+    padding: 9px 190px 9px 14px !important;
+  }
+
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    padding-right: 0 !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account {
+    top: 50% !important;
+    right: 14px !important;
+    transform: translateY(-50%) !important;
+  }
+
+  body .product-chart #qimen-workbench-layout,
+  body .product-chart #qimen-workbench-layout > #qimen-chart,
+  body .product-chart #qimen-workbench-layout > #qimen-chart > .analysis-panel {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart #qimen-chart .canvas-panel {
+    display: grid !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    grid-template-rows: auto minmax(0, 1fr) 76px !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart #qimen-chart .canvas-panel__content.qimen-board-layout {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    align-content: stretch !important;
+  }
+
+  body .product-chart #qimen-chart .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
+    display: grid !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    overflow: hidden !important;
+    align-content: stretch !important;
+  }
+
+  body .product-chart #qimen-chart .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
+    width: min(100%, calc(100svh - 304px)) !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
+    width: min(100%, calc(100svh - 304px)) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip {
+    --qimen-summary-track: 76px;
+    --qimen-summary-row: 33px;
+    display: grid !important;
+    height: var(--qimen-summary-track) !important;
+    min-height: var(--qimen-summary-track) !important;
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, var(--qimen-summary-row)) !important;
+    grid-auto-flow: row !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+    padding: 3px !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip > * {
+    display: flex !important;
+    min-width: 0 !important;
+    height: var(--qimen-summary-row) !important;
+    min-height: 0 !important;
+    align-self: center !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip > .summary-chip--metadata,
+  body .product-chart #qimen-chart .summary-strip > .summary-chip--pillars {
+    grid-column: span 4 !important;
+  }
+
+  /* Semi cards contain a body wrapper. The strip's fixed 44px track is only
+     valid when card, body and content share its height; otherwise the body
+     paints below the card and gets clipped by the strip. */
+  body .product-chart #qimen-chart .summary-strip > .summary-chip > .semi-card-body {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip .summary-chip__content {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 0 7px !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip .summary-chip__content strong {
+    overflow: hidden !important;
+    color: var(--paipan-ink) !important;
+    font: 850 12px/1 ui-sans-serif, system-ui, sans-serif !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart .bazi-headband { grid-template-columns: 1fr 1fr; }
+  body .product-chart .bazi-headband__block--hero { grid-column: 1 / -1; }
+  body .product-chart .bazi-reading-workspace { grid-template-columns: minmax(0, 1fr); }
+  body .product-chart .bazi-six-pillars { overflow-x: auto; }
+  body .product-chart .bazi-six-pillars__row { min-width: 680px; }
+  body .product-chart .bazi-six-pillars__row--glyph > strong { font-size: 1.9rem; }
+  body .product-chart .bazi-timing-track { min-height: 65px; }
+
+  body .product-chart #qimen-chart .summary-strip {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip > *,
+  body .product-chart #qimen-chart .summary-strip > .summary-chip--metadata,
+  body .product-chart #qimen-chart .summary-strip > .summary-chip--pillars {
+    grid-column: span 1 !important;
+    height: 36px !important;
+  }
+
+  body .product-chart #qimen-chart .summary-strip > .summary-chip--metadata,
+  body .product-chart #qimen-chart .summary-strip > .summary-chip--pillars {
+    grid-column: span 2 !important;
+  }
+
+  body .product-chart .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout {
+    display: grid !important;
+    height: auto !important;
+    min-height: 0 !important;
+    grid-template-rows: auto !important;
+    overflow: visible !important;
+    align-content: start !important;
+  }
+
+  body .product-chart .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    grid-template-rows: auto auto !important;
+    align-content: start !important;
+    overflow: visible !important;
+  }
+
+  body .product-chart .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+    justify-self: center !important;
+    align-self: start !important;
+  }
+
+  body .product-chart .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card {
+    display: grid !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+}
+
+/* Final mobile layout contract.  Keep the Swiss/brutalist palette, but give
+ * the shell one predictable reading order: identity + account, full-width
+ * mode rail, then the optional chart control.  This intentionally comes last
+ * so legacy route-specific overrides cannot re-squeeze the header. */
+@media (max-width: 720px) {
+  body .page-shell.product-chart {
+    padding: 6px 6px 52px !important;
+    gap: 8px !important;
+  }
+
+  body .product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    border-bottom-width: 3px !important;
+    box-shadow: 3px 3px 0 var(--paipan-red) !important;
+  }
+
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+  }
+
+  body .product-chart .observatory-hero__copy h1 {
+    font-size: clamp(1.15rem, 3.4vw, 1.45rem) !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__status { display: none !important; }
+
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    width: max-content !important;
+    min-width: 100% !important;
+    height: 36px !important;
+    padding: 2px !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 58px !important;
+    min-height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+
+  body .product-chart .observatory-hero .hero-action {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    justify-self: end !important;
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  body .product-chart .combined-agent-surface,
+  body .product-chart .classic-observatory,
+  body .product-chart .kline-panel {
+    box-shadow: 3px 3px 0 var(--paipan-red) !important;
+  }
+
+  body .product-chart .combined-agent-surface__heading {
+    padding: 11px 12px 9px !important;
+  }
+
+  body .product-chart .combined-agent-surface__heading > div > span {
+    font-size: 9px !important;
+    letter-spacing: .12em !important;
+  }
+
+  body .product-chart .combined-agent-surface__heading h2 {
+    font-size: clamp(1.25rem, 5vw, 1.55rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  body .product-chart .combined-agent-surface .agent-panel__section--result {
+    min-height: 260px !important;
+  }
+
+  body .product-chart .combined-agent-surface .agent-result-empty--chart {
+    min-height: 220px !important;
+    padding: 18px 12px !important;
+  }
+
+  body .product-chart .qmdj-footer {
+    width: 100% !important;
+    min-height: 30px !important;
+    padding: 7px 9px !important;
+  }
+
+  body .product-chart .qmdj-footer__compact {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+}
+
+html:has(.product-chart),
+body:has(.product-chart) {
+  background: var(--paipan-ground) !important;
+}
+
+body .page-shell.product-chart {
+  width: min(1520px, calc(100vw - 28px)) !important;
+  height: 100svh !important;
+  min-height: 100svh !important;
+  padding: 4px 0 6px !important;
+  gap: 5px !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart .observatory-hero {
+  display: grid !important;
+  position: relative !important;
+  grid-template-columns: max-content minmax(420px, 1fr) max-content !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  min-height: 76px !important;
+  height: 76px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 9px 190px 9px 14px !important;
+  overflow: visible !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 2px !important;
+  background: var(--paipan-ink) !important;
+  box-shadow: 7px 7px 0 var(--paipan-red) !important;
+  color: var(--paipan-paper) !important;
+}
+
+body .product-chart .observatory-hero__copy {
+  display: flex !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: max-content !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+body .product-chart .workspace-kicker {
+  display: none !important;
+}
+
+body .product-chart .observatory-hero__copy h1 {
+  margin: 3px 0 0 !important;
+  color: var(--paipan-paper) !important;
+  font-size: clamp(1.25rem, 2.1vw, 1.7rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -.08em !important;
+  line-height: .95 !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 3px !important;
+  border: 2px solid var(--paipan-yellow) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+  min-width: 0 !important;
+  flex: 1 1 0 !important;
+  margin: 0 !important;
+  padding: 6px 5px !important;
+  justify-content: center !important;
+  border-radius: 0 !important;
+  color: var(--paipan-ink) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab-active {
+  background: var(--paipan-yellow) !important;
+  box-shadow: 3px 3px 0 var(--paipan-red) !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-ink-bar,
+body .product-chart .observatory-hero__agent-entry {
+  display: none !important;
+}
+
+body .product-chart .observatory-hero .platform-account {
+  position: absolute !important;
+  top: 50% !important;
+  right: 14px !important;
+  transform: translateY(-50%) !important;
+  align-self: center !important;
+}
+
+body .product-chart .observatory-hero .platform-account__status {
+  display: none !important;
+}
+
+body .product-chart .observatory-hero .hero-action {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  align-self: center !important;
+}
+
+body .product-chart .qmdj-footer {
+  display: flex !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: none !important;
+}
+
+body .product-chart .qmdj-footer__compact {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  color: var(--paipan-violet) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart .qmdj-footer__compact a {
+  color: var(--paipan-red) !important;
+}
+
+body .product-chart .chart-inspector-head {
+  display: flex !important;
+  min-height: 34px !important;
+  align-items: center !important;
+  padding: 7px 10px !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart .chart-inspector-head strong {
+  color: var(--paipan-ink) !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+}
+
+/* One owner for every chart Agent. Qimen's rail/drawer and the two classic
+   * methods differ only in placement; their controls must never inherit a
+   * separate generic Agent theme. */
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 8px !important;
+  gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: none !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-tabs__list {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.45fr) minmax(0, .78fr) minmax(0, .62fr) !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) [data-slot="tabs-trigger"],
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .semi-tabs-tab {
+  display: inline-flex !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 6px !important;
+  border-right: 1px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  color: var(--paipan-ink) !important;
+  background: transparent !important;
+  font: 900 clamp(.72rem, .95vw, .86rem)/1 ui-sans-serif, system-ui, sans-serif !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) [data-slot="tabs-trigger"]:last-child,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .semi-tabs-tab:last-child { border-right: 0 !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) [data-slot="tabs-trigger"][data-state="active"],
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .semi-tabs-tab-active {
+  background: var(--paipan-yellow) !important;
+  box-shadow: 3px 3px 0 var(--paipan-red) !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .semi-tabs-ink-bar { display: none !important; }
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-tabs__content,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) [data-slot="tabs-content"] {
+  min-height: 0 !important;
+  height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output {
+  display: grid !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  gap: 8px !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel { grid-template-rows: auto auto minmax(0, 1fr) !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output { grid-template-rows: auto minmax(0, 1fr) !important; }
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__section,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output {
+  min-width: 0 !important;
+  padding: 10px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: none !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__section--question { display: grid !important; gap: 8px !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__section--result { grid-template-rows: auto minmax(0, 1fr) !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__section-head,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output__toolbar {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__section-head strong { color: var(--paipan-ink) !important; font: 950 1rem/1 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__section-head > span,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__result-actions { color: var(--paipan-violet) !important; font-size: .72rem !important; text-align: right !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__angles { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__angle,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups button,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-copy,
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output__toolbar .command-button {
+  min-height: 30px !important;
+  padding: 4px 8px !important;
+  border: 1px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  color: var(--paipan-ink) !important;
+  background: #f5e6bf !important;
+  font: 850 .78rem/1.15 ui-sans-serif, system-ui, sans-serif !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__angle.is-active { background: var(--paipan-yellow) !important; box-shadow: 2px 2px 0 var(--paipan-red) !important; transform: translate(-1px, -1px) !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__textarea {
+  width: 100% !important;
+  min-height: 76px !important;
+  max-height: 112px !important;
+  padding: 8px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  color: var(--paipan-ink) !important;
+  background: #fff !important;
+  font: 800 .84rem/1.45 ui-sans-serif, system-ui, sans-serif !important;
+  resize: vertical !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__question-meta { display: flex !important; justify-content: space-between !important; color: var(--paipan-violet) !important; font-size: .72rem !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__question-meta button { color: var(--paipan-violet) !important; font-weight: 850 !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups { padding-top: 6px !important; border-top: 1px solid var(--paipan-ink) !important; color: var(--paipan-ink) !important; font-size: .74rem !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups > div { display: grid !important; gap: 4px !important; margin-top: 6px !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups button { text-align: left !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__toolbar { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; align-items: center !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__entitlement { display: grid !important; gap: 2px !important; color: var(--paipan-ink) !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__entitlement span { font: 800 .7rem/1 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__entitlement strong { font: 950 .92rem/1 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .command-button-primary {
+  min-height: 42px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  color: var(--paipan-ink) !important;
+  background: var(--paipan-yellow) !important;
+  box-shadow: 4px 4px 0 var(--paipan-red) !important;
+  font: 950 .88rem/1.1 ui-sans-serif, system-ui, sans-serif !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-scroll { min-height: 0 !important; height: 100% !important; border: 1px solid var(--paipan-ink) !important; border-radius: 0 !important; background: #fff !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty { min-height: 0 !important; color: var(--paipan-violet) !important; background: #f5e6bf !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty strong { color: var(--paipan-red) !important; font-size: 1rem !important; font-weight: 950 !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty span { max-width: 28rem !important; color: var(--paipan-violet) !important; font-weight: 750 !important; text-align: center !important; }
+
+/* The empty result is an analysis protocol, not an oversized apology. */
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty--chart {
+  display: grid !important;
+  min-height: 100% !important;
+  align-content: space-between !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 0 !important;
+  background: #fffaf0 !important;
+  color: var(--paipan-ink) !important;
+  text-align: left !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__stamp {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: var(--paipan-ink) !important;
+  font: 950 10px/1 ui-monospace, monospace !important;
+  letter-spacing: .08em !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__stamp svg {
+  width: 16px !important;
+  height: 16px !important;
+  padding: 2px !important;
+  border: 1px solid var(--paipan-ink) !important;
+  background: var(--paipan-yellow) !important;
+  color: var(--paipan-ink) !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__lead {
+  display: grid !important;
+  gap: 4px !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__lead strong {
+  color: var(--paipan-ink) !important;
+  font: 950 clamp(1rem, 1.3vw, 1.2rem)/1 ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -.045em !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__lead p {
+  margin: 0 !important;
+  color: #55418c !important;
+  font: 750 11px/1.42 ui-sans-serif, system-ui, sans-serif !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__protocol {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  border: 1px solid var(--paipan-ink) !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__protocol span {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 3px !important;
+  padding: 5px 4px !important;
+  border-right: 1px solid var(--paipan-ink) !important;
+  color: var(--paipan-ink) !important;
+  font: 850 10px/1.15 ui-sans-serif, system-ui, sans-serif !important;
+  text-align: left !important;
+}
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__protocol span:last-child { border-right: 0 !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty__protocol b { color: var(--paipan-red) !important; font: 950 9px/1 ui-monospace, monospace !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty--chart > small {
+  color: #55418c !important;
+  font: 800 9px/1.2 ui-monospace, monospace !important;
+}
+
+/* 三盘联合只有 Agent：把它做成完整的分析台，而不是拉宽侧栏。 */
+body .product-chart .analysis-layout--combined-agent {
+  display: flex !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+body .product-chart .combined-agent-surface {
+  display: grid !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  grid-template-rows: 106px minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: 6px 6px 0 var(--paipan-red) !important;
+}
+body .product-chart .combined-agent-surface__heading {
+  display: flex !important;
+  min-width: 0 !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 13px 16px !important;
+  border-bottom: 3px solid var(--paipan-ink) !important;
+  background: var(--paipan-ink) !important;
+  color: var(--paipan-paper) !important;
+}
+body .product-chart .combined-agent-surface__heading > div { display: grid !important; min-width: 0 !important; align-content: center !important; gap: 4px !important; }
+body .product-chart .combined-agent-surface__heading > div > span:first-child { color: var(--paipan-yellow) !important; font: 900 10px/1 ui-monospace, monospace !important; letter-spacing: .1em !important; }
+body .product-chart .combined-agent-surface__heading h2 { margin: 0 !important; color: var(--paipan-paper) !important; font: 950 clamp(1.55rem, 2.3vw, 2.15rem)/.9 ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -.07em !important; }
+body .product-chart .combined-agent-surface__heading p { margin: 0 !important; color: #ded3c2 !important; font: 750 12px/1.35 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart .combined-agent-surface__sources { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 2px !important; }
+body .product-chart .combined-agent-surface__sources span { padding: 3px 5px !important; border: 1px solid #6c655c !important; color: var(--paipan-paper) !important; font: 850 9px/1 ui-monospace, monospace !important; }
+body .product-chart .combined-agent-surface__heading > strong { display: grid !important; flex: 0 0 auto !important; height: fit-content !important; align-self: center !important; padding: 8px 10px !important; border: 2px solid var(--paipan-ink) !important; background: var(--paipan-yellow) !important; box-shadow: 3px 3px 0 var(--paipan-red) !important; color: var(--paipan-ink) !important; font: 950 11px/1 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart .combined-agent-surface > .inspector-tabs {
+  display: grid !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  grid-template-rows: 47px minmax(0, 1fr) !important;
+  padding: 8px !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--paipan-ground) !important;
+}
+body .product-chart .combined-agent-surface .inspector-tabs__list { min-height: 47px !important; height: 47px !important; }
+body .product-chart .combined-agent-surface .inspector-tabs__content,
+body .product-chart .combined-agent-surface .semi-tabs-content,
+body .product-chart .combined-agent-surface .semi-tabs-pane,
+body .product-chart .combined-agent-surface .semi-tabs-pane-motion-overlay { min-height: 0 !important; height: 100% !important; overflow: hidden !important; }
+body .product-chart .combined-agent-surface .agent-panel--chart {
+  display: grid !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  grid-template-columns: minmax(350px, .9fr) minmax(0, 1.45fr) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+}
+body .product-chart .combined-agent-surface .chart-inspector-head { display: none !important; }
+body .product-chart .combined-agent-surface .agent-panel__section--question {
+  display: grid !important;
+  min-height: 0 !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  align-content: start !important;
+  overflow: auto !important;
+}
+body .product-chart .combined-agent-surface .agent-panel__toolbar { grid-column: 1 !important; grid-row: 2 !important; }
+body .product-chart .combined-agent-surface .agent-panel__section--result {
+  display: grid !important;
+  min-height: 0 !important;
+  grid-column: 2 !important;
+  grid-row: 1 / span 2 !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+body .product-chart .combined-agent-surface .agent-panel__section--result .inspector-scroll { min-height: 0 !important; height: 100% !important; }
+body .product-chart .combined-agent-surface .agent-panel__section--result .inspector-scroll [data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-height: 100% !important;
+  height: 100% !important;
+}
+body .product-chart .combined-agent-surface .agent-result-empty--chart { padding: clamp(16px, 2.2vw, 30px) !important; }
+body .product-chart .combined-agent-surface .agent-result-empty__lead strong { font-size: clamp(1.3rem, 2vw, 1.9rem) !important; }
+body .product-chart .combined-agent-surface .agent-result-empty__lead p { max-width: 50ch !important; font-size: 13px !important; }
+body .product-chart .combined-agent-surface .agent-result-empty__protocol span { padding: 10px 8px !important; font-size: 11px !important; }
+
+@media (max-width: 900px) {
+  body .product-chart .combined-agent-surface { grid-template-rows: auto minmax(0, 1fr) !important; }
+  body .product-chart .combined-agent-surface__heading { padding: 11px !important; }
+  body .product-chart .combined-agent-surface__heading h2 { font-size: 1.45rem !important; }
+  body .product-chart .combined-agent-surface__heading > strong { display: none !important; }
+  body .product-chart .combined-agent-surface .agent-panel--chart { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto auto minmax(360px, 1fr) !important; overflow: auto !important; }
+  body .product-chart .combined-agent-surface .agent-panel__section--question { grid-column: 1 !important; grid-row: 1 !important; overflow: visible !important; }
+  body .product-chart .combined-agent-surface .agent-panel__toolbar { grid-column: 1 !important; grid-row: 2 !important; }
+  body .product-chart .combined-agent-surface .agent-panel__section--result { grid-column: 1 !important; grid-row: 3 !important; min-height: 360px !important; }
+}
+
+@media (max-width: 1180px) {
+  /* The server first renders the deterministic desktop tree. Keep only the
+   * main chart visible at narrow widths so the desktop rail cannot squeeze it. */
+  body .product-chart #qimen-workbench-layout.analysis-panel-group {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body .product-chart #qimen-workbench-layout > #qimen-chart {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    flex: none !important;
+  }
+
+  body .product-chart #qimen-workbench-layout > #qimen-workbench-separator,
+  body .product-chart #qimen-workbench-layout > #qimen-agent {
+    display: none !important;
+  }
+
+  html:has(.product-chart),
+  body:has(.product-chart) {
+    min-height: 100% !important;
+    overflow: auto !important;
+  }
+
+  body .page-shell.product-chart {
+    width: calc(100vw - 16px) !important;
+    height: auto !important;
+    min-height: 100svh !important;
+    grid-template-rows: auto auto auto auto !important;
+    overflow: visible !important;
+  }
+
+  /* Narrow title bars keep identity, account actions, navigation and chart
+   * controls in explicit rows. */
+  body .product-chart .observatory-hero {
+    position: relative !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+    padding: 9px !important;
+  }
+
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    padding-right: 148px !important;
+  }
+
+  body .product-chart .workspace-kicker {
+    display: none !important;
+  }
+
+  body .product-chart .observatory-hero__copy h1 {
+    margin: 0 !important;
+    font-size: 1.18rem !important;
+    letter-spacing: -.065em !important;
+    white-space: nowrap !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account {
+    display: flex !important;
+    position: absolute !important;
+    top: 9px !important;
+    right: 9px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__status {
+    display: none !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__redeem-wrap {
+    position: relative !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__button {
+    min-height: 30px !important;
+    padding: 5px 7px !important;
+    border: 1.5px solid var(--paipan-paper) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--paipan-paper) !important;
+    font: 900 10px/1 ui-sans-serif, system-ui, sans-serif !important;
+    white-space: nowrap !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__button.is-primary {
+    background: var(--paipan-yellow) !important;
+    color: var(--paipan-ink) !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__redeem-popover {
+    right: 0 !important;
+    left: auto !important;
+    z-index: 110 !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    overflow-x: auto !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    width: max-content !important;
+    min-width: 100% !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 58px !important;
+  }
+
+  body .product-chart .observatory-hero .hero-action {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    justify-self: end !important;
+    min-height: 32px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+
+  body .product-chart .observatory-hero__agent-entry {
+    display: none !important;
+  }
+
+  body .product-chart .qmdj-footer__compact {
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    overflow-x: auto !important;
+  }
+
+  body .product-chart .qmdj-footer {
+    margin-top: auto !important;
+    flex: none !important;
+  }
+
+  /* The compact workbench renders the inspector in a separate drawer.  It
+   * therefore cannot inherit the desktop sidebar's visual treatment. */
+  body .product-chart .chart-analysis-toggle {
+    display: inline-flex !important;
+    position: fixed !important;
+    right: 14px !important;
+    bottom: 14px !important;
+    z-index: 70 !important;
+    min-height: 44px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 0 13px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-yellow) !important;
+    box-shadow: 4px 4px 0 var(--paipan-red) !important;
+    color: var(--paipan-ink) !important;
+    font: 950 13px/1 ui-sans-serif, system-ui, sans-serif !important;
+    letter-spacing: -.02em !important;
+  }
+
+  body .product-chart .chart-analysis-toggle span {
+    display: grid !important;
+    width: 21px !important;
+    height: 21px !important;
+    place-items: center !important;
+    background: var(--paipan-ink) !important;
+    color: var(--paipan-yellow) !important;
+    font: 950 10px/1 ui-monospace, monospace !important;
+  }
+
+  body .product-chart .chart-analysis-drawer {
+    position: fixed !important;
+    z-index: 100 !important;
+    inset: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body .product-chart .chart-analysis-drawer.is-open {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body .product-chart .chart-analysis-drawer__backdrop {
+    position: absolute !important;
+    z-index: 0 !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0 !important;
+    background: rgb(23 23 23 / .72) !important;
+    opacity: 0 !important;
+    transition: opacity 160ms ease-out !important;
+  }
+
+  body .product-chart .chart-analysis-drawer.is-open .chart-analysis-drawer__backdrop {
+    opacity: 1 !important;
+  }
+
+  body .product-chart .chart-analysis-drawer__panel {
+    position: relative !important;
+    z-index: 1 !important;
+    display: grid !important;
+    width: min(calc(100% - 16px), 520px) !important;
+    height: min(calc(100% - 16px), 920px) !important;
+    margin: auto !important;
+    grid-template-rows: 46px minmax(0, 1fr) !important;
+    overflow: hidden !important;
+    border: 3px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-paper) !important;
+    box-shadow: 8px 8px 0 var(--paipan-red) !important;
+    color: var(--paipan-ink) !important;
+    transform: translateY(18px) !important;
+    transition: transform 160ms ease-out !important;
+  }
+
+  body .product-chart .chart-analysis-drawer.is-open .chart-analysis-drawer__panel {
+    transform: translateY(0) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer__header {
+    display: flex !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 10px 0 12px !important;
+    border-bottom: 3px solid var(--paipan-ink) !important;
+    background: var(--paipan-ink) !important;
+    color: var(--paipan-paper) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer__header strong {
+    color: inherit !important;
+    font: 950 16px/1 ui-sans-serif, system-ui, sans-serif !important;
+    letter-spacing: -.04em !important;
+  }
+
+  body .product-chart .chart-analysis-drawer__header button {
+    display: grid !important;
+    width: 27px !important;
+    height: 27px !important;
+    place-items: center !important;
+    border: 2px solid var(--paipan-paper) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-red) !important;
+    color: var(--paipan-paper) !important;
+    font: 950 20px/1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .sidebar-panel,
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart,
+  body .product-chart .chart-analysis-drawer .semi-tabs-content,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-active,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-motion-overlay,
+  body .product-chart .chart-analysis-drawer .inspector-tabs__content {
+    min-height: 0 !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .sidebar-panel {
+    display: flex !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    background: var(--paipan-paper) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart {
+    display: grid !important;
+    width: 100% !important;
+    height: 100% !important;
+    grid-template-rows: 43px minmax(0, 1fr) !important;
+    overflow: hidden !important;
+    background: var(--paipan-paper) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-bar {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    min-width: 0 !important;
+    height: 43px !important;
+    padding: 4px !important;
+    gap: 3px !important;
+    border-bottom: 3px solid var(--paipan-ink) !important;
+    background: var(--paipan-yellow) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-tab {
+    display: flex !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 3px 2px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    border: 1px solid transparent !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--paipan-ink) !important;
+    font: 950 11px/1 ui-sans-serif, system-ui, sans-serif !important;
+    letter-spacing: -.05em !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-tab svg {
+    width: 13px !important;
+    height: 13px !important;
+    flex: 0 0 auto !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-tab-active {
+    border-color: var(--paipan-ink) !important;
+    background: var(--paipan-paper) !important;
+    box-shadow: 2px 2px 0 var(--paipan-red) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-ink-bar {
+    display: none !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .semi-tabs-content,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-active,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-motion-overlay,
+  body .product-chart .chart-analysis-drawer .inspector-tabs__content {
+    display: flex !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel--chart,
+  body .product-chart .chart-analysis-drawer .inspector-output {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    background: var(--paipan-paper) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .chart-inspector-head {
+    display: none !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section--question {
+    flex: 0 0 auto !important;
+    padding: 10px 12px 9px !important;
+    border-bottom: 2px solid var(--paipan-ink) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section-head {
+    display: flex !important;
+    min-width: 0 !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section-head strong {
+    color: var(--paipan-ink) !important;
+    font: 950 14px/1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section-head > span,
+  body .product-chart .chart-analysis-drawer .agent-panel__result-actions {
+    color: var(--paipan-violet) !important;
+    font: 800 11px/1.25 ui-sans-serif, system-ui, sans-serif !important;
+    text-align: right !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__angles {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    margin: 9px 0 !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__angle {
+    min-width: 0 !important;
+    min-height: 28px !important;
+    padding: 4px 3px !important;
+    border: 1.5px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-paper) !important;
+    color: var(--paipan-ink) !important;
+    font: 900 11px/1.05 ui-sans-serif, system-ui, sans-serif !important;
+    letter-spacing: -.04em !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__angle.is-active {
+    background: var(--paipan-yellow) !important;
+    box-shadow: 2px 2px 0 var(--paipan-red) !important;
+    transform: translate(-1px, -1px) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__question {
+    display: block !important;
+    margin: 0 !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__textarea {
+    display: block !important;
+    width: 100% !important;
+    min-height: 72px !important;
+    padding: 8px !important;
+    resize: vertical !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    background: #fff !important;
+    color: var(--paipan-ink) !important;
+    font: 800 16px/1.35 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__textarea:focus {
+    box-shadow: 3px 3px 0 var(--paipan-violet) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__question-meta {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 5px !important;
+    color: var(--paipan-violet) !important;
+    font: 800 11px/1 ui-monospace, monospace !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__question-meta button,
+  body .product-chart .chart-analysis-drawer .agent-panel__followups summary,
+  body .product-chart .chart-analysis-drawer .agent-panel__followups button {
+    color: var(--paipan-ink) !important;
+    font: 850 11px/1.25 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__followups {
+    margin-top: 7px !important;
+    border-top: 1px solid var(--paipan-ink) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__followups summary {
+    padding-top: 6px !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__followups div {
+    display: grid !important;
+    gap: 4px !important;
+    padding-top: 5px !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__followups button {
+    padding: 5px 6px !important;
+    border: 1px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: #f5e6bf !important;
+    text-align: left !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(148px, auto) !important;
+    flex: 0 0 auto !important;
+    gap: 7px !important;
+    padding: 8px 12px !important;
+    border-bottom: 2px solid var(--paipan-ink) !important;
+    background: #f5e6bf !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__entitlement {
+    display: flex !important;
+    min-width: 0 !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    color: var(--paipan-ink) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__entitlement span {
+    font: 800 10px/1.15 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__entitlement strong {
+    margin-top: 2px !important;
+    font: 950 13px/1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .command-button-primary {
+    min-height: 38px !important;
+    padding: 6px 9px !important;
+    justify-content: center !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-red) !important;
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
+    color: var(--paipan-paper) !important;
+    font: 950 12px/1.1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .command-button-primary svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section--result {
+    display: flex !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    padding: 10px 12px 12px !important;
+    overflow: hidden !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-panel__section--result > .agent-panel__section-head,
+  body .product-chart .chart-analysis-drawer .inspector-output__toolbar {
+    flex: 0 0 auto !important;
+    padding-bottom: 8px !important;
+    border-bottom: 2px solid var(--paipan-ink) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-output__toolbar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    background: var(--paipan-yellow) !important;
+    color: var(--paipan-ink) !important;
+    font: 950 14px/1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-output__toolbar .command-button,
+  body .product-chart .chart-analysis-drawer .agent-result-copy {
+    min-height: 30px !important;
+    padding: 4px 7px !important;
+    border: 1.5px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-paper) !important;
+    color: var(--paipan-ink) !important;
+    font: 900 11px/1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-scroll {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    margin-top: 8px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .inspector-scroll [data-radix-scroll-area-viewport] {
+    padding: 9px !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-result-empty {
+    display: grid !important;
+    min-height: 100% !important;
+    place-content: center !important;
+    gap: 8px !important;
+    padding: 20px !important;
+    color: var(--paipan-violet) !important;
+    text-align: center !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-result-empty svg {
+    width: 25px !important;
+    height: 25px !important;
+    margin: 0 auto !important;
+    color: var(--paipan-red) !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-result-empty strong {
+    color: var(--paipan-ink) !important;
+    font: 950 14px/1.2 ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  body .product-chart .chart-analysis-drawer .agent-result-empty span,
+  body .product-chart .chart-analysis-drawer .agent-result,
+  body .product-chart .chart-analysis-drawer .json-block,
+  body .product-chart .chart-analysis-drawer .literature-block {
+    color: var(--paipan-ink) !important;
+    font: 700 12px/1.55 ui-sans-serif, system-ui, sans-serif !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+  }
+}
+
+/* Narrow Qimen has one geometry contract: the chart column grows with the
+ * square board.  Older global workbench rules assumed a fixed-height desktop
+ * split pane and could reduce this content row to a few pixels on phones. */
+@media (max-width: 720px) {
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel,
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: auto auto auto !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: auto !important;
+    align-content: start !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: auto auto !important;
+    align-content: start !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    aspect-ratio: 1 / 1 !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+    align-self: start !important;
+    justify-self: center !important;
+    overflow: hidden !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card {
+    display: grid !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: none !important;
+    gap: 4px !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip > * {
+    grid-column: span 1 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip > :is(.summary-chip--metadata, .summary-chip--pillars) {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile visual contract
+   --------------------------------------------------------------------------
+   This is intentionally the final, route-scoped mobile owner.  The workbench
+   has seven modes but one shell: product identity + account actions, a
+   compact scrollable mode rail, an in-flow chart control, then the reading
+   surface.  Do not add mode-specific phone overrides ahead of this block. */
+@media (max-width: 720px) {
+  html:has(.product-chart),
+  body:has(.product-chart) { overflow-x: clip !important; }
+
+  body .page-shell.product-chart {
+    width: 100% !important;
+    min-height: 100svh !important;
+    margin: 0 !important;
+    padding: 4px 4px 68px !important;
+    gap: 5px !important;
+  }
+
+  body .product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: 31px 40px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-height: 0 !important;
+    padding: 8px !important;
+    box-shadow: 4px 4px 0 var(--paipan-red) !important;
+  }
+
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  body .product-chart .observatory-hero__copy h1 {
+    overflow: hidden !important;
+    font-size: 1.08rem !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account {
+    position: static !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    transform: none !important;
+  }
+
+  body .product-chart .observatory-hero .platform-account__button {
+    min-height: 28px !important;
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--paipan-red) var(--paipan-paper);
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar,
+  body .product-chart .bazi-six-pillars::-webkit-scrollbar,
+  body .product-chart .ziwei-panel__canvas::-webkit-scrollbar { height: 4px; }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-thumb,
+  body .product-chart .bazi-six-pillars::-webkit-scrollbar-thumb,
+  body .product-chart .ziwei-panel__canvas::-webkit-scrollbar-thumb { background: var(--paipan-red); }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-track,
+  body .product-chart .bazi-six-pillars::-webkit-scrollbar-track,
+  body .product-chart .ziwei-panel__canvas::-webkit-scrollbar-track { background: var(--paipan-paper); }
+
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    min-width: max-content !important;
+    width: max-content !important;
+    height: 40px !important;
+    padding: 2px !important;
+  }
+
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 56px !important;
+    min-height: 32px !important;
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+  }
+
+  body .product-chart .observatory-hero .hero-action {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 5px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* The analysis entry belongs after the reading surface on phones.  A fixed
+     action covered palaces, K-line evidence and the footer on short pages. */
+  body .product-chart :is(.analysis-layout--stacked, .analysis-layout--classic) {
+    padding-bottom: 6px !important;
+  }
+
+  body .product-chart .chart-analysis-toggle {
+    position: static !important;
+    align-self: end !important;
+    width: auto !important;
+    margin: 10px 0 0 auto !important;
+    min-height: 42px !important;
+    padding: 0 10px !important;
+  }
+
+  /* Six pillars are a reading table, not a desktop canvas.  Show all six
+     columns at once on a phone; the compact label rail and wrapped evidence
+     replace the previous 680px horizontal strip. */
+  body .product-chart .bazi-six-pillars {
+    overflow: visible !important;
+  }
+
+  body .product-chart .bazi-six-pillars__row {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 34px repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  body .product-chart .bazi-six-pillars__row > * {
+    min-width: 0 !important;
+    min-height: 23px !important;
+    padding: 2px 1px !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body .product-chart .bazi-six-pillars__row > span,
+  body .product-chart .bazi-six-pillars__row small { font-size: 8px !important; }
+  body .product-chart .bazi-six-pillars__row--head > strong { min-height: 36px !important; font-size: 1rem !important; }
+  body .product-chart .bazi-six-pillars__row--glyph > strong { min-height: 42px !important; font-size: 1.55rem !important; }
+  body .product-chart .bazi-six-pillars__row--shensha > div { min-height: 44px !important; gap: 1px !important; padding: 3px 1px !important; }
+  body .product-chart .bazi-six-pillars__row--shensha > div small { font-size: 7px !important; line-height: 1.05 !important; }
+
+  /* 紫微 at 375px cannot honestly fit twelve readable palaces.  Preserve the
+     library's full geometry in a contained horizontal reading plane rather
+     than clipping and overlapping its labels. */
+  body .product-chart .ziwei-panel__canvas {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--paipan-red) var(--paipan-paper);
+  }
+
+  body .product-chart .ziwei-panel__canvas .iztro-astrolabe {
+    min-width: 520px !important;
+  }
+
+  body .product-chart .ziwei-panel__canvas .iztro-palace,
+  body .product-chart .ziwei-panel__canvas .iztro-center-palace {
+    min-width: 0 !important;
+  }
+
+  /* Classical boards and the all-Agent screen share the page edge rhythm. */
+  body .product-chart :is(.classic-observatory, .combined-agent-surface, .kline-panel) {
+    box-shadow: 4px 4px 0 var(--paipan-red) !important;
+  }
+
+  body .product-chart .combined-agent-surface__heading {
+    min-height: 0 !important;
+    padding: 10px !important;
+  }
+
+  body .product-chart .combined-agent-surface__heading p,
+  body .product-chart .combined-agent-surface__sources { display: none !important; }
+}
+
+/* Mobile Qimen summary is evidence, not a decorative colour strip.  The old
+   36px fixed card contract clipped its values; let labels wrap and reserve a
+   full row for the two compound summaries. */
+@media (max-width: 720px) {
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    padding: 4px !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip > .summary-chip {
+    height: auto !important;
+    min-height: 42px !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip > :is(.summary-chip--metadata, .summary-chip--pillars) {
+    grid-column: 1 / -1 !important;
+    min-height: 48px !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip > .summary-chip > .semi-card-body,
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip .summary-chip__content {
+    width: 100% !important;
+    height: auto !important;
+    min-height: inherit !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip .summary-chip__content {
+    align-items: flex-start !important;
+    gap: 5px !important;
+    padding: 6px 7px !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip .summary-chip__badge {
+    flex: 0 0 auto !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout.analysis-panel-group > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="qimen"] > .summary-strip .summary-chip__content strong {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    color: var(--paipan-ink) !important;
+    font: 850 12px/1.32 ui-sans-serif, system-ui, sans-serif !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+/* Final mobile layout contract.  Keep the palette, but give the shell one
+ * predictable reading order after all legacy route overrides. */
+@media (max-width: 720px) {
+  body .page-shell.product-chart { padding: 6px 6px 52px !important; gap: 8px !important; }
+  body .product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 8px !important; padding: 10px !important;
+    border-bottom-width: 3px !important; box-shadow: 3px 3px 0 var(--paipan-red) !important;
+  }
+  body .product-chart .observatory-hero__copy { grid-column: 1 !important; grid-row: 1 !important; align-self: center !important; }
+  body .product-chart .observatory-hero__copy h1 { font-size: clamp(1.15rem, 3.4vw, 1.45rem) !important; line-height: 1.1 !important; letter-spacing: -0.03em !important; }
+  body .product-chart .observatory-hero .platform-account { grid-column: 2 !important; grid-row: 1 !important; align-self: center !important; }
+  body .product-chart .observatory-hero .platform-account__status { display: none !important; }
+  body .product-chart .observatory-hero .workbench-tabs { grid-column: 1 / -1 !important; grid-row: 2 !important; width: 100% !important; }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar { width: max-content !important; min-width: 100% !important; height: 36px !important; padding: 2px !important; }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab { min-width: 58px !important; min-height: 30px !important; padding: 4px 8px !important; font-size: 11px !important; line-height: 1 !important; }
+  body .product-chart .observatory-hero .hero-action { grid-column: 2 !important; grid-row: 3 !important; justify-self: end !important; min-height: 32px !important; padding: 6px 10px !important; font-size: 11px !important; }
+  body .product-chart :is(.classic-observatory, .combined-agent-surface, .kline-panel) { box-shadow: 3px 3px 0 var(--paipan-red) !important; }
+  body .product-chart .combined-agent-surface__heading { padding: 11px 12px 9px !important; }
+  body .product-chart .combined-agent-surface__heading > div > span { font-size: 9px !important; letter-spacing: .12em !important; }
+  body .product-chart .combined-agent-surface__heading h2 { font-size: clamp(1.25rem, 5vw, 1.55rem) !important; line-height: 1.08 !important; }
+  body .product-chart .combined-agent-surface .agent-panel__section--result { min-height: 260px !important; }
+  body .product-chart .combined-agent-surface .agent-result-empty--chart { min-height: 220px !important; padding: 18px 12px !important; }
+  body .product-chart .qmdj-footer { width: 100% !important; min-height: 30px !important; padding: 7px 9px !important; }
+  body .product-chart .qmdj-footer__compact { width: 100% !important; justify-content: flex-start !important; gap: 6px !important; white-space: nowrap !important; font-size: 10px !important; line-height: 1.1 !important; }
+}
+
+@media (max-width: 420px) {
+  body .product-chart .observatory-hero { gap: 6px !important; padding: 8px !important; }
+  body .product-chart .observatory-hero .workbench-tabs { scrollbar-width: none !important; }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar { display: none !important; }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar { height: 34px !important; }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab { min-width: 56px !important; min-height: 28px !important; padding-inline: 7px !important; font-size: 10px !important; }
+}
+
+/* Do not let the guest recovery copy become a phantom full-height panel in
+ * the desktop two-column Agent grid.  It is a notice, so it should consume
+ * only its own content height. */
+body .product-chart .agent-panel--chart {
+  align-content: start !important;
+}
+
+body .product-chart .agent-panel__guest-recovery-note {
+  align-self: start !important;
+  min-height: 0 !important;
+  height: auto !important;
+}

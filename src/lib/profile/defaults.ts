@@ -1,5 +1,6 @@
 import { getResolvedTimeZone } from "@/lib/qimen/defaults";
 import { DEFAULT_QIMEN_SETTINGS } from "@/lib/qimen/settings";
+import { DEFAULT_BAZI_SETTINGS } from "@/lib/bazi/settings";
 import type { ProfileInput } from "./types";
 
 const pad = (value: number) => String(value).padStart(2, "0");
@@ -29,6 +30,7 @@ export const getDefaultProfileInput = (
     timeZone,
     gender: "male",
     timeBasis: "civil",
+    baziSettings: DEFAULT_BAZI_SETTINGS,
     qimenSettings: DEFAULT_QIMEN_SETTINGS,
     solar: {
       year: now.getFullYear(),

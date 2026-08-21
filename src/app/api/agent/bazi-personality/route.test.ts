@@ -307,7 +307,7 @@ describe("POST /api/agent/bazi-personality", () => {
   });
 
   it("rejects a prediction that skips the ordinary-versus-follow-structure audit", async () => {
-    const { chart_diagnosis: _diagnosis, ...withoutDiagnosis } = predictionJson;
+    const withoutDiagnosis = { ...predictionJson, chart_diagnosis: undefined };
     requestBaziPersonalityPredictionMock.mockResolvedValueOnce({
       content: JSON.stringify(withoutDiagnosis),
       model: "test-model",

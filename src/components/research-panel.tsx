@@ -11,8 +11,8 @@ type ResearchPanelProps = {
 };
 
 const TOOL_OPTIONS: Array<{ value: ResearchTool; label: string; hint: string }> = [
-  { value: "trend", label: "人生趋势", hint: "大运与流年的结构波动" },
-  { value: "verification", label: "算法核验", hint: "主引擎与参考引擎逐字段对照" },
+  { value: "trend", label: "八字人生 K 线", hint: "基于大运与流年的长期趋势" },
+  { value: "verification", label: "算法校验", hint: "主引擎与参考引擎逐字段对照" },
 ];
 
 const statusLabel: Record<VerificationStatus, string> = {
@@ -66,8 +66,8 @@ function TrendChart({ points }: { points: LifeTrendPoint[] }) {
 
 export function ResearchPanel({ data, tool, onToolChange }: ResearchPanelProps) {
   if (!data) return <section className="research-panel empty-panel">研究资料暂未生成，请先检查输入的日期时间与地点。</section>;
-  return <section className="research-panel" aria-label="术数研究工具">
-    <div className="research-panel__header"><div><span className="research-panel__eyebrow">研究工作台 · 可复核输出</span><h2>把盘面变成可检查的证据</h2></div><span className="research-panel__scope">不替代现实决策</span></div>
+  return <section className="research-panel" aria-label="人生 K 线">
+    <div className="research-panel__header"><div><span className="research-panel__eyebrow">人生 K 线 · 八字大运与流年</span><h2>把关键节点放回时间里看</h2></div><span className="research-panel__scope">趋势参考，不替代现实决策</span></div>
     <Tabs type="card" activeKey={tool} onChange={(key) => onToolChange(key as ResearchTool)} className="research-panel__tabs">
       {TOOL_OPTIONS.map((option) => <Tabs.TabPane key={option.value} itemKey={option.value} tab={<span>{option.label}</span>} />)}
     </Tabs>

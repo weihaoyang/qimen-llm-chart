@@ -1,4 +1,5 @@
 import type { NormalizedProfileInput } from "@/lib/profile";
+import type { BaziSettings } from "./settings";
 
 export type BaziPillarKey = "year" | "month" | "day" | "time";
 
@@ -65,6 +66,7 @@ export type NormalizedBaziChart = {
     solarFull: string;
     lunar: string;
     lunarFull: string;
+    conventions: BaziSettings;
     baZi: string[];
     dayMaster: string;
     wuXing: string[];

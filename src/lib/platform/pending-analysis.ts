@@ -10,6 +10,7 @@ export const AGENT_SESSION_TURNS = 10;
 
 export type PendingPaidAnalysis = {
   orderId: string;
+  productCode?: string;
   /** Guest tokens are only present for the guest checkout path. Account purchases recover via the platform session. */
   checkoutToken: string;
   checkoutMode?: "account" | "guest";
@@ -23,11 +24,14 @@ export type PendingPaidAnalysis = {
   analysisProduct?: "agent" | "kline";
   klineKind?: KlineKind;
   klineSeries?: KlineSeries;
+  /** Keep payment recovery in the product that initiated the analysis. */
+  returnPath?: "/" | "/paipan";
   createdAt: number;
 };
 
 export type CompletedPaidAnalysis = {
   orderId: string;
+  productCode?: string;
   checkoutToken: string;
   checkoutMode?: "account" | "guest";
   mode: WorkbenchMode;
@@ -49,75 +53,113 @@ export type ActiveAgentSession = Omit<CompletedPaidAnalysis, "content" | "model"
   updatedAt: number;
 };
 
-const storage = () => (typeof window === "undefined" ? null : window.sessionStorage);
+type CheckoutMode = "account" | "guest";
 
-export const savePendingPaidAnalysis = (value: PendingPaidAnalysis) =>
-  storage()?.setItem(PENDING_KEY, JSON.stringify(value));
+const sessionStorageFor = () => (typeof window === "undefined" ? null : window.sessionStorage);
+const accountStorageFor = () => (typeof window === "undefined" ? null : window.localStorage);
 
-export const loadPendingPaidAnalysis = (): PendingPaidAnalysis | null => {
+/**
+ * Account recovery contains no bearer or guest credential and may survive a
+ * payment-provider tab switch. Guest recovery must remain session-only because
+ * its checkout token is a scoped credential and must never enter long-lived
+ * localStorage.
+ */
+const storageFor = (mode: CheckoutMode = "guest") => mode === "account" ? accountStorageFor() : sessionStorageFor();
+
+const readFrom = <T>(key: string, mode: CheckoutMode): T | null => {
   try {
-    const raw = storage()?.getItem(PENDING_KEY);
-    return raw ? (JSON.parse(raw) as PendingPaidAnalysis) : null;
+    const raw = storageFor(mode)?.getItem(key);
+    return raw ? JSON.parse(raw) as T : null;
   } catch {
     return null;
   }
 };
 
-export const clearPendingPaidAnalysis = () => storage()?.removeItem(PENDING_KEY);
+const writeTo = (key: string, value: unknown, mode: CheckoutMode) => {
+  try {
+    storageFor(mode)?.setItem(key, JSON.stringify(value));
+  } catch {
+    // An account recovery contains no guest credential, so a same-tab session
+    // fallback is safe when localStorage is unavailable (private mode/quota).
+    if (mode === "account") {
+      try {
+        sessionStorageFor()?.setItem(key, JSON.stringify(value));
+      } catch {
+        // There is no safe durable fallback for browser storage being disabled.
+      }
+    }
+  }
+};
+
+const removeFrom = (key: string, mode: CheckoutMode) => {
+  try {
+    storageFor(mode)?.removeItem(key);
+  } catch {
+    // Best effort cleanup only.
+  }
+};
+
+export const savePendingPaidAnalysis = (value: PendingPaidAnalysis) =>
+  writeTo(PENDING_KEY, value, value.checkoutMode === "account" ? "account" : "guest");
+
+export const loadPendingPaidAnalysis = (): PendingPaidAnalysis | null => {
+  return readFrom<PendingPaidAnalysis>(PENDING_KEY, "guest") ?? readFrom<PendingPaidAnalysis>(PENDING_KEY, "account");
+};
+
+export const clearPendingPaidAnalysis = () => {
+  removeFrom(PENDING_KEY, "guest");
+  removeFrom(PENDING_KEY, "account");
+};
 
 export const saveCompletedPaidAnalysis = (value: CompletedPaidAnalysis) =>
-  storage()?.setItem(COMPLETED_KEY, JSON.stringify(value));
+  writeTo(COMPLETED_KEY, value, value.checkoutMode === "account" ? "account" : "guest");
 
 export const popCompletedPaidAnalysis = (): CompletedPaidAnalysis | null => {
-  try {
-    const raw = storage()?.getItem(COMPLETED_KEY);
-    storage()?.removeItem(COMPLETED_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<CompletedPaidAnalysis>;
+  for (const mode of ["guest", "account"] as const) {
+    const parsed = readFrom<Partial<CompletedPaidAnalysis>>(COMPLETED_KEY, mode);
+    removeFrom(COMPLETED_KEY, mode);
+    if (!parsed) continue;
     if (
       typeof parsed.orderId !== "string" ||
       typeof parsed.checkoutToken !== "string" ||
       !Array.isArray(parsed.messages) ||
       typeof parsed.mode !== "string"
     ) {
-      return null;
+      continue;
     }
     return parsed as CompletedPaidAnalysis;
-  } catch {
-    return null;
   }
+  return null;
 };
 
 export const saveActiveAgentSession = (value: ActiveAgentSession) =>
-  storage()?.setItem(ACTIVE_KEY, JSON.stringify(value));
+  writeTo(ACTIVE_KEY, value, value.checkoutMode === "account" ? "account" : "guest");
 
 export const loadActiveAgentSession = (): ActiveAgentSession | null => {
-  try {
-    const raw = storage()?.getItem(ACTIVE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<ActiveAgentSession>;
+  for (const mode of ["guest", "account"] as const) {
+    const parsed = readFrom<Partial<ActiveAgentSession>>(ACTIVE_KEY, mode);
+    if (!parsed) continue;
     if (
       typeof parsed.orderId !== "string" ||
       typeof parsed.checkoutToken !== "string" ||
       !Array.isArray(parsed.messages) ||
       typeof parsed.mode !== "string"
     ) {
-      return null;
+      continue;
     }
     return parsed as ActiveAgentSession;
-  } catch {
-    return null;
   }
+  return null;
 };
 
-export const clearActiveAgentSession = () => storage()?.removeItem(ACTIVE_KEY);
+export const clearActiveAgentSession = () => {
+  removeFrom(ACTIVE_KEY, "guest");
+  removeFrom(ACTIVE_KEY, "account");
+};
 
 export const saveKlineAiResult = (value: Pick<CompletedPaidAnalysis, "content" | "model" | "klineKind" | "klineSeries">) =>
-  storage()?.setItem(KLINE_RESULT_KEY, JSON.stringify(value));
+  writeTo(KLINE_RESULT_KEY, value, "guest");
 
 export const loadKlineAiResult = (): Pick<CompletedPaidAnalysis, "content" | "model" | "klineKind" | "klineSeries"> | null => {
-  try {
-    const raw = storage()?.getItem(KLINE_RESULT_KEY);
-    return raw ? JSON.parse(raw) as Pick<CompletedPaidAnalysis, "content" | "model" | "klineKind" | "klineSeries"> : null;
-  } catch { return null; }
+  return readFrom<Pick<CompletedPaidAnalysis, "content" | "model" | "klineKind" | "klineSeries">>(KLINE_RESULT_KEY, "guest");
 };

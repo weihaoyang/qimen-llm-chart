@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { getAccountGate, getAccountPaymentResult, getGuestPaymentResult, restorePlatformAccessState } from "@/lib/platform/browser";
+import { requirePlatformClientConfig } from "@/lib/platform/config";
 import { loadPlatformSession } from "@/lib/platform/session";
 import {
   AGENT_SESSION_TURNS,
@@ -21,9 +22,13 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
 
   const finish = useCallback(async () => {
     const pending = loadPendingPaidAnalysis();
-    if (!pending || !orderId || pending.orderId !== orderId) {
+    const configuredProductCode = (() => {
+      try { return requirePlatformClientConfig().productCode; } catch { return ""; }
+    })();
+    const resolvedProductCode = productCode || configuredProductCode;
+    if (!pending || !orderId || pending.orderId !== orderId || (pending.productCode && pending.productCode !== resolvedProductCode) || (configuredProductCode && resolvedProductCode !== configuredProductCode)) {
       setStage("failed");
-      setMessage("找不到这次分析的本地恢复信息，请回到工作台重新发起。");
+      setMessage("这笔订单与当前产品不匹配，未执行分析；请回到工作台恢复订单。");
       return;
     }
 
@@ -44,7 +49,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
       }
       for (let attempt = 0; attempt < 20; attempt += 1) {
         const result = pending.checkoutMode === "account"
-          ? await getAccountPaymentResult(accountAccessToken, orderId, productCode || undefined, { csrfToken: accountCsrfToken })
+          ? await getAccountPaymentResult(accountAccessToken, orderId, resolvedProductCode, { csrfToken: accountCsrfToken })
           : await getGuestPaymentResult(orderId, pending.checkoutToken);
         const normalizedResult = result as {
           order?: { status?: string };
@@ -72,7 +77,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
       }
 
       if (pending.checkoutMode === "account") {
-        const gate = await getAccountGate(accountAccessToken, productCode || undefined, undefined, { csrfToken: accountCsrfToken });
+        const gate = await getAccountGate(accountAccessToken, resolvedProductCode, undefined, { csrfToken: accountCsrfToken });
         if (!gate.allowed) throw new Error(gate.message || "支付已确认，但权益还在激活，请稍后重试。");
       }
       setStage("paid");
@@ -103,6 +108,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
 
       saveCompletedPaidAnalysis({
         orderId: pending.orderId,
+        productCode: pending.productCode ?? resolvedProductCode,
         checkoutToken: pending.checkoutToken,
         checkoutMode: pending.checkoutMode,
         mode: pending.mode,
@@ -123,7 +129,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
         klineSeries: pending.klineSeries,
       });
       clearPendingPaidAnalysis();
-      window.location.replace("/");
+      window.location.replace(pending.returnPath === "/paipan" ? "/paipan" : "/");
     } catch (error) {
       setStage("failed");
       setMessage(error instanceof Error ? error.message : "分析失败，请重试。");

@@ -1,7 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import type { Position } from "3meta";
 import { GripVertical } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -91,23 +91,15 @@ import { ChartForm } from "./chart-form";
 import { InspectorPanel } from "./inspector-panel";
 import { PalaceGrid } from "./palace-grid";
 import { SummaryStrip } from "./summary-strip";
-import { ResearchPanel } from "./research-panel";
 import { KlinePanel } from "./kline-panel";
 import { ObservationJournal } from "./observation-journal";
 import { ClassicObservatoryPanel } from "./classic-observatory-panel";
 import { DecisionTreePanel } from "./decision-tree-panel";
-import { AgentCommandCenter } from "./agent-command-center";
+import { BattleCommandCenter } from "./battle-command-center";
 import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
 import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
-
-const ZiweiPanel = dynamic(
-  () => import("./ziwei-panel").then((module) => module.ZiweiPanel),
-  {
-    ssr: false,
-    loading: () => <div className="empty-panel">紫微盘加载中。</div>,
-  },
-);
+import { ZiweiPanel } from "./ziwei-panel";
 
 type AgentModeState = {
   question: string;
@@ -144,7 +136,7 @@ type PlatformWorkspaceState = {
 const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
   qimen: {
     question: "",
-    focus: "人生议题访谈",
+    focus: "按主题分析",
     content: "",
     model: null,
     error: null,
@@ -332,6 +324,7 @@ const toProfileFromSequenceInput = (
   timeZone: nextInput.timeZone,
   gender: source.gender,
   timeBasis: source.timeBasis,
+  baziSettings: source.baziSettings,
   location: source.location,
   solar: {
     year: Number(nextInput.startDatetime.slice(0, 4)),
@@ -435,21 +428,26 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     error: null,
   });
   const [klineAiContent, setKlineAiContent] = useState("");
+  const [klineAiKind, setKlineAiKind] = useState<KlineKind | null>(null);
   const [klineAiError, setKlineAiError] = useState<string | null>(null);
   const [klineAiLoading, setKlineAiLoading] = useState(false);
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
-  // Keep the initial tree deterministic across SSR and hydration.  The CSS
-  // breakpoint owns the first paint; the effect below switches to the drawer
-  // only after React has mounted, avoiding a server/client layout mismatch.
+  // Keep the initial tree deterministic across SSR and hydration. CSS owns
+  // the chart's first paint; this state only controls narrow-only overlays and
+  // the non-chart compact fallback after React mounts.
   const [isNarrowLayout, setIsNarrowLayout] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
-  // The server and supported browsers render the final split surface from the
-  // first paint. Test/legacy runtimes without ResizeObserver still use the
-  // stacked fallback and never attempt to mount resizable panels.
-  const [resizablePanelsReady, setResizablePanelsReady] = useState(() =>
-    typeof window === "undefined" || typeof ResizeObserver !== "undefined",
-  );
+  // `react-resizable-panels` emits a server-only Suspense boundary under this
+  // Next runtime. Rendering it before hydration can shift the AppShell root
+  // and leave the workbench as an empty split surface. Start with the stable
+  // chart canvas, then enhance to the same draggable desktop layout after
+  // React owns the DOM.
+  const [resizablePanelsReady, setResizablePanelsReady] = useState(false);
   const platformSelectedChannel = platformWorkspace.channels.find((channel) => channel.ready)?.channel ?? "";
+  // The Battle Domain uses the same paid Agent entitlement as the chart
+  // workbench. A guest checkout token must be forwarded explicitly; login is
+  // only required for persistence, not for consuming a paid guest turn.
+  const guestAgentAccess = Object.values(agentState).find((state) => state.authMode === "guest" && state.checkoutToken && state.usageAvailable > 0);
 
   useEffect(() => {
     const resolvedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -481,10 +479,10 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     const zone = formState.timeZone;
     try {
       return {
-        "double-hour": buildQimenKline(buildChartSequenceByCount(start, zone, "double-hour", 20, qimenSettings), "relationship"),
-        day: buildQimenKline(buildChartSequenceByCount(start, zone, "day", 20, qimenSettings), "relationship"),
-        month: buildQimenKline(buildChartSequenceByCount(start, zone, "month", 20, qimenSettings), "relationship"),
-        year: buildQimenKline(buildChartSequenceByCount(start, zone, "year", 20, qimenSettings), "relationship"),
+        "double-hour": buildQimenKline(buildChartSequenceByCount(start, zone, "double-hour", 20, qimenSettings), "relationship", "double-hour"),
+        day: buildQimenKline(buildChartSequenceByCount(start, zone, "day", 20, qimenSettings), "relationship", "day"),
+        month: buildQimenKline(buildChartSequenceByCount(start, zone, "month", 20, qimenSettings), "relationship", "month"),
+        year: buildQimenKline(buildChartSequenceByCount(start, zone, "year", 20, qimenSettings), "relationship", "year"),
       };
     } catch {
       return {
@@ -952,16 +950,16 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     setAgentState((current) => {
       const currentMode = current[mode];
       if (currentMode.conversation.length > 0 || (currentMode.question.trim() && currentMode.question !== DEFAULT_AGENT_QUESTIONS[mode])) return current;
-      return { ...current, [mode]: { ...currentMode, question: "", focus: "人生议题访谈" } };
+      return { ...current, [mode]: { ...currentMode, question: "", focus: "按主题分析" } };
     });
   };
 
-  const handleAgentEvidenceModeChange = (nextMode: WorkbenchMode) => {
-    setMode(nextMode);
-    setParametersOpen(false);
-  };
-
   const handleClassicWorkspaceOpen = (kind: "daliuren" | "taiyi") => {
+    // The two classic boards are research tools rather than a new Agent mode.
+    // Reuse the existing gated research Agent so its exact structured text and
+    // compact JSON stay attached to the selected method.
+    setMode("research");
+    setResearchTool(kind);
     setClassicWorkspace(kind);
     setKlineWorkspaceOpen(false);
     setDecisionWorkspaceOpen(false);
@@ -1184,8 +1182,10 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         savePendingPaidAnalysis({
           ...pending,
           orderId: checkout.orderId,
+          productCode: platformConfig.productCode,
           checkoutToken: "",
           checkoutMode: "account",
+          returnPath: product === "chart" ? "/paipan" : "/",
         });
         window.location.assign(checkout.providerCheckoutUrl);
         return;
@@ -1200,11 +1200,13 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       savePendingPaidAnalysis({
         ...pending,
         orderId: checkout.order.order_id,
+        productCode: platformConfig.productCode,
         checkoutToken: checkout.checkout_token,
         checkoutMode: "guest",
+        returnPath: product === "chart" ? "/paipan" : "/",
       });
       if (!payment.provider_checkout_url) throw new Error("平台没有返回收银台地址，未继续发起支付。");
-      window.location.assign(`${payment.provider_checkout_url}`);
+      window.location.href = payment.provider_checkout_url;
     } finally {
       checkoutInFlightRef.current = false;
       setPlatformCheckoutLoading(null);
@@ -1288,10 +1290,10 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         json: JSON.stringify({ format: "qmdj-kline-precise-v2", kind, scale: scale ?? null, series, source: sourceJson }),
       };
       await beginPaidCheckout(KLINE_PLAN_CODE, {
-        mode: "qimen",
+        mode: kind === "life" ? "bazi" : "qimen",
         question: kind === "life"
-          ? "请对这组基于八字大运与流年的‘人生 K 线’做精确 AI 深度分析，逐点说明趋势、预测窗口、现实建议和复盘条件。"
-          : "请对这组奇门序列盘的感情 K 线做精确的 AI 深度分析，逐点说明互动条件、预测窗口、现实建议和关系边界。",
+          ? "请对这组基于八字大运与流年的‘人生 K 线’做精确 AI 取象。必须吸收载荷中每一个规则 K 点的 evidence、score、delta、phase 与八字原始字段；以当前条件分出上、中、下三条可验证的人生世界线，各自给出触发条件、观察时间窗、现实行动建议、停止条件和复盘条件。不得把任何路径写成确定结果。"
+          : "请对这组奇门序列盘的感情 K 线做精确的 AI 取象。必须吸收载荷中每一个规则 K 点的 evidence、score、delta、phase 与原始序列盘字段；以当前条件分出上、中、下三条可验证的可能路径，各自给出触发条件、观察时间窗、现实行动建议、停止条件和复盘条件。不得把任何路径写成确定结果。",
         focus: kind === "life" ? "人生 K 线" : "感情 K 线",
         structuredText: context.text,
         jsonPayload: context.json,
@@ -1451,12 +1453,16 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
 
   useEffect(() => {
     const savedKline = loadKlineAiResult();
-    if (savedKline?.content) setKlineAiContent(savedKline.content);
+    if (savedKline?.content) {
+      setKlineAiContent(savedKline.content);
+      setKlineAiKind(savedKline.klineKind ?? null);
+    }
     const completed = popCompletedPaidAnalysis();
     const active = completed ?? loadActiveAgentSession();
     if (!active) return;
     if (completed?.analysisProduct === "kline") {
       setKlineAiContent(completed.content);
+      setKlineAiKind(completed.klineKind ?? null);
       saveKlineAiResult({ content: completed.content, model: completed.model, klineKind: completed.klineKind, klineSeries: completed.klineSeries });
       setKlineAiLoading(false);
       return;
@@ -1500,6 +1506,9 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const agentInspector = (
     <InspectorPanel
       surface={product === "chart" ? "chart" : "shengtian"}
+      hideTechnicalTabs={product === "shengtian" && agentWorkspaceOpen}
+      hideObservatoryHeader={product === "shengtian" && agentWorkspaceOpen}
+      agentTitle={classicWorkspace === "daliuren" ? "大六壬 Agent 分析" : classicWorkspace === "taiyi" ? "太乙 Agent 分析" : "AI 分析"}
       agentAngles={AGENT_ANALYSIS_ANGLES[mode]}
       agentError={agentState[mode].error}
       agentConversation={agentState[mode].conversation}
@@ -1532,25 +1541,6 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     />
   );
 
-  const restoreAgentCase = useCallback(({ question, conversation, mode: restoredMode, evidence }: { question: string; conversation: AgentConversationMessage[]; mode?: WorkbenchMode; evidence?: { sourceText:string; structuredJson:unknown } | null }) => {
-    const assistantResult = [...conversation].reverse().find((message) => message.role === "assistant")?.content ?? "";
-    const targetMode = restoredMode ?? mode;
-    if (restoredMode) setMode(restoredMode);
-    setAgentState((current) => ({
-      ...current,
-      [targetMode]: {
-        ...current[targetMode],
-        question,
-        conversation,
-        content: assistantResult,
-        sessionStructuredText: evidence?.sourceText ?? "",
-        sessionJsonPayload: evidence ? JSON.stringify(evidence.structuredJson) : "",
-        error: null,
-        loading: false,
-      },
-    }));
-  }, [mode]);
-
   const shiftChartDateTime = (hours: number) => {
     const nextDatetime = shiftDateTimeInput(formState.datetime, hours);
     if (nextDatetime === formState.datetime) return;
@@ -1567,11 +1557,22 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     }
 
     const mediaQuery = window.matchMedia("(max-width: 1180px)");
-    const syncLayout = () => setIsNarrowLayout(mediaQuery.matches);
+    // On mobile WebViews the layout viewport can temporarily retain a desktop
+    // width during first paint while visualViewport already reports the real
+    // device width.  Use the smaller value so the chart never mounts as two
+    // squeezed desktop panels on a phone.
+    const syncLayout = () => {
+      const visualWidth = window.visualViewport?.width ?? Number.POSITIVE_INFINITY;
+      setIsNarrowLayout(mediaQuery.matches || visualWidth <= 1180);
+    };
 
     syncLayout();
     mediaQuery.addEventListener("change", syncLayout);
-    return () => mediaQuery.removeEventListener("change", syncLayout);
+    window.visualViewport?.addEventListener("resize", syncLayout);
+    return () => {
+      mediaQuery.removeEventListener("change", syncLayout);
+      window.visualViewport?.removeEventListener("resize", syncLayout);
+    };
   }, []);
 
   useEffect(() => {
@@ -1584,6 +1585,12 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [chartAnalysisOpen]);
+
+  useEffect(() => {
+    if (resizablePanelsReady && !isNarrowLayout) {
+      setChartAnalysisOpen(false);
+    }
+  }, [isNarrowLayout, resizablePanelsReady]);
 
   useEffect(() => {
     if (!parametersOpen) {
@@ -1668,7 +1675,20 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
 
         {mode === "research" ? (
-          <ResearchPanel data={researchData} tool={researchTool} onToolChange={setResearchTool} />
+          <KlinePanel
+            life={lifeKline}
+            relationship={relationshipKline}
+            relationshipScales={relationshipKlines}
+            aiContent={klineAiContent}
+            aiKind={klineAiKind}
+            aiError={klineAiError}
+            loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
+            onAnalyze={handleKlineAnalyze}
+            aiPriceLabel={(() => {
+              const plan = platformWorkspace.plans.find((item) => item.plan_code === KLINE_PLAN_CODE);
+              return plan ? `¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
+            })()}
+          />
         ) : null}
 
       </div>
@@ -1849,16 +1869,57 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     </div>
   );
 
+  const chartAnalysisToggle = (
+    <button
+      type="button"
+      className="chart-analysis-toggle"
+      aria-controls="chart-analysis-drawer"
+      aria-expanded={chartAnalysisOpen}
+      onClick={() => setChartAnalysisOpen(true)}
+    >
+      <span>AI</span>
+      盘面分析
+    </button>
+  );
+
+  const chartAnalysisOverlay = product === "chart"
+    && chartAnalysisOpen
+    && (isNarrowLayout || !resizablePanelsReady)
+    && typeof document !== "undefined"
+    ? createPortal(
+      <div className="product-chart chart-analysis-portal">
+        <div className="chart-analysis-drawer is-open" aria-hidden={false}>
+          <button
+            type="button"
+            className="chart-analysis-drawer__backdrop"
+            aria-label="关闭盘面分析"
+            onClick={() => setChartAnalysisOpen(false)}
+          />
+          <section className="chart-analysis-drawer__panel" id="chart-analysis-drawer" role="dialog" aria-label="盘面分析台" aria-modal="true">
+            <header className="chart-analysis-drawer__header">
+              <strong>AI 分析</strong>
+              <button type="button" onClick={() => setChartAnalysisOpen(false)} aria-label="关闭盘面分析">×</button>
+            </header>
+            {workbenchSidebar}
+          </section>
+        </div>
+      </div>,
+      document.body,
+    )
+    : null;
+
   return (
     <div className={`page-shell product-${product}${agentWorkspaceOpen ? " is-agent-workspace" : ""}`} data-mode={mode}>
-      <header className="observatory-hero">
+      {!(product === "shengtian" && agentWorkspaceOpen) ? <header className="observatory-hero">
         <div className="observatory-hero__copy">
-          <span className="workspace-kicker">{product === "shengtian" ? "胜天半子" : "术数排盘工具"}</span>
-          <h1>{product === "shengtian" ? "胜天半子" : "术数排盘工作台"}</h1>
-          <span className="observatory-hero__workspace">{product === "shengtian" ? (agentWorkspaceOpen ? "人生决策控制室" : decisionWorkspaceOpen ? "关键决策树" : klineWorkspaceOpen ? "K 线观测" : classicWorkspace === "daliuren" ? "大六壬观测" : classicWorkspace === "taiyi" ? "太乙神数观测" : activeModeMeta.title) : (classicWorkspace === "daliuren" ? "大六壬排盘研究" : classicWorkspace === "taiyi" ? "太乙神数排盘研究" : activeModeMeta.title)}</span>
-          <p className="observatory-hero__manifesto" aria-label="产品说明">
-            {product === "shengtian" ? <><strong>命盘写下边界，选择决定路径。</strong><span>从前重构代码，现在重构命运。</span></> : <><strong>准确排盘，可复核的术数研究。</strong><span>奇门、八字、紫微与三式研究工具。</span></>}
-          </p>
+          <span className="workspace-kicker">{product === "shengtian" ? "胜天半子" : "知几"}</span>
+          <h1>{product === "shengtian" ? "胜天半子" : "知几"}</h1>
+          {product === "shengtian" ? (
+            <>
+              <span className="observatory-hero__workspace">{agentWorkspaceOpen ? "人生决策控制室" : decisionWorkspaceOpen ? "关键决策树" : klineWorkspaceOpen ? "K 线观测" : classicWorkspace === "daliuren" ? "大六壬观测" : classicWorkspace === "taiyi" ? "太乙神数观测" : activeModeMeta.title}</span>
+              <p className="observatory-hero__manifesto" aria-label="产品说明"><strong>命盘写下边界，选择决定路径。</strong><span>从前重构代码，现在重构命运。</span></p>
+            </>
+          ) : null}
         </div>
 
         <ModeTabs mode={mode} onChange={handleModeChange} product={product} klineActive={klineWorkspaceOpen} onKlineSelect={handleKlineWorkspaceOpen} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} decisionActive={decisionWorkspaceOpen} onDecisionSelect={handleDecisionWorkspaceOpen} agentActive={agentWorkspaceOpen} onAgentSelect={handleAgentWorkspaceOpen} />
@@ -1885,7 +1946,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
             </>
           ) : (
             <>
-              <span className="platform-account__status">游客模式 · 支付后可恢复本次分析</span>
+              <span className="platform-account__status">游客模式 · 当前标签页可恢复 <small>关闭页面或换设备可能丢失恢复信息</small></span>
               {invitationRedeemControl}
               <button type="button" className="platform-account__button is-primary" onClick={handlePlatformLogin}>登录平台账户</button>
             </>
@@ -1928,33 +1989,28 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
           ) : null}
         </div>
 
-      </header>
+      </header> : null}
 
       {error ? <p className="error-banner">{error}</p> : null}
 
       {product === "shengtian" && agentWorkspaceOpen ? (
-        <AgentCommandCenter
-          mode={mode}
-          onModeChange={handleAgentEvidenceModeChange}
-          inspector={agentInspector}
-          life={lifeKline}
-          relationshipScales={relationshipKlines}
-          question={agentState[mode].question}
-          conversationCount={agentState[mode].conversation.length}
+        <BattleCommandCenter
           canPersist={platformWorkspace.status === "authenticated"}
-          evidenceText={structuredText}
-          evidenceJson={jsonPayload}
-          conversation={agentState[mode].conversation}
           accessToken={platformWorkspace.session?.access_token}
+          guestCheckoutToken={guestAgentAccess?.checkoutToken}
+          guestUsageAvailable={guestAgentAccess?.usageAvailable}
+          accountUsageAvailable={platformWorkspace.usage?.available ?? 0}
           onLogin={handlePlatformLogin}
           onOpenWorkbench={() => setAgentWorkspaceOpen(false)}
-          onCaseRestore={restoreAgentCase}
         />
       ) : product === "shengtian" && decisionWorkspaceOpen ? (
         <DecisionTreePanel life={lifeKline} relationshipScales={relationshipKlines} />
       ) : classicWorkspace ? (
         <main className="analysis-layout analysis-layout--classic" aria-label={classicWorkspace === "daliuren" ? "大六壬观测" : "太乙神数观测"}>
           <ClassicObservatoryPanel kind={classicWorkspace} value={researchData?.[classicWorkspace] ?? null} />
+          <aside className="classic-agent-rail agent-surface-host" aria-label={`${classicWorkspace === "daliuren" ? "大六壬" : "太乙神数"} Agent 分析`}>
+            {agentInspector}
+          </aside>
         </main>
       ) : product === "shengtian" && klineWorkspaceOpen ? (
         <main className="analysis-layout analysis-layout--kline" aria-label="K 线观测">
@@ -1964,6 +2020,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
               relationship={relationshipKline}
               relationshipScales={relationshipKlines}
               aiContent={klineAiContent}
+              aiKind={klineAiKind}
               aiError={klineAiError}
               loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
               onAnalyze={handleKlineAnalyze}
@@ -1980,54 +2037,31 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
           <section className="combined-agent-surface">
             <div className="combined-agent-surface__heading">
               <div>
-                <span>三盘联合</span>
-                <h2>Agent 分析</h2>
+                <span>TRI-CHART / RESEARCH CONTEXT</span>
+                <h2>三盘联合 Agent</h2>
                 <p>奇门、八字、紫微三盘数据会同时作为本次分析上下文。</p>
+                <div className="combined-agent-surface__sources" aria-label="已接入的盘面">
+                  <span>奇门遁甲</span><span>八字四柱</span><span>紫微斗数</span>
+                </div>
               </div>
-              <strong>已载入三盘数据</strong>
+              <strong>三盘已载入</strong>
             </div>
             {agentInspector}
           </section>
         </main>
       ) : product === "chart" ? (
-        isNarrowLayout || !resizablePanelsReady ? (
-          <main className="analysis-layout analysis-layout--chart-compact" data-layout="chart-analysis-drawer">
-            <div className="chart-compact-canvas">
-              {workbenchCanvas}
-              <button
-                type="button"
-                className="chart-analysis-toggle"
-                aria-controls="chart-analysis-drawer"
-                aria-expanded={chartAnalysisOpen}
-                onClick={() => setChartAnalysisOpen(true)}
-              >
-                <span>AI</span>
-                盘面分析
-              </button>
-            </div>
-            <div
-              className="chart-analysis-drawer"
-              id="chart-analysis-drawer"
-              aria-hidden={!chartAnalysisOpen}
-              data-open={chartAnalysisOpen}
-            >
-              <button
-                type="button"
-                className="chart-analysis-drawer__backdrop"
-                aria-label="关闭盘面分析"
-                tabIndex={chartAnalysisOpen ? 0 : -1}
-                onClick={() => setChartAnalysisOpen(false)}
-              />
-              <section className="chart-analysis-drawer__panel" role="dialog" aria-label="盘面分析台" aria-modal="true">
-                <header className="chart-analysis-drawer__header">
-                  <span>AI ANALYSIS DESK</span>
-                  <button type="button" onClick={() => setChartAnalysisOpen(false)} aria-label="关闭盘面分析">×</button>
-                </header>
-                {workbenchSidebar}
-              </section>
-            </div>
-          </main>
+        !resizablePanelsReady ? (
+          <>
+            <main className="analysis-layout analysis-layout--chart-compact" data-layout="chart-analysis-drawer">
+              <div className="chart-compact-canvas">
+                {workbenchCanvas}
+                {chartAnalysisToggle}
+              </div>
+            </main>
+            {chartAnalysisOverlay}
+          </>
         ) : (
+          <>
           <Group
             id="qimen-workbench-layout"
             orientation="horizontal"
@@ -2036,6 +2070,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
           >
             <Panel id="qimen-chart" defaultSize="68%" minSize="54%" className="analysis-panel">
               {workbenchCanvas}
+              {chartAnalysisToggle}
             </Panel>
             <Separator id="qimen-workbench-separator" className="analysis-panel-divider">
               <span className="analysis-panel-divider__grip" aria-hidden="true">
@@ -2046,6 +2081,8 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
               {workbenchSidebar}
             </Panel>
           </Group>
+          {chartAnalysisOverlay}
+          </>
         )
       ) : isNarrowLayout || !resizablePanelsReady ? (
         <main className="analysis-layout analysis-layout--stacked" data-layout="agent-sidebar">
@@ -2074,16 +2111,17 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       )}
 
       <footer className="qmdj-footer">
-        <div className="qmdj-footer__brand">
-          <span>{product === "shengtian" ? "胜天半子" : "术数排盘工作台"}</span>
-          <p>{product === "shengtian" ? "以身入局，落下你选择的一子。" : "准确计算，清晰阅读，保留每一项盘面依据。"}</p>
-        </div>
-        <div className="qmdj-footer__meta">
-          <span>© 2026 胜天半子</span>
-          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">
-            鄂ICP备2026026686号-1
-          </a>
-        </div>
+        {product === "chart" ? (
+          <div className="qmdj-footer__compact">
+            <span>知几</span><span>© 2026 胜天半子</span>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026026686号-1</a>
+          </div>
+        ) : (
+          <>
+            <div className="qmdj-footer__brand"><span>胜天半子</span><p>以身入局，落下你选择的一子。</p></div>
+            <div className="qmdj-footer__meta"><span>© 2026 胜天半子</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026026686号-1</a></div>
+          </>
+        )}
       </footer>
 
     </div>

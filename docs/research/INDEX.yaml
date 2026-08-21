@@ -1,1 +1,30 @@
-reports: []
+reports:
+  - id: agent-improvement-research-2026-08-17
+    path: docs/research/agent-improvement-research-2026-08-17.md
+    sources:
+      - https://arxiv.org/abs/2407.18418
+      - https://openreview.net/forum?id=ZVZGjtP5VB
+    status: verified_locally_and_public-source-reviewed
+  - id: agent-history-audit-2026-08-17
+    path: docs/research/agent-history-audit-2026-08-17.md
+    sources:
+      - F:\\temp\\mingli-bench-data.json
+      - F:\\temp\\qmdj-agent-history-baseline-20260817.json
+      - F:\\temp\\qmdj-agent-history-forced-bazi-20-20260817.json
+    status: verified_locally_no_model_calls
+  - id: fate-bench-2026-08-17
+    path: docs/research/fate-bench-2026-08-17.md
+    sources:
+      - https://github.com/shunshi-ai/fate-bench
+      - https://github.com/DestinyLinker/MingLi-Bench
+      - https://github.com/Notcokeaddictedanymore/Bazi-Bech
+    status: verified_locally
+  - id: open-source-agent-audit-2026-08-17
+    path: docs/research/open-source-agent-audit-2026-08-17.md
+    sources:
+      - https://github.com/hhszzzz/taibu/tree/e8f636972a6fdb14f2a532ee223101f889ab4820
+      - https://github.com/dzcmemory-web/bazi-ziwei-skill
+      - https://github.com/Johnson-Jia/ziwei-bazi-reading/tree/b36c85df7c7c057f9074ff52b70b6deffc2caecb
+      - https://github.com/lzm0x219/ziwei/tree/264567b8dbcb5da6520d9b9248fcd2e9cce71f3b
+      - https://pypi.org/project/bazi-agent/
+    status: source_audited_locally

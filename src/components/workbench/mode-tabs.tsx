@@ -25,10 +25,14 @@ const MODE_OPTIONS: Array<{
   { value: "bazi", label: "八字" },
   { value: "ziwei", label: "紫微" },
   { value: "combined", label: "三盘联合" },
-  { value: "research", label: "术数研究" },
+  { value: "research", label: "人生 K 线" },
 ];
 
 export function ModeTabs({ mode, onChange, product = "shengtian", klineActive = false, onKlineSelect, classicActive = null, onClassicSelect, decisionActive = false, onDecisionSelect, agentActive = false, onAgentSelect }: ModeTabsProps) {
+  // `research` is an internal calibration surface. The customer-facing
+  // 胜天半子 shell exposes the resulting K 线, not the research workflow;
+  // 知几 keeps the full research tab for its dedicated workbench.
+  const visibleModeOptions = MODE_OPTIONS.filter((item) => product === "chart" || item.value !== "research");
   return (
     <Tabs
       className="workbench-tabs"
@@ -54,7 +58,7 @@ export function ModeTabs({ mode, onChange, product = "shengtian", klineActive = 
       }}
       type="card"
     >
-      {MODE_OPTIONS.map((item) => (
+      {visibleModeOptions.map((item) => (
         <Tabs.TabPane
           itemKey={item.value}
           key={item.value}

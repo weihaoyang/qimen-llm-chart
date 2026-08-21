@@ -71,6 +71,10 @@ export function AdminInvitationPanel({ accessToken, productCode, planCode }: Adm
         const client = createPlatformClient({ accessToken });
         const session = await client.getAdminSession();
         if (cancelled) return;
+        if (session.role !== "owner" && session.role !== "admin") {
+          setState("denied");
+          return;
+        }
         setRole(session.role);
         setState("authorized");
         try {
