@@ -2228,3 +2228,38 @@ body .product-chart .agent-panel__guest-recovery-note {
   min-height: 0 !important;
   height: auto !important;
 }
+
+/* The chart Agent lives in a fixed-height sidebar on desktop.  Its question
+ * editor can be taller than the available viewport, so letting the four
+ * following tracks collapse makes the entitlement toolbar and guest notice
+ * paint over the result section.  Keep every block in normal flow and make
+ * the sidebar itself the scroll container when the viewport is short. */
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart {
+  grid-template-rows: auto auto minmax(42px, auto) minmax(72px, auto) minmax(270px, auto) !important;
+  height: auto !important;
+  min-height: 100% !important;
+  align-content: start !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__toolbar,
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__guest-recovery-note,
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__error,
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--result {
+  grid-column: 1 !important;
+  grid-row: auto !important;
+}
+
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__toolbar {
+  min-height: 42px !important;
+}
+
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__guest-recovery-note {
+  box-sizing: border-box !important;
+  min-height: 72px !important;
+}
+
+body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--result {
+  min-height: 270px !important;
+}
