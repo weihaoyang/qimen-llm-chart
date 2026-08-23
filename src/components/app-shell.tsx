@@ -95,7 +95,6 @@ import { KlinePanel } from "./kline-panel";
 import { ObservationJournal } from "./observation-journal";
 import { ClassicObservatoryPanel } from "./classic-observatory-panel";
 import { DecisionTreePanel } from "./decision-tree-panel";
-import { BattleCommandCenter } from "./battle-command-center";
 import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
 import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
@@ -1993,17 +1992,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
 
       {error ? <p className="error-banner">{error}</p> : null}
 
-      {product === "shengtian" && agentWorkspaceOpen ? (
-        <BattleCommandCenter
-          canPersist={platformWorkspace.status === "authenticated"}
-          accessToken={platformWorkspace.session?.access_token}
-          guestCheckoutToken={guestAgentAccess?.checkoutToken}
-          guestUsageAvailable={guestAgentAccess?.usageAvailable}
-          accountUsageAvailable={platformWorkspace.usage?.available ?? 0}
-          onLogin={handlePlatformLogin}
-          onOpenWorkbench={() => setAgentWorkspaceOpen(false)}
-        />
-      ) : product === "shengtian" && decisionWorkspaceOpen ? (
+      {product === "shengtian" && decisionWorkspaceOpen ? (
         <DecisionTreePanel life={lifeKline} relationshipScales={relationshipKlines} />
       ) : classicWorkspace ? (
         <main className="analysis-layout analysis-layout--classic" aria-label={classicWorkspace === "daliuren" ? "大六壬观测" : "太乙神数观测"}>

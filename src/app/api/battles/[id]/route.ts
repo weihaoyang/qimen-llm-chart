@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { asDate, asOptionalText, asText, isBattleStatus, isUuid } from "@/lib/battle/input";
 import { deleteBattle, getBattle, updateBattle } from "@/lib/battle/repository";
+import { getBattleScenario } from "@/lib/scenarios/repository";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, context: Context) {
-  try { const id = (await context.params).id; if (!isUuid(id)) return NextResponse.json({ error: "战局标识无效。" }, { status: 400 }); const battle = await getBattle(await requireAccountSubject(request), id); return battle ? NextResponse.json({ battle }) : NextResponse.json({ error: "战局不存在。" }, { status: 404 }); }
+  try { const id = (await context.params).id; if (!isUuid(id)) return NextResponse.json({ error: "战局标识无效。" }, { status: 400 }); const subject = await requireAccountSubject(request); const battle = await getBattle(subject, id); return battle ? NextResponse.json({ battle, scenario: await getBattleScenario(subject, id) }) : NextResponse.json({ error: "战局不存在。" }, { status: 404 }); }
   catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({ error: error.message }, { status: error.status }) : NextResponse.json({ error: "读取战局失败。" }, { status: 500 }); }
 }
 

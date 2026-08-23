@@ -1,6 +1,6 @@
-import { AppShellEntry } from "@/components/app-shell-entry";
-import "./shengtian.css";
+import { ShengtianReferenceEntry } from "@/components/shengtian-reference-entry";
+import "../shengtian-reference/index.css";
 
 export default function Home() {
-  return <AppShellEntry />;
+  return <ShengtianReferenceEntry />;
 }

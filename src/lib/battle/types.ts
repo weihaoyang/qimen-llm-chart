@@ -31,6 +31,9 @@ export type Battle = {
   hardDeadline: string | null;
   createdAt: string;
   updatedAt: string;
+  scenarioId?: string | null;
+  scenarioVersion?: number | null;
+  sourceType?: "user_created" | "official_catalog" | "legacy_import";
 };
 
 export type BattleFact = {

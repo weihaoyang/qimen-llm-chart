@@ -1,0 +1,346 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: -0.015em;
+    background-color: #04070d;
+    color: #e2e8f0;
+  }
+  
+  .font-mono-code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+  
+  .font-serif-sc {
+    font-family: 'Noto Serif SC', Georgia, Cambria, 'Times New Roman', serif;
+  }
+}
+
+/* Tactical HUD & Luxury War Room Backgrounds */
+.tactical-bg {
+  background-color: #04070c;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(30, 58, 138, 0.18), transparent),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(220, 38, 38, 0.07), transparent),
+    radial-gradient(ellipse 50% 40% at 0% 80%, rgba(13, 148, 136, 0.06), transparent);
+}
+
+.tactical-bg-war {
+  background-color: #050408;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(185, 28, 28, 0.25), transparent),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(217, 119, 6, 0.1), transparent),
+    radial-gradient(ellipse 60% 40% at 0% 90%, rgba(147, 51, 234, 0.09), transparent);
+}
+
+.tactical-grid {
+  background-size: 28px 28px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+.tactical-grid-dense {
+  background-size: 14px 14px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
+
+/* Glassmorphism Frosted Surfaces (backdrop-filter: blur(20px)) */
+.glass-sidebar {
+  background: linear-gradient(180deg, rgba(10, 16, 28, 0.76) 0%, rgba(6, 10, 18, 0.85) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
+.glass-content {
+  background: linear-gradient(180deg, rgba(9, 14, 25, 0.72) 0%, rgba(5, 8, 16, 0.82) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
+.glass-card {
+  background: rgba(14, 21, 37, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(20, 31, 54, 0.75);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.glass-card-active {
+  background: linear-gradient(145deg, rgba(20, 35, 62, 0.88) 0%, rgba(11, 20, 38, 0.94) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  box-shadow: inset 0 0 20px rgba(56, 189, 248, 0.15), 0 10px 30px -5px rgba(0, 0, 0, 0.7);
+}
+
+/* Inner Glow Details */
+.inner-glow-blue {
+  box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.inner-glow-cyan {
+  box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.inner-glow-red {
+  box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.inner-glow-amber {
+  box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Tactical Scanline Effect */
+@keyframes scanline-glow {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+.scanline-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanline-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.6) 30%, rgba(255, 255, 255, 0.95) 50%, rgba(56, 189, 248, 0.6) 70%, transparent 100%);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7), 0 0 4px rgba(255, 255, 255, 0.9);
+  animation: scanline-glow 5.5s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.scanline-card-red::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.6) 30%, rgba(255, 255, 255, 0.95) 50%, rgba(239, 68, 68, 0.6) 70%, transparent 100%);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.7), 0 0 4px rgba(255, 255, 255, 0.9);
+  animation: scanline-glow 4.5s linear infinite;
+}
+
+.scanline-card-amber::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(245, 158, 11, 0.6) 30%, rgba(255, 255, 255, 0.95) 50%, rgba(245, 158, 11, 0.6) 70%, transparent 100%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.7), 0 0 4px rgba(255, 255, 255, 0.9);
+  animation: scanline-glow 5s linear infinite;
+}
+
+/* Tactical Bracket Accents */
+.hud-corner {
+  position: relative;
+}
+.hud-corner::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid rgba(255, 255, 255, 0.35);
+  border-left: 2px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+.hud-corner::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+  border-right: 2px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.hud-corner-red::before {
+  border-top-color: rgba(239, 68, 68, 0.85);
+  border-left-color: rgba(239, 68, 68, 0.85);
+}
+.hud-corner-red::after {
+  border-bottom-color: rgba(239, 68, 68, 0.85);
+  border-right-color: rgba(239, 68, 68, 0.85);
+}
+
+.hud-corner-amber::before {
+  border-top-color: rgba(245, 158, 11, 0.85);
+  border-left-color: rgba(245, 158, 11, 0.85);
+}
+.hud-corner-amber::after {
+  border-bottom-color: rgba(245, 158, 11, 0.85);
+  border-right-color: rgba(245, 158, 11, 0.85);
+}
+
+.hud-corner-cyan::before {
+  border-top-color: rgba(6, 182, 212, 0.85);
+  border-left-color: rgba(6, 182, 212, 0.85);
+}
+.hud-corner-cyan::after {
+  border-bottom-color: rgba(6, 182, 212, 0.85);
+  border-right-color: rgba(6, 182, 212, 0.85);
+}
+
+/* Glass & Obsidian Surfaces */
+.surface-obsidian {
+  background: linear-gradient(180deg, rgba(13, 19, 30, 0.88) 0%, rgba(8, 12, 20, 0.94) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.surface-obsidian-war {
+  background: linear-gradient(180deg, rgba(22, 12, 16, 0.92) 0%, rgba(12, 7, 10, 0.96) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow: 0 10px 35px -5px rgba(220, 38, 38, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+.surface-card {
+  background: rgba(15, 23, 38, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card:hover {
+  background: rgba(22, 33, 54, 0.8);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Tactical Scanline & Radar */
+.radar-sweep {
+  background: conic-gradient(from 0deg at 50% 50%, rgba(239, 68, 68, 0.2) 0deg, rgba(239, 68, 68, 0.01) 60deg, transparent 90deg, transparent 360deg);
+  animation: radar-spin 4s linear infinite;
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pulse-glow-red {
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.4);
+  animation: pulse-red 2s infinite ease-in-out;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 18px rgba(220, 38, 38, 0.35); }
+  50% { box-shadow: 0 0 35px rgba(220, 38, 38, 0.7); }
+}
+
+.pulse-glow-amber {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.glow-amber {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
+}
+
+.glow-red {
+  box-shadow: 0 0 30px -5px rgba(239, 68, 68, 0.45);
+}
+
+.glow-blue {
+  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.35);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.35);
+}
+
+/* Custom Tactical Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(6, 9, 14, 0.9);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.95);
+}
+
+/* Tactical Asset Card Physics & Hologram FX */
+.card-tactical {
+  background: linear-gradient(145deg, rgba(16, 24, 38, 0.95) 0%, rgba(9, 14, 23, 0.98) 100%);
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.card-tactical:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+}
+
+.card-tactical-holo {
+  background-image: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.04) 30%, transparent 60%);
+  background-size: 200% 200%;
+}
+
+.card-tactical:hover .card-tactical-holo {
+  animation: holo-sweep 2.5s ease infinite;
+}
+
+@keyframes holo-sweep {
+  0% { background-position: 100% 0%; }
+  100% { background-position: -100% 0%; }
+}
+
+.digit-display {
+  background: rgba(3, 5, 8, 0.85);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 14px rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.digit-display-red {
+  background: rgba(22, 4, 8, 0.9);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 16px rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+.digit-display-emerald {
+  background: rgba(4, 22, 15, 0.9);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 16px rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+.digit-display-cyan {
+  background: rgba(3, 18, 25, 0.9);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 16px rgba(6, 182, 212, 0.25);
+  border: 1px solid rgba(6, 182, 212, 0.45);
+}
+
+

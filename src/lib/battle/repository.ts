@@ -4,7 +4,7 @@ import type { AccountSubject } from "@/lib/agent/account-subject";
 import type { Battle, BattleConstraint, BattleFact, GravityLine, InventoryItem, Junction, Move, ResourceSnapshot } from "./types";
 
 type Json = Record<string, unknown>;
-type CaseRow = { id:string; title:string; objective:string; minimum_outcome:string; ideal_outcome:string; opponent_summary:string; status:Battle["status"]; hard_deadline:Date|null; created_at:Date; updated_at:Date };
+type CaseRow = { id:string; title:string; objective:string; minimum_outcome:string; ideal_outcome:string; opponent_summary:string; status:Battle["status"]; hard_deadline:Date|null; created_at:Date; updated_at:Date; scenario_id:string|null; scenario_version:number|null; source_type:Battle["sourceType"] };
 type FactRow = { id:string; battle_id:string; kind:BattleFact["kind"]; content:string; source:BattleFact["source"]; confidence:number; occurred_at:Date|null; verified_at:Date|null; created_at:Date };
 type ConstraintRow = { id:string; battle_id:string; kind:BattleConstraint["kind"]; label:string; description:string; hard:boolean; severity:number; threshold_json:Json; source_json:Json };
 type InventoryRow = { id:string; battle_id:string; category:InventoryItem["category"]; label:string; description:string; quantity:string|null; unit:string|null; availability:InventoryItem["availability"]; expires_at:Date|null; cost_json:Json; evidence_json:Json };
@@ -18,7 +18,7 @@ const ownership = (subject: AccountSubject) => [subject.subjectType, subject.sub
 const asRecord = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const asStrings = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const iso = (value: Date|null|undefined) => value?.toISOString() ?? null;
-const mapBattle = (row: CaseRow): Battle => ({ id:row.id, title:row.title, objective:row.objective, minimumOutcome:row.minimum_outcome, idealOutcome:row.ideal_outcome, opponentSummary:row.opponent_summary, status:row.status, hardDeadline:iso(row.hard_deadline), createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() });
+const mapBattle = (row: CaseRow): Battle => ({ id:row.id, title:row.title, objective:row.objective, minimumOutcome:row.minimum_outcome, idealOutcome:row.ideal_outcome, opponentSummary:row.opponent_summary, status:row.status, hardDeadline:iso(row.hard_deadline), createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString(), scenarioId:row.scenario_id, scenarioVersion:row.scenario_version, sourceType:row.source_type });
 const mapFact = (row: FactRow): BattleFact => ({ id:row.id, battleId:row.battle_id, kind:row.kind, content:row.content, source:row.source, confidence:row.confidence, occurredAt:iso(row.occurred_at), verifiedAt:iso(row.verified_at), createdAt:row.created_at.toISOString() });
 const mapConstraint = (row: ConstraintRow): BattleConstraint => ({ id:row.id, battleId:row.battle_id, kind:row.kind, label:row.label, description:row.description, hard:row.hard, severity:row.severity, threshold:asRecord(row.threshold_json), source:asRecord(row.source_json) });
 const mapInventory = (row: InventoryRow): InventoryItem => ({ id:row.id, battleId:row.battle_id, category:row.category, label:row.label, description:row.description, quantity:row.quantity === null ? null : Number(row.quantity), unit:row.unit, availability:row.availability, expiresAt:iso(row.expires_at), cost:asRecord(row.cost_json), evidence:asRecord(row.evidence_json) });
@@ -29,12 +29,12 @@ const mapMove = (row: MoveRow): Move => ({ id:row.id, battleId:row.battle_id, ju
 export const isBattleId = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 export const listBattles = async (subject: AccountSubject) => {
-  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND bc.status='active')) AND c.status <> 'archived' ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
+  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND bc.status='active')) AND c.status <> 'archived' ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
   return result.rows.map(mapBattle);
 };
 
 export const getBattle = async (subject: AccountSubject, id: string) => {
-  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at FROM battle_cases c WHERE c.id=$1 AND ((c.platform_subject_type=$2 AND c.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active'))`, [id, ...ownership(subject)]);
+  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type FROM battle_cases c WHERE c.id=$1 AND ((c.platform_subject_type=$2 AND c.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active'))`, [id, ...ownership(subject)]);
   return result.rows[0] ? mapBattle(result.rows[0]) : null;
 };
 
@@ -42,14 +42,14 @@ export const isBattleOwner = async (subject: AccountSubject, id: string) => Bool
 
 export const createBattle = async (subject: AccountSubject, input: Pick<Battle, "title"|"objective"|"minimumOutcome"|"idealOutcome"|"opponentSummary"|"hardDeadline">) => {
   const id = randomUUID();
-  const row = await query<CaseRow>(`INSERT INTO battle_cases(id,platform_subject_type,platform_subject_id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,hard_deadline) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,status,hard_deadline,created_at,updated_at`, [id, ...ownership(subject), input.title, input.objective, input.minimumOutcome, input.idealOutcome, input.opponentSummary, input.hardDeadline]);
+  const row = await query<CaseRow>(`INSERT INTO battle_cases(id,platform_subject_type,platform_subject_id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,hard_deadline) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,status,hard_deadline,created_at,updated_at,scenario_id,scenario_version,source_type`, [id, ...ownership(subject), input.title, input.objective, input.minimumOutcome, input.idealOutcome, input.opponentSummary, input.hardDeadline]);
   return mapBattle(row.rows[0]);
 };
 
 export const updateBattle = async (subject: AccountSubject, id: string, input: Partial<Pick<Battle, "title"|"objective"|"minimumOutcome"|"idealOutcome"|"opponentSummary"|"hardDeadline"|"status">>) => {
   const current = await getBattle(subject, id);
   if (!current) return null;
-  const row = await query<CaseRow>(`UPDATE battle_cases SET title=$4,objective=$5,minimum_outcome=$6,ideal_outcome=$7,opponent_summary=$8,status=$9,hard_deadline=$10,updated_at=now() WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 RETURNING id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,status,hard_deadline,created_at,updated_at`, [id, ...ownership(subject), input.title ?? current.title, input.objective ?? current.objective, input.minimumOutcome ?? current.minimumOutcome, input.idealOutcome ?? current.idealOutcome, input.opponentSummary ?? current.opponentSummary, input.status ?? current.status, input.hardDeadline === undefined ? current.hardDeadline : input.hardDeadline]);
+  const row = await query<CaseRow>(`UPDATE battle_cases SET title=$4,objective=$5,minimum_outcome=$6,ideal_outcome=$7,opponent_summary=$8,status=$9,hard_deadline=$10,updated_at=now() WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 RETURNING id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,status,hard_deadline,created_at,updated_at,scenario_id,scenario_version,source_type`, [id, ...ownership(subject), input.title ?? current.title, input.objective ?? current.objective, input.minimumOutcome ?? current.minimumOutcome, input.idealOutcome ?? current.idealOutcome, input.opponentSummary ?? current.opponentSummary, input.status ?? current.status, input.hardDeadline === undefined ? current.hardDeadline : input.hardDeadline]);
   return row.rows[0] ? mapBattle(row.rows[0]) : null;
 };
 
