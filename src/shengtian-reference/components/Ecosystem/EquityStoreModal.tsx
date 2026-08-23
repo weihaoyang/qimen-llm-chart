@@ -6,6 +6,9 @@
 import React, { useState } from 'react';
 import { SubscriptionTier } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, listPlatformPlans } from '../../../lib/platform/browser';
+import { loadPlatformSession } from '../../../lib/platform/session';
+import { requirePlatformClientConfig } from '../../../lib/platform/config';
 import confetti from 'canvas-confetti';
 import { 
   X, 
@@ -67,7 +70,6 @@ export const EquityStoreModal: React.FC<EquityStoreModalProps> = ({
   isOpen,
   onClose,
   userEquity,
-  onAddEquity,
 }) => {
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -78,39 +80,34 @@ export const EquityStoreModal: React.FC<EquityStoreModalProps> = ({
   const handlePurchasePack = (pack: typeof EQUITY_PACKS[0]) => {
     setIsProcessing(true);
     soundManager.playBlip(700, 0.05);
-
-    setTimeout(() => {
-      setIsProcessing(false);
-      onAddEquity(pack.points, `购买推演权益包：${pack.label}`);
-      soundManager.playStrategyLocked();
-      confetti({
-        particleCount: 90,
-        spread: 70,
-        origin: { y: 0.5 },
-        colors: ['#FFB800', '#3A7DFF', '#FFFFFF'],
-      });
-      setSuccessToast(`成功购入 ${pack.points} 推演权益点！已入账。`);
-      setTimeout(() => setSuccessToast(null), 3000);
-    }, 800);
+    void beginCheckout(`shengtian-banzi-equity-${pack.id}`);
   };
 
   const handleSubscribe = (tier: SubscriptionTier) => {
     setIsProcessing(true);
     soundManager.playBlip(800, 0.05);
 
-    setTimeout(() => {
-      setIsProcessing(false);
-      onAddEquity(tier.equityPerMonth, `开通订阅：${tier.name}`);
-      soundManager.playStrategyLocked();
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.5 },
-        colors: ['#FFB800', '#D70026', '#FFFFFF'],
-      });
-      setSuccessToast(`🎉 恭喜开通 ${tier.name}！已充值 ${tier.equityPerMonth} 权益点。`);
-      setTimeout(() => setSuccessToast(null), 3500);
-    }, 900);
+    void beginCheckout(tier.id === 'ANNUAL' ? 'shengtian-banzi-annual' : 'shengtian-banzi-monthly');
+  };
+
+  const beginCheckout = async (planHint: string) => {
+    try {
+      const config = requirePlatformClientConfig();
+      const catalog = await listPlatformPlans(config.productCode);
+      const plan = catalog.items.find((item) => item.plan_code === planHint) ?? catalog.items.find((item) => item.plan_code.includes('shengtian-banzi'));
+      if (!plan) throw new Error('平台暂未发布可购买的胜天半子套餐。');
+      const channel = catalog.channels.find((item) => item.ready)?.channel;
+      if (!channel) throw new Error('当前没有可用支付方式。');
+      const returnUrl = `${window.location.origin}/billing/result?product_code=${encodeURIComponent(config.productCode)}`;
+      const session = loadPlatformSession();
+      const checkout = session?.access_token
+        ? await createAccountCheckout(session.access_token, plan.plan_code, channel, returnUrl, { csrfToken: session.csrf_token })
+        : await (async () => { const guest = await createGuestCheckout(plan.plan_code, channel); const payment = await createGuestPaymentAttempt(guest, channel, returnUrl); return { providerCheckoutUrl: payment.provider_checkout_url }; })();
+      if (!checkout.providerCheckoutUrl) throw new Error('平台没有返回收银台地址。');
+      window.location.assign(checkout.providerCheckoutUrl);
+    } catch (error) {
+      setIsProcessing(false); setSuccessToast(error instanceof Error ? error.message : '支付初始化失败，请重试。');
+    }
   };
 
   return (
