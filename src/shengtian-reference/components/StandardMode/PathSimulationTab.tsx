@@ -28,15 +28,18 @@ import {
   EPISTEMIC_TAG_CONFIG 
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface PathSimulationTabProps {
   battlefield: BattlefieldState;
+  battleId: string;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onTriggerBreakthrough: () => void;
 }
 
 export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   battlefield,
+  battleId,
   onUpdateBattlefield,
   onTriggerBreakthrough,
 }) => {
@@ -49,6 +52,18 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   const [strategyDay, setStrategyDay] = useState(14);
   const [selectedCardsForNewStrategy, setSelectedCardsForNewStrategy] = useState<string[]>([]);
   const [hoveredStratId, setHoveredStratId] = useState<string | null>(null);
+  const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void sessionApi.analysis(battleId).then((result) => {
+      const loaded = result.moves.map((move) => ({
+        id: String(move.id), name: String(move.title ?? '未命名策略'), type: move.kind === 'strong_attack' ? 'AGGRESSIVE' : move.kind === 'hedge' ? 'HEDGE' : 'PROBING', typeLabel: move.kind === 'strong_attack' ? '强攻手' : move.kind === 'hedge' ? '对冲手' : '试局手', description: String(move.rationale ?? ''), targetTimelineDay: 14, assignedCardIds: [], costDescription: JSON.stringify(move.cost ?? {}), successSignal: JSON.stringify(move.validation ?? {}), estimatedSurvivalProb: 50, status: move.state === 'selected' ? 'LOCKED' : move.state === 'executing' ? 'EXECUTING' : 'PROPOSED',
+      } as StrategyBranch));
+      if (!cancelled && loaded.length) onUpdateBattlefield((previous) => ({ ...previous, strategies: loaded }));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId, onUpdateBattlefield]);
 
   const handleOpenAddStrategy = (type: StrategyType) => {
     setActiveStrategyTypeModal(type);
@@ -85,6 +100,13 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
       ...prev,
       strategies: [...prev.strategies, newStrat],
     }));
+
+    void sessionApi.analysis(battleId).then(async ({ junctions }) => {
+      const junctionId = junctions[0]?.id;
+      if (!junctionId) { setPersistenceMessage('策略已保存在当前草稿；创建因果节点后才能写入服务端。'); return; }
+      await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [] }]);
+      setPersistenceMessage('策略草案已写入战局。');
+    }).catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '策略保存失败，请重试。'));
 
     setActiveStrategyTypeModal(null);
     soundManager.playBlip(850, 0.04);
@@ -136,6 +158,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
             红色重力线为“不作为时的自然沉沦死线”。通过布设强攻手、试局手与对冲手，扭转概率重力场。
           </p>
         </div>
+        {persistenceMessage ? <div className="text-xs text-cyan-300">{persistenceMessage}</div> : null}
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 shrink-0">

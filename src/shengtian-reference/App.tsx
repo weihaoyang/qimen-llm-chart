@@ -739,8 +739,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
               onSaveDNARecord={handleSaveDNARecord}
             />
           ) : (
-            <CausalWorkshopView
-              battlefield={battlefield}
+        <CausalWorkshopView
+          battlefield={battlefield}
+          battleId={session.activeBattle?.id ?? battlefield.id}
               onUpdateBattlefield={updateBattlefield}
               userProfile={userProfile}
               sigil={userProfile.sigil}

@@ -38,6 +38,7 @@ import {
 
 interface CausalWorkshopViewProps {
   battlefield: BattlefieldState;
+  battleId: string;
   onUpdateBattlefield: React.Dispatch<React.SetStateAction<BattlefieldState>>;
   userProfile?: UserProfile;
   sigil?: DeciderSigil;
@@ -58,6 +59,7 @@ interface CausalWorkshopViewProps {
 
 export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
   battlefield,
+  battleId,
   onUpdateBattlefield,
   userProfile,
   sigil,
@@ -322,6 +324,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
           {activeStandardTab === 'simulation' && (
             <PathSimulationTab
               battlefield={battlefield}
+              battleId={battleId}
               onUpdateBattlefield={onUpdateBattlefield as any}
               onTriggerBreakthrough={onLaunchSingularity}
             />
