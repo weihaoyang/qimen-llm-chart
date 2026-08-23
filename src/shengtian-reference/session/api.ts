@@ -23,6 +23,18 @@ export type SessionBattle = {
   updatedAt: string;
 };
 
+export type Collaborator = {
+  id: string;
+  battleId: string;
+  subjectType: string;
+  subjectId: string;
+  role: "viewer" | "contributor" | "advisor" | "owner";
+  status: "invited" | "active" | "revoked";
+  permissions: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, credentials: "include", headers: { "Content-Type":"application/json", ...(init?.headers ?? {}) } });
   const data = await response.json().catch(() => ({}));
@@ -39,4 +51,7 @@ export const sessionApi = {
   module: (battleId:string, moduleId:string) => request<{ state: unknown }>(`/api/battles/${battleId}/modules/${moduleId}`),
   saveModule: (battleId:string, moduleId:string, state:unknown, consent:unknown = {}) => request<{ state: unknown }>(`/api/battles/${battleId}/modules/${moduleId}`, { method:"PUT", body:JSON.stringify({ state, consent }) }),
   ai: (battleId:string, kind:string, body:Record<string, unknown>) => request<{ job: unknown; usage?: unknown }>(`/api/battles/${battleId}/ai/${kind}`, { method:"POST", body:JSON.stringify(body) }),
+  collaborators: (battleId:string) => request<{ collaborators: Collaborator[] }>(`/api/battles/${battleId}/collaborators`),
+  inviteCollaborator: (battleId:string, input:{ subjectType:string; subjectId:string; role:"viewer"|"contributor"|"advisor"; permissions?:Record<string, unknown> }) => request<{ collaborator: Collaborator }>(`/api/battles/${battleId}/collaborators`, { method:"POST", body:JSON.stringify(input) }),
+  updateCollaborator: (battleId:string, collaboratorId:string, input:{ status?:"invited"|"active"|"revoked"; action?:"accept" }) => request<{ collaborator: Collaborator }>(`/api/battles/${battleId}/collaborators`, { method:"PATCH", body:JSON.stringify({ collaboratorId, ...input }) }),
 };

@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { BoardRole } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi, type Collaborator } from '../../session/api';
 import confetti from 'canvas-confetti';
 import { 
   X, 
@@ -24,22 +25,48 @@ interface CausalLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
   battlefieldTitle: string;
+  battleId: string;
 }
 
 export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
   isOpen,
   onClose,
   battlefieldTitle,
+  battleId,
 }) => {
   const [selectedRole, setSelectedRole] = useState<BoardRole>('STRATEGIST');
   const [enableRedaction, setEnableRedaction] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
+  const [subjectId, setSubjectId] = useState('');
+  const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!isOpen) return null;
 
-  const generatedLink = `https://aethel.io/collab/link_${Date.now().toString(36)}?role=${selectedRole.toLowerCase()}&redacted=${enableRedaction}`;
+  const generatedLink = collaborator && typeof window !== 'undefined'
+    ? `${window.location.origin}/?battle=${encodeURIComponent(battleId)}&invite=${encodeURIComponent(collaborator.id)}`
+    : '';
+
+  const roleMap = { OBSERVER: 'viewer', COMMENTATOR: 'contributor', STRATEGIST: 'advisor' } as const;
+
+  const handleInvite = async () => {
+    if (!subjectId.trim()) { setError('请输入受邀者的平台账户 ID。'); return; }
+    setError(null); setIsSaving(true);
+    try {
+      const result = await sessionApi.inviteCollaborator(battleId, {
+        subjectType: 'user', subjectId: subjectId.trim(), role: roleMap[selectedRole],
+        permissions: { redacted: enableRedaction },
+      });
+      setCollaborator(result.collaborator);
+      soundManager.playSuccess();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '邀请失败，请稍后重试。');
+    } finally { setIsSaving(false); }
+  };
 
   const handleCopy = () => {
+    if (!generatedLink) return;
     soundManager.playSuccess();
     navigator.clipboard.writeText(generatedLink);
     setIsCopied(true);
@@ -119,6 +146,16 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
           </div>
         </div>
 
+        <div className="space-y-2">
+          <label className="text-xs font-mono-code text-slate-300 font-bold block">受邀者平台账户 ID</label>
+          <div className="flex gap-2">
+            <input value={subjectId} onChange={(event) => setSubjectId(event.target.value)} placeholder="例如 user_01..." disabled={Boolean(collaborator)} className="flex-1 bg-black/60 border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 disabled:opacity-60" />
+            <button onClick={() => void handleInvite()} disabled={isSaving || Boolean(collaborator)} className="px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold">{isSaving ? '发送中…' : collaborator ? '已发送' : '发送邀请'}</button>
+          </div>
+          {error ? <p className="text-xs text-rose-300">{error}</p> : null}
+          {collaborator ? <p className="text-[11px] text-emerald-300">邀请已保存。对方登录后打开下方链接即可接受，链接不会伪造或写入浏览器状态。</p> : null}
+        </div>
+
         {/* Redaction Switch */}
         <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06] flex items-center justify-between">
           <div className="space-y-0.5">
@@ -151,7 +188,7 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
             <input
               type="text"
               readOnly
-              value={generatedLink}
+              value={generatedLink || '发送邀请后生成真实协作链接'}
               className="flex-1 bg-black/60 border border-white/[0.1] rounded-xl px-3 py-2 text-xs font-mono-code text-slate-300 focus:outline-none"
             />
             <button

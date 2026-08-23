@@ -121,9 +121,23 @@ export default function App() {
 
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
   const moduleHydratedRef = React.useRef<Record<string, boolean>>({});
+  const inviteHandledRef = React.useRef<string | null>(null);
   const [battlefield, setBattlefield] = useState<BattlefieldState>(INITIAL_SAAS_BATTLEFIELD);
   const [activeMainView, setActiveMainView] = useState<'WAR_ROOM' | 'CONCLAVES' | 'DECISION_BOARD' | 'CASE_LAB' | 'COGNITIVE_DNA' | 'MARKETPLACE' | 'WORLD_PULSE'>('WAR_ROOM');
   const [activeStandardTab, setActiveStandardTab] = useState<'interview' | 'cards' | 'simulation' | 'risks'>('interview');
+
+  useEffect(() => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId || typeof window === 'undefined') return;
+    const inviteId = new URLSearchParams(window.location.search).get('invite');
+    if (!inviteId || inviteHandledRef.current === inviteId) return;
+    inviteHandledRef.current = inviteId;
+    void sessionApi.updateCollaborator(battleId, inviteId, { action: 'accept' }).then(() => {
+      window.history.replaceState({}, '', `/?battle=${encodeURIComponent(battleId)}`);
+    }).catch(() => {
+      inviteHandledRef.current = null;
+    });
+  }, [session.activeBattle?.id]);
   
   // User Calibration & Sigil State
   const [isCalibrated, setIsCalibrated] = useState<boolean>(() => {
@@ -905,6 +919,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         isOpen={isCausalLinkModalOpen}
         onClose={() => setIsCausalLinkModalOpen(false)}
         battlefieldTitle={battlefield.title}
+        battleId={session.activeBattle?.id ?? battlefield.id}
       />
 
       {/* System Guide Modal */}
