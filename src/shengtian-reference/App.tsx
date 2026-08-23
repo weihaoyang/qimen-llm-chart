@@ -89,13 +89,14 @@ import type { CatalogScenario } from './session/api';
 
 function ScenarioChooser({ scenarios, error, onClone }: { scenarios: CatalogScenario[]; error: string | null; onClone: (scenarioId: string) => Promise<unknown> }) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   return (
     <main className="min-h-screen bg-[#04070d] text-slate-100 tactical-grid px-6 py-12">
       <div className="mx-auto max-w-6xl">
         <p className="font-mono-code text-xs tracking-[0.3em] text-cyan-400">SHENGTIAN BANZI / OFFICIAL CATALOG</p>
         <h1 className="mt-4 text-4xl font-black">选择一个现实战局，开始自己的推演</h1>
         <p className="mt-4 max-w-2xl text-slate-400">官方案例只读。点击复制后会创建属于你的战局，后续采访、策略、突破和复盘都只写入你的会话。</p>
-        {error ? <div className="mt-6 rounded-xl border border-amber-700/50 bg-amber-950/30 p-4 text-sm text-amber-200">{error}。请登录平台账户后复制案例。</div> : null}
+        {error || actionError ? <div className="mt-6 rounded-xl border border-amber-700/50 bg-amber-950/30 p-4 text-sm text-amber-200">{actionError ?? error}。请登录平台账户后复制案例。</div> : null}
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {scenarios.map((scenario) => (
             <article key={scenario.id} className="surface-card rounded-2xl p-5">
@@ -103,7 +104,7 @@ function ScenarioChooser({ scenarios, error, onClone }: { scenarios: CatalogScen
               <h2 className="mt-4 text-xl font-bold">{scenario.title}</h2>
               <p className="mt-2 text-sm text-slate-400">{scenario.subtitle}</p>
               <p className="mt-4 min-h-16 text-sm leading-6 text-slate-300">{scenario.description}</p>
-              <button className="mt-6 w-full rounded-xl bg-cyan-600 px-4 py-3 text-sm font-bold hover:bg-cyan-500 disabled:opacity-50" disabled={busy !== null} onClick={async () => { setBusy(scenario.id); try { await onClone(scenario.id); } finally { setBusy(null); } }}>{busy === scenario.id ? '正在创建战局…' : '复制到我的战局'}</button>
+              <button className="mt-6 w-full rounded-xl bg-cyan-600 px-4 py-3 text-sm font-bold hover:bg-cyan-500 disabled:opacity-50" disabled={busy !== null} onClick={async () => { setBusy(scenario.id); setActionError(null); try { await onClone(scenario.id); } catch (cloneError) { setActionError(cloneError instanceof Error ? cloneError.message : '复制案例失败，请稍后重试。'); } finally { setBusy(null); } }}>{busy === scenario.id ? '正在创建战局…' : '复制到我的战局'}</button>
             </article>
           ))}
         </div>
