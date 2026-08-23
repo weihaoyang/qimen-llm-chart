@@ -20,6 +20,7 @@ export type SessionBattle = {
   hardDeadline: string | null;
   scenarioId?: string | null;
   scenarioVersion?: number | null;
+  updatedAt: string;
 };
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {

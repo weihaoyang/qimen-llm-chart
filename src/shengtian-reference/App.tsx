@@ -83,6 +83,7 @@ import {
 import { generateDeciderSigil } from './utils/sigilGenerator';
 import { soundManager } from './utils/soundEffects';
 import { useBattleSession } from './session/useBattleSession';
+import { sessionApi } from './session/api';
 import type { CatalogScenario } from './session/api';
 
 function ScenarioChooser({ scenarios, error, onClone }: { scenarios: CatalogScenario[]; error: string | null; onClone: (scenarioId: string) => Promise<unknown> }) {
@@ -239,6 +240,19 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [isWarRoomsModalOpen, setIsWarRoomsModalOpen] = useState(false);
   const [selectedBattlefieldId, setSelectedBattlefieldId] = useState('saas-crisis');
 
+  const updateBattlefield = React.useCallback((updater: React.SetStateAction<BattlefieldState>) => {
+    setBattlefield(updater);
+  }, []);
+
+  useEffect(() => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId) return;
+    const timer = window.setTimeout(() => {
+      void fetch(`/api/battles/${battleId}`, { method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:battlefield.title, objective:battlefield.subtitle, minimumOutcome:'', idealOutcome:battlefield.idealOutcome ?? '', opponentSummary:'', hardDeadline:new Date(Date.now() + Math.max(1,battlefield.targetDeadlineDays) * 86400000).toISOString() }) });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [session.activeBattle?.id, battlefield.title, battlefield.subtitle, battlefield.idealOutcome, battlefield.targetDeadlineDays]);
+
   useEffect(() => {
     const battle = session.activeBattle;
     if (!battle) return;
@@ -286,6 +300,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     },
   ]);
 
+  useEffect(() => {
+    if (!session.battles.length) return;
+    const timer = window.setTimeout(() => setBattlefieldList(session.battles.map((battle) => ({ id:battle.id, title:battle.title, subtitle:battle.objective, status:battle.status === 'closed' ? 'STABLE' : 'CRITICAL', updatedAt:new Date(battle.updatedAt).toLocaleString(), isShared:false, daysLeft:battle.hardDeadline ? Math.max(1, Math.ceil((new Date(battle.hardDeadline).getTime() - Date.now()) / 86400000)) : 30, confidence:70, industry:'现实决策推演' }))), 0);
+    return () => window.clearTimeout(timer);
+  }, [session.battles]);
+
   const handleSelectBattlefield = (item: WarRoomItem) => {
     setSelectedBattlefieldId(item.id);
     setBattlefield(prev => ({
@@ -298,8 +318,13 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     soundManager.playBlip(750, 0.03);
   };
 
-  const handleCreateNewBattlefield = () => {
+  const handleCreateNewBattlefield = async () => {
     const newId = `battlefield-${Date.now()}`;
+    try {
+      const result = await sessionApi.create({ title:'新建现实决策战局', objective:'描述需要解决的现实问题', minimumOutcome:'', idealOutcome:'', opponentSummary:'', hardDeadline:new Date(Date.now() + 30 * 86400000).toISOString() });
+      await session.refresh();
+      setSelectedBattlefieldId(result.battle.id);
+    } catch { /* keep the local draft visible until the account is ready */ }
     const newBattlefield: WarRoomItem = {
       id: newId,
       title: '新建因果博弈战局',
@@ -666,14 +691,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           battlefield.breakthroughActive ? (
             <SingularityDeductionView
               battlefield={battlefield}
-              onUpdateBattlefield={setBattlefield}
+              onUpdateBattlefield={updateBattlefield}
               onExitSingularityMode={handleExitSingularity}
               onSaveDNARecord={handleSaveDNARecord}
             />
           ) : (
             <CausalWorkshopView
               battlefield={battlefield}
-              onUpdateBattlefield={setBattlefield}
+              onUpdateBattlefield={updateBattlefield}
               userProfile={userProfile}
               sigil={userProfile.sigil}
               onLaunchSingularity={() => setIsBreakthroughModalOpen(true)}
@@ -710,7 +735,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           <div className="space-y-4">
             <DecisionBoardView
               battlefield={battlefield}
-              onUpdateBattlefield={setBattlefield}
+              onUpdateBattlefield={updateBattlefield}
             />
           </div>
         )}
@@ -908,7 +933,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         isOpen={isEmotionalModalOpen}
         onClose={() => setIsEmotionalModalOpen(false)}
         battlefield={battlefield}
-        onUpdateBattlefield={setBattlefield}
+        onUpdateBattlefield={updateBattlefield}
       />
 
       {/* Value Calibrator Modal */}
@@ -916,7 +941,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         isOpen={isValueModalOpen}
         onClose={() => setIsValueModalOpen(false)}
         battlefield={battlefield}
-        onUpdateBattlefield={setBattlefield}
+        onUpdateBattlefield={updateBattlefield}
       />
 
       {/* Metaphysics Timing Modal */}
@@ -924,7 +949,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         isOpen={isMetaphysicsModalOpen}
         onClose={() => setIsMetaphysicsModalOpen(false)}
         battlefield={battlefield}
-        onUpdateBattlefield={setBattlefield}
+        onUpdateBattlefield={updateBattlefield}
       />
 
       {/* Silent Observer Alerts Modal */}
