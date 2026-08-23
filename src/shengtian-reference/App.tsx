@@ -386,6 +386,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       totalBattlesFoughtTogether: prev.totalBattlesFoughtTogether + 1,
       victoriesTogether: record.survivalOutcome === 'SURVIVED' ? prev.victoriesTogether + 1 : prev.victoriesTogether,
     }));
+    const battleId = session.activeBattle?.id;
+    if (battleId) {
+      void fetch(`/api/battles/${battleId}/reviews`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ outcome:record.survivalOutcome, facts:record.extractedDNA.join('\n'), whatChanged:record.userReflection, diagnosis:{ reasoning:{ expected:50, actual:75, note:'Decision DNA review' } }, nextAdjustment:record.fatalQuestion }) });
+    }
   };
 
   // Equity manipulation
