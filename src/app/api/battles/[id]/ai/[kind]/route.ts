@@ -5,6 +5,8 @@ import { createAiJob, failAiJob, finishAiJob, getAiJob, startAiJob } from "@/lib
 import { requestAgentAnalysis } from "@/lib/agent/chat";
 import { isUuid, asText } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
+import { replaceInventory } from "@/lib/battle/repository";
+import { createAdvice } from "@/lib/battle/extended-repository";
 
 const kinds = new Set(["interview", "cards", "red-team", "breakthrough", "review"]);
 const normalizeKind = (value: string) => value === "red-team" ? "red_team" : value;
@@ -12,6 +14,7 @@ const parseStructured = (value: string) => {
   try { const parsed = JSON.parse(value.replace(/^```json\s*/i, "").replace(/```$/i, "").trim()); return parsed && typeof parsed === "object" ? parsed : { analysis: value }; }
   catch { return { analysis: value }; }
 };
+const asArray = (value: unknown) => Array.isArray(value) ? value : [];
 
 export async function handleAiPost(request: Request, context: { params: Promise<{ id:string; kind?:string }> }, forcedKind?: string) {
   let reservationId = "";
@@ -40,6 +43,17 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     const question = asText(body?.question, 6000) || `请完成 ${kind} 模式的结构化现实推演。只返回合法 JSON，字段应包含 summary、facts、risks、actions、verificationSignals、stopConditions。`;
     const result = await requestAgentAnalysis({ mode:"research", researchTool:"battle", focus:kind, question, structuredText:JSON.stringify(input), jsonPayload:JSON.stringify(input), analysisProduct:"agent" });
     const structured = parseStructured(result.content);
+    if (kind === "cards") {
+      const cards = asArray(structured.cards ?? structured.assets).map((item, index) => {
+        const card = item && typeof item === "object" ? item as Record<string, unknown> : {};
+        return { category: card.category === "FINANCIAL" ? "cash" : card.category === "TIME" ? "time" : card.category === "INFO" ? "information" : "asset", label: String(card.title ?? card.label ?? `AI 底牌 ${index + 1}`).slice(0, 160), description: String(card.description ?? card.content ?? "AI 生成底牌，待用户核验。").slice(0, 6000), quantity: typeof card.numericValue === "number" ? card.numericValue : null, unit: typeof card.unit === "string" ? card.unit : null, availability: "available" as const, expiresAt: null, cost: {}, evidence: { source: "ai", jobId: created.jobId } };
+      });
+      if (cards.length) await replaceInventory(subject, id, cards as Parameters<typeof replaceInventory>[2]);
+    }
+    if (kind === "red_team" || kind === "breakthrough") {
+      const opinion = String(structured.critique ?? structured.summary ?? structured.analysis ?? "AI 已完成结构化推演，请人工审查。");
+      await createAdvice(subject, id, { targetType: "battle", targetId: null, opinion, rationale: JSON.stringify(structured).slice(0, 12000), uncertainty: "AI 输出必须由用户确认后才进入事实或行动。", source: { jobId: created.jobId, kind } });
+    }
     await finishAiJob(subject,id,created.jobId,structured,result.model);
     const usage = accessToken ? await commitPlatformUsage(accessToken,reservationId,{planCode:AGENT_PLAN_CODE}) : await commitPlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken});
     reservationId = "";

@@ -15,7 +15,7 @@ export class TacticalAIService {
     currentBattle: Partial<BattlefieldState>
   ): Promise<{ text: string; parameterExtracted?: { key: string; label: string; value: string | number } }> {
     try {
-      const response = await fetch(`/api/battles/${currentBattle.id}/interview`, {
+      const response = await fetch(`/api/battles/${currentBattle.id}/ai/interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -24,7 +24,8 @@ export class TacticalAIService {
         })
       });
       const data = await response.json();
-      const rawText = data.analysis || data.text || '';
+      const rawResult = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
+      const rawText = typeof rawResult === 'object' && rawResult ? String((rawResult as { assistantMessage?: unknown; summary?: unknown }).assistantMessage ?? (rawResult as { summary?: unknown }).summary ?? JSON.stringify(rawResult)) : String(rawResult ?? data.analysis ?? data.text ?? '');
       
       let text = rawText;
       let parameterExtracted = undefined;
@@ -79,13 +80,14 @@ export class TacticalAIService {
 
   public static async generateFatalQuestion(strategyName: string, battlefield: BattlefieldState): Promise<string> {
     try {
-      const response = await fetch(`/api/battles/${battlefield.id}/interview`, {
+      const response = await fetch(`/api/battles/${battlefield.id}/ai/interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: `请针对策略“${strategyName}”提出一个致命且具体的单句问题。` })
       });
       const data = await response.json();
-      return String(data.analysis || data.text || '').trim();
+      const result = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
+      return String(typeof result === 'string' ? result : result ? (result as { summary?: unknown }).summary ?? JSON.stringify(result) : data.analysis || data.text || '').trim();
     } catch (e) {
       return "如果在最坏的假设下，你是否依然能存活？";
     }

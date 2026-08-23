@@ -71,6 +71,7 @@ import {
   ArchonTierState,
   ArchonRealityProposal,
   AISymbioteState
+  , CardAsset
 } from './types';
 import { 
   INITIAL_SAAS_BATTLEFIELD, 
@@ -201,6 +202,30 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     void loadModules();
     return () => { cancelled = true; };
   }, [session.activeBattle?.id]);
+
+  useEffect(() => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId) return;
+    let cancelled = false;
+    void fetch(`/api/battles/${battleId}/inventory`, { credentials:'include' }).then(async (response) => {
+      if (!response.ok) return;
+      const payload = await response.json() as { inventory?: Array<Record<string, unknown>> };
+      if (cancelled || !Array.isArray(payload.inventory)) return;
+      const categoryMap: Record<string, CardAsset['category']> = { cash:'FINANCIAL', time:'TIME', information:'INFO', skill:'CHIPS', asset:'CHIPS', relationship:'CHIPS', credential:'CHIPS', channel:'CHIPS', energy:'CHIPS', other:'CHIPS' };
+      const assets: CardAsset[] = payload.inventory.map((item, index) => ({ id:String(item.id ?? `inventory-${index}`), category:categoryMap[String(item.category)] ?? 'CHIPS', title:String(item.label ?? '未命名底牌'), description:String(item.description ?? ''), tag:'FACT', confidence:80, numericValue:typeof item.quantity === 'number' ? item.quantity : undefined, unit:typeof item.unit === 'string' ? item.unit : undefined, createdAt:String(item.createdAt ?? new Date().toISOString()) }));
+      setBattlefield((previous) => ({ ...previous, assets }));
+      moduleHydratedRef.current['inventory'] = true;
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [session.activeBattle?.id]);
+
+  useEffect(() => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId || !moduleHydratedRef.current['inventory']) return;
+    const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
+    const timer = window.setTimeout(() => { void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) }); }, 450);
+    return () => window.clearTimeout(timer);
+  }, [session.activeBattle?.id, battlefield.assets]);
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
