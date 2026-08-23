@@ -6,15 +6,33 @@ import { requestAgentAnalysis } from "@/lib/agent/chat";
 import { isUuid, asText } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
 import { replaceInventory } from "@/lib/battle/repository";
-import { createAdvice } from "@/lib/battle/extended-repository";
+import { createAdvice, createReview } from "@/lib/battle/extended-repository";
 
 const kinds = new Set(["interview", "cards", "red-team", "breakthrough", "review"]);
 const normalizeKind = (value: string) => value === "red-team" ? "red_team" : value;
 const parseStructured = (value: string) => {
-  try { const parsed = JSON.parse(value.replace(/^```json\s*/i, "").replace(/```$/i, "").trim()); return parsed && typeof parsed === "object" ? parsed : { analysis: value }; }
-  catch { return { analysis: value }; }
+  try { const parsed = JSON.parse(value.replace(/^```json\s*/i, "").replace(/```$/i, "").trim()); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null; }
+  catch { return null; }
 };
 const asArray = (value: unknown) => Array.isArray(value) ? value : [];
+const requiredString = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+const validateStructured = (kind: string, value: Record<string, unknown> | null) => {
+  if (!value) return "模型没有返回合法 JSON 对象。";
+  const requirements: Record<string, string[]> = {
+    interview: ["assistantMessage", "extractedFacts", "extractedConstraints", "updatedFields", "nextQuestion", "confidence"],
+    cards: ["cards"],
+    red_team: ["critique", "biasWarning", "failureProbability", "fatalVulnerability", "suggestedFocus"],
+    breakthrough: ["phases", "strategies", "actions", "stopConditions"],
+    review: ["summary", "facts", "whatChanged", "diagnosis", "nextAdjustment"],
+  };
+  for (const key of requirements[kind] ?? []) if (!(key in value)) return `模型输出缺少字段：${key}`;
+  if (kind === "cards" && !Array.isArray(value.cards)) return "cards 必须是数组。";
+  for (const key of ["extractedFacts", "extractedConstraints", "updatedFields", "phases", "strategies", "actions", "stopConditions"]) if (key in value && !Array.isArray(value[key])) return `${key} 必须是数组。`;
+  for (const key of ["assistantMessage", "nextQuestion", "critique", "biasWarning", "fatalVulnerability", "suggestedFocus", "summary", "facts", "whatChanged", "nextAdjustment"]) if (key in value && !requiredString(value[key])) return `${key} 必须是非空文本。`;
+  if ("confidence" in value && (typeof value.confidence !== "number" || value.confidence < 0 || value.confidence > 1)) return "confidence 必须是 0 到 1 之间的数字。";
+  if ("failureProbability" in value && (typeof value.failureProbability !== "number" || value.failureProbability < 0 || value.failureProbability > 1)) return "failureProbability 必须是 0 到 1 之间的数字。";
+  return null;
+};
 
 export async function handleAiPost(request: Request, context: { params: Promise<{ id:string; kind?:string }> }, forcedKind?: string) {
   let reservationId = "";
@@ -42,7 +60,13 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     reservationId = reservation.reservation_id;
     const question = asText(body?.question, 6000) || `请完成 ${kind} 模式的结构化现实推演。只返回合法 JSON，字段应包含 summary、facts、risks、actions、verificationSignals、stopConditions。`;
     const result = await requestAgentAnalysis({ mode:"research", researchTool:"battle", focus:kind, question, structuredText:JSON.stringify(input), jsonPayload:JSON.stringify(input), analysisProduct:"agent" });
-    const structured = parseStructured(result.content);
+    const parsedStructured = parseStructured(result.content);
+    const schemaError = validateStructured(kind, parsedStructured);
+    if (schemaError) {
+      await failAiJob(subject, id, created.jobId, "invalid_structured_output", schemaError);
+      throw new Error(schemaError);
+    }
+    const structured = parsedStructured as Record<string, unknown>;
     if (kind === "cards") {
       const cards = asArray(structured.cards ?? structured.assets).map((item, index) => {
         const card = item && typeof item === "object" ? item as Record<string, unknown> : {};
@@ -53,6 +77,9 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     if (kind === "red_team" || kind === "breakthrough") {
       const opinion = String(structured.critique ?? structured.summary ?? structured.analysis ?? "AI 已完成结构化推演，请人工审查。");
       await createAdvice(subject, id, { targetType: "battle", targetId: null, opinion, rationale: JSON.stringify(structured).slice(0, 12000), uncertainty: "AI 输出必须由用户确认后才进入事实或行动。", source: { jobId: created.jobId, kind } });
+    }
+    if (kind === "review") {
+      await createReview(subject, id, { commitmentId: null, outcome: String(structured.summary), facts: String(structured.facts), whatChanged: String(structured.whatChanged), diagnosis: (structured.diagnosis && typeof structured.diagnosis === "object" && !Array.isArray(structured.diagnosis)) ? structured.diagnosis as Record<string, unknown> : {}, nextAdjustment: String(structured.nextAdjustment) });
     }
     await finishAiJob(subject,id,created.jobId,structured,result.model);
     const usage = accessToken ? await commitPlatformUsage(accessToken,reservationId,{planCode:AGENT_PLAN_CODE}) : await commitPlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken});
