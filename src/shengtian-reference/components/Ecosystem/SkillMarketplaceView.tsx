@@ -1,25 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/purity */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { 
-  ShoppingBag, 
   Coins, 
-  Sparkles, 
   Star, 
   Download, 
-  ShieldCheck, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Tag, 
   Check, 
-  Flame, 
-  HelpCircle,
-  Clock,
-  Layers,
-  Cpu,
-  FileText
 } from 'lucide-react';
-import { SkillMarketplaceItem, EquityTransaction } from '../../types';
-import { INITIAL_MARKETPLACE_ITEMS, INITIAL_EQUITY_ACCOUNT } from '../../data/presets';
+import { SkillMarketplaceItem } from '../../types';
+import { INITIAL_MARKETPLACE_ITEMS } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
 
@@ -37,11 +25,12 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
   onRequestPurchase,
 }) => {
   const [items] = useState<SkillMarketplaceItem[]>(INITIAL_MARKETPLACE_ITEMS);
-  const [ownedTemplateIds, setOwnedTemplateIds] = useState<string[]>(items.filter((item) => item.isOwned).map((item) => item.id));
+  // Ownership is authoritative in the platform entitlement/module response.
+  // Catalog `isOwned` flags are demo metadata and must never unlock a user's account.
+  const [ownedTemplateIds, setOwnedTemplateIds] = useState<string[]>([]);
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
   const equityBalance = userEquity ?? 0;
-  const [transactions] = useState<EquityTransaction[]>(INITIAL_EQUITY_ACCOUNT.transactions);
   const [filterType, setFilterType] = useState<'ALL' | 'TEMPLATE' | 'AI_KNOWLEDGE_PACK'>('ALL');
   const [activeTab, setActiveTab] = useState<'MARKET' | 'WALLET'>('MARKET');
 
@@ -267,28 +256,9 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {transactions.map((tx) => {
-              const isEarn = tx.amount > 0;
-              return (
-                <div key={tx.id} className="p-4 rounded-xl bg-black/60 border border-white/[0.06] flex items-center justify-between text-xs font-mono-code">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                      isEarn ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-red-950 text-red-300 border border-red-700'
-                    }`}>
-                      {isEarn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <span className="text-white font-bold block">{tx.title}</span>
-                      <span className="text-slate-500 text-[10px]">{tx.timestamp}</span>
-                    </div>
-                  </div>
-
-                  <span className={`text-sm font-bold ${isEarn ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    {isEarn ? `+${tx.amount}` : tx.amount} 点
-                  </span>
-                </div>
-              );
-            })}
+            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.06] text-xs text-slate-300 leading-relaxed">
+              平台权益流水由统一账户与支付平台维护，qmdj 不复制或缓存一份本地账本。当前页面只展示实时可用权益；完成平台购买或权益变更后，请刷新以重新读取账户状态。
+            </div>
           </div>
 
           <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-800/50 text-xs text-blue-200 leading-relaxed font-mono-code">
