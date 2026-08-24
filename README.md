@@ -79,6 +79,8 @@ npm test
 npm run build
 ```
 
+统一账户、邀请码兑换、游客凭证与 AI 权益链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
+
 ## 许可证
 
 本项目使用 `GNU GPL v3.0` 许可证，详见 [LICENSE](./LICENSE)。
