@@ -18,7 +18,6 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { AnonymousCaseStudy } from '../../types';
-import { INITIAL_ANONYMOUS_CASES } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
 import { TacticalAIService } from '../../services/aiService';
@@ -30,8 +29,8 @@ interface CaseStudyLabViewProps {
 export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   battleId,
 }) => {
-  const [cases, setCases] = useState<AnonymousCaseStudy[]>(INITIAL_ANONYMOUS_CASES);
-  const [selectedCaseId, setSelectedCaseId] = useState<string>(INITIAL_ANONYMOUS_CASES[0].id);
+  const [cases, setCases] = useState<AnonymousCaseStudy[]>([]);
+  const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [userSelectedChoiceId, setUserSelectedChoiceId] = useState<string | null>(null);
   const [hasSimulated, setHasSimulated] = useState<boolean>(false);
   const [bountyClaimed, setBountyClaimed] = useState<boolean>(false);
@@ -39,6 +38,25 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [stateHydrated, setStateHydrated] = useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void sessionApi.catalog().then(async ({ scenarios }) => {
+      const details = await Promise.all((scenarios ?? []).filter((scenario) => scenario.kind === 'case-study').map((scenario) => sessionApi.scenario(scenario.id)));
+      const loaded = details.map(({ scenario }) => {
+        const content = scenario.caseStudy as Record<string, unknown> | undefined;
+        const choices = Array.isArray(content?.choices) ? content.choices : [];
+        return {
+          id: String(scenario.id), title: String(scenario.title ?? ''), industry: String(scenario.industry ?? ''), authorPseudonym: String(content?.authorPseudonym ?? '官方匿名案例'), difficulty: content?.difficulty === 'EXTREME' ? 'EXTREME' : 'HIGH', backgroundSummary: String(content?.backgroundSummary ?? scenario.description ?? ''), coreDilemma: String(content?.coreDilemma ?? scenario.objective ?? ''), timeRunway: String(content?.timeRunway ?? `决策窗口 ${scenario.hardDeadlineDays ?? 0} 天`), financialStatus: String(content?.financialStatus ?? '待补充财务底牌'), choices: choices.map((choice) => { const item = choice as Record<string, unknown>; return { id:String(item.id ?? ''), name:String(item.name ?? ''), typeLabel:String(item.typeLabel ?? ''), description:String(item.description ?? ''), communityChoicePercent:Number(item.communityChoicePercent ?? 0), survivalRate:Number(item.survivalRate ?? 0), isAuthorActualChoice:item.isAuthorActualChoice === true }; }), authorActualOutcome:String(content?.authorActualOutcome ?? ''), keyTakeaway:String(content?.keyTakeaway ?? ''), totalSimulations:Number(content?.totalSimulations ?? 0), bountyReward:Number(content?.bountyReward ?? 0),
+        } as AnonymousCaseStudy;
+      });
+      if (!cancelled) {
+        setCases(loaded);
+        setSelectedCaseId((current) => loaded.some((item) => item.id === current) ? current : loaded[0]?.id ?? '');
+      }
+    }).catch((error) => { if (!cancelled) setSimulationError(error instanceof Error ? error.message : '官方案例目录读取失败，请重试。'); });
+    return () => { cancelled = true; };
+  }, []);
 
   React.useEffect(() => {
     if (!battleId) return;
@@ -67,6 +85,8 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   }, [battleId, stateHydrated, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult]);
 
   const activeCase = cases.find(c => c.id === selectedCaseId) || cases[0];
+
+  if (!activeCase) return <div className="rounded-2xl border border-amber-700/50 bg-amber-950/20 p-6 text-sm text-amber-200">正在加载官方匿名案例目录…</div>;
 
   const handleSelectChoice = (choiceId: string) => {
     setUserSelectedChoiceId(choiceId);

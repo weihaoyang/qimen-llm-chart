@@ -7,7 +7,6 @@ import {
   Check, 
 } from 'lucide-react';
 import { SkillMarketplaceItem } from '../../types';
-import { INITIAL_MARKETPLACE_ITEMS } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
 
@@ -24,7 +23,8 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
   userEquity,
   onRequestPurchase,
 }) => {
-  const [items] = useState<SkillMarketplaceItem[]>(INITIAL_MARKETPLACE_ITEMS);
+  const [items, setItems] = useState<SkillMarketplaceItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   // Ownership is authoritative in the platform entitlement/module response.
   // Catalog `isOwned` flags are demo metadata and must never unlock a user's account.
   const [ownedTemplateIds, setOwnedTemplateIds] = useState<string[]>([]);
@@ -33,6 +33,15 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
   const equityBalance = userEquity ?? 0;
   const [filterType, setFilterType] = useState<'ALL' | 'TEMPLATE' | 'AI_KNOWLEDGE_PACK'>('ALL');
   const [activeTab, setActiveTab] = useState<'MARKET' | 'WALLET'>('MARKET');
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void sessionApi.templates().then(({ templates }) => {
+      if (cancelled) return;
+      setItems((templates ?? []).map((item) => ({ ...item, type: item.type === 'AI_KNOWLEDGE_PACK' ? 'AI_KNOWLEDGE_PACK' : 'TEMPLATE', id: String(item.id), title: String(item.title ?? ''), author: String(item.author ?? ''), authorTitle: String(item.authorTitle ?? ''), price: Number(item.price ?? 0), rating: Number(item.rating ?? 0), downloads: Number(item.downloads ?? 0), tags: Array.isArray(item.tags) ? item.tags.filter((value): value is string => typeof value === 'string') : [], description: String(item.description ?? ''), includes: Array.isArray(item.includes) ? item.includes.filter((value): value is string => typeof value === 'string') : [], isOwned: false })) as SkillMarketplaceItem[]);
+    }).catch((error) => { if (!cancelled) setActivationError(error instanceof Error ? error.message : '技能市场目录读取失败，请重试。'); }).finally(() => { if (!cancelled) setCatalogLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   React.useEffect(() => {
     if (!battleId) return;
@@ -142,7 +151,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
       {/* Main View: Market Grid */}
       {activeTab === 'MARKET' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {filteredItems.map((item) => {
+          {catalogLoading ? <div className="col-span-full rounded-xl border border-white/[0.08] p-6 text-sm text-slate-400">正在加载官方技能目录…</div> : filteredItems.map((item) => {
             const isAI = item.type === 'AI_KNOWLEDGE_PACK';
 
             return (

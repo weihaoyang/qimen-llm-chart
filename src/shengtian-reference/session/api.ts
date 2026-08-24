@@ -44,6 +44,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const sessionApi = {
   catalog: () => request<{ scenarios: CatalogScenario[] }>("/api/scenarios"),
+  scenario: (id:string) => request<{ scenario: Record<string, unknown> }>(`/api/scenarios/${encodeURIComponent(id)}`),
+  templates: () => request<{ templates: Array<Record<string, unknown>> }>("/api/templates"),
   battles: () => request<{ battles: SessionBattle[] }>("/api/battles"),
   battle: (id:string) => request<{ battle: SessionBattle; scenario?: unknown }>(`/api/battles/${id}`),
   updateBattle: (id:string, input:Record<string, unknown>) => request<{ battle: SessionBattle }>(`/api/battles/${id}`, { method:"PATCH", body:JSON.stringify(input) }),
