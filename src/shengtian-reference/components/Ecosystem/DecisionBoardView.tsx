@@ -94,6 +94,10 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   }, [battleId, board, onUpdateBattlefield]);
 
   const handleCopyInviteLink = () => {
+    if (!board.roomId || !board.shareToken) {
+      setPersistenceMessage('当前战局还没有可用的分享令牌，请先通过战局协作邀请创建协作者。');
+      return;
+    }
     const link = `https://shengtianbanzi.ai/board/${board.roomId}?token=${board.shareToken}`;
     void navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
@@ -162,14 +166,14 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
     const newGhost: GhostStrategyBranch = {
       id: `ghost-${Date.now()}`,
-      creatorName: '外部特邀参谋 (顾问)',
-      creatorRoleTitle: '特聘战略顾问',
+      creatorName: '你 (指挥官)',
+      creatorRoleTitle: '用户提交的幽灵策略',
       strategyName: ghostName.trim(),
       coreThesis: ghostThesis.trim(),
       estimatedSurvivalProb: ghostProb,
-      suggestedAction: ghostAction.trim() || '立即制定该平行分支的执行细则并推演',
-      pros: ghostPros.trim() || '避开正面绞杀，开辟全新资源通道',
-      cons: ghostCons.trim() || '需要让渡部分权益或投入额外协调成本',
+      suggestedAction: ghostAction.trim() || '待补充执行动作',
+      pros: ghostPros.trim() || '待补充优势',
+      cons: ghostCons.trim() || '待补充代价与风险',
     };
 
     onUpdateBattlefield(prev => ({
@@ -189,9 +193,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     soundManager.playSuccess();
   };
 
-  const displayTitle = isRedacted 
-    ? '【脱敏代号：ALPHA-09】核心业务大客户续约与现金流生命线博弈'
-    : battlefield.title;
+  const displayTitle = isRedacted ? `【脱敏战局】${battlefield.title}` : battlefield.title;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

@@ -123,6 +123,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   const [selectedEvent, setSelectedEvent] = useState<EnhancedPulseEvent | null>(GLOBAL_EVENTS[0]);
   const [rotAngle, setRotAngle] = useState(0);
   const [isObservingOnly, setIsObservingOnly] = useState(false);
+  const [observationSummary, setObservationSummary] = useState<string | null>(null);
   const [tickerOffset, setTickerOffset] = useState(0);
   const [intervenedEvents, setIntervenedEvents] = useState<string[]>([]);
   const [usageError, setUsageError] = useState<string | null>(null);
@@ -401,11 +402,11 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
               <span>世界脉搏 · 宏观决策情报网</span>
               <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-red-950/80 text-red-400 border border-red-800/80 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
-                LIVE
+                OFFICIAL CATALOG
               </span>
             </h3>
             <p className="text-xs text-slate-400 font-mono-code mt-0.5">
-              MACRO STRATEGIC ADVISORY FEED / SYNC: 99.8%
+              MACRO STRATEGIC CASE LIBRARY / EXTERNAL CONNECTORS NOT CONNECTED
             </p>
           </div>
         </div>
@@ -564,7 +565,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
               <div className="space-y-2">
                 <span className="text-[10px] font-mono-code text-slate-500 flex items-center gap-1">
                   <Wifi className="w-3 h-3" />
-                  实时情报流截获 (LIVE INTEL):
+                  官方案例信号（非实时外部数据）:
                 </span>
                 <div className="bg-black/80 rounded-xl border border-white/[0.05] p-3 space-y-2 font-mono-code text-[11px]">
                   {selectedEvent.intelLogs.map((log, idx) => (
@@ -584,7 +585,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
               <div className="flex items-center justify-between text-[11px] font-mono-code">
                 <span className="flex items-center gap-1.5 text-slate-400 text-xs">
                   <Users className="w-4 h-4 text-cyan-500" />
-                  {selectedEvent.activeObservers} 战略顾问参与
+                  官方演示样本：{selectedEvent.activeObservers} 条观察记录
                 </span>
                 <span className="text-amber-400 font-bold bg-amber-950/30 px-2.5 py-1.5 rounded-lg border border-amber-900/50 text-xs">
                   系统算力分配: {selectedEvent.equityCostToIntervene} EQT
@@ -595,6 +596,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
                 <button
                   onClick={() => {
                     setIsObservingOnly(true);
+                    setObservationSummary(`${selectedEvent.title}的核心教训：${selectedEvent.riddleDescription} 重点观察行业：${selectedEvent.sectors.join('、')}。`);
                     soundManager.playBlip(600, 0.03);
                   }}
                   className="py-3 px-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-sm font-mono-code text-slate-300 border border-white/[0.1] transition-colors flex items-center justify-center gap-2"
@@ -613,9 +615,10 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
 
               {isObservingOnly && (
                 <div className="text-[10px] text-cyan-400 font-mono-code text-center pt-2 animate-pulse">
-                  » 案卷提取中。系统正在生成宏观历史教训... «
+                  » 已提取官方案例教训（不代表实时外部信号） «
                 </div>
               )}
+              {observationSummary && <div className="rounded-xl border border-cyan-800/60 bg-cyan-950/30 p-3 text-xs leading-relaxed text-cyan-100">{observationSummary}</div>}
               {usageError && <div className="text-center text-xs text-red-300">{usageError}</div>}
             </div>
           )}
@@ -626,7 +629,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
       <div className="mt-4 h-8 bg-black/60 rounded-lg border border-white/[0.08] overflow-hidden flex items-center px-3 shrink-0 relative">
         <div className="flex items-center gap-2 text-[10px] font-mono-code text-red-400 font-bold z-10 bg-black/60 pr-4 h-full border-r border-white/[0.08]">
           <ShieldAlert className="w-3.5 h-3.5" />
-          <span>GLOBAL FEED</span>
+          <span>CASE NOTES</span>
         </div>
         <div className="flex-1 overflow-hidden relative h-full flex items-center">
           <div 

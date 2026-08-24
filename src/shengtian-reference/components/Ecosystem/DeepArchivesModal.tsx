@@ -128,13 +128,12 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
     soundManager.playBlip(600, 0.1);
     setIsRestoring(true);
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       setIsRestoring(false);
-      setArchives(prev =>
-        prev.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a))
-      );
+      const nextArchives = archives.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a));
+      setArchives(nextArchives);
       setSelectedArchive(prev => ({ ...prev, isUnlocked: true }));
-      if (battleId) void sessionApi.saveModule(battleId, 'deep-archives', { unlockedIds: archives.filter((item) => item.isUnlocked || item.id === archive.id).map((item) => item.id) }).catch(() => undefined);
+      if (battleId) void sessionApi.saveModule(battleId, 'deep-archives', { unlockedIds: nextArchives.filter((item) => item.isUnlocked).map((item) => item.id) }).catch((error) => setUsageError(error instanceof Error ? error.message : '档案解锁状态保存失败，请重试。'));
       soundManager.playStrategyLocked();
       confetti({
         particleCount: 70,

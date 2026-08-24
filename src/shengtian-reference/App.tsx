@@ -59,6 +59,7 @@ import { TacticalSensoryModal } from './components/Navigation/TacticalSensoryMod
 
 import { 
   BattlefieldState, 
+  DecisionBoardState,
   DecisionDNARecord,
   AIPersonaType,
   SilentObserverAlert,
@@ -118,7 +119,16 @@ export default function App() {
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
   const moduleHydratedRef = React.useRef<Record<string, boolean>>({});
   const inviteHandledRef = React.useRef<string | null>(null);
-  const [battlefield, setBattlefield] = useState<BattlefieldState>(INITIAL_SAAS_BATTLEFIELD);
+  const emptyDecisionBoard: DecisionBoardState = {
+    roomId: '',
+    shareToken: '',
+    expiresInHours: 0,
+    isRedacted: true,
+    members: [],
+    comments: [],
+    ghostStrategies: [],
+  };
+  const [battlefield, setBattlefield] = useState<BattlefieldState>(() => ({ ...INITIAL_SAAS_BATTLEFIELD, decisionBoard: emptyDecisionBoard }));
   const [activeMainView, setActiveMainView] = useState<'WAR_ROOM' | 'CONCLAVES' | 'DECISION_BOARD' | 'CASE_LAB' | 'COGNITIVE_DNA' | 'MARKETPLACE' | 'WORLD_PULSE'>('WAR_ROOM');
   const [activeStandardTab, setActiveStandardTab] = useState<'interview' | 'cards' | 'simulation' | 'risks'>('interview');
 
