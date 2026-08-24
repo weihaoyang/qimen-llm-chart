@@ -128,4 +128,26 @@ export class TacticalAIService {
       throw e instanceof Error ? e : new Error('致命问题服务暂时不可用，请重试。');
     }
   }
+
+  public static async generateReview(
+    battlefield: BattlefieldState,
+    strategyName: string,
+    reflection: string,
+    fatalQuestion: string,
+  ): Promise<Record<string, unknown>> {
+    const response = await fetch(`/api/battles/${battlefield.id}/ai/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idempotencyKey: `breakthrough-review:${battlefield.id}:${strategyName}:${reflection.slice(0, 80)}`,
+        question: `请复盘战局“${battlefield.title}”中策略“${strategyName}”。致命问题：${fatalQuestion}。用户反思：${reflection}。严格返回 review JSON，并把可执行的决策DNA规律放入 facts 或 nextAdjustment。`,
+        review: { strategyName, fatalQuestion, reflection },
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : `复盘请求失败（${response.status}）`);
+    const result = await resolveJob(battlefield.id, data.job);
+    if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('复盘没有返回结构化结果。');
+    return result as Record<string, unknown>;
+  }
 }

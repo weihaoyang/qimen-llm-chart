@@ -20,6 +20,7 @@ import { BattlefieldState, AsymmetricStrategyPackage } from '../../types';
 import { ASYMMETRIC_STRATEGY_PACKAGES } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 import { Compass, Moon } from 'lucide-react';
+import { sessionApi } from '../../session/api';
 
 interface Phase3SandTableProps {
   battlefield: BattlefieldState;
@@ -39,6 +40,8 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   const [selectedStrategyKey, setSelectedStrategyKey] = useState<'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH'>(battlefield.lockedAsymmetricStrategyId ?? 'FIELD_SHIFT');
   const [activePivotalModal, setActivePivotalModal] = useState<{ day: number; label: string; risk: string } | null>(null);
   const [isLocked, setIsLocked] = useState(Boolean(battlefield.lockedAsymmetricStrategyId));
+  const [isLocking, setIsLocking] = useState(false);
+  const [lockError, setLockError] = useState<string | null>(null);
 
   const currentPkg = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyKey];
 
@@ -47,14 +50,37 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
     soundManager.playBlip(700, 0.03);
   };
 
-  const handleLockStrategy = () => {
-    setIsLocked(true);
-    soundManager.playStrategyLocked();
-
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      lockedAsymmetricStrategyId: selectedStrategyKey,
-    }));
+  const handleLockStrategy = async () => {
+    if (isLocking || isLocked) return;
+    setIsLocking(true);
+    setLockError(null);
+    try {
+      const { junctions } = await sessionApi.analysis(battlefield.id);
+      const junctionId = typeof (junctions[0] as { id?: unknown } | undefined)?.id === 'string' ? (junctions[0] as { id: string }).id : null;
+      if (!junctionId) throw new Error('当前战局还没有因果节点，无法生成正式落子令。请先完成采访或路径分析。');
+      const kind = selectedStrategyKey === 'LEVERAGE_STRIKE' ? 'strong_attack' : selectedStrategyKey === 'SCORCHED_EARTH' ? 'hedge' : 'probe';
+      const saved = await sessionApi.saveMoves(battlefield.id, junctionId, [{
+        kind,
+        title: currentPkg.name,
+        rationale: currentPkg.coreIdea,
+        keyVariable: currentPkg.primaryLever,
+        cost: { resources: currentPkg.resourceList, sacrifice: currentPkg.sacrificeList },
+        validation: { signal: currentPkg.successSignal, indicators: currentPkg.leadingIndicators },
+        stop: { criteria: currentPkg.abortCriteria },
+        actions: [{ title: currentPkg.initialFirstStep, description: currentPkg.initialFirstStep, owner: '用户', dueAt: null }],
+        source: { layer: 'breakthrough_sand_table', strategyId: selectedStrategyKey },
+      }]);
+      const moveId = (saved.moves[0] as { id?: unknown } | undefined)?.id;
+      if (!moveId) throw new Error('策略草案保存成功但未返回策略标识。');
+      await sessionApi.commitMove(battlefield.id, String(moveId));
+      setIsLocked(true);
+      soundManager.playStrategyLocked();
+      onUpdateBattlefield(prev => ({ ...prev, lockedAsymmetricStrategyId: selectedStrategyKey }));
+    } catch (error) {
+      setLockError(error instanceof Error ? error.message : '策略锁定失败，请重试。');
+    } finally {
+      setIsLocking(false);
+    }
   };
 
   const handleNext = () => {
@@ -341,6 +367,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          {lockError && <span className="text-xs text-red-300 max-w-xs">{lockError}</span>}
           {onOpenValueModal && (
             <button
               onClick={onOpenValueModal}
@@ -366,10 +393,11 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
           {!isLocked ? (
             <button
               onClick={handleLockStrategy}
+              disabled={isLocking}
               className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold font-mono-code text-xs flex items-center gap-2 shadow-xl shadow-red-900/60 transition-all cursor-pointer"
             >
               <Lock className="w-4 h-4" />
-              <span>锁定破局策略</span>
+              <span>{isLocking ? '正在保存并锁定…' : '锁定破局策略'}</span>
             </button>
           ) : (
             <button

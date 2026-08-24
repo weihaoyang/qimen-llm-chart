@@ -18,7 +18,7 @@ import { soundManager } from '../../utils/soundEffects';
 
 interface Phase4AutopsyProps {
   battlefield: BattlefieldState;
-  onSaveDNARecord: (record: DecisionDNARecord) => void;
+  onSaveDNARecord: (record: DecisionDNARecord) => Promise<void> | void;
   onReturnToStandardMode: () => void;
 }
 
@@ -40,35 +40,43 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
     return () => { cancelled = true; };
   }, [selectedStrategy.name, battlefield.id]);
   
-  const [reflectionText, setReflectionText] = useState(
-    '在公司发展早期，为了追求单点快速增长，过度依赖单一客户（占收入40%），没有建立健康的客户结构防线。这个错误在18个月前签第一单时就已埋下。'
-  );
+  const [reflectionText, setReflectionText] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveAndExit = () => {
+  const handleSaveAndExit = async () => {
+    if (!reflectionText.trim() || fatalQuestionError || isSaving) {
+      setSaveError('请先完成反思，并确保致命问题已成功生成。');
+      return;
+    }
+    setIsSaving(true);
+    setSaveError(null);
     soundManager.playBlip(1000, 0.06);
-
-    const dnaRecord: DecisionDNARecord = {
-      id: `dna-${Date.now()}`,
-      battlefieldTitle: battlefield.title,
-      timestamp: new Date().toLocaleDateString(),
-      selectedStrategy: selectedStrategy.codeName,
-      survivalOutcome: 'SURVIVED',
-      fatalQuestion: fatalQuestion,
-      userReflection: reflectionText,
-      extractedDNA: [
-        '【警惕单一客户收入占比>30%致命依赖】',
-        '【高压商业环境下人脉信任度衰减0.6x】',
-        '【绝不在现金跑道跌破60天后开启被动防守】',
-      ],
-    };
-
-    onSaveDNARecord(dnaRecord);
-    setIsSaved(true);
-
-    setTimeout(() => {
-      onReturnToStandardMode();
-    }, 1200);
+    try {
+      const review = await TacticalAIService.generateReview(battlefield, selectedStrategy.name, reflectionText.trim(), fatalQuestion);
+      const facts = String(review.facts ?? '').trim();
+      const nextAdjustment = String(review.nextAdjustment ?? '').trim();
+      const summary = String(review.summary ?? '').trim();
+      const extractedDNA = [facts, nextAdjustment, summary].filter((value, index, values) => value && values.indexOf(value) === index);
+      if (!extractedDNA.length) throw new Error('复盘结果没有可提炼的决策DNA。');
+      await onSaveDNARecord({
+        id: `dna-${Date.now()}`,
+        battlefieldTitle: battlefield.title,
+        timestamp: new Date().toISOString(),
+        selectedStrategy: selectedStrategy.codeName,
+        survivalOutcome: 'LESSON_LEARNED',
+        fatalQuestion,
+        userReflection: reflectionText.trim(),
+        extractedDNA,
+      });
+      setIsSaved(true);
+      setTimeout(() => onReturnToStandardMode(), 1200);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '复盘保存失败，请重试。');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -96,8 +104,8 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
 
           <div className="text-right shrink-0">
             <span className="text-[11px] text-slate-400 font-mono-code block">战局推演结果</span>
-            <span className="text-xs font-mono-code font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-700">
-              ✓ 生存通道已打通
+              <span className="text-xs font-mono-code font-bold text-amber-300 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-700">
+              待复盘确认
             </span>
           </div>
         </div>
@@ -201,6 +209,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
           disabled={isSaved}
           className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 shadow-xl transition-all cursor-pointer"
         >
+          {saveError && <span className="text-xs text-red-300 max-w-sm">{saveError}</span>}
           {isSaved ? (
             <>
               <CheckCircle2 className="w-4 h-4 text-emerald-300" />
@@ -209,7 +218,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
           ) : (
             <>
               <Dna className="w-4 h-4 text-amber-300" />
-              <span>确认存档，锻造决策DNA并退出</span>
+              <span>{isSaving ? '正在生成并保存复盘…' : '确认存档，锻造决策DNA并退出'}</span>
             </>
           )}
         </button>

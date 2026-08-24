@@ -467,21 +467,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     return () => window.clearTimeout(timer);
   }, [session.activeBattle?.id, dnaRecords]);
 
-  const handleSaveDNARecord = (record: DecisionDNARecord) => {
+  const handleSaveDNARecord = async (record: DecisionDNARecord) => {
+    const battleId = session.activeBattle?.id;
+    if (battleId) {
+      const memory = await sessionApi.saveMemory({ battleId, title: record.battlefieldTitle, memory: { userKeyChoice: record.selectedStrategy, outcome: record.survivalOutcome, outcomeLabel: record.survivalOutcome, memoryQuote: record.userReflection, lessonLearned: record.extractedDNA.join('；'), timestamp: record.timestamp }, source: { type: 'decision_dna', recordId: record.id } });
+      if (!memory) throw new Error('决策记忆保存失败，请重试。');
+    }
     const updated = [record, ...dnaRecords];
     setDnaRecords(updated);
-    // Gain bond EXP with Symbiote on completing deduction
+    // Gain bond EXP with Symbiote only after the server-side memory is saved.
     setSymbioteState(prev => ({
       ...prev,
       bondExp: Math.min(prev.maxBondExp, prev.bondExp + 50),
       totalBattlesFoughtTogether: prev.totalBattlesFoughtTogether + 1,
       victoriesTogether: record.survivalOutcome === 'SURVIVED' ? prev.victoriesTogether + 1 : prev.victoriesTogether,
     }));
-    const battleId = session.activeBattle?.id;
-    if (battleId) {
-      void fetch(`/api/battles/${battleId}/reviews`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ outcome:record.survivalOutcome, facts:record.extractedDNA.join('\n'), whatChanged:record.userReflection, diagnosis:{ reasoning:{ expected:50, actual:75, note:'Decision DNA review' } }, nextAdjustment:record.fatalQuestion }) });
-      void sessionApi.saveMemory({ battleId, title: record.battlefieldTitle, memory: { userKeyChoice: record.selectedStrategy, outcome: record.survivalOutcome, outcomeLabel: record.survivalOutcome, memoryQuote: record.userReflection, lessonLearned: record.extractedDNA.join('；'), timestamp: record.timestamp }, source: { type: 'decision_dna', recordId: record.id } }).catch(() => undefined);
-    }
   };
 
   // Equity manipulation
