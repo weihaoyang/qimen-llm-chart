@@ -9,10 +9,8 @@ import {
   restorePlatformAccessState,
 } from "@/lib/platform/browser";
 import { savePlatformFlashMessage } from "@/lib/platform/flash";
-import { createPlatformClient } from "@/lib/platform/client";
 import { requirePlatformClientConfig } from "@/lib/platform/config";
 import { clearPlatformSession, savePlatformSession } from "@/lib/platform/session";
-import type { PlatformSession } from "@singularity-sequence/web-sdk";
 
 export default function PlatformCallbackPage() {
   const [message, setMessage] = useState("正在恢复平台登录状态。");
@@ -35,29 +33,18 @@ export default function PlatformCallbackPage() {
           throw new Error("登录授权已过期或来源校验失败，请返回首页重新登录。");
         }
         const redirectUri = `${window.location.origin}/auth/platform-callback`;
-        const result = await createPlatformClient().exchangeOAuthCode(
-          callback.code,
-          config.productCode,
-          redirectUri,
-          oauthRequest.verifier,
-        );
-        const tokenSession = result.session as PlatformSession;
+        const bridge = await fetch("/api/platform/session", {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: callback.code, verifier: oauthRequest.verifier, redirect_uri: redirectUri }),
+        });
+        const result = await bridge.json().catch(() => ({}));
+        if (!bridge.ok) throw new Error(result.error ?? "平台登录交换失败，请重试。");
         const session = {
           ...result.session,
           access_token: "",
           refresh_token: "",
           csrf_token: result.csrf_token,
         };
-        const bridgeResponse = await fetch("/api/platform/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            access_token: tokenSession.access_token,
-            refresh_token: tokenSession.refresh_token,
-            csrf_token: result.csrf_token,
-          }),
-        });
-        if (!bridgeResponse.ok) throw new Error("无法保存排盘工作台登录状态，请重试。");
         savePlatformSession(session);
         await restorePlatformAccessState(session);
         window.history.replaceState({}, document.title, window.location.pathname);
