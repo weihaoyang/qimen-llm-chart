@@ -14,18 +14,30 @@ import {
 } from 'lucide-react';
 import { BattlefieldState, RiskBreaker } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface RiskMonitorTabProps {
   battlefield: BattlefieldState;
+  battleId: string;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onLaunchBreakthrough: () => void;
 }
 
 export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
   battlefield,
+  battleId,
   onUpdateBattlefield,
   onLaunchBreakthrough,
 }) => {
+  React.useEffect(() => {
+    let cancelled = false;
+    void sessionApi.module(battleId, 'risk-monitor').then(({ state }) => {
+      const breakers = (state as { riskBreakers?: unknown } | null)?.riskBreakers;
+      if (!cancelled || !Array.isArray(breakers)) return;
+      onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers as BattlefieldState['riskBreakers'] }));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId, onUpdateBattlefield]);
   const toggleRiskTrigger = (riskId: string) => {
     onUpdateBattlefield(prev => {
       const updated = prev.riskBreakers.map(r => {
@@ -49,6 +61,8 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
         riskBreakers: updated,
       };
     });
+    const next = battlefield.riskBreakers.map(r => r.id === riskId ? { ...r, isTriggered: !r.isTriggered, triggeredAt: !r.isTriggered ? new Date().toISOString() : undefined } : r);
+    void sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: next }).catch(() => undefined);
   };
 
   const triggeredCount = battlefield.riskBreakers.filter(r => r.isTriggered).length;

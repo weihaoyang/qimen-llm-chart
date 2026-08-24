@@ -333,6 +333,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
           {activeStandardTab === 'risks' && (
             <RiskMonitorTab
               battlefield={battlefield}
+              battleId={battleId}
               onUpdateBattlefield={onUpdateBattlefield as any}
               onLaunchBreakthrough={onLaunchSingularity}
             />

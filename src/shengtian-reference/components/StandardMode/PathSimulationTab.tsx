@@ -53,6 +53,8 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   const [selectedCardsForNewStrategy, setSelectedCardsForNewStrategy] = useState<string[]>([]);
   const [hoveredStratId, setHoveredStratId] = useState<string | null>(null);
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
+  const [activeCommitmentId, setActiveCommitmentId] = useState<string | null>(null);
+  const [commitPending, setCommitPending] = useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -64,6 +66,14 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void sessionApi.commitment(battleId).then(({ commitment }) => {
+      if (!cancelled) setActiveCommitmentId(commitment ? String(commitment.moveId) : null);
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId]);
 
   const handleOpenAddStrategy = (type: StrategyType) => {
     setActiveStrategyTypeModal(type);
@@ -104,12 +114,30 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     void sessionApi.analysis(battleId).then(async ({ junctions }) => {
       const junctionId = junctions[0]?.id;
       if (!junctionId) { setPersistenceMessage('策略已保存在当前草稿；创建因果节点后才能写入服务端。'); return; }
-      await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [] }]);
+      const saved = await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [] }]);
+      const persisted = saved.moves[0] as Record<string, unknown> | undefined;
+      if (persisted?.id) onUpdateBattlefield(previous => ({ ...previous, strategies: previous.strategies.map(item => item.id === newStrat.id ? { ...item, id: String(persisted.id) } : item) }));
       setPersistenceMessage('策略草案已写入战局。');
     }).catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '策略保存失败，请重试。'));
 
     setActiveStrategyTypeModal(null);
     soundManager.playBlip(850, 0.04);
+  };
+
+  const handleCommitStrategy = async (strategyId: string) => {
+    if (!/^[0-9a-f-]{36}$/i.test(strategyId)) {
+      setPersistenceMessage('该策略仍在本地草稿状态，请先保存成功后再锁定。');
+      return;
+    }
+    setCommitPending(strategyId);
+    try {
+      const result = await sessionApi.commitMove(battleId, strategyId);
+      setActiveCommitmentId(String(result.commitment.moveId));
+      onUpdateBattlefield(previous => ({ ...previous, strategies: previous.strategies.map(item => ({ ...item, status: item.id === strategyId ? 'LOCKED' : item.status })) }));
+      setPersistenceMessage('策略已锁定并生成落子令。');
+    } catch (error) {
+      setPersistenceMessage(error instanceof Error ? error.message : '策略锁定失败，请重试。');
+    } finally { setCommitPending(null); }
   };
 
   const handleDeleteStrategy = (stratId: string) => {
@@ -451,7 +479,10 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
 
                   <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono-code">
                     <span className="text-slate-400">预估突破存活率:</span>
-                    <span className="font-black text-emerald-400 text-sm">{strat.estimatedSurvivalProb}%</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-emerald-400 text-sm">{strat.estimatedSurvivalProb}%</span>
+                      {activeCommitmentId === strat.id || strat.status === 'LOCKED' ? <span className="text-[10px] text-emerald-300">已锁定</span> : <button onClick={() => void handleCommitStrategy(strat.id)} disabled={commitPending === strat.id} className="rounded bg-blue-700 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50">{commitPending === strat.id ? '锁定中…' : '锁定策略'}</button>}
+                    </div>
                   </div>
                 </div>
               );
