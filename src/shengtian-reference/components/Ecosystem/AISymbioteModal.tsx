@@ -70,9 +70,9 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   };
 
   const handleSetMemoryConsent = async (id: string, consentStatus: 'active' | 'paused' | 'revoked') => {
-    const row = (await sessionApi.memories()).memories.find((item) => String(item.id) === id);
-    if (!row) return;
     try {
+      const row = (await sessionApi.memories()).memories.find((item) => String(item.id) === id);
+      if (!row) throw new Error('记忆不存在或已被删除。');
       await sessionApi.saveMemory({ id, battleId: row.battleId as string | null | undefined, title: String(row.title ?? '未命名记忆'), memory: (row.memory as Record<string, unknown>) ?? {}, source: (row.source as Record<string, unknown>) ?? {}, consentStatus });
       setMemoryStatuses((current) => ({ ...current, [id]: consentStatus }));
     } catch (error) { setMemoryError(error instanceof Error ? error.message : '更新记忆授权失败，请重试。'); }
