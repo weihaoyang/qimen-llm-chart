@@ -41,6 +41,8 @@ interface WarRoomsModalProps {
   selectedBattlefieldId: string;
   onSelectBattlefield: (item: WarRoomItem) => void;
   onCreateNewBattlefield: () => void;
+  onArchiveBattlefield: (item: WarRoomItem) => void | Promise<void>;
+  onDeleteBattlefield: (item: WarRoomItem) => void | Promise<void>;
   onOpenCausalLinkModal: () => void;
   onOpenRealityEchoesModal: () => void;
   onOpenArchonSanctumModal: () => void;
@@ -59,6 +61,8 @@ export const WarRoomsModal: React.FC<WarRoomsModalProps> = ({
   selectedBattlefieldId,
   onSelectBattlefield,
   onCreateNewBattlefield,
+  onArchiveBattlefield,
+  onDeleteBattlefield,
   onOpenCausalLinkModal,
   onOpenRealityEchoesModal,
   onOpenArchonSanctumModal,
@@ -174,7 +178,7 @@ export const WarRoomsModal: React.FC<WarRoomsModalProps> = ({
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  已归档 ({battlefieldList.filter(b => b.status === 'ARCHIVED').length || 12})
+                  已归档 ({battlefieldList.filter(b => b.status === 'ARCHIVED').length})
                 </button>
               </div>
             </div>
@@ -249,9 +253,10 @@ export const WarRoomsModal: React.FC<WarRoomsModalProps> = ({
                         <strong className="text-cyan-300">{item.confidence}%</strong>
                       </div>
 
-                      <div className="flex items-center gap-1 text-blue-400 font-bold text-[11px] group-hover:translate-x-0.5 transition-transform">
-                        <span>载入推演</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                      <div className="flex items-center gap-2">
+                        <button onClick={(event) => { event.stopPropagation(); void onArchiveBattlefield(item); }} className="rounded-lg border border-amber-700/60 px-2 py-1 text-[10px] text-amber-300 hover:bg-amber-950/50">{item.status === 'ARCHIVED' ? '取消归档' : '归档'}</button>
+                        <button onClick={(event) => { event.stopPropagation(); void onDeleteBattlefield(item); }} className="rounded-lg border border-red-700/60 px-2 py-1 text-[10px] text-red-300 hover:bg-red-950/50">删除</button>
+                        <span className="flex items-center gap-1 text-blue-400 font-bold text-[11px] group-hover:translate-x-0.5 transition-transform"><span>载入推演</span><ArrowRight className="w-3.5 h-3.5" /></span>
                       </div>
                     </div>
                   </div>

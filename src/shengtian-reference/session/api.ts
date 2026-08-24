@@ -46,6 +46,8 @@ export const sessionApi = {
   catalog: () => request<{ scenarios: CatalogScenario[] }>("/api/scenarios"),
   battles: () => request<{ battles: SessionBattle[] }>("/api/battles"),
   battle: (id:string) => request<{ battle: SessionBattle; scenario?: unknown }>(`/api/battles/${id}`),
+  updateBattle: (id:string, input:Record<string, unknown>) => request<{ battle: SessionBattle }>(`/api/battles/${id}`, { method:"PATCH", body:JSON.stringify(input) }),
+  deleteBattle: (id:string) => request<{ deleted:boolean }>(`/api/battles/${id}`, { method:"DELETE", body:JSON.stringify({ confirmation:"DELETE" }) }),
   analysis: (id:string) => request<{ junctions: Array<{ id:string }>; moves: Array<Record<string, unknown>> }>(`/api/battles/${id}/analysis`),
   saveMoves: (id:string, junctionId:string, moves:Array<Record<string, unknown>>) => request<{ moves: unknown[] }>(`/api/battles/${id}/moves`, { method:"POST", body:JSON.stringify({ junctionId, moves }) }),
   deleteMove: (id:string, moveId:string) => request<{ deleted:boolean }>(`/api/battles/${id}/moves?moveId=${encodeURIComponent(moveId)}`, { method:"DELETE" }),

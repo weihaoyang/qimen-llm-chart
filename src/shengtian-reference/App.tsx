@@ -384,11 +384,13 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     if (!session.battles.length) return;
-    const timer = window.setTimeout(() => setBattlefieldList(session.battles.map((battle) => ({ id:battle.id, title:battle.title, subtitle:battle.objective, status:battle.status === 'closed' ? 'STABLE' : 'CRITICAL', updatedAt:new Date(battle.updatedAt).toLocaleString(), isShared:false, daysLeft:battle.hardDeadline ? Math.max(1, Math.ceil((new Date(battle.hardDeadline).getTime() - Date.now()) / 86400000)) : 30, confidence:70, industry:'现实决策推演' }))), 0);
+    const timer = window.setTimeout(() => setBattlefieldList(session.battles.map((battle) => ({ id:battle.id, title:battle.title, subtitle:battle.objective, status:battle.status === 'archived' ? 'ARCHIVED' : battle.status === 'closed' ? 'STABLE' : 'CRITICAL', updatedAt:new Date(battle.updatedAt).toLocaleString(), isShared:false, daysLeft:battle.hardDeadline ? Math.max(1, Math.ceil((new Date(battle.hardDeadline).getTime() - Date.now()) / 86400000)) : 30, confidence:70, industry:'现实决策推演' }))), 0);
     return () => window.clearTimeout(timer);
   }, [session.battles]);
 
   const handleSelectBattlefield = (item: WarRoomItem) => {
+    const persisted = session.battles.find((battle) => battle.id === item.id);
+    if (persisted) session.selectBattle(persisted);
     setSelectedBattlefieldId(item.id);
     setBattlefield(prev => ({
       ...prev,
@@ -398,6 +400,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       confidence: item.confidence,
     }));
     soundManager.playBlip(750, 0.03);
+  };
+
+  const handleArchiveBattlefield = async (item: WarRoomItem) => {
+    try {
+      await sessionApi.updateBattle(item.id, { status: item.status === 'ARCHIVED' ? 'active' : 'archived' });
+      await session.refresh();
+    } catch (error) { setPersistenceError(error instanceof Error ? error.message : '归档战局失败，请重试。'); }
+  };
+
+  const handleDeleteBattlefield = async (item: WarRoomItem) => {
+    if (!window.confirm(`确认永久删除战局“${item.title}”？该操作不可恢复。`)) return;
+    try {
+      await sessionApi.deleteBattle(item.id);
+      await session.refresh();
+    } catch (error) { setPersistenceError(error instanceof Error ? error.message : '删除战局失败，请重试。'); }
   };
 
   const handleCreateNewBattlefield = async () => {
@@ -1055,7 +1072,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         battlefieldList={battlefieldList}
         selectedBattlefieldId={selectedBattlefieldId}
         onSelectBattlefield={handleSelectBattlefield}
-        onCreateNewBattlefield={handleCreateNewBattlefield}
+            onCreateNewBattlefield={handleCreateNewBattlefield}
+            onArchiveBattlefield={handleArchiveBattlefield}
+            onDeleteBattlefield={handleDeleteBattlefield}
         onOpenCausalLinkModal={() => setIsCausalLinkModalOpen(true)}
         onOpenRealityEchoesModal={() => setIsRealityEchoesModalOpen(true)}
         onOpenArchonSanctumModal={() => setIsArchonSanctumModalOpen(true)}
