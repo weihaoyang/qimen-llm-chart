@@ -56,6 +56,7 @@ export const sessionApi = {
   module: (battleId:string, moduleId:string) => request<{ state: unknown }>(`/api/battles/${battleId}/modules/${moduleId}`),
   saveModule: (battleId:string, moduleId:string, state:unknown, consent:unknown = {}) => request<{ state: unknown }>(`/api/battles/${battleId}/modules/${moduleId}`, { method:"PUT", body:JSON.stringify({ state, consent }) }),
   ai: (battleId:string, kind:string, body:Record<string, unknown>) => request<{ job: unknown; usage?: unknown }>(`/api/battles/${battleId}/ai/${kind}`, { method:"POST", body:JSON.stringify(body) }),
+  aiJob: (battleId:string, jobId:string) => request<{ job: Record<string, unknown> }>(`/api/battles/${battleId}/jobs/${jobId}`),
   collaborators: (battleId:string) => request<{ collaborators: Collaborator[] }>(`/api/battles/${battleId}/collaborators`),
   inviteCollaborator: (battleId:string, input:{ subjectType:string; subjectId:string; role:"viewer"|"contributor"|"advisor"; permissions?:Record<string, unknown> }) => request<{ collaborator: Collaborator }>(`/api/battles/${battleId}/collaborators`, { method:"POST", body:JSON.stringify(input) }),
   updateCollaborator: (battleId:string, collaboratorId:string, input:{ status?:"invited"|"active"|"revoked"; action?:"accept" }) => request<{ collaborator: Collaborator }>(`/api/battles/${battleId}/collaborators`, { method:"PATCH", body:JSON.stringify({ collaboratorId, ...input }) }),

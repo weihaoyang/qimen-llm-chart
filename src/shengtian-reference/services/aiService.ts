@@ -1,4 +1,24 @@
 import { BattlefieldState, CardAsset, AsymmetricStrategyPackage, InterviewMessage } from '../types';
+import { sessionApi } from '../session/api';
+
+const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+const resolveJob = async (battleId: string, initial: unknown) => {
+  if (!initial || typeof initial !== 'object') return initial;
+  const job = initial as Record<string, unknown>;
+  const jobId = typeof job.jobId === 'string' ? job.jobId : typeof job.id === 'string' ? job.id : null;
+  if (!jobId) return initial;
+  let current = job;
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    const status = current.status;
+    if (status === 'succeeded' || status === 'failed' || status === 'timed_out') {
+      if (status !== 'succeeded') throw new Error(typeof current.errorMessage === 'string' ? current.errorMessage : 'AI 任务未完成。');
+      return current.result;
+    }
+    await wait(500);
+    current = (await sessionApi.aiJob(battleId, jobId)).job;
+  }
+  throw new Error('AI 任务等待超时，请稍后从战局恢复。');
+};
 
 export interface RedTeamResponse {
   critique: string;
@@ -25,7 +45,7 @@ export class TacticalAIService {
       });
       if (!response.ok) throw new Error(`采访服务请求失败（${response.status}）`);
       const data = await response.json();
-      const rawResult = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
+      const rawResult = await resolveJob(String(currentBattle.id), data.job);
       const rawText = typeof rawResult === 'object' && rawResult ? String((rawResult as { assistantMessage?: unknown; summary?: unknown }).assistantMessage ?? (rawResult as { summary?: unknown }).summary ?? JSON.stringify(rawResult)) : String(rawResult ?? data.analysis ?? data.text ?? '');
       
       let text = rawText;
@@ -67,7 +87,7 @@ export class TacticalAIService {
       });
       if (!response.ok) throw new Error(`红队服务请求失败（${response.status}）`);
       const data = await response.json();
-      const result = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
+      const result = await resolveJob(String(battlefield.id), data.job);
       const text = JSON.stringify(result ?? data.analysis ?? data.text ?? '').replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(text);
     } catch (e) {
@@ -84,7 +104,7 @@ export class TacticalAIService {
       });
       if (!response.ok) throw new Error(`致命问题服务请求失败（${response.status}）`);
       const data = await response.json();
-      const result = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
+      const result = await resolveJob(String(battlefield.id), data.job);
       return String(typeof result === 'string' ? result : result ? (result as { summary?: unknown }).summary ?? JSON.stringify(result) : data.analysis || data.text || '').trim();
     } catch (e) {
       throw e instanceof Error ? e : new Error('致命问题服务暂时不可用，请重试。');
