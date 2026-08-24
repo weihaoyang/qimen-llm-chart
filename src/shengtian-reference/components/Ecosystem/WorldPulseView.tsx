@@ -405,7 +405,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
           
           {/* Target List Tabs */}
           <div className="flex bg-black/80 border-b border-white/[0.08] overflow-x-auto custom-scrollbar shrink-0">
-            {events.map((evt) => (
+            {catalogLoading ? <div className="px-4 py-3 text-[11px] text-slate-500">正在读取官方事件目录…</div> : events.map((evt) => (
               <button
                 key={evt.id}
                 onClick={() => {
