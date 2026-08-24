@@ -74,9 +74,6 @@ import {
   AISymbioteState
   , CardAsset
 } from './types';
-import { 
-  INITIAL_SAAS_BATTLEFIELD, 
-} from './data/presets';
 import { generateDeciderSigil } from './utils/sigilGenerator';
 import { soundManager } from './utils/soundEffects';
 import { useBattleSession } from './session/useBattleSession';
@@ -109,6 +106,38 @@ function ScenarioChooser({ scenarios, error, onClone }: { scenarios: CatalogScen
   );
 }
 
+function createBattlefieldShell(activeBattle: NonNullable<ReturnType<typeof useBattleSession>['activeBattle']>, decisionBoard: DecisionBoardState): BattlefieldState {
+  const deadline = activeBattle.hardDeadline ? new Date(activeBattle.hardDeadline).getTime() : Date.now();
+  return {
+    id: activeBattle.id,
+    title: activeBattle.title,
+    subtitle: activeBattle.objective,
+    createdAt: activeBattle.updatedAt,
+    currentDay: 0,
+    targetDeadlineDays: Math.max(0, Math.ceil((deadline - Date.now()) / 86400000)),
+    idealOutcome: activeBattle.idealOutcome,
+    bottomLine: activeBattle.minimumOutcome,
+    confidence: 0,
+    keyActors: [],
+    financials: { availableCash: 0, monthlyBurn: 0, monthlyIncomeWithoutClient: 0, calculatedDays: 0, alertLevel: 'SAFE' },
+    assets: [],
+    gravityNodes: [],
+    strategies: [],
+    riskBreakers: [],
+    interviewHistory: [],
+    breakthroughActive: false,
+    breakthroughPhase: 1,
+    forcedWorstCaseActive: false,
+    cognitiveBiasesDetected: [],
+    redTeamLog: [],
+    selectedPersona: 'ANALYST',
+    emotionalTelemetry: { energy: 0, stress: 0, confidence: 0, recentLoggedDate: '', historyLogs: [], aiStressInsight: '' },
+    valueCalibrator: { coreValues: [], strategyAlignmentAudit: [] },
+    metaphysicsTiming: { isViewed: false, solarTerm: '', lunarDate: '', qiMenChart: { gong: '', door: '', star: '', deity: '', elementEnergy: '' }, symbolicReflection: '' },
+    decisionBoard,
+  };
+}
+
 export default function App() {
   const session = useBattleSession();
   if (session.loading) return <div className="min-h-screen bg-[#04070d] text-slate-200 grid place-items-center font-mono-code">正在加载官方案例与战局…</div>;
@@ -128,7 +157,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     comments: [],
     ghostStrategies: [],
   };
-  const [battlefield, setBattlefield] = useState<BattlefieldState>(() => ({ ...INITIAL_SAAS_BATTLEFIELD, decisionBoard: emptyDecisionBoard }));
+  const [battlefield, setBattlefield] = useState<BattlefieldState>(() => createBattlefieldShell(session.activeBattle!, emptyDecisionBoard));
   const [activeMainView, setActiveMainView] = useState<'WAR_ROOM' | 'CONCLAVES' | 'DECISION_BOARD' | 'CASE_LAB' | 'COGNITIVE_DNA' | 'MARKETPLACE' | 'WORLD_PULSE'>('WAR_ROOM');
   const [activeStandardTab, setActiveStandardTab] = useState<'interview' | 'cards' | 'simulation' | 'risks'>('interview');
 
@@ -309,6 +338,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         valueCalibrator: battlefield.valueCalibrator,
         metaphysicsTiming: battlefield.metaphysicsTiming,
         selectedPersona: battlefield.selectedPersona,
+        interviewHistory: battlefield.interviewHistory,
         breakthroughActive: battlefield.breakthroughActive,
         breakthroughPhase: battlefield.breakthroughPhase,
         forcedWorstCaseActive: battlefield.forcedWorstCaseActive,
@@ -321,7 +351,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       void fetch(`/api/battles/${battleId}/modules/${moduleId}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state, consent: { source: 'user_session' } }) });
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);
@@ -344,7 +374,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [isArchonSanctumModalOpen, setIsArchonSanctumModalOpen] = useState(false);
   const [isAISymbioteModalOpen, setIsAISymbioteModalOpen] = useState(false);
   const [isWarRoomsModalOpen, setIsWarRoomsModalOpen] = useState(false);
-  const [selectedBattlefieldId, setSelectedBattlefieldId] = useState('saas-crisis');
+  const [selectedBattlefieldId, setSelectedBattlefieldId] = useState('');
 
   const updateBattlefield = React.useCallback((updater: React.SetStateAction<BattlefieldState>) => {
     setBattlefield(updater);
@@ -354,7 +384,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     const battleId = session.activeBattle?.id;
     if (!battleId) return;
     const timer = window.setTimeout(() => {
-      void fetch(`/api/battles/${battleId}`, { method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:battlefield.title, objective:battlefield.subtitle, minimumOutcome:'', idealOutcome:battlefield.idealOutcome ?? '', opponentSummary:'', hardDeadline:new Date(Date.now() + Math.max(1,battlefield.targetDeadlineDays) * 86400000).toISOString() }) });
+      void fetch(`/api/battles/${battleId}`, { method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:battlefield.title, objective:battlefield.subtitle, idealOutcome:battlefield.idealOutcome ?? session.activeBattle?.idealOutcome ?? undefined }) })
+        .then((response) => { if (!response.ok) throw new Error(`战局元数据保存失败（${response.status}）。`); })
+        .catch((error) => setPersistenceError(error instanceof Error ? error.message : '战局元数据保存失败，请重试。'));
     }, 500);
     return () => window.clearTimeout(timer);
   }, [session.activeBattle?.id, battlefield.title, battlefield.subtitle, battlefield.idealOutcome, battlefield.targetDeadlineDays]);
@@ -370,41 +402,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   }, [session.activeBattle]);
 
   // Battlefield List for War Rooms Management
-  const [battlefieldList, setBattlefieldList] = useState<WarRoomItem[]>([
-    {
-      id: 'saas-crisis',
-      title: '高科技SaaS企业现金流死线突围',
-      subtitle: '头部客户续约受阻 · 跑道仅剩42天生死抉择',
-      status: 'CRITICAL',
-      updatedAt: '10分钟前',
-      isShared: true,
-      daysLeft: 42,
-      confidence: 70,
-      industry: '企业软件 / SaaS',
-    },
-    {
-      id: 'vp-reorg',
-      title: '职场高管权力重组与晋升卡位博弈',
-      subtitle: '核心BU合并重组 · 关键晋升窗口期30天推演',
-      status: 'STABLE',
-      updatedAt: '2小时前',
-      isShared: false,
-      daysLeft: 30,
-      confidence: 65,
-      industry: '组织治理 / 职场博弈',
-    },
-    {
-      id: 'hard-tech-bridge',
-      title: '硬科技初创企业资方撤资与过桥融资',
-      subtitle: '领投机构突发毁约 · 现金跑道仅剩28天救赎',
-      status: 'CRITICAL',
-      updatedAt: '昨天',
-      isShared: true,
-      daysLeft: 28,
-      confidence: 50,
-      industry: '硬科技 / 先进制造',
-    },
-  ]);
+  const [battlefieldList, setBattlefieldList] = useState<WarRoomItem[]>([]);
 
   useEffect(() => {
     if (!session.battles.length) return;
@@ -607,7 +605,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           ...d,
           status: 'RESOLVED' as const,
           resolvedOptionId: option.id,
-          resolvedAt: '刚刚',
+          resolvedAt: new Date().toISOString(),
           resolutionFeedback: `你执行了【${option.action}】。${option.rewardDesc}`,
         };
       });
@@ -674,7 +672,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           roleTitle: '密会创始人',
           sigilName: userProfile.sigil?.name || '【深潜的利维坦】',
           equityContributed: 100,
-          joinedAt: '刚刚',
+          joinedAt: new Date().toISOString(),
           isUser: true,
         },
       ],
@@ -683,7 +681,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           id: 'anc-init',
           title: '密会正式建立',
           content: '密会公共因果网络已连通全服。',
-          timestamp: '刚刚',
+            timestamp: new Date().toISOString(),
         },
       ],
     };
@@ -707,7 +705,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
                 memberRole: '高阶执棋官 (你)',
                 actionName,
                 impactAlpha: 0.12,
-                executedAt: '刚刚',
+                executedAt: new Date().toISOString(),
               },
             ],
           };
@@ -725,8 +723,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       industry: proposal.industry || '硬科技 / 先进制造',
       backgroundDilemma: proposal.backgroundDilemma || '',
       status: 'SUBMITTED',
-      submittedAt: '刚刚',
-      bountyEquityReward: 50,
+      submittedAt: new Date().toISOString(),
+      bountyEquityReward: 0,
       observersIntervenedCount: 0,
       communitySuccessRate: 0,
     };
@@ -748,9 +746,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           archonLemma: `【执政官因果引理】：${lemma}`,
           authorArchonName: userProfile.username,
           authorSigil: userProfile.sigil?.name || '【深潜的利维坦】',
-          createdAt: '刚刚',
-          upvotes: 1,
-          isVerifiedByAethel: true,
+          createdAt: new Date().toISOString(),
+          upvotes: 0,
+          isVerifiedByAethel: false,
         },
         ...prev.archiveAnnotations,
       ],

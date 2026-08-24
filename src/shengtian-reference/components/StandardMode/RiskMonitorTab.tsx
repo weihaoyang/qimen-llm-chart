@@ -33,8 +33,27 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
     let cancelled = false;
     void sessionApi.module(battleId, 'risk-monitor').then(({ state }) => {
       const breakers = (state as { riskBreakers?: unknown } | null)?.riskBreakers;
-      if (cancelled || !Array.isArray(breakers)) return;
-      onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers as BattlefieldState['riskBreakers'] }));
+      if (cancelled) return;
+      if (Array.isArray(breakers)) {
+        onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers as BattlefieldState['riskBreakers'] }));
+        return;
+      }
+      void fetch(`/api/battles/${battleId}/constraints`, { credentials: 'include' }).then(async (response) => {
+        if (!response.ok) throw new Error(`读取风险约束失败（${response.status}）。`);
+        const payload = await response.json() as { constraints?: Array<Record<string, unknown>> };
+        const derived = (payload.constraints ?? []).map((constraint, index) => ({
+          id: String(constraint.id ?? `constraint-${index}`),
+          name: String(constraint.label ?? `约束 ${index + 1}`),
+          condition: String(constraint.description ?? '当该约束被证伪或越过阈值时触发。'),
+          isTriggered: false,
+          impact: `严重度 ${String(constraint.severity ?? 3)}/5`,
+          recommendedAction: constraint.hard === false ? '重新核验并调整策略假设。' : '立即停止当前路径并进入破局重构。',
+        }));
+        if (!cancelled) {
+          onUpdateBattlefield(prev => ({ ...prev, riskBreakers: derived }));
+          await sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: derived });
+        }
+      }).catch(() => undefined);
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);

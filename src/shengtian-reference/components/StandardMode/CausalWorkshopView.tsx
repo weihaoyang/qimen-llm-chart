@@ -112,12 +112,12 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
 
                 <span className="text-[11px] font-mono-code text-red-300 bg-red-950/90 px-2 py-1 rounded-md border border-red-700/80 font-bold flex items-center gap-1.5">
                   <Clock className="w-3 h-3 text-red-400" />
-                  现金死线 {battlefield.financials?.calculatedDays ?? 42} 天
+                  现金死线 {battlefield.financials ? `${battlefield.financials.calculatedDays} 天` : '待核验'}
                 </span>
 
                 <span className="text-[11px] font-mono-code text-emerald-300 bg-emerald-950/70 px-2 py-1 rounded-md border border-emerald-700/70 font-bold flex items-center gap-1.5">
                   <TrendingUp className="w-3 h-3 text-emerald-400" />
-                  常规收敛度 {battlefield.confidence ?? 70}%
+                  常规收敛度 {typeof battlefield.confidence === 'number' ? `${battlefield.confidence}%` : '待核验'}
                 </span>
 
                 {triggeredRisksCount > 0 && (
@@ -184,7 +184,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
                 <span className="font-mono-code">现金跑道死线</span>
               </div>
               <span className="text-xs font-mono-code font-bold text-red-400">
-                {battlefield.financials?.calculatedDays ?? 42} 天
+                {battlefield.financials ? `${battlefield.financials.calculatedDays} 天` : '待核验'}
               </span>
             </div>
 
@@ -194,7 +194,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
                 <span className="font-mono-code">常规收敛概率</span>
               </div>
               <span className="text-xs font-mono-code font-bold text-blue-400">
-                {battlefield.confidence ?? 70}%
+                {typeof battlefield.confidence === 'number' ? `${battlefield.confidence}%` : '待核验'}
               </span>
             </div>
 
@@ -204,7 +204,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
                 <span className="font-mono-code">风险断路器</span>
               </div>
               <span className="text-xs font-mono-code font-bold text-amber-400">
-                {triggeredRisksCount} / {battlefield.riskBreakers?.length || 4} 触发
+                {triggeredRisksCount} / {battlefield.riskBreakers?.length ?? 0} 触发
               </span>
             </div>
 
@@ -262,7 +262,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
               <Layers className="w-3 h-3" />
               <span>02 六维底牌</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/40 text-blue-200">
-                {battlefield.assets?.length || 18}
+                {battlefield.assets?.length ?? 0}
               </span>
             </button>
 

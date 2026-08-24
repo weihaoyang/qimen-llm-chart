@@ -131,7 +131,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
       targetType: newCommentTarget,
       targetTitle: newCommentTargetTitle,
       content: newCommentText.trim(),
-      timestamp: '刚刚',
+      timestamp: new Date().toISOString(),
       upvotes: 1,
     };
 
@@ -415,7 +415,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
               对比你的当前主导策略：
             </span>
             <div className="flex items-center justify-between">
-              <span className="text-white font-bold">{battlefield.strategies[0]?.name || '默认战术'}</span>
+              <span className="text-white font-bold">{battlefield.strategies[0]?.name || '尚未锁定策略'}</span>
               <span className="text-emerald-400 font-mono-code font-bold">
                 当前胜率预估: {battlefield.strategies[0]?.estimatedSurvivalProb || 55}%
               </span>
@@ -485,7 +485,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
                 onChange={(e) => {
                   const val = e.target.value as any;
                   setNewCommentTarget(val);
-                  if (val === 'CARD') setNewCommentTargetTitle('[CHIP-01] 校友VP人脉');
+                  if (val === 'CARD') setNewCommentTargetTitle(battlefield.assets[0]?.title ? `[${battlefield.assets[0].id}] ${battlefield.assets[0].title}` : '当前战局底牌');
                   else if (val === 'STRATEGY') setNewCommentTargetTitle('改变战场策略');
                   else setNewCommentTargetTitle('全局战局');
                 }}
