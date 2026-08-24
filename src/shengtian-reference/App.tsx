@@ -780,7 +780,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {activeMainView === 'CASE_LAB' && (
           <div className="space-y-4">
             <CaseStudyLabView
-              onEarnEquity={handleAddEquity}
+              battleId={session.activeBattle?.id}
             />
           </div>
         )}

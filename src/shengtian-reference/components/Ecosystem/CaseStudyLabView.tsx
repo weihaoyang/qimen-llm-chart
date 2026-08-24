@@ -20,20 +20,42 @@ import {
 import { AnonymousCaseStudy } from '../../types';
 import { INITIAL_ANONYMOUS_CASES } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface CaseStudyLabViewProps {
-  onEarnEquity?: (amount: number, reason: string) => void;
+  battleId?: string;
 }
 
 export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
-  onEarnEquity,
+  battleId,
 }) => {
   const [cases, setCases] = useState<AnonymousCaseStudy[]>(INITIAL_ANONYMOUS_CASES);
   const [selectedCaseId, setSelectedCaseId] = useState<string>(INITIAL_ANONYMOUS_CASES[0].id);
   const [userSelectedChoiceId, setUserSelectedChoiceId] = useState<string | null>(null);
   const [hasSimulated, setHasSimulated] = useState<boolean>(false);
-  const [equityBalance, setEquityBalance] = useState<number>(18);
   const [bountyClaimed, setBountyClaimed] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!battleId) return;
+    let cancelled = false;
+    void sessionApi.module(battleId, 'case-study-lab').then(({ state }) => {
+      const saved = state as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; bountyClaimed?: unknown } | null;
+      if (cancelled || !saved) return;
+      if (typeof saved.selectedCaseId === 'string') setSelectedCaseId(saved.selectedCaseId);
+      if (typeof saved.userSelectedChoiceId === 'string') setUserSelectedChoiceId(saved.userSelectedChoiceId);
+      if (typeof saved.hasSimulated === 'boolean') setHasSimulated(saved.hasSimulated);
+      if (typeof saved.bountyClaimed === 'boolean') setBountyClaimed(saved.bountyClaimed);
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId]);
+
+  React.useEffect(() => {
+    if (!battleId) return;
+    const timer = window.setTimeout(() => {
+      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed }).catch(() => undefined);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [battleId, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed]);
 
   const activeCase = cases.find(c => c.id === selectedCaseId) || cases[0];
 
@@ -47,11 +69,8 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
     setHasSimulated(true);
     soundManager.playSuccess();
     
-    if (!bountyClaimed && onEarnEquity) {
-      onEarnEquity(activeCase.bountyReward, `完成案例推演《${activeCase.title}》`);
-      setEquityBalance(prev => prev + activeCase.bountyReward);
-      setBountyClaimed(true);
-    }
+    // Rewards are issued by the platform after the persisted simulation is audited.
+    setBountyClaimed(true);
   };
 
   const handleResetSimulation = () => {
@@ -88,8 +107,8 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
           <div className="flex items-center gap-3">
             <div className="px-4 py-2 rounded-xl bg-black/60 border border-amber-500/40 text-xs font-mono-code flex items-center gap-2">
               <Coins className="w-4 h-4 text-amber-400" />
-              <span className="text-slate-300">推演权益余额:</span>
-              <span className="text-amber-400 font-bold text-sm">{equityBalance} 权益点</span>
+              <span className="text-slate-300">案例状态:</span>
+              <span className="text-amber-400 font-bold text-sm">官方只读 · 推演记录已保存</span>
             </div>
           </div>
         </div>
