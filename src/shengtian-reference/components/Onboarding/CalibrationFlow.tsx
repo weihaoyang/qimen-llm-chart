@@ -333,7 +333,9 @@ export const CalibrationFlow: React.FC<CalibrationFlowProps> = ({
       totalSimulations: 1,
       singularitySuccessRate: 100,
       favoriteStrategyType: '非对称升维突破',
-      equityBalance: 500, // 初始赠送500推演权益点
+      // Entitlements are resolved by the unified platform after calibration;
+      // never mint local equity in the browser.
+      equityBalance: 0,
       achievements: [
         {
           id: 'ach-sigil-forged',
