@@ -50,6 +50,7 @@ export const sessionApi = {
   saveMoves: (id:string, junctionId:string, moves:Array<Record<string, unknown>>) => request<{ moves: unknown[] }>(`/api/battles/${id}/moves`, { method:"POST", body:JSON.stringify({ junctionId, moves }) }),
   commitment: (id:string) => request<{ commitment: Record<string, unknown> | null }>(`/api/battles/${id}/commitments`),
   commitMove: (id:string, moveId:string, changeReason?:string) => request<{ commitment: Record<string, unknown> }>(`/api/battles/${id}/commitments`, { method:"POST", body:JSON.stringify({ moveId, changeReason }) }),
+  consumeUsage: (id:string, operation:string, idempotencyKey:string) => request<{ usage: unknown }>(`/api/battles/${id}/usage`, { method:"POST", body:JSON.stringify({ operation, idempotencyKey }) }),
   clone: (scenarioId:string) => request<{ battle:{ battleId:string } }>(`/api/scenarios/${scenarioId}/clone`, { method:"POST", body:JSON.stringify({}) }),
   create: (input: Record<string, unknown>) => request<{ battle: SessionBattle }>("/api/battles", { method:"POST", body:JSON.stringify(input) }),
   module: (battleId:string, moduleId:string) => request<{ state: unknown }>(`/api/battles/${battleId}/modules/${moduleId}`),

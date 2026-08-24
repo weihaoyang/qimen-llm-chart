@@ -125,6 +125,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   const [isObservingOnly, setIsObservingOnly] = useState(false);
   const [tickerOffset, setTickerOffset] = useState(0);
   const [intervenedEvents, setIntervenedEvents] = useState<string[]>([]);
+  const [usageError, setUsageError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!battleId) return;
@@ -360,12 +361,17 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
     };
   }, [events, selectedEvent]);
 
-  const handleIntervene = (event: EnhancedPulseEvent) => {
+  const handleIntervene = async (event: EnhancedPulseEvent) => {
     if (intervenedEvents.includes(event.id)) {
       onInterveneEvent(event);
       return;
     }
-    const success = onSpendEquity(event.equityCostToIntervene, `介入奇点事件：${event.title}`);
+    setUsageError(null);
+    let success = true;
+    if (battleId) {
+      try { await sessionApi.consumeUsage(battleId, 'world_pulse_intervention', `world-pulse:${battleId}:${event.id}`); }
+      catch (error) { setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); success = false; }
+    } else success = onSpendEquity(event.equityCostToIntervene, `介入奇点事件：${event.title}`);
     if (success) {
       const nextEvents = Array.from(new Set([...intervenedEvents, event.id]));
       setIntervenedEvents(nextEvents);
@@ -610,6 +616,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
                   » 案卷提取中。系统正在生成宏观历史教训... «
                 </div>
               )}
+              {usageError && <div className="text-center text-xs text-red-300">{usageError}</div>}
             </div>
           )}
         </div>

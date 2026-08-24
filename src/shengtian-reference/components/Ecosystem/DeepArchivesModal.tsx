@@ -98,6 +98,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   const [archives, setArchives] = useState<DeepArchiveItem[]>(HISTORICAL_ARCHIVES);
   const [selectedArchive, setSelectedArchive] = useState<DeepArchiveItem>(HISTORICAL_ARCHIVES[0]);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [usageError, setUsageError] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (!battleId) return;
@@ -113,9 +114,16 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleUnlock = (archive: DeepArchiveItem) => {
-    const success = onSpendEquity(archive.unlockCostEquity, `解锁深网历史档案：${archive.historicEventTitle}`);
-    if (!success) return;
+  const handleUnlock = async (archive: DeepArchiveItem) => {
+    setUsageError(null);
+    if (battleId) {
+      try {
+        await sessionApi.consumeUsage(battleId, 'deep_archive_unlock', `deep-archive:${battleId}:${archive.id}`);
+      } catch (error) {
+        setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
+        return;
+      }
+    } else if (!onSpendEquity(archive.unlockCostEquity, `解锁深网历史档案：${archive.historicEventTitle}`)) return;
 
     soundManager.playBlip(600, 0.1);
     setIsRestoring(true);
@@ -272,11 +280,12 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
                   </p>
                 </div>
                 <button
-                  onClick={() => handleUnlock(selectedArchive)}
+                  onClick={() => void handleUnlock(selectedArchive)}
                   className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mono-code font-bold text-xs shadow-lg shadow-purple-950 cursor-pointer"
                 >
                   解密此历史案例 ({selectedArchive.unlockCostEquity} 权益点)
                 </button>
+                {usageError && <p className="text-xs text-red-300">{usageError}</p>}
               </div>
             )}
 
