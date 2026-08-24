@@ -53,10 +53,13 @@ export class TacticalAIService {
     currentBattle: Partial<BattlefieldState>
   ): Promise<{ text: string; parameterExtracted?: { key: string; label: string; value: string | number } }> {
     try {
+      const battleId = String(currentBattle.id ?? '');
+      const idempotencyKey = `interview:${battleId}:${history.length}:${userReply.trim().slice(0, 120)}`;
       const response = await fetch(`/api/battles/${currentBattle.id}/ai/interview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({
+          idempotencyKey,
           question: userReply,
           history: history.map((item) => ({ role: item.sender === 'ai' ? 'assistant' : 'user', content: item.text }))
         })
@@ -96,10 +99,12 @@ export class TacticalAIService {
     battlefield: BattlefieldState
   ): Promise<RedTeamResponse> {
     try {
+      const idempotencyKey = `red-team:${battlefield.id}:${Date.now()}:${userPlan.trim().slice(0, 160)}`;
       const response = await fetch(`/api/battles/${battlefield.id}/red-team`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({
+          idempotencyKey,
           question: `作为红队审查官攻击以下策略，并严格返回 JSON：${userPlan}`
         })
       });
@@ -115,10 +120,11 @@ export class TacticalAIService {
 
   public static async generateFatalQuestion(strategyName: string, battlefield: BattlefieldState): Promise<string> {
     try {
+      const idempotencyKey = `fatal-question:${battlefield.id}:${strategyName}:${Date.now()}`;
       const response = await fetch(`/api/battles/${battlefield.id}/ai/interview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: `请针对策略“${strategyName}”提出一个致命且具体的单句问题。` })
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+        body: JSON.stringify({ idempotencyKey, question: `请针对策略“${strategyName}”提出一个致命且具体的单句问题。` })
       });
       if (!response.ok) throw new Error(`致命问题服务请求失败（${response.status}）`);
       const data = await response.json();
@@ -139,7 +145,7 @@ export class TacticalAIService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        idempotencyKey: `breakthrough-review:${battlefield.id}:${strategyName}:${reflection.slice(0, 80)}`,
+        idempotencyKey: `breakthrough-review:${battlefield.id}:${Date.now()}:${strategyName}:${reflection.slice(0, 80)}`,
         question: `请复盘战局“${battlefield.title}”中策略“${strategyName}”。致命问题：${fatalQuestion}。用户反思：${reflection}。严格返回 review JSON，并把可执行的决策DNA规律放入 facts 或 nextAdjustment。`,
         review: { strategyName, fatalQuestion, reflection },
       }),
