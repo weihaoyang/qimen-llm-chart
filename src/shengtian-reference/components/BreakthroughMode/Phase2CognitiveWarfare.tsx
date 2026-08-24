@@ -29,7 +29,10 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
 }) => {
   const [userDraft, setUserDraft] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
-  const [currentCritique, setCurrentCritique] = useState<RedTeamResponse | null>(null);
+  const [currentCritique, setCurrentCritique] = useState<RedTeamResponse | null>(() => {
+    const last = battlefield.redTeamLog[battlefield.redTeamLog.length - 1];
+    return last ? { critique: last.redTeamCritique, biasWarning: last.biasWarning, failureProbability: last.failureProbability, fatalVulnerability: '来自已保存红队记录，重新提交可获得新的结构化攻击。', suggestedFocus: '继续核验记录中的失败条件。' } : null;
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const presetResponses = [

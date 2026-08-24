@@ -67,11 +67,22 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     if (!battleId) return;
     let cancelled = false;
     hydratedRef.current = false;
-    void sessionApi.module(battleId, 'decision-board').then(({ state }) => {
+    void Promise.all([sessionApi.module(battleId, 'decision-board'), sessionApi.collaborators(battleId)]).then(([{ state }, { collaborators }]) => {
       const snapshot = state && typeof state === 'object' ? state as { state?: unknown } : null;
       if (cancelled) return;
+      const members: BoardMember[] = collaborators.filter((item) => item.status !== 'revoked').map((item) => ({
+        id: item.id,
+        name: item.subjectId,
+        avatar: item.subjectId.slice(0, 1).toUpperCase(),
+        role: item.role === 'advisor' ? 'STRATEGIST' : item.role === 'contributor' ? 'COMMENTATOR' : 'OBSERVER',
+        roleTitle: item.role,
+        invitedAt: item.createdAt,
+        status: item.status === 'active' ? 'ACTIVE' : 'PENDING',
+      }));
       if (snapshot?.state && typeof snapshot.state === 'object') {
-        onUpdateBattlefield((previous) => ({ ...previous, decisionBoard: snapshot.state as BattlefieldState['decisionBoard'] }));
+        onUpdateBattlefield((previous) => ({ ...previous, decisionBoard: { ...(snapshot.state as BattlefieldState['decisionBoard']), members } }));
+      } else {
+        onUpdateBattlefield((previous) => ({ ...previous, decisionBoard: { ...previous.decisionBoard, members } }));
       }
       hydratedRef.current = true;
     }).catch((error) => {
@@ -82,6 +93,10 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     });
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);
+
+  useEffect(() => {
+    setIsRedacted(board.isRedacted);
+  }, [board.isRedacted]);
 
   useEffect(() => {
     if (!battleId || !hydratedRef.current) return;
