@@ -202,7 +202,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
                       [{breakerCode}]
                     </span>
                     <span className="text-slate-500">|</span>
-                    <span className="text-slate-400">VOLTAGE: 100%</span>
+                    <span className="text-slate-400">VOLTAGE: {isTriggered ? '0%' : '100%'}</span>
                   </div>
 
                   <span className={`px-2 py-0.5 rounded-full font-bold border ${

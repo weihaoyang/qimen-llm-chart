@@ -47,6 +47,8 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   const [tickerOffset, setTickerOffset] = useState(0);
   const [intervenedEvents, setIntervenedEvents] = useState<string[]>([]);
   const [usageError, setUsageError] = useState<string | null>(null);
+  const globalVolatility = events.length ? (events.reduce((sum, event) => sum + event.volatility, 0) / events.length).toFixed(1) : '—';
+  const causalEntropy = events.length ? (events.reduce((sum, event) => sum + event.complexity * event.volatility, 0) / events.length / 100).toFixed(1) : '—';
 
   useEffect(() => {
     let cancelled = false;
@@ -353,14 +355,14 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
           <div className="flex flex-col items-end">
             <span className="text-slate-500 text-[10px]">全局波动率 (GVI)</span>
             <span className="text-amber-400 font-bold flex items-center gap-1 text-sm">
-              <Activity className="w-3.5 h-3.5" /> 84.2 <span className="text-red-400">↑</span>
+              <Activity className="w-3.5 h-3.5" /> {globalVolatility} <span className="text-red-400">{events.length ? '↑' : ''}</span>
             </span>
           </div>
           <div className="w-px h-8 bg-white/[0.1]"></div>
           <div className="flex flex-col items-end">
             <span className="text-slate-500 text-[10px]">因果熵值 (ENTROPY)</span>
             <span className="text-cyan-400 font-bold flex items-center gap-1 text-sm">
-              <Zap className="w-3.5 h-3.5" /> 1.042e9
+              <Zap className="w-3.5 h-3.5" /> {causalEntropy}
             </span>
           </div>
           <div className="w-px h-8 bg-white/[0.1]"></div>
