@@ -75,10 +75,6 @@ import {
 } from './types';
 import { 
   INITIAL_SAAS_BATTLEFIELD, 
-  INITIAL_REALITY_ECHOES,
-  INITIAL_CONCLAVES,
-  INITIAL_ARCHON_STATE,
-  INITIAL_AI_SYMBIOTE
 } from './data/presets';
 import { generateDeciderSigil } from './utils/sigilGenerator';
 import { soundManager } from './utils/soundEffects';
@@ -162,27 +158,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       email: 'commander@aethel.io',
       sigil: defaultSigil,
       aiPersona: 'ANALYST',
-      isCalibrated: true,
-      totalSimulations: 8,
-      singularitySuccessRate: 87.5,
-      favoriteStrategyType: '非对称升维突破',
-      equityBalance: 650,
-      achievements: [
-        {
-          id: 'ach-first-sigil',
-          title: '烙印铸成',
-          description: '完成首次世界观校准与咖啡馆危机教学推演',
-          icon: 'Sparkles',
-          unlockedAt: new Date().toISOString(),
-        },
-        {
-          id: 'ach-fog-breach',
-          title: '突破观测者迷雾',
-          description: '在多用户干涉的迷雾状态下成功引爆破局奇点',
-          icon: 'Eye',
-          unlockedAt: new Date().toISOString(),
-        },
-      ],
+      isCalibrated: false,
+      totalSimulations: 0,
+      singularitySuccessRate: 0,
+      favoriteStrategyType: '',
+      // Entitlements are owned by the unified platform; qmdj starts fail-closed
+      // until the account/profile endpoint supplies the current value.
+      equityBalance: 0,
+      achievements: [],
     };
   });
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
@@ -210,10 +193,41 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   }, [userProfile]);
 
   // Masterpiece Puzzles State
-  const [realityEchoes, setRealityEchoes] = useState<RealityEcho[]>(INITIAL_REALITY_ECHOES);
-  const [conclaves, setConclaves] = useState<ObserverConclave[]>(INITIAL_CONCLAVES);
-  const [archonState, setArchonState] = useState<ArchonTierState>(INITIAL_ARCHON_STATE);
-  const [symbioteState, setSymbioteState] = useState<AISymbioteState>(INITIAL_AI_SYMBIOTE);
+  // Ecosystem state is battle-scoped. Official preset objects are catalog examples,
+  // never a user's initial progress; an absent snapshot starts empty/locked.
+  const [realityEchoes, setRealityEchoes] = useState<RealityEcho[]>([]);
+  const [conclaves, setConclaves] = useState<ObserverConclave[]>([]);
+  const [archonState, setArchonState] = useState<ArchonTierState>({
+    isUnlocked: false,
+    archonRankTitle: '见习观测者',
+    archonSealsCount: 0,
+    promotionRequirements: {
+      singularityVictories: { current: 0, required: 3, met: false },
+      conclaveGlobalRank: { current: 0, required: 10, met: false },
+      unsolvableArchiveSolved: { current: 0, required: 1, met: false },
+    },
+    privileges: { precognition: false, archiveAnnotation: false, realityProposal: false },
+    precognitionEvents: [],
+    archiveAnnotations: [],
+    userProposals: [],
+  });
+  const [symbioteState, setSymbioteState] = useState<AISymbioteState>({
+    id: 'battle-scoped-symbiote',
+    customName: '未命名共生体',
+    personaType: 'ANALYST',
+    bondLevel: 1,
+    bondExp: 0,
+    maxBondExp: 100,
+    evolutionStage: 'AWAKENED',
+    evolutionStageName: '初醒',
+    temperament: 'COLD_CALCULATING',
+    temperamentName: '冷静计算',
+    dialogueTendency: '等待用户授权后开始学习。',
+    adaptiveToneNotes: '',
+    totalBattlesFoughtTogether: 0,
+    victoriesTogether: 0,
+    longTermMemories: [],
+  });
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
@@ -471,29 +485,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   // Equity manipulation
-  const handleSpendEquity = (amount: number, reason: string): boolean => {
-    if (userProfile.equityBalance < amount) {
-      setIsStoreModalOpen(true);
-      return false;
-    }
-    setUserProfile(prev => ({
-      ...prev,
-      equityBalance: prev.equityBalance - amount,
-    }));
-    soundManager.playBlip(750, 0.03);
-    return true;
+  const handleSpendEquity = (_amount: number, _reason: string): boolean => {
+    // Never mutate a browser-side equity balance. Paid actions must go through
+    // the platform gate/checkout flow and return an authoritative entitlement.
+    setIsStoreModalOpen(true);
+    return false;
   };
 
-  const handleAddEquity = (amount: number, reason: string) => {
-    setUserProfile(prev => ({
-      ...prev,
-      equityBalance: prev.equityBalance + amount,
-    }));
+  const handleAddEquity = (_amount: number, _reason: string) => {
+    // Rewards are credited by the platform ledger after server verification.
+    setPersistenceError('权益奖励需由统一平台确认，当前不会在浏览器本地增加。');
   };
 
   // Calibration completion
   const handleCompleteCalibration = (profile: UserProfile, sigil: DeciderSigil) => {
-    setUserProfile(profile);
+    setUserProfile((previous) => ({ ...profile, equityBalance: previous.equityBalance }));
     setIsCalibrated(true);
     setShowCalibrationFlow(false);
     setBattlefield(prev => ({
