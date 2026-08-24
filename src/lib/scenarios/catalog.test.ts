@@ -17,4 +17,11 @@ describe("official scenario catalog", () => {
     const scenario = getScenario("saas-renewal-crisis");
     expect(scenario?.facts.some((fact) => fact.content.includes("42%"))).toBe(true);
   });
+
+  it("keeps anonymous case-study choices in the server catalog", () => {
+    const cases = SCENARIOS.filter((scenario) => scenario.kind === "case-study");
+    expect(cases).toHaveLength(2);
+    expect(cases.every((scenario) => (scenario.caseStudy?.choices.length ?? 0) >= 3)).toBe(true);
+    expect(cases.every((scenario) => scenario.caseStudy?.choices.some((choice) => choice.isAuthorActualChoice))).toBe(true);
+  });
 });
