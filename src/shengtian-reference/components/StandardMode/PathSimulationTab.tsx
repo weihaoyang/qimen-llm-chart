@@ -67,7 +67,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
       } as StrategyBranch;
       });
       if (!cancelled && loaded.length) onUpdateBattlefield((previous) => ({ ...previous, strategies: loaded }));
-    }).catch(() => undefined);
+    }).catch((error) => { if (!cancelled) setPersistenceMessage(error instanceof Error ? error.message : '策略列表读取失败，请重试。'); });
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);
 
@@ -75,7 +75,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     let cancelled = false;
     void sessionApi.commitment(battleId).then(({ commitment }) => {
       if (!cancelled) setActiveCommitmentId(commitment ? String(commitment.moveId) : null);
-    }).catch(() => undefined);
+    }).catch((error) => { if (!cancelled) setPersistenceMessage(error instanceof Error ? error.message : '当前锁定策略读取失败，请重试。'); });
     return () => { cancelled = true; };
   }, [battleId]);
 

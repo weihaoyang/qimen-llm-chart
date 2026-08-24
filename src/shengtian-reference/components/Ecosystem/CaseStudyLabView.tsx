@@ -79,7 +79,8 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   React.useEffect(() => {
     if (!battleId || !stateHydrated) return;
     const timer = window.setTimeout(() => {
-      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult }).catch(() => undefined);
+      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult })
+        .catch((error) => setSimulationError(error instanceof Error ? error.message : '案例推演状态保存失败，请重试。'));
     }, 250);
     return () => window.clearTimeout(timer);
   }, [battleId, stateHydrated, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult]);

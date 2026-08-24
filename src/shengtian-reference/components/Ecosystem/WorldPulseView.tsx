@@ -315,7 +315,8 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
     if (success) {
       const nextEvents = Array.from(new Set([...intervenedEvents, event.id]));
       setIntervenedEvents(nextEvents);
-      if (battleId) void sessionApi.saveModule(battleId, 'world-pulse', { intervenedEventIds: nextEvents }).catch(() => undefined);
+      if (battleId) void sessionApi.saveModule(battleId, 'world-pulse', { intervenedEventIds: nextEvents })
+        .catch((error) => setUsageError(error instanceof Error ? error.message : '世界脉搏介入状态保存失败，请重试。'));
       soundManager.playStrategyLocked();
       confetti({
         particleCount: 120,
