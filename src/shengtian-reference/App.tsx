@@ -548,7 +548,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   // 2. Conclaves Handlers
   const handleInjectEquityToConclave = (conclaveId: string, amount: number) => {
-    if (!handleSpendEquity(amount, '向密会公共资源池注入')) return;
+    if (!session.activeBattle?.id && !handleSpendEquity(amount, '向密会公共资源池注入')) return;
     setConclaves(prev => prev.map(c => {
       if (c.id !== conclaveId) return c;
       return {
@@ -559,7 +559,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   const handleCreateConclave = (newConclave: Partial<ObserverConclave>) => {
-    if (!handleSpendEquity(100, '铸造专属密会公会')) return;
+    if (!session.activeBattle?.id && !handleSpendEquity(100, '铸造专属密会公会')) return;
     const fullConclave: ObserverConclave = {
       id: `conclave-${Date.now()}`,
       name: newConclave.name || '新因果密会',

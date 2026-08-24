@@ -92,21 +92,27 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
 
   const currentConclave = conclaves.find(c => c.id === selectedConclaveId) || conclaves[0];
 
-  const handleInject = () => {
+  const handleInject = async () => {
     if (!currentConclave) return;
-    if (userEquity < equityInput) {
+    if (!battleId && userEquity < equityInput) {
       soundManager.playBlip(400, 0.08);
       if (onOpenStoreModal) onOpenStoreModal();
       return;
     }
-    onInjectEquityToConclave(currentConclave.id, equityInput);
-    soundManager.playSuccess();
+    try {
+      if (battleId) await sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-inject:${battleId}:${currentConclave.id}:${equityInput}`);
+      onInjectEquityToConclave(currentConclave.id, equityInput);
+      soundManager.playSuccess();
+    } catch (error) { setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newDoctrine.trim()) return;
 
+    try {
+      if (battleId) await sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-create:${battleId}:${newName.trim()}`);
+    } catch (error) { setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); return; }
     onCreateConclave({
       name: newName,
       codeName: newCodeName.toUpperCase() || 'NEW CONCLAVE',
@@ -130,7 +136,9 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
 
   const handleAddSynchronizedAction = (simId: string) => {
     if (!newActionInput.trim() || !currentConclave) return;
-    onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput);
+    if (battleId) {
+      void sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-action:${battleId}:${currentConclave.id}:${simId}:${newActionInput.trim()}`).then(() => onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput)).catch((error) => setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'));
+    } else onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput);
     setNewActionInput('');
     soundManager.playStrategyLocked();
   };
