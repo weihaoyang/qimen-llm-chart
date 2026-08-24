@@ -117,7 +117,7 @@ export default function App() {
   const session = useBattleSession();
   if (session.loading) return <div className="min-h-screen bg-[#04070d] text-slate-200 grid place-items-center font-mono-code">正在加载官方案例与战局…</div>;
   if (!session.activeBattle) return <ScenarioChooser scenarios={session.catalog} error={session.error} onClone={session.cloneScenario} />;
-  return <BattleWorkspace session={session} />;
+  return <BattleWorkspace key={session.activeBattle.id} session={session} />;
 }
 
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
@@ -215,6 +215,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       }
     };
     void loadModules();
+    void sessionApi.module(battleId, 'battlefield-aux').then(({ state }) => {
+      const snapshot = state && typeof state === 'object' ? state as { state?: unknown } : null;
+      const value = snapshot?.state;
+      if (!cancelled && value && typeof value === 'object') {
+        setBattlefield((previous) => ({ ...previous, ...(value as Partial<BattlefieldState>) }));
+      }
+      moduleHydratedRef.current['battlefield-aux'] = true;
+    }).catch(() => { moduleHydratedRef.current['battlefield-aux'] = true; });
     return () => { cancelled = true; };
   }, [session.activeBattle?.id]);
 
@@ -250,12 +258,18 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       ['observer-conclaves', conclaves],
       ['archon-tier', archonState],
       ['ai-symbiote', symbioteState],
+      ['battlefield-aux', {
+        emotionalTelemetry: battlefield.emotionalTelemetry,
+        valueCalibrator: battlefield.valueCalibrator,
+        metaphysicsTiming: battlefield.metaphysicsTiming,
+        selectedPersona: battlefield.selectedPersona,
+      }],
     ];
     const timers = states.filter(([moduleId]) => moduleHydratedRef.current[moduleId]).map(([moduleId, state]) => window.setTimeout(() => {
       void fetch(`/api/battles/${battleId}/modules/${moduleId}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state, consent: { source: 'user_session' } }) });
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);
@@ -297,9 +311,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   useEffect(() => {
     const battle = session.activeBattle;
     if (!battle) return;
+    moduleHydratedRef.current = {};
     const timer = window.setTimeout(() => {
       setSelectedBattlefieldId(battle.id);
-      setBattlefield((previous) => ({ ...previous, id:battle.id, title:battle.title, subtitle:battle.objective, objective:battle.objective, minimumOutcome:battle.minimumOutcome, idealOutcome:battle.idealOutcome, targetDeadlineDays:battle.hardDeadline ? Math.max(1, Math.ceil((new Date(battle.hardDeadline).getTime() - Date.now()) / 86400000)) : previous.targetDeadlineDays }));
     }, 0);
     return () => window.clearTimeout(timer);
   }, [session.activeBattle]);
