@@ -34,9 +34,8 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    setFatalQuestionError(null);
     void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
-      .then((question) => { if (!cancelled) setFatalQuestion(question); })
+      .then((question) => { if (!cancelled) { setFatalQuestion(question); setFatalQuestionError(null); } })
       .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });
     return () => { cancelled = true; };
   }, [selectedStrategy.name, battlefield.id]);
