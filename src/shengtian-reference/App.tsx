@@ -506,7 +506,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   
   // 1. Reality Echoes Handlers
   const handleResolveDustEvent = (echoId: string, eventId: string, option: CausalDustOption) => {
-    if (option.costEquity > 0) {
+    if (option.costEquity > 0 && !session.activeBattle?.id) {
       if (!handleSpendEquity(option.costEquity, '平息因果尘埃')) return;
     }
 
@@ -855,6 +855,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       <RealityEchoesModal
         isOpen={isRealityEchoesModalOpen}
         onClose={() => setIsRealityEchoesModalOpen(false)}
+        battleId={session.activeBattle?.id}
         echoes={realityEchoes}
         onResolveDustEvent={handleResolveDustEvent}
         onClaimEquilibriumReward={handleClaimEquilibriumReward}

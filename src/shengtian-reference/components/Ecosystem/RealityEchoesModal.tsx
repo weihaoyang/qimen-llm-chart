@@ -10,6 +10,7 @@ import {
   CausalDustOption 
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 import { 
   X, 
   Flame, 
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 
 interface RealityEchoesModalProps {
+  battleId?: string;
   isOpen: boolean;
   onClose: () => void;
   echoes: RealityEcho[];
@@ -36,6 +38,7 @@ interface RealityEchoesModalProps {
 }
 
 export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
+  battleId,
   isOpen,
   onClose,
   echoes,
@@ -46,6 +49,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
   const [selectedEchoId, setSelectedEchoId] = useState<string>(echoes[0]?.id || '');
   const [selectedDustEvent, setSelectedDustEvent] = useState<CausalDustEvent | null>(null);
   const [resolvingOptionId, setResolvingOptionId] = useState<string | null>(null);
+  const [usageError, setUsageError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -56,15 +60,25 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
     soundManager.playBlip(750, 0.03);
   };
 
-  const handleExecuteResolution = (option: CausalDustOption) => {
+  const handleExecuteResolution = async (option: CausalDustOption) => {
     if (!currentEcho || !selectedDustEvent) return;
-    if (userEquity < option.costEquity) {
+    if (!battleId && userEquity < option.costEquity) {
       soundManager.playBlip(400, 0.08);
       return;
     }
 
     setResolvingOptionId(option.id);
-    setTimeout(() => {
+    setUsageError(null);
+    if (battleId) {
+      try {
+        await sessionApi.consumeUsage(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${selectedDustEvent.id}:${option.id}`);
+      } catch (error) {
+        setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
+        setResolvingOptionId(null);
+        return;
+      }
+    }
+    window.setTimeout(() => {
       onResolveDustEvent(currentEcho.id, selectedDustEvent.id, option);
       setResolvingOptionId(null);
       setSelectedDustEvent(null);
@@ -106,6 +120,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
         </div>
 
         {/* Content Body (2 Columns) */}
+        {usageError && <div className="mx-5 mt-4 rounded-xl border border-red-700/60 bg-red-950/40 px-3 py-2 text-xs text-red-200">{usageError}</div>}
         <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.08]">
           
           {/* Left Column: Echo List & Equilibrium Timeline (5 cols) */}
