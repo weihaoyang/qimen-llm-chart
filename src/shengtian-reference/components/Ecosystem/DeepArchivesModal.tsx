@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { DeepArchiveItem } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
+import type { DEEP_ARCHIVES_CATALOG } from '../../../lib/scenarios/ecosystem';
 import confetti from 'canvas-confetti';
 import { 
   X, 
@@ -31,62 +32,7 @@ interface DeepArchivesModalProps {
   onSpendEquity: (amount: number, reason: string) => boolean;
 }
 
-const HISTORICAL_ARCHIVES: DeepArchiveItem[] = [
-  {
-    id: 'arch-ltcm-1998',
-    codeName: 'ARCH-1998-LTCM',
-    historicEventTitle: '1998 长期资本管理公司 (LTCM) 黑天鹅破局',
-    year: '1998',
-    location: '美国 · 格林威治',
-    summary: '诺奖得主模型遭遇俄罗斯债务违约黑天鹅，46亿美元杠杆资产面临挤兑。美联储牵头14家华尔街巨头联合注资36.25亿美元，完成史上经典非对称过桥纾困。',
-    keyDilemma: '百亿衍生品持仓在无买盘情况下被迫清算，引发全球金融体系连锁雪崩。',
-    finalRippleSequence: [
-      '第一步：封存单边利差套利敞口，剥离非核心对冲持仓',
-      '第二步：向纽约联储展示系统性传染因果图，倒逼银行业财团介入',
-      '第三步：以90%股权让渡换取无追索权过桥资金，保全核心资产信用',
-    ],
-    historicalSigilName: '【永恒的阿基米德】',
-    historicalAlphaRate: 0.9245,
-    isUnlocked: true,
-    unlockCostEquity: 0,
-  },
-  {
-    id: 'arch-lehman-2008',
-    codeName: 'ARCH-2008-LEHMAN',
-    historicEventTitle: '2008 雷曼兄弟清算夜：巴克莱资产火种抢救',
-    year: '2008',
-    location: '美国 · 纽约曼哈顿',
-    summary: '在失去最后贷款人支持的绝境72小时内，将优质投行与交易业务与有毒次贷资产彻底物理隔离，由巴克莱以17.5亿美元极速收购，保全逾万名员工火种。',
-    keyDilemma: '母公司现金仅剩数小时耗尽，常规破产将导致全球清算链条全盘冻结。',
-    finalRippleSequence: [
-      '第一步：实施「焦土切割」，将核心交易牌照与有毒资产实体剥离',
-      '第二步：在破产法第11条框架下极速完成资产包过桥转让协议',
-      '第三步：锁定关键骨干团队留任奖金，维持北美交易柜台不间断运转',
-    ],
-    historicalSigilName: '【深潜的利维坦】',
-    historicalAlphaRate: 0.7850,
-    isUnlocked: false,
-    unlockCostEquity: 100,
-  },
-  {
-    id: 'arch-tylenol-1982',
-    codeName: 'ARCH-1982-TYLENOL',
-    historicEventTitle: '1982 强生泰诺投毒事件：第一性伦理奇点突围',
-    year: '1982',
-    location: '美国 · 芝加哥',
-    summary: '遭遇恶意投毒危机后，强生管理层顶住1亿美元直接损失，在全国范围内无条件召回3100万瓶药品，并率先发明三层防篡改包装，次年市占率奇迹回升至30%。',
-    keyDilemma: '品牌面临毁灭性公信力崩塌，传统公关辩解只会加速死亡。',
-    finalRippleSequence: [
-      '第一步：启动第一性伦理原则，无条件全美召回并悬赏缉凶',
-      '第二步：率先研发并公开三层防篡改安全包装工业标准',
-      '第三步：全面重构消费者信任协议，以诚挚透明重夺市场第一',
-    ],
-    historicalSigilName: '【孤峰的守望者】',
-    historicalAlphaRate: 0.8890,
-    isUnlocked: false,
-    unlockCostEquity: 80,
-  },
-];
+type CatalogArchive = (typeof DEEP_ARCHIVES_CATALOG)[number];
 
 export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   battleId,
@@ -95,10 +41,25 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   userEquity,
   onSpendEquity,
 }) => {
-  const [archives, setArchives] = useState<DeepArchiveItem[]>(HISTORICAL_ARCHIVES);
-  const [selectedArchive, setSelectedArchive] = useState<DeepArchiveItem>(HISTORICAL_ARCHIVES[0]);
+  const [archives, setArchives] = useState<DeepArchiveItem[]>([]);
+  const [selectedArchive, setSelectedArchive] = useState<DeepArchiveItem | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/catalog/deep-archives', { credentials: 'include' }).then(async (response) => {
+      if (!response.ok) throw new Error(`深网档案目录读取失败（${response.status}）。`);
+      const payload = await response.json() as { archives?: CatalogArchive[] };
+      if (cancelled) return;
+      const next = Array.isArray(payload.archives) ? payload.archives : [];
+      setArchives(next);
+      setSelectedArchive(next[0] ?? null);
+    }).catch((error) => { if (!cancelled) setUsageError(error instanceof Error ? error.message : '深网档案目录读取失败，请重试。'); })
+      .finally(() => { if (!cancelled) setCatalogLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   React.useEffect(() => {
     if (!battleId) return;
@@ -109,12 +70,14 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
       const unlocked = saved?.unlockedIds;
       if (cancelled || !Array.isArray(unlocked)) return;
       const ids = new Set(unlocked.filter((value): value is string => typeof value === 'string'));
-      setArchives(HISTORICAL_ARCHIVES.map((archive) => ({ ...archive, isUnlocked: archive.isUnlocked || ids.has(archive.id) })));
+      setArchives((current) => current.map((archive) => ({ ...archive, isUnlocked: archive.isUnlocked || ids.has(archive.id) })));
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [battleId]);
 
   if (!isOpen) return null;
+  if (catalogLoading) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 text-sm text-slate-300">正在读取官方深网档案目录…</div>;
+  if (!selectedArchive) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 text-sm text-red-200">{usageError ?? '官方深网档案目录为空。'}</div>;
 
   const handleUnlock = async (archive: DeepArchiveItem) => {
     setUsageError(null);
@@ -134,7 +97,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
       setIsRestoring(false);
       const nextArchives = archives.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a));
       setArchives(nextArchives);
-      setSelectedArchive(prev => ({ ...prev, isUnlocked: true }));
+      setSelectedArchive(prev => prev ? { ...prev, isUnlocked: true } : prev);
       if (battleId) void sessionApi.saveModule(battleId, 'deep-archives', { unlockedIds: nextArchives.filter((item) => item.isUnlocked).map((item) => item.id) }).catch((error) => setUsageError(error instanceof Error ? error.message : '档案解锁状态保存失败，请重试。'));
       soundManager.playStrategyLocked();
       confetti({

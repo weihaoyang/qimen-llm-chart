@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { WorldPulseEvent } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
+import type { CatalogPulseEvent } from '../../../lib/scenarios/ecosystem';
 import confetti from 'canvas-confetti';
 import { 
   Globe, 
@@ -26,90 +27,7 @@ interface WorldPulseViewProps {
 }
 
 // Extended Event Interface for richer UI
-interface EnhancedPulseEvent extends WorldPulseEvent {
-  sectors: string[];
-  complexity: number;
-  volatility: number;
-  intelLogs: string[];
-}
-
-const GLOBAL_EVENTS: EnhancedPulseEvent[] = [
-  {
-    id: 'evt-tokyo-ai',
-    code: 'MACRO-26A',
-    title: '亚洲核心算力供应链断裂 (宏观推演案例)',
-    region: '亚洲 · 供应链核心区',
-    lat: 35.67,
-    lng: 139.65,
-    riddleDescription: '核心算力基建受地缘政策及突发限电双重打击，供应链停滞。作为高度依赖算力的企业，客户面临合规约束与运力宕机的双重绞杀。请评估物理阻断对贵公司现金流的传导链条。',
-    severity: 'TECH_COLLAPSE',
-    equityCostToIntervene: 50,
-    activeObservers: 342,
-    status: 'ACTIVE',
-    expiresInMins: 48,
-    sectors: ['AI算力', '半导体供应链', '数据基建'],
-    complexity: 85,
-    volatility: 92,
-    intelLogs: [
-      "[04:12] 主要代工厂宣布不可抗力停工",
-      "[04:15] 二级市场相关期权隐含波动率飙升",
-      "[04:18] 跨国云厂商开始限制新开算力实例"
-    ]
-  },
-  {
-    id: 'evt-london-fund',
-    code: 'MACRO-26B',
-    title: '离岸美元债违约与流动性挤兑 (实战推演案例)',
-    region: '欧洲 · 离岸金融中心',
-    lat: 51.5,
-    lng: -0.12,
-    riddleDescription: '宏观黑天鹅导致离岸核心做市商暂停报价，百亿级杠杆资金抽离。企业客户面临信贷收紧与汇率剧烈波动的双杀。此案旨在演练极端流动性枯竭下的现金池保卫战。',
-    severity: 'FINANCIAL_SINGULARITY',
-    equityCostToIntervene: 80,
-    activeObservers: 589,
-    status: 'ACTIVE',
-    expiresInMins: 15,
-    sectors: ['跨境资本', '企业信贷', '汇兑对冲'],
-    complexity: 94,
-    volatility: 98,
-    intelLogs: [
-      "[11:42] 核心做市商宣布暂停双边报价",
-      "[11:43] 离岸流动性池出现断崖式抽水",
-      "[11:44] 监管机构紧急召开闭门会议"
-    ]
-  },
-  {
-    id: 'evt-sf-biotech',
-    code: 'MACRO-26C',
-    title: '核心知识产权遭遇跨国诉讼狙击 (防御推演案例)',
-    region: '北美 · 创新科技枢纽',
-    lat: 37.77,
-    lng: -122.41,
-    riddleDescription: '在关键IPO/融资听证会前夕，竞对通过恶意交叉诉讼冻结核心专利资产，企图用高昂诉讼成本耗死目标企业现金流。此案用于推演非对称反击与合规破局。',
-    severity: 'GLOBAL_CRITICAL',
-    equityCostToIntervene: 50,
-    activeObservers: 215,
-    status: 'ACTIVE',
-    expiresInMins: 112,
-    sectors: ['生物医药', '知识产权', '风险投资'],
-    complexity: 76,
-    volatility: 64,
-    intelLogs: [
-      "[14:00] 竞品公司向法院申请预先禁令",
-      "[14:05] 核心研发人员收到匿名猎头邀约",
-      "[14:15] 董事局提议启动毒丸计划"
-    ]
-  },
-];
-
-const TICKER_NEWS = [
-  "MACRO: US Treasury yield curve steepening signals potential shift in tech valuation multiples...",
-  "COMPLIANCE: EU Parliament drafts new AI liability framework, severely impacting downstream application margins.",
-  "SUPPLY CHAIN: Red Sea shipping disruptions causing 15% freight cost spike and inventory cycle delays.",
-  "MARKET: Sovereign wealth funds shifting allocation towards real assets, causing liquidity tightening in venture markets.",
-  "SECURITY: Enterprise SaaS vendor suffers zero-day exploit, triggering supply chain audit wave across Fortune 500.",
-  "SYSTEM: Macro Intelligence Terminal operating at nominal capacity."
-];
+type EnhancedPulseEvent = CatalogPulseEvent;
 
 export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   battleId,
@@ -119,14 +37,31 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [events] = useState<EnhancedPulseEvent[]>(GLOBAL_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState<EnhancedPulseEvent | null>(GLOBAL_EVENTS[0]);
+  const [events, setEvents] = useState<EnhancedPulseEvent[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<EnhancedPulseEvent | null>(null);
+  const [tickerNews, setTickerNews] = useState<string[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [rotAngle, setRotAngle] = useState(0);
   const [isObservingOnly, setIsObservingOnly] = useState(false);
   const [observationSummary, setObservationSummary] = useState<string | null>(null);
   const [tickerOffset, setTickerOffset] = useState(0);
   const [intervenedEvents, setIntervenedEvents] = useState<string[]>([]);
   const [usageError, setUsageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/catalog/world-pulse', { credentials: 'include' }).then(async (response) => {
+      if (!response.ok) throw new Error(`世界脉搏目录读取失败（${response.status}）。`);
+      const payload = await response.json() as { events?: EnhancedPulseEvent[]; ticker?: string[] };
+      if (cancelled) return;
+      const nextEvents = Array.isArray(payload.events) ? payload.events : [];
+      setEvents(nextEvents);
+      setSelectedEvent(nextEvents[0] ?? null);
+      setTickerNews(Array.isArray(payload.ticker) ? payload.ticker : []);
+    }).catch((error) => { if (!cancelled) setUsageError(error instanceof Error ? error.message : '世界脉搏目录读取失败，请重试。'); })
+      .finally(() => { if (!cancelled) setCatalogLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!battleId) return;
@@ -638,7 +573,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
             className="absolute whitespace-nowrap flex gap-12 text-[10px] font-mono-code text-slate-400"
             style={{ transform: `translateX(${tickerOffset}px)` }}
           >
-            {TICKER_NEWS.concat(TICKER_NEWS).map((news, i) => (
+            {tickerNews.concat(tickerNews).map((news, i) => (
               <span key={i} className="flex items-center gap-2">
                 <span className="text-blue-500">▪</span> {news}
               </span>
