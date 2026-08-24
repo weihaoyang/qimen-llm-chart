@@ -14,7 +14,6 @@ import {
   Layers
 } from 'lucide-react';
 import { SilentObserverAlert, BattlefieldState } from '../../types';
-import { INITIAL_SILENT_OBSERVER_ALERTS } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 
 interface SilentObserverModalProps {
@@ -28,7 +27,10 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
   onClose,
   onImportDraftAsBattlefield,
 }) => {
-  const [alerts, setAlerts] = useState<SilentObserverAlert[]>(INITIAL_SILENT_OBSERVER_ALERTS);
+  // External calendar/mail/board connectors are intentionally fail-closed until
+  // an account has explicitly authorized a provider. Never show preset signals
+  // as if they were live user telemetry.
+  const [alerts, setAlerts] = useState<SilentObserverAlert[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -83,8 +85,13 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
         {/* Alerts List */}
         <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
           {alerts.length === 0 ? (
-            <div className="p-8 text-center text-xs font-mono-code text-slate-500 bg-black/40 rounded-xl border border-white/[0.04]">
-              暂无未处理的外部工作流异常信号，雷达持续静默监测中...
+            <div className="p-6 text-center text-xs font-mono-code text-slate-400 bg-black/40 rounded-xl border border-white/[0.06] space-y-3">
+              <p className="text-slate-200 font-bold">外部连接器尚未授权</p>
+              <p>日历、邮件和项目看板目前没有可读取的 qmdj 内部同步记录。授权完成并产生同步记录后，异常信号才会显示在这里。</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-left">
+                {['日历 · 未连接', '邮件 · 未连接', '项目看板 · 未连接'].map((label) => <span key={label} className="rounded-lg border border-white/[0.08] bg-slate-950/60 px-3 py-2">{label}</span>)}
+              </div>
+              <p className="text-slate-500">当前不会伪造外部实时信号，也不会读取浏览器本地数据。</p>
             </div>
           ) : (
             alerts.map((alert) => {
