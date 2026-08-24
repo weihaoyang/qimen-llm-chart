@@ -489,7 +489,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                     const isExpanded = !!expandedCardIds[asset.id];
                     const cardCode = `${cat.code}-${String(index + 1).padStart(2, '0')}`;
                     const isFact = asset.tag === 'FACT';
-                    const isVPAsset = asset.id === 'asset-chips-1';
+                    const isVPAsset = asset.category === 'CHIPS' && (asset.tag === 'OPPORTUNITY' || /VP|校友|私交|关系/i.test(asset.title));
 
                     return (
                       <div
@@ -599,11 +599,11 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                               <p className="text-[11px] text-slate-300 leading-relaxed">
                                 {isVPAsset ? (
                                   <span className="text-red-300">
-                                    ⚠️ <strong>高危穿透：</strong>该资源依赖单一校友私交。在企业合规采购审计压力下，对方无法承担越级担保责任，在破局模式中已被自动隔离。
+                                    ⚠️ <strong>高危穿透：</strong>该资源依赖关系型或机会型假设（{asset.title}）。在正式流程和对手反应下，兑现概率必须重新核验，不能直接作为确定性承诺。
                                   </span>
                                 ) : isFact ? (
                                   <span className="text-emerald-300">
-                                    ✓ <strong>事实已锚定：</strong>该资产具有客观银行流水/签约存根支撑，可作为后续一切策略推演的坚固基石。
+                                    ✓ <strong>事实已锚定：</strong>该资产已被标记为硬性事实，可作为后续策略推演的输入；仍需在执行前保留证据来源。
                                   </span>
                                 ) : (
                                   <span className="text-slate-300">

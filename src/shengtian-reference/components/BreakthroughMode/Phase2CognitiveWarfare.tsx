@@ -135,7 +135,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
               <span className="font-bold">RED_TEAM_CHIEF_TERMINAL // V3.7_TACTICAL</span>
             </div>
             <span className="text-[10px] bg-red-950 px-2.5 py-0.5 rounded-full border border-red-900 text-red-300 font-bold tracking-wider">
-              STRESS LEVEL: 100%
+              STRESS LEVEL: {Math.round(battlefield.emotionalTelemetry?.stress ?? 0)}%
             </span>
           </div>
 
@@ -144,7 +144,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
             {errorMessage && <div className="rounded-xl border border-amber-700/70 bg-amber-950/40 p-3 text-amber-200">{errorMessage}</div>}
             <div className="text-slate-400 leading-relaxed border-l-2 border-red-500 pl-3">
               <strong className="text-red-400 block mb-1">AI 首席红队指挥官 &gt;</strong>
-              破局模式已激活。系统已自动降级所有非事实信息。预设情景：你的校友VP因避嫌拒绝沟通，你的原强攻策略失效。<br />
+              破局模式已激活。系统已自动降级所有非事实信息。当前首先核验：{battlefield.riskBreakers?.[0]?.condition || '尚未记录硬性风险约束'}；当前核心底牌：{battlefield.assets?.[0]?.title || '尚未确认可用底牌'}。原有假设不得直接视为可执行路径。<br />
               <span className="text-amber-300 font-bold">基于此绝境，陈述你的第一反应应对方案：</span>
             </div>
 

@@ -189,9 +189,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     });
 
     return {
-      id: 'usr-commander-01',
-      username: '观测者 · 核心执棋官',
-      email: 'commander@aethel.io',
+      id: 'current-account',
+      username: '当前执棋官',
+      email: '',
       sigil: defaultSigil,
       aiPersona: 'ANALYST',
       isCalibrated: false,

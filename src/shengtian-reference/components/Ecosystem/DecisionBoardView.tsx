@@ -44,6 +44,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   onUpdateBattlefield,
 }) => {
   const board = battlefield.decisionBoard;
+  const strategist = board.members.find((member) => member.role === 'STRATEGIST');
   const hydratedRef = useRef(false);
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -347,8 +348,8 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             </p>
           </div>
           <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] font-mono-code text-slate-400 flex items-center justify-between">
-            <span>陈顾问 · 前SaaS商业VP</span>
-            <span className="text-purple-300 font-bold">● 正在参谋</span>
+            <span>{strategist ? `${strategist.name} · ${strategist.roleTitle}` : '暂无已授权参谋'}</span>
+            <span className="text-purple-300 font-bold">{strategist ? '● 正在参谋' : '○ 等待邀请'}</span>
           </div>
         </div>
 
