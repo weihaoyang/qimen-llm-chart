@@ -24,14 +24,18 @@ import { soundManager } from '../../utils/soundEffects';
 
 interface SkillMarketplaceViewProps {
   onLoadTemplate?: (templateId: string) => void;
+  userEquity?: number;
+  onRequestPurchase?: (item: SkillMarketplaceItem) => void;
 }
 
 export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
   onLoadTemplate,
+  userEquity,
+  onRequestPurchase,
 }) => {
-  const [items, setItems] = useState<SkillMarketplaceItem[]>(INITIAL_MARKETPLACE_ITEMS);
-  const [equityBalance, setEquityBalance] = useState<number>(INITIAL_EQUITY_ACCOUNT.balance);
-  const [transactions, setTransactions] = useState<EquityTransaction[]>(INITIAL_EQUITY_ACCOUNT.transactions);
+  const [items] = useState<SkillMarketplaceItem[]>(INITIAL_MARKETPLACE_ITEMS);
+  const equityBalance = userEquity ?? 0;
+  const [transactions] = useState<EquityTransaction[]>(INITIAL_EQUITY_ACCOUNT.transactions);
   const [filterType, setFilterType] = useState<'ALL' | 'TEMPLATE' | 'AI_KNOWLEDGE_PACK'>('ALL');
   const [activeTab, setActiveTab] = useState<'MARKET' | 'WALLET'>('MARKET');
 
@@ -41,29 +45,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
       return;
     }
 
-    if (equityBalance < item.price) {
-      soundManager.playWarning();
-      alert(`权益点数不足！需要 ${item.price} 权益点，当前余额 ${equityBalance} 权益点。可通过在推演所完成案例或在委员会提供采纳建议获得权益！`);
-      return;
-    }
-
-    // Deduct equity
-    const newBalance = equityBalance - item.price;
-    setEquityBalance(newBalance);
-
-    // Update transactions
-    const newTx: EquityTransaction = {
-      id: `tx-${Date.now()}`,
-      type: 'SPEND_TEMPLATE',
-      amount: -item.price,
-      title: `兑换【${item.title}】`,
-      timestamp: '刚刚',
-    };
-    setTransactions([newTx, ...transactions]);
-
-    // Mark owned
-    setItems(prev => prev.map(i => i.id === item.id ? { ...i, isOwned: true } : i));
-    soundManager.playSuccess();
+    onRequestPurchase?.(item);
   };
 
   const filteredItems = items.filter(item => {
@@ -214,7 +196,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
                   <div className="flex items-center gap-1.5 font-mono-code text-xs">
                     <Coins className="w-4 h-4 text-amber-400" />
                     <span className="text-white font-bold text-sm">
-                      {item.isOwned ? '已解锁' : `${item.price} 权益点`}
+                      {item.isOwned ? '已解锁' : `${item.price} 权益点 · 平台结算`}
                     </span>
                   </div>
 
