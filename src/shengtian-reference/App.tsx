@@ -75,7 +75,6 @@ import {
 } from './types';
 import { 
   INITIAL_SAAS_BATTLEFIELD, 
-  INITIAL_DECISION_DNA_ARCHIVE,
   INITIAL_REALITY_ECHOES,
   INITIAL_CONCLAVES,
   INITIAL_ARCHON_STATE,
@@ -409,9 +408,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   // Decision DNA storage
-  const [dnaRecords, setDnaRecords] = useState<DecisionDNARecord[]>(() => {
-    return INITIAL_DECISION_DNA_ARCHIVE;
-  });
+  const [dnaRecords, setDnaRecords] = useState<DecisionDNARecord[]>([]);
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;

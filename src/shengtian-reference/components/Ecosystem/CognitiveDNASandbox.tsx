@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   Dna, 
   Sparkles, 
@@ -23,11 +23,6 @@ import {
   CognitivePatternInsight, 
   CounterfactualReviewItem 
 } from '../../types';
-import { 
-  INITIAL_COGNITIVE_DNA_RADAR, 
-  INITIAL_COGNITIVE_INSIGHTS, 
-  INITIAL_COUNTERFACTUAL_REVIEWS 
-} from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 
 interface CognitiveDNASandboxProps {
@@ -38,10 +33,16 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
   dnaRecords,
 }) => {
   const [activeTab, setActiveTab] = useState<'RADAR' | 'INSIGHTS' | 'COUNTERFACTUAL' | 'ARCHIVE'>('RADAR');
-  const [radar, setRadar] = useState<DecisionDNARadarMetrics>(INITIAL_COGNITIVE_DNA_RADAR);
-  const [insights] = useState<CognitivePatternInsight[]>(INITIAL_COGNITIVE_INSIGHTS);
-  const [counterfactuals] = useState<CounterfactualReviewItem[]>(INITIAL_COUNTERFACTUAL_REVIEWS);
-  const [selectedCfId, setSelectedCfId] = useState<string>(INITIAL_COUNTERFACTUAL_REVIEWS[0].id);
+  const radar = useMemo<DecisionDNARadarMetrics>(() => {
+    if (!dnaRecords.length) return { riskAppetite: 0, infoRigor: 0, decisionSpeed: 0, adversityTenacity: 0, counterIntuition: 0, valueAlignment: 0 };
+    const outcomeScore = dnaRecords.filter((record) => record.survivalOutcome === 'SURVIVED').length / dnaRecords.length;
+    const evidenceScore = Math.min(100, Math.round(dnaRecords.reduce((sum, record) => sum + record.extractedDNA.length, 0) / dnaRecords.length * 20));
+    const reflectionScore = Math.min(100, Math.round(dnaRecords.reduce((sum, record) => sum + record.userReflection.length, 0) / dnaRecords.length));
+    return { riskAppetite: Math.round(45 + outcomeScore * 30), infoRigor: evidenceScore, decisionSpeed: Math.min(100, 40 + dnaRecords.length * 8), adversityTenacity: Math.round(35 + outcomeScore * 55), counterIntuition: Math.min(100, 30 + reflectionScore / 2), valueAlignment: Math.min(100, 30 + reflectionScore / 1.5) };
+  }, [dnaRecords]);
+  const insights = useMemo<CognitivePatternInsight[]>(() => dnaRecords.length ? [{ id: 'derived-evidence', type: 'WINNING_FORMULA', title: '从已保存复盘中提取的决策规律', detail: `已分析 ${dnaRecords.length} 条本人复盘记录。`, evidence: dnaRecords.flatMap((record) => record.extractedDNA).slice(0, 4).join('；') || '当前复盘尚未提取明确 DNA。', actionableGuidance: '继续完成真实复盘，积累足够样本后再生成稳定模式。', createdAt: '实时计算' }] : [], [dnaRecords]);
+  const counterfactuals = useMemo<CounterfactualReviewItem[]>(() => [], []);
+  const [selectedCfId, setSelectedCfId] = useState<string>('');
 
   const activeCounterfactual = counterfactuals.find(c => c.id === selectedCfId) || counterfactuals[0];
 
@@ -68,8 +69,8 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
 
           <div className="flex items-center gap-2 font-mono-code text-xs">
             <span className="text-slate-400">已沉淀认知法则:</span>
-            <span className="text-amber-400 font-bold bg-amber-950/80 px-2.5 py-1 rounded-xl border border-amber-800">
-              {dnaRecords.length + 2} 条核心法则
+              <span className="text-amber-400 font-bold bg-amber-950/80 px-2.5 py-1 rounded-xl border border-amber-800">
+              {dnaRecords.length} 条已保存复盘
             </span>
           </div>
         </div>
@@ -135,10 +136,10 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
                 <div className="absolute w-full h-[1px] bg-white/[0.06] -rotate-45" />
 
                 {/* Radar Polygon Shape */}
-                <div className="w-44 h-44 bg-gradient-to-tr from-amber-500/20 via-blue-500/30 to-purple-500/20 border-2 border-amber-400/80 rounded-2xl rotate-12 flex items-center justify-center shadow-lg shadow-amber-950/40 animate-pulse">
+                <div className="w-44 h-44 bg-gradient-to-tr from-amber-500/20 via-blue-500/30 to-purple-500/20 border-2 border-amber-400/80 rounded-2xl rotate-12 flex items-center justify-center shadow-lg shadow-amber-950/40">
                   <div className="text-center font-mono-code text-[11px] text-amber-300 font-bold">
                     <span>综合战力</span>
-                    <span className="block text-white text-base font-black">78.5</span>
+                    <span className="block text-white text-base font-black">{dnaRecords.length ? Math.round(Object.values(radar).reduce((sum, value) => sum + value, 0) / 6) : '—'}</span>
                   </div>
                 </div>
               </div>
@@ -199,7 +200,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {insights.map((insight) => {
+            {insights.length ? insights.map((insight) => {
               const isWinning = insight.type === 'WINNING_FORMULA';
               return (
                 <div 
@@ -235,7 +236,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
                   </div>
                 </div>
               );
-            })}
+            }) : <div className="rounded-xl border border-white/[0.08] bg-black/40 p-6 text-center text-xs text-slate-400">完成并保存至少一次真实复盘后，这里才会生成你的认知模式报告。</div>}
           </div>
         </div>
       )}
@@ -255,7 +256,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
 
           {/* Alternative Pathway Selector */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {counterfactuals.map((cf) => {
+            {counterfactuals.length ? counterfactuals.map((cf) => {
               const isSelected = cf.id === selectedCfId;
               return (
                 <button
@@ -276,11 +277,11 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
                   <h4 className="text-xs font-bold text-white">{cf.strategyName}</h4>
                 </button>
               );
-            })}
+            }) : <div className="rounded-xl border border-white/[0.08] bg-black/40 p-6 text-center text-xs text-slate-400">反事实沙盒需要已保存的真实策略与执行结果，目前没有可验证的替代路径。</div>}
           </div>
 
           {/* Counterfactual Simulation Result Details */}
-          <div className="p-5 rounded-2xl bg-black/60 border border-purple-500/40 space-y-4 font-mono-code text-xs">
+          {activeCounterfactual && <div className="p-5 rounded-2xl bg-black/60 border border-purple-500/40 space-y-4 font-mono-code text-xs">
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
               <span className="text-purple-300 font-bold">反事实假设：{activeCounterfactual.strategyName}</span>
               <span className="text-emerald-400 font-bold text-sm">
@@ -313,7 +314,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
               <strong className="text-amber-300 block mb-1">💡 首席顾问事后上帝视角洞察：</strong>
               {activeCounterfactual.aiComparativeHindsight}
             </div>
-          </div>
+          </div>}
         </div>
       )}
 
