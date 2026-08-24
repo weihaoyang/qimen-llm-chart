@@ -749,6 +749,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {/* VIEW 2: Observer Conclaves (组织的崛起 · 第二拼图) */}
         {activeMainView === 'CONCLAVES' && (
           <ObserverConclavesView
+            battleId={session.activeBattle?.id ?? battlefield.id}
             conclaves={conclaves}
             userEquity={userProfile.equityBalance}
             onInjectEquityToConclave={handleInjectEquityToConclave}

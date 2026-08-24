@@ -11,6 +11,7 @@ import {
   DeciderSigil
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi, Collaborator } from '../../session/api';
 import { 
   Shield, 
   Users, 
@@ -32,6 +33,7 @@ import {
 } from 'lucide-react';
 
 interface ObserverConclavesViewProps {
+  battleId: string;
   conclaves: ObserverConclave[];
   userEquity: number;
   onInjectEquityToConclave: (conclaveId: string, amount: number) => void;
@@ -41,6 +43,7 @@ interface ObserverConclavesViewProps {
 }
 
 export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
+  battleId,
   conclaves,
   userEquity,
   onInjectEquityToConclave,
@@ -58,6 +61,34 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   const [newCodeName, setNewCodeName] = useState('');
   const [newDoctrine, setNewDoctrine] = useState('');
   const [newGlowColor, setNewGlowColor] = useState('#38bdf8');
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [inviteSubjectId, setInviteSubjectId] = useState('');
+  const [inviteRole, setInviteRole] = useState<'viewer' | 'contributor' | 'advisor'>('contributor');
+  const [collaborationMessage, setCollaborationMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void sessionApi.collaborators(battleId).then(({ collaborators: value }) => {
+      if (!cancelled) setCollaborators(value);
+    }).catch((error) => {
+      if (!cancelled) setCollaborationMessage(error instanceof Error ? error.message : '协作者状态读取失败。');
+    });
+    return () => { cancelled = true; };
+  }, [battleId]);
+
+  const handleInvite = async () => {
+    const subjectId = inviteSubjectId.trim();
+    if (!subjectId) return;
+    setCollaborationMessage(null);
+    try {
+      const result = await sessionApi.inviteCollaborator(battleId, { subjectType: 'account', subjectId, role: inviteRole });
+      setCollaborators((current) => [...current.filter((item) => item.id !== result.collaborator.id), result.collaborator]);
+      setInviteSubjectId('');
+      setCollaborationMessage('协作邀请已创建，受邀者接受后才会获得访问权限。');
+    } catch (error) {
+      setCollaborationMessage(error instanceof Error ? error.message : '协作邀请失败，请重试。');
+    }
+  };
 
   const currentConclave = conclaves.find(c => c.id === selectedConclaveId) || conclaves[0];
 
@@ -406,6 +437,16 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
                         </span>
                       </div>
                     ))}
+                  </div>
+                  <div className="border-t border-white/[0.06] pt-3 space-y-2">
+                    <div className="text-[11px] font-mono-code text-sky-300 font-bold">服务端协作席位</div>
+                    <div className="flex gap-2">
+                      <input value={inviteSubjectId} onChange={(event) => setInviteSubjectId(event.target.value)} placeholder="受邀账户 subject id" className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-black/50 px-2 py-1.5 text-[11px] text-white" />
+                      <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value as typeof inviteRole)} className="rounded-lg border border-white/[0.1] bg-black/50 px-2 py-1.5 text-[11px] text-white"><option value="viewer">观察员</option><option value="contributor">贡献者</option><option value="advisor">顾问</option></select>
+                      <button onClick={() => void handleInvite()} className="rounded-lg bg-sky-700 px-2.5 py-1.5 text-[11px] font-bold text-white">邀请</button>
+                    </div>
+                    {collaborators.map((collaborator) => <div key={collaborator.id} className="flex items-center justify-between text-[10px] text-slate-400"><span>{collaborator.subjectId} · {collaborator.role}</span><span className={collaborator.status === 'active' ? 'text-emerald-300' : 'text-amber-300'}>{collaborator.status}</span></div>)}
+                    {collaborationMessage && <p className="text-[10px] text-amber-300">{collaborationMessage}</p>}
                   </div>
                 </div>
 
