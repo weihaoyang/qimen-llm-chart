@@ -811,6 +811,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onOpenStoreModal={() => setIsStoreModalOpen(true)}
         onOpenDeepArchivesModal={() => setIsDeepArchivesModalOpen(true)}
         onOpenWarRoomsModal={() => setIsWarRoomsModalOpen(true)}
+        onOpenExportBrief={() => setIsExportModalOpen(true)}
+        onOpenDNAArchive={() => setIsDNAModalOpen(true)}
         onResetToStandard={handleExitSingularity}
         isRiskTriggered={isRiskTriggered}
         selectedPersona={battlefield.selectedPersona || userProfile.aiPersona || 'ANALYST'}

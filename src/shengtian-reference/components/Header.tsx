@@ -17,7 +17,9 @@ import {
   Sparkles,
   Layers,
   FolderGit2,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  BrainCircuit
 } from 'lucide-react';
 import { AIPersonaType, DeciderSigil, UserProfile } from '../types';
 import { soundManager } from '../utils/soundEffects';
@@ -33,6 +35,8 @@ interface HeaderProps {
   onOpenStoreModal: () => void;
   onOpenDeepArchivesModal: () => void;
   onOpenWarRoomsModal: () => void;
+  onOpenExportBrief: () => void;
+  onOpenDNAArchive: () => void;
   onResetToStandard: () => void;
   isRiskTriggered: boolean;
   selectedPersona: AIPersonaType;
@@ -55,6 +59,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenStoreModal,
   onOpenDeepArchivesModal,
   onOpenWarRoomsModal,
+  onOpenExportBrief,
+  onOpenDNAArchive,
   onResetToStandard,
   isRiskTriggered,
   selectedPersona,
@@ -185,6 +191,26 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <History className="w-3.5 h-3.5 text-purple-400" />
             <span className="hidden md:inline">深网</span>
+          </button>
+
+          {/* Decision DNA archive */}
+          <button
+            onClick={onOpenDNAArchive}
+            className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-black/40 hover:bg-white/[0.06] border border-white/[0.08] text-slate-300 hover:text-cyan-300 text-xs font-mono-code flex items-center gap-1.5 transition-all cursor-pointer"
+            title="打开决策 DNA 档案"
+          >
+            <BrainCircuit className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden md:inline">DNA</span>
+          </button>
+
+          {/* Export tactical brief */}
+          <button
+            onClick={onOpenExportBrief}
+            className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-black/40 hover:bg-white/[0.06] border border-white/[0.08] text-slate-300 hover:text-blue-300 text-xs font-mono-code flex items-center gap-1.5 transition-all cursor-pointer"
+            title="导出战局决策简报"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden md:inline">导出</span>
           </button>
 
           {/* Token Equity Ledger / Store */}
