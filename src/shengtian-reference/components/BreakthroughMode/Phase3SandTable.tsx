@@ -36,9 +36,9 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   onOpenMetaphysicsModal,
   onOpenValueModal,
 }) => {
-  const [selectedStrategyKey, setSelectedStrategyKey] = useState<'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH'>('FIELD_SHIFT');
+  const [selectedStrategyKey, setSelectedStrategyKey] = useState<'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH'>(battlefield.lockedAsymmetricStrategyId ?? 'FIELD_SHIFT');
   const [activePivotalModal, setActivePivotalModal] = useState<{ day: number; label: string; risk: string } | null>(null);
-  const [isLocked, setIsLocked] = useState(false);
+  const [isLocked, setIsLocked] = useState(Boolean(battlefield.lockedAsymmetricStrategyId));
 
   const currentPkg = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyKey];
 

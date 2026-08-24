@@ -285,13 +285,19 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         valueCalibrator: battlefield.valueCalibrator,
         metaphysicsTiming: battlefield.metaphysicsTiming,
         selectedPersona: battlefield.selectedPersona,
+        breakthroughActive: battlefield.breakthroughActive,
+        breakthroughPhase: battlefield.breakthroughPhase,
+        forcedWorstCaseActive: battlefield.forcedWorstCaseActive,
+        lockedAsymmetricStrategyId: battlefield.lockedAsymmetricStrategyId,
+        cognitiveBiasesDetected: battlefield.cognitiveBiasesDetected,
+        redTeamLog: battlefield.redTeamLog,
       }],
     ];
     const timers = states.filter(([moduleId]) => moduleHydratedRef.current[moduleId]).map(([moduleId, state]) => window.setTimeout(() => {
       void fetch(`/api/battles/${battleId}/modules/${moduleId}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state, consent: { source: 'user_session' } }) });
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);
