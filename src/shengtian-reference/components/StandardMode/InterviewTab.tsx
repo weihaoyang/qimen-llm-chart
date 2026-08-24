@@ -78,8 +78,14 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
         bottomLine: response.parameterExtracted?.key === 'bottom_line' ? String(response.parameterExtracted.value) : prev.bottomLine,
       }));
       soundManager.playBlip(900, 0.05);
-    } catch {
-      // safe fallback
+    } catch (error) {
+      const errorMsg: InterviewMessage = {
+        id: `msg-error-${Date.now()}`,
+        sender: 'ai',
+        text: error instanceof Error ? `采访未完成：${error.message}` : '采访未完成，请重试。',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      };
+      onUpdateBattlefield(prev => ({ ...prev, interviewHistory: [...prev.interviewHistory, errorMsg] }));
     } finally {
       setIsTyping(false);
     }

@@ -23,6 +23,7 @@ export class TacticalAIService {
           history: history.map((item) => ({ role: item.sender === 'ai' ? 'assistant' : 'user', content: item.text }))
         })
       });
+      if (!response.ok) throw new Error(`采访服务请求失败（${response.status}）`);
       const data = await response.json();
       const rawResult = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
       const rawText = typeof rawResult === 'object' && rawResult ? String((rawResult as { assistantMessage?: unknown; summary?: unknown }).assistantMessage ?? (rawResult as { summary?: unknown }).summary ?? JSON.stringify(rawResult)) : String(rawResult ?? data.analysis ?? data.text ?? '');
@@ -48,7 +49,7 @@ export class TacticalAIService {
       return { text, parameterExtracted };
     } catch (e) {
       console.error(e);
-      return { text: "通信线路受到干扰，请重试。" };
+      throw e instanceof Error ? e : new Error('采访服务暂时不可用，请重试。');
     }
   }
 
@@ -64,17 +65,13 @@ export class TacticalAIService {
           question: `作为红队审查官攻击以下策略，并严格返回 JSON：${userPlan}`
         })
       });
+      if (!response.ok) throw new Error(`红队服务请求失败（${response.status}）`);
       const data = await response.json();
       const result = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
       const text = JSON.stringify(result ?? data.analysis ?? data.text ?? '').replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(text);
     } catch (e) {
-      return {
-        critique: "无法连接红队引擎。",
-        failureProbability: 99,
-        fatalVulnerability: "通信中断",
-        suggestedFocus: "恢复系统连接"
-      };
+      throw e instanceof Error ? e : new Error('红队服务暂时不可用，请重试。');
     }
   }
 
@@ -85,11 +82,12 @@ export class TacticalAIService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: `请针对策略“${strategyName}”提出一个致命且具体的单句问题。` })
       });
+      if (!response.ok) throw new Error(`致命问题服务请求失败（${response.status}）`);
       const data = await response.json();
       const result = data.job && typeof data.job === 'object' ? (data.job as { result?: unknown }).result : undefined;
       return String(typeof result === 'string' ? result : result ? (result as { summary?: unknown }).summary ?? JSON.stringify(result) : data.analysis || data.text || '').trim();
     } catch (e) {
-      return "如果在最坏的假设下，你是否依然能存活？";
+      throw e instanceof Error ? e : new Error('致命问题服务暂时不可用，请重试。');
     }
   }
 }

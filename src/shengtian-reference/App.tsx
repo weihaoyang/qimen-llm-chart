@@ -268,6 +268,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [isSensoryModalOpen, setIsSensoryModalOpen] = useState(false);
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
   
   // Aethel Ecosystem Modals
   const [isDeepArchivesModalOpen, setIsDeepArchivesModalOpen] = useState(false);
@@ -359,36 +360,16 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   const handleCreateNewBattlefield = async () => {
-    const newId = `battlefield-${Date.now()}`;
     try {
       const result = await sessionApi.create({ title:'新建现实决策战局', objective:'描述需要解决的现实问题', minimumOutcome:'', idealOutcome:'', opponentSummary:'', hardDeadline:new Date(Date.now() + 30 * 86400000).toISOString() });
       await session.refresh();
       setSelectedBattlefieldId(result.battle.id);
-    } catch { /* keep the local draft visible until the account is ready */ }
-    const newBattlefield: WarRoomItem = {
-      id: newId,
-      title: '新建因果博弈战局',
-      subtitle: '未命名战局 · 等待采访参数萃取',
-      status: 'STABLE',
-      updatedAt: '刚刚',
-      isShared: false,
-      daysLeft: 30,
-      confidence: 50,
-      industry: '未分类',
-    };
-    setBattlefieldList(prev => [newBattlefield, ...prev]);
-    setSelectedBattlefieldId(newId);
-    setActiveMainView('WAR_ROOM');
-    setActiveStandardTab('interview');
-    setBattlefield(prev => ({
-      ...prev,
-      id: newId,
-      title: '新建因果博弈战局',
-      subtitle: '未命名战局 · 等待采访参数萃取',
-      targetDeadlineDays: 30,
-      confidence: 50,
-    }));
-    soundManager.playSuccess();
+      setActiveMainView('WAR_ROOM');
+      setActiveStandardTab('interview');
+      soundManager.playSuccess();
+    } catch (error) {
+      setPersistenceError(error instanceof Error ? error.message : '创建战局失败，请重试。');
+    }
   };
 
   // Decision DNA storage
@@ -703,6 +684,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-700 ${
       battlefield.breakthroughActive ? 'bg-[#05080D] text-slate-100' : 'bg-[#080B12] text-slate-100'
     } tactical-grid`}>
+      {persistenceError && <div className="fixed top-3 right-3 z-[100] max-w-sm rounded-xl border border-red-500/50 bg-red-950/90 px-4 py-3 text-xs text-red-100 shadow-xl">{persistenceError}<button className="ml-3 text-red-300 underline" onClick={() => setPersistenceError(null)}>关闭</button></div>}
       
       {/* Top Standard Clean Header */}
       <Header
