@@ -48,6 +48,7 @@ export const sessionApi = {
   battle: (id:string) => request<{ battle: SessionBattle; scenario?: unknown }>(`/api/battles/${id}`),
   analysis: (id:string) => request<{ junctions: Array<{ id:string }>; moves: Array<Record<string, unknown>> }>(`/api/battles/${id}/analysis`),
   saveMoves: (id:string, junctionId:string, moves:Array<Record<string, unknown>>) => request<{ moves: unknown[] }>(`/api/battles/${id}/moves`, { method:"POST", body:JSON.stringify({ junctionId, moves }) }),
+  deleteMove: (id:string, moveId:string) => request<{ deleted:boolean }>(`/api/battles/${id}/moves?moveId=${encodeURIComponent(moveId)}`, { method:"DELETE" }),
   commitment: (id:string) => request<{ commitment: Record<string, unknown> | null }>(`/api/battles/${id}/commitments`),
   commitMove: (id:string, moveId:string, changeReason?:string) => request<{ commitment: Record<string, unknown> }>(`/api/battles/${id}/commitments`, { method:"POST", body:JSON.stringify({ moveId, changeReason }) }),
   consumeUsage: (id:string, operation:string, idempotencyKey:string) => request<{ usage: unknown }>(`/api/battles/${id}/usage`, { method:"POST", body:JSON.stringify({ operation, idempotencyKey }) }),

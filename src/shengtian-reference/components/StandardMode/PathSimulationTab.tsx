@@ -55,6 +55,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [activeCommitmentId, setActiveCommitmentId] = useState<string | null>(null);
   const [commitPending, setCommitPending] = useState<string | null>(null);
+  const [deletePending, setDeletePending] = useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -140,12 +141,17 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     } finally { setCommitPending(null); }
   };
 
-  const handleDeleteStrategy = (stratId: string) => {
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      strategies: prev.strategies.filter(s => s.id !== stratId),
-    }));
-    soundManager.playBlip(400, 0.03);
+  const handleDeleteStrategy = async (stratId: string) => {
+    if (deletePending) return;
+    setDeletePending(stratId);
+    try {
+      if (/^[0-9a-f-]{36}$/i.test(stratId)) await sessionApi.deleteMove(battleId, stratId);
+      onUpdateBattlefield(prev => ({ ...prev, strategies: prev.strategies.filter(s => s.id !== stratId) }));
+      setPersistenceMessage('策略草案已删除。');
+      soundManager.playBlip(400, 0.03);
+    } catch (error) {
+      setPersistenceMessage(error instanceof Error ? error.message : '删除策略失败，请重试。');
+    } finally { setDeletePending(null); }
   };
 
   const toggleAssignCard = (strategyId: string, cardId: string) => {

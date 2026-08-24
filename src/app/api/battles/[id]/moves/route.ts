@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { isUuid } from "@/lib/battle/input";
-import { listMoves, saveMoveSet } from "@/lib/battle/repository";
+import { deleteDraftMove, listMoves, saveMoveSet } from "@/lib/battle/repository";
 import { asRecord, asText } from "@/lib/battle/input";
 import type { MoveKind } from "@/lib/battle/types";
 
@@ -29,4 +29,14 @@ export async function POST(request: Request, context: Context) {
     const saved = await saveMoveSet(await requireAccountSubject(request), id, body.junctionId as string, moves);
     return saved === null ? NextResponse.json({ error: "战局或交叉点不存在，或不属于当前账户。" }, { status: 403 }) : NextResponse.json({ moves: saved }, { status: 201 });
   } catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({ error: error.message }, { status: error.status }) : NextResponse.json({ error: "保存策略失败。" }, { status: 500 }); }
+}
+
+export async function DELETE(request: Request, context: Context) {
+  try {
+    const id = (await context.params).id;
+    const moveId = new URL(request.url).searchParams.get("moveId");
+    if (!isUuid(id) || !isUuid(moveId)) return NextResponse.json({ error: "战局或策略标识无效。" }, { status: 400 });
+    const deleted = await deleteDraftMove(await requireAccountSubject(request), id, moveId);
+    return deleted === null ? NextResponse.json({ error: "战局或策略不存在，或不属于当前账户。" }, { status: 403 }) : deleted ? NextResponse.json({ deleted: true }) : NextResponse.json({ error: "只有未锁定的策略草案可以删除。" }, { status: 409 });
+  } catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({ error: error.message }, { status: error.status }) : NextResponse.json({ error: "删除策略失败。" }, { status: 500 }); }
 }

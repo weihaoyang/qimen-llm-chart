@@ -191,6 +191,13 @@ export const listMoves = async (subject: AccountSubject, battleId: string, junct
   return result.rows.map(mapMove);
 };
 
+export const deleteDraftMove = async (subject: AccountSubject, battleId: string, moveId: string) => withTransaction(async (client) => {
+  const owner = await client.query(`SELECT c.id FROM battle_cases c JOIN battle_moves m ON m.battle_id=c.id WHERE c.id=$1 AND m.id=$2 AND c.platform_subject_type=$3 AND c.platform_subject_id=$4 FOR UPDATE`, [battleId, moveId, ...ownership(subject)]);
+  if (!owner.rowCount) return null;
+  const deleted = await client.query(`DELETE FROM battle_moves WHERE id=$1 AND battle_id=$2 AND state='draft' RETURNING id`, [moveId, battleId]);
+  return Boolean(deleted.rowCount);
+});
+
 export const commitMove = async (subject: AccountSubject, battleId: string, moveId: string, changeReason?: string) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
