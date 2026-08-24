@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { DeepArchiveItem } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 import confetti from 'canvas-confetti';
 import { 
   X, 
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 interface DeepArchivesModalProps {
+  battleId?: string;
   isOpen: boolean;
   onClose: () => void;
   userEquity: number;
@@ -87,6 +89,7 @@ const HISTORICAL_ARCHIVES: DeepArchiveItem[] = [
 ];
 
 export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
+  battleId,
   isOpen,
   onClose,
   userEquity,
@@ -95,6 +98,18 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   const [archives, setArchives] = useState<DeepArchiveItem[]>(HISTORICAL_ARCHIVES);
   const [selectedArchive, setSelectedArchive] = useState<DeepArchiveItem>(HISTORICAL_ARCHIVES[0]);
   const [isRestoring, setIsRestoring] = useState(false);
+
+  React.useEffect(() => {
+    if (!battleId) return;
+    let cancelled = false;
+    void sessionApi.module(battleId, 'deep-archives').then(({ state }) => {
+      const unlocked = (state as { unlockedIds?: unknown } | null)?.unlockedIds;
+      if (cancelled || !Array.isArray(unlocked)) return;
+      const ids = new Set(unlocked.filter((value): value is string => typeof value === 'string'));
+      setArchives(HISTORICAL_ARCHIVES.map((archive) => ({ ...archive, isUnlocked: archive.isUnlocked || ids.has(archive.id) })));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId]);
 
   if (!isOpen) return null;
 
@@ -111,6 +126,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
         prev.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a))
       );
       setSelectedArchive(prev => ({ ...prev, isUnlocked: true }));
+      if (battleId) void sessionApi.saveModule(battleId, 'deep-archives', { unlockedIds: archives.filter((item) => item.isUnlocked || item.id === archive.id).map((item) => item.id) }).catch(() => undefined);
       soundManager.playStrategyLocked();
       confetti({
         particleCount: 70,

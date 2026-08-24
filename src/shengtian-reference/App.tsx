@@ -881,6 +881,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       <DeepArchivesModal
         isOpen={isDeepArchivesModalOpen}
         onClose={() => setIsDeepArchivesModalOpen(false)}
+        battleId={session.activeBattle?.id}
         userEquity={userProfile.equityBalance}
         onSpendEquity={handleSpendEquity}
       />
