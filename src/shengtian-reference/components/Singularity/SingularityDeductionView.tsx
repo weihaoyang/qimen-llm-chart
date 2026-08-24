@@ -290,6 +290,7 @@ export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> =
         selectedNodeId={selectedNode?.id}
         onSelectNode={setSelectedNode}
         onTargetSingularity={(nodeId) => {
+          setSelectedNode(INITIAL_NODES.find((node) => node.id === nodeId) ?? selectedNode);
           soundManager.playBlip(900, 0.05);
         }}
       />
