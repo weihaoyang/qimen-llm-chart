@@ -69,8 +69,9 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
     setHasSimulated(true);
     soundManager.playSuccess();
     
-    // Rewards are issued by the platform after the persisted simulation is audited.
-    setBountyClaimed(true);
+    // The simulation state is persisted below. Any reward is platform-ledger
+    // controlled and must not be marked as credited by the browser.
+    setBountyClaimed(false);
   };
 
   const handleResetSimulation = () => {
@@ -148,7 +149,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed mb-3">{cs.backgroundSummary}</p>
 
               <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono-code text-slate-400">
-                <span>推演奖励: <strong className="text-amber-300">+{cs.bountyReward} 权益点</strong></span>
+                <span>平台审计奖励: <strong className="text-amber-300">完成后按规则核发</strong></span>
                 <span className={isSelected ? 'text-amber-400 font-bold' : 'text-slate-500'}>
                   {isSelected ? '● 正在沙盘' : '载入兵棋'}
                 </span>
@@ -278,7 +279,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-40 text-black text-xs font-bold font-mono-code flex items-center gap-2 shadow-xl shadow-amber-950/60 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-black" />
-              <span>提交推演并生成【决策对比报告】 (+{activeCase.bountyReward} 权益)</span>
+              <span>提交推演并生成【决策对比报告】</span>
               <ArrowRight className="w-4 h-4 text-black" />
             </button>
           </div>
