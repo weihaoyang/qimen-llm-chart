@@ -198,6 +198,14 @@ export const deleteDraftMove = async (subject: AccountSubject, battleId: string,
   return Boolean(deleted.rowCount);
 });
 
+export const updateDraftMoveSource = async (subject: AccountSubject, battleId: string, moveId: string, source: Record<string, unknown>) => withTransaction(async (client) => {
+  const owner = await client.query(`SELECT m.id FROM battle_moves m JOIN battle_cases c ON c.id=m.battle_id WHERE m.id=$1 AND m.battle_id=$2 AND c.platform_subject_type=$3 AND c.platform_subject_id=$4 AND m.state='draft' FOR UPDATE`, [moveId, battleId, ...ownership(subject)]);
+  if (!owner.rowCount) return null;
+  const result = await client.query<MoveRow>(`UPDATE battle_moves SET source_json=$3::jsonb WHERE id=$1 AND battle_id=$2 AND state='draft' RETURNING id,battle_id,junction_id,version,kind,title,key_variable,rationale,action_json,cost_json,upside_json,failure_cost_json,validation_json,stop_json,assumptions_json,source_json,state`, [moveId, battleId, JSON.stringify(source)]);
+  await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
+  return result.rows[0] ? mapMove(result.rows[0]) : null;
+});
+
 export const commitMove = async (subject: AccountSubject, battleId: string, moveId: string, changeReason?: string) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;

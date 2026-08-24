@@ -206,6 +206,13 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   });
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const profileHydratedRef = React.useRef(false);
+  const saveBattleModule = React.useCallback(async (battleId: string, moduleId: string, state: unknown, consent: Record<string, unknown> = {}) => {
+    const response = await fetch(`/api/battles/${battleId}/modules/${moduleId}`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state, consent }),
+    });
+    if (!response.ok) throw new Error(`模块 ${moduleId} 保存失败（${response.status}）。`);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -394,14 +401,6 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   const updateBattlefield = React.useCallback((updater: React.SetStateAction<BattlefieldState>) => {
     setBattlefield(updater);
-  }, []);
-
-  const saveBattleModule = React.useCallback(async (battleId: string, moduleId: string, state: unknown, consent: Record<string, unknown> = {}) => {
-    const response = await fetch(`/api/battles/${battleId}/modules/${moduleId}`, {
-      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state, consent }),
-    });
-    if (!response.ok) throw new Error(`模块 ${moduleId} 保存失败（${response.status}）。`);
   }, []);
 
   useEffect(() => {

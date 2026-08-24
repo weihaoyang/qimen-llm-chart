@@ -29,18 +29,39 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
   onUpdateBattlefield,
   onLaunchBreakthrough,
 }) => {
+  const [activeMoveId, setActiveMoveId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   React.useEffect(() => {
     let cancelled = false;
-    void sessionApi.module(battleId, 'risk-monitor').then(({ state }) => {
-      const envelope = state as { state?: unknown } | null;
-      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { riskBreakers?: unknown } | null;
-      const breakers = saved?.riskBreakers;
-      if (cancelled) return;
-      if (Array.isArray(breakers)) {
-        onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers as BattlefieldState['riskBreakers'] }));
-        return;
-      }
-      void fetch(`/api/battles/${battleId}/constraints`, { credentials: 'include' }).then(async (response) => {
+    const load = async () => {
+      try {
+        const { commitment } = await sessionApi.commitment(battleId);
+        const moveId = typeof commitment?.moveId === 'string' ? commitment.moveId : null;
+        if (moveId) {
+          const execution = await sessionApi.execution(battleId, moveId);
+          const breakers = execution.breakers.map((breaker) => ({
+            id: String(breaker.id),
+            name: String(breaker.label ?? breaker.kind ?? '执行断路器'),
+            condition: JSON.stringify(breaker.threshold ?? {}),
+            isTriggered: Boolean(breaker.triggeredAt),
+            triggeredAt: typeof breaker.triggeredAt === 'string' ? breaker.triggeredAt : undefined,
+            impact: String(breaker.actionOnTrigger ?? '触发后停止当前落子令。'),
+            recommendedAction: String(breaker.actionOnTrigger ?? '立即停止当前路径并进入破局重构。'),
+          }));
+          if (!cancelled) {
+            setActiveMoveId(moveId);
+            onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers }));
+          }
+          return;
+        }
+        const { state } = await sessionApi.module(battleId, 'risk-monitor');
+        const envelope = state as { state?: unknown } | null;
+        const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { riskBreakers?: unknown } | null;
+        if (Array.isArray(saved?.riskBreakers)) {
+          if (!cancelled) onUpdateBattlefield(prev => ({ ...prev, riskBreakers: saved.riskBreakers as BattlefieldState['riskBreakers'] }));
+          return;
+        }
+        const response = await fetch(`/api/battles/${battleId}/constraints`, { credentials: 'include' });
         if (!response.ok) throw new Error(`读取风险约束失败（${response.status}）。`);
         const payload = await response.json() as { constraints?: Array<Record<string, unknown>> };
         const derived = (payload.constraints ?? []).map((constraint, index) => ({
@@ -55,11 +76,28 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
           onUpdateBattlefield(prev => ({ ...prev, riskBreakers: derived }));
           await sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: derived });
         }
-      }).catch(() => undefined);
-    }).catch(() => undefined);
+      } catch (error) {
+        if (!cancelled) setActionMessage(error instanceof Error ? error.message : '风险断路器读取失败，请重试。');
+      }
+    };
+    void load();
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);
-  const toggleRiskTrigger = (riskId: string) => {
+  const toggleRiskTrigger = async (riskId: string) => {
+    const risk = battlefield.riskBreakers.find((item) => item.id === riskId);
+    if (!risk) return;
+    if (activeMoveId) {
+      if (risk.isTriggered) {
+        setActionMessage('正式执行台断路器触发后不可在浏览器复位；如需换线，请结束当前落子令并记录原因。');
+        return;
+      }
+      try {
+        await sessionApi.triggerBreaker(battleId, activeMoveId, riskId);
+        onUpdateBattlefield(prev => ({ ...prev, riskBreakers: prev.riskBreakers.map(item => item.id === riskId ? { ...item, isTriggered: true, triggeredAt: new Date().toISOString() } : item) }));
+        setActionMessage('正式执行断路器已触发，当前落子令已进入停止流程。');
+      } catch (error) { setActionMessage(error instanceof Error ? error.message : '触发正式断路器失败，请重试。'); }
+      return;
+    }
     onUpdateBattlefield(prev => {
       const updated = prev.riskBreakers.map(r => {
         if (r.id === riskId) {
@@ -83,7 +121,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
       };
     });
     const next = battlefield.riskBreakers.map(r => r.id === riskId ? { ...r, isTriggered: !r.isTriggered, triggeredAt: !r.isTriggered ? new Date().toISOString() : undefined } : r);
-    void sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: next }).catch(() => undefined);
+    void sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: next }).catch((error) => setActionMessage(error instanceof Error ? error.message : '风险断路器保存失败，请重试。'));
   };
 
   const triggeredCount = battlefield.riskBreakers.filter(r => r.isTriggered).length;
@@ -91,6 +129,8 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
+      {actionMessage && <div className="rounded-xl border border-amber-700/60 bg-amber-950/40 px-4 py-3 text-xs text-amber-200">{actionMessage}</div>}
+
       {/* Top Banner Alert Status */}
       <div className={`surface-obsidian rounded-2xl p-5 shadow-2xl transition-all duration-500 border ${
         triggeredCount > 0

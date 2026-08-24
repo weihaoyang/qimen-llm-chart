@@ -60,9 +60,12 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   React.useEffect(() => {
     let cancelled = false;
     void sessionApi.analysis(battleId).then((result) => {
-      const loaded = result.moves.map((move) => ({
-        id: String(move.id), name: String(move.title ?? '未命名策略'), type: move.kind === 'strong_attack' ? 'AGGRESSIVE' : move.kind === 'hedge' ? 'HEDGE' : 'PROBING', typeLabel: move.kind === 'strong_attack' ? '强攻手' : move.kind === 'hedge' ? '对冲手' : '试局手', description: String(move.rationale ?? ''), targetTimelineDay: 14, assignedCardIds: [], costDescription: JSON.stringify(move.cost ?? {}), successSignal: JSON.stringify(move.validation ?? {}), estimatedSurvivalProb: 50, status: move.state === 'selected' ? 'LOCKED' : move.state === 'executing' ? 'EXECUTING' : 'PROPOSED',
-      } as StrategyBranch));
+      const loaded = result.moves.map((move) => {
+        const source = move.source && typeof move.source === 'object' ? move.source as Record<string, unknown> : {};
+        return {
+        id: String(move.id), name: String(move.title ?? '未命名策略'), type: move.kind === 'strong_attack' ? 'AGGRESSIVE' : move.kind === 'hedge' ? 'HEDGE' : 'PROBING', typeLabel: move.kind === 'strong_attack' ? '强攻手' : move.kind === 'hedge' ? '对冲手' : '试局手', description: String(move.rationale ?? ''), targetTimelineDay: typeof source.targetTimelineDay === 'number' ? source.targetTimelineDay : 14, assignedCardIds: Array.isArray(source.assignedCardIds) ? source.assignedCardIds.filter((value): value is string => typeof value === 'string') : [], costDescription: JSON.stringify(move.cost ?? {}), successSignal: JSON.stringify(move.validation ?? {}), estimatedSurvivalProb: typeof source.estimatedSurvivalProb === 'number' ? source.estimatedSurvivalProb : 50, status: move.state === 'selected' ? 'LOCKED' : move.state === 'executing' ? 'EXECUTING' : 'PROPOSED',
+      } as StrategyBranch;
+      });
       if (!cancelled && loaded.length) onUpdateBattlefield((previous) => ({ ...previous, strategies: loaded }));
     }).catch(() => undefined);
     return () => { cancelled = true; };
@@ -115,7 +118,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     void sessionApi.analysis(battleId).then(async ({ junctions }) => {
       const junctionId = junctions[0]?.id;
       if (!junctionId) { setPersistenceMessage('策略已保存在当前草稿；创建因果节点后才能写入服务端。'); return; }
-      const saved = await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [] }]);
+      const saved = await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [], source: { layer: 'path_simulation', assignedCardIds: selectedCardsForNewStrategy, targetTimelineDay: strategyDay, estimatedSurvivalProb: newStrat.estimatedSurvivalProb } }]);
       const persisted = saved.moves[0] as Record<string, unknown> | undefined;
       if (persisted?.id) onUpdateBattlefield(previous => ({ ...previous, strategies: previous.strategies.map(item => item.id === newStrat.id ? { ...item, id: String(persisted.id) } : item) }));
       setPersistenceMessage('策略草案已写入战局。');
@@ -155,6 +158,10 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   };
 
   const toggleAssignCard = (strategyId: string, cardId: string) => {
+    const current = battlefield.strategies.find((strategy) => strategy.id === strategyId);
+    const nextAssignedCardIds = current
+      ? (current.assignedCardIds.includes(cardId) ? current.assignedCardIds.filter((id) => id !== cardId) : [...current.assignedCardIds, cardId])
+      : [];
     onUpdateBattlefield(prev => ({
       ...prev,
       strategies: prev.strategies.map(s => {
@@ -168,6 +175,14 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
         return s;
       }),
     }));
+    if (/^[0-9a-f-]{36}$/i.test(strategyId) && current?.status === 'PROPOSED') {
+      void sessionApi.updateMoveSource(battleId, strategyId, {
+        layer: 'path_simulation',
+        assignedCardIds: nextAssignedCardIds,
+        targetTimelineDay: current.targetTimelineDay,
+        estimatedSurvivalProb: current.estimatedSurvivalProb,
+      }).catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '策略底牌挂载保存失败，请重试。'));
+    }
     soundManager.playBlip(750, 0.02);
   };
 
