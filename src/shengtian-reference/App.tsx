@@ -540,7 +540,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     const echo = realityEchoes.find(e => e.id === echoId);
     if (!echo || echo.finalRewardUnlocked) return;
 
-    handleAddEquity(echo.finalRewardEquity, '现实回响终局平衡奖励');
+    // The reward is recorded as a completed module state; entitlement crediting is
+    // performed by the platform ledger and must not be fabricated in the browser.
     setRealityEchoes(prev => prev.map(e => e.id === echoId ? { ...e, finalRewardUnlocked: true } : e));
     soundManager.playSuccess();
   };
