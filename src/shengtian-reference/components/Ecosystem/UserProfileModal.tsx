@@ -142,7 +142,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 {userProfile?.username || '观测者 · 核心执棋官'}
               </h3>
               <p className="text-xs text-slate-400 font-mono-code">
-                UUID: {userProfile?.id || 'usr-alpha-001'} · 绑定AI伙伴: {userProfile?.aiPersona || 'ANALYST'}
+                UUID: {userProfile?.id || '当前账户'} · 绑定AI伙伴: {userProfile?.aiPersona || 'ANALYST'}
               </p>
             </div>
 
@@ -155,19 +155,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <div className="p-2.5 bg-black/40 rounded-xl border border-white/[0.05]">
                 <span className="text-[10px] text-slate-500 block">推演场次</span>
                 <span className="text-sm font-bold text-white">
-                  {userProfile?.totalSimulations ?? 8} 次
+                  {userProfile?.totalSimulations ?? 0} 次
                 </span>
               </div>
               <div className="p-2.5 bg-black/40 rounded-xl border border-white/[0.05]">
                 <span className="text-[10px] text-slate-500 block">奇点突破率</span>
                 <span className="text-sm font-bold text-emerald-400">
-                  {userProfile?.singularitySuccessRate ?? 87.5}%
+                  {userProfile?.singularitySuccessRate ?? 0}%
                 </span>
               </div>
               <div className="p-2.5 bg-black/40 rounded-xl border border-white/[0.05]">
                 <span className="text-[10px] text-slate-500 block">权益余额</span>
                 <span className="text-sm font-bold text-amber-400">
-                  {userProfile?.equityBalance ?? 500} 点
+                  {userProfile?.equityBalance ?? 0} 点
                 </span>
               </div>
             </div>
@@ -196,10 +196,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(userProfile?.achievements || [
-              { id: '1', title: '烙印铸成', description: '完成首次世界观校准与咖啡馆危机教学推演' },
-              { id: '2', title: '首次突破观测者迷雾', description: '在多用户干涉的迷雾状态下成功引爆破局奇点' },
-            ]).map((ach, idx) => (
+            {(userProfile?.achievements || []).map((ach, idx) => (
               <div key={idx} className="p-3 rounded-xl bg-black/40 border border-white/[0.08] flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-amber-950/60 border border-amber-500/50 flex items-center justify-center text-amber-400 shrink-0">
                   <Award className="w-4 h-4" />
@@ -211,6 +208,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             ))}
           </div>
+          {!(userProfile?.achievements?.length) && <p className="text-xs text-slate-500">暂无已核验成就，完成真实战局后会在这里显示。</p>}
         </div>
 
       </div>

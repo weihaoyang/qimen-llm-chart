@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Dna, 
   Sparkles, 
@@ -50,6 +50,20 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
   const [counterfactualLoading, setCounterfactualLoading] = useState(false);
   const [counterfactualError, setCounterfactualError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!battleId) return;
+    let cancelled = false;
+    void sessionApi.module(battleId, 'counterfactual').then(({ state }) => {
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { results?: unknown } | null;
+      if (cancelled || !Array.isArray(saved?.results)) return;
+      const results = saved.results.filter((item): item is CounterfactualReviewItem => Boolean(item && typeof item === 'object' && typeof (item as CounterfactualReviewItem).id === 'string'));
+      setCounterfactuals(results);
+      setSelectedCfId(results[0]?.id ?? '');
+    }).catch((error) => { if (!cancelled) setCounterfactualError(error instanceof Error ? error.message : '反事实历史记录读取失败，请重试。'); });
+    return () => { cancelled = true; };
+  }, [battleId]);
+
   const generateCounterfactual = async () => {
     const record = dnaRecords[0];
     if (!battleId || !record || counterfactualLoading) return;
@@ -73,8 +87,9 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
         retainedValuation: String(value.retainedValuation ?? '服务端未评估'),
         aiComparativeHindsight: String(value.nextAdjustment ?? '请结合实际执行结果继续核验。'),
       };
-      setCounterfactuals([item]);
+      setCounterfactuals((previous) => [item, ...previous.filter((entry) => entry.id !== item.id)].slice(0, 20));
       setSelectedCfId(item.id);
+      await sessionApi.saveModule(battleId, 'counterfactual', { results: [item, ...counterfactuals.filter((entry) => entry.id !== item.id)].slice(0, 20) }, { source: 'counterfactual_review' });
     } catch (error) {
       setCounterfactualError(error instanceof Error ? error.message : '反事实推演失败，请重试。');
     } finally { setCounterfactualLoading(false); }
