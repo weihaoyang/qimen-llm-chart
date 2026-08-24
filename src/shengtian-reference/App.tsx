@@ -498,7 +498,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   // Calibration completion
-  const handleCompleteCalibration = (profile: UserProfile, sigil: DeciderSigil) => {
+  const handleCompleteCalibration = (profile: UserProfile, sigil: DeciderSigil, answers: AIPersonaType[]) => {
     setUserProfile((previous) => ({ ...profile, equityBalance: previous.equityBalance }));
     setIsCalibrated(true);
     setShowCalibrationFlow(false);
@@ -506,6 +506,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       ...prev,
       selectedPersona: profile.aiPersona,
     }));
+    const dimensions: Array<'information' | 'reasoning' | 'resource' | 'time' | 'risk' | 'execution' | 'relationship'> = ['information', 'reasoning', 'resource'];
+    void Promise.all(dimensions.map((dimension, index) => fetch('/api/battles/calibration', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dimension,
+        expected: null,
+        actual: answers[index] ? 1 : 0,
+        note: `首次认知校准：${answers[index] ?? profile.aiPersona}`,
+      }),
+    }))).then((responses) => {
+      const failed = responses.find((response) => !response.ok);
+      if (failed) throw new Error(`校准记录保存失败（${failed.status}）。`);
+    }).catch((error) => setPersistenceError(error instanceof Error ? error.message : '校准记录保存失败，请重试。'));
   };
 
   const handleLaunchSingularity = () => {

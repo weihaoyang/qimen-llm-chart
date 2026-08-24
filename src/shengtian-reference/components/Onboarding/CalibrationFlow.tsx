@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 interface CalibrationFlowProps {
-  onCompleteCalibration: (profile: UserProfile, sigil: DeciderSigil) => void;
+  onCompleteCalibration: (profile: UserProfile, sigil: DeciderSigil, answers: AIPersonaType[]) => void;
   onCancel?: () => void;
 }
 
@@ -330,32 +330,17 @@ export const CalibrationFlow: React.FC<CalibrationFlowProps> = ({
       sigil: generatedSigil,
       aiPersona: assignedPersona,
       isCalibrated: true,
-      totalSimulations: 1,
-      singularitySuccessRate: 100,
-      favoriteStrategyType: '非对称升维突破',
+      totalSimulations: 0,
+      singularitySuccessRate: 0,
+      favoriteStrategyType: '',
       // Entitlements are resolved by the unified platform after calibration;
       // never mint local equity in the browser.
       equityBalance: 0,
-      achievements: [
-        {
-          id: 'ach-sigil-forged',
-          title: '烙印铸成',
-          description: '完成首次世界观校准与咖啡馆危机教学推演',
-          icon: 'Award',
-          unlockedAt: new Date().toISOString(),
-        },
-        {
-          id: 'ach-singularity-ignited',
-          title: '奇点引爆者',
-          description: '首次在绝境中逆转宿命重力线，突破50%未来地平线',
-          icon: 'Flame',
-          unlockedAt: new Date().toISOString(),
-        },
-      ],
+      achievements: [],
     };
 
     soundManager.playSuccess();
-    onCompleteCalibration(newProfile, generatedSigil);
+    onCompleteCalibration(newProfile, generatedSigil, CALIBRATION_QUESTIONS.map((_, index) => selectedAnswers[index]).filter((value): value is AIPersonaType => Boolean(value)));
   };
 
   return (
