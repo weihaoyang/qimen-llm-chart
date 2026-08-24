@@ -128,6 +128,7 @@ function createBattlefieldShell(activeBattle: NonNullable<ReturnType<typeof useB
     breakthroughActive: false,
     breakthroughPhase: 1,
     forcedWorstCaseActive: false,
+    breakthroughConfirmedTruths: {},
     cognitiveBiasesDetected: [],
     redTeamLog: [],
     selectedPersona: 'ANALYST',
@@ -342,6 +343,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         breakthroughActive: battlefield.breakthroughActive,
         breakthroughPhase: battlefield.breakthroughPhase,
         forcedWorstCaseActive: battlefield.forcedWorstCaseActive,
+        breakthroughConfirmedTruths: battlefield.breakthroughConfirmedTruths,
         lockedAsymmetricStrategyId: battlefield.lockedAsymmetricStrategyId,
         cognitiveBiasesDetected: battlefield.cognitiveBiasesDetected,
         redTeamLog: battlefield.redTeamLog,
@@ -351,7 +353,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       void fetch(`/api/battles/${battleId}/modules/${moduleId}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state, consent: { source: 'user_session' } }) });
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);

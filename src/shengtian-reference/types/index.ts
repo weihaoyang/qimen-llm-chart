@@ -430,6 +430,7 @@ export interface BattlefieldState {
   breakthroughActive: boolean;
   breakthroughPhase: 1 | 2 | 3 | 4;
   forcedWorstCaseActive: boolean;
+  breakthroughConfirmedTruths?: Record<string, boolean>;
   lockedAsymmetricStrategyId?: 'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH';
   cognitiveBiasesDetected: string[];
   redTeamLog: {
@@ -776,5 +777,4 @@ export interface AISymbioteState {
   victoriesTogether: number;
   longTermMemories: SymbioteLongTermMemory[];
 }
-
 

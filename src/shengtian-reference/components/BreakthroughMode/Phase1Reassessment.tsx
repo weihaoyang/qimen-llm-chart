@@ -25,14 +25,13 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
   onProceedToPhase2,
 }) => {
   const [confirmedTruths, setConfirmedTruths] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(battlefield.assets.map((asset) => [asset.id, asset.tag === 'FACT'])),
+    battlefield.breakthroughConfirmedTruths ?? Object.fromEntries(battlefield.assets.map((asset) => [asset.id, asset.tag === 'FACT'])),
   );
 
   const handleToggleConfirm = (assetId: string) => {
-    setConfirmedTruths(prev => ({
-      ...prev,
-      [assetId]: !prev[assetId],
-    }));
+    const next = { ...confirmedTruths, [assetId]: !confirmedTruths[assetId] };
+    setConfirmedTruths(next);
+    onUpdateBattlefield((previous) => ({ ...previous, breakthroughConfirmedTruths: next }));
     soundManager.playBlip(750, 0.02);
   };
 
@@ -151,12 +150,12 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
                     <button
                       onClick={() => handleToggleConfirm(asset.id)}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-colors cursor-pointer ${
-                        confirmedTruths[asset.id]
+                        confirmedTruths[asset.id] ?? isFact
                           ? 'bg-slate-800 text-slate-300 border-slate-700'
                           : 'bg-amber-950 text-amber-300 border-amber-700'
                       }`}
                     >
-                      {confirmedTruths[asset.id] ? '已确认此残酷约束' : '标记复核'}
+                      {(confirmedTruths[asset.id] ?? isFact) ? '已确认此残酷约束' : '标记复核'}
                     </button>
                   </div>
                 </div>
