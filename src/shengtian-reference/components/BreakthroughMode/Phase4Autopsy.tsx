@@ -30,7 +30,16 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   const selectedStrategyId = battlefield.lockedAsymmetricStrategyId || 'FIELD_SHIFT';
   const selectedStrategy = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyId];
 
-  const [fatalQuestion, setFatalQuestion] = useState('...'); useEffect(() => { TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield).then(q => setFatalQuestion(q)); }, [selectedStrategy.name, battlefield]);
+  const [fatalQuestion, setFatalQuestion] = useState('正在请求 AI 致命问题…');
+  const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setFatalQuestionError(null);
+    void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
+      .then((question) => { if (!cancelled) setFatalQuestion(question); })
+      .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });
+    return () => { cancelled = true; };
+  }, [selectedStrategy.name, battlefield.id]);
   
   const [reflectionText, setReflectionText] = useState(
     '在公司发展早期，为了追求单点快速增长，过度依赖单一客户（占收入40%），没有建立健康的客户结构防线。这个错误在18个月前签第一单时就已埋下。'
@@ -137,7 +146,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
         </div>
 
         <blockquote className="font-serif-sc text-base sm:text-lg font-bold text-slate-100 leading-relaxed bg-black/60 p-4.5 rounded-xl border border-amber-800/40">
-          “{fatalQuestion}”
+          {fatalQuestionError ? <span className="text-amber-300">{fatalQuestionError}</span> : <>“{fatalQuestion}”</>}
         </blockquote>
 
         {/* User Reflection Textarea */}

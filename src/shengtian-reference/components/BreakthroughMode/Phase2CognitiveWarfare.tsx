@@ -30,6 +30,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
   const [userDraft, setUserDraft] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentCritique, setCurrentCritique] = useState<RedTeamResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const presetResponses = [
     '我们必须立刻降价！比对手更低！',
@@ -45,6 +46,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
     soundManager.playWarning();
     setUserDraft('');
     setIsSimulating(true);
+    setErrorMessage(null);
 
     try {
       const response = await TacticalAIService.generateRedTeamAttack(text, battlefield);
@@ -73,6 +75,8 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
         };
       });
       soundManager.playBlip(950, 0.04);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '红队推演失败，请重试。');
     } finally {
       setIsSimulating(false);
     }
@@ -134,6 +138,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
 
           {/* Terminal Output Log */}
           <div className="flex-1 overflow-y-auto space-y-4 pr-2 text-xs">
+            {errorMessage && <div className="rounded-xl border border-amber-700/70 bg-amber-950/40 p-3 text-amber-200">{errorMessage}</div>}
             <div className="text-slate-400 leading-relaxed border-l-2 border-red-500 pl-3">
               <strong className="text-red-400 block mb-1">AI 首席红队指挥官 &gt;</strong>
               破局模式已激活。系统已自动降级所有非事实信息。预设情景：你的校友VP因避嫌拒绝沟通，你的原强攻策略失效。<br />
