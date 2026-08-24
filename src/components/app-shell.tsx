@@ -1015,6 +1015,24 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         : Boolean(state.checkoutToken)
     );
 
+  // The account balance is the authoritative source after login/redeem. An
+  // active guest session can be restored from local storage at the same time
+  // as the platform session, so never let that stale mode shadow an account
+  // entitlement that is already visible in the account bar.
+  const getAccountAgentState = (state: AgentModeState): AgentModeState | null => {
+    if (platformWorkspace.status !== "authenticated" || !platformWorkspace.session || !platformWorkspace.usage || platformWorkspace.usage.available <= 0) {
+      return null;
+    }
+    return {
+      ...state,
+      authMode: "account",
+      checkoutToken: "",
+      orderId: "",
+      usageAvailable: platformWorkspace.usage.available,
+      usageConsumed: platformWorkspace.usage.consumed,
+    };
+  };
+
   const refreshPlatformAccount = async () => {
     if (platformWorkspace.status !== "authenticated" || !platformWorkspace.session) {
       throw new Error("请先登录平台账户。");
@@ -1227,7 +1245,9 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         ...compatibility.evidence,
       ].join("\n");
       const pairJson = JSON.stringify({ format: "qmdj-bazi-compatibility-v1", left: JSON.parse(serializeBaziToCompactJson(baziChart)), right: JSON.parse(serializeBaziToCompactJson(partnerBaziChart)), ruleSummary: compatibility });
-      const existing = Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState.bazi;
+      const existing = getAccountAgentState(agentState.bazi)
+        ?? Object.values(agentState).find((state) => canUseAgentState(state))
+        ?? agentState.bazi;
       if (canUseAgentState(existing)) {
         const accessToken = existing.authMode === "account" ? (await refreshPlatformAccount()).session.access_token : undefined;
         const response = await fetch("/api/agent", { method: "POST", headers: buildAgentRequestHeaders(existing, accessToken), body: JSON.stringify({ mode: "bazi", question: "请做八字双人合盘的 AI 详细分析：分别列出两人的盘面事实，再分析互动协同、冲突、现实验证与具体建议；不要替任何一方断言想法或结果。", focus: "双人合盘", history: existing.conversation, structuredText: pairText, jsonPayload: pairJson }) });
@@ -1313,9 +1333,10 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     }
 
     const currentState = agentState[mode];
-    const sharedState = canUseAgentState(currentState)
-      ? currentState
-      : Object.values(agentState).find((state) => canUseAgentState(state)) ?? currentState;
+    const sharedState = getAccountAgentState(currentState)
+      ?? (canUseAgentState(currentState)
+        ? currentState
+        : Object.values(agentState).find((state) => canUseAgentState(state)) ?? currentState);
     const enteredQuestion = currentState.question.trim();
     const isInterviewStart = !enteredQuestion && currentState.focus === "人生议题访谈" && currentState.conversation.length === 0;
     if (!enteredQuestion && !isInterviewStart) {
