@@ -10,6 +10,7 @@ import { createPlatformClient } from "@/lib/platform/client";
 
 type AdminInvitationPanelProps = {
   accessToken: string;
+  csrfToken?: string;
   productCode: string;
   planCode: string;
 };
@@ -39,7 +40,7 @@ const formatExpiry = (value: string) => {
   return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
 };
 
-export function AdminInvitationPanel({ accessToken, productCode, planCode }: AdminInvitationPanelProps) {
+export function AdminInvitationPanel({ accessToken, csrfToken, productCode, planCode }: AdminInvitationPanelProps) {
   const [state, setState] = useState<AdminState>("checking");
   const [role, setRole] = useState<"owner" | "admin" | null>(null);
   const [open, setOpen] = useState(false);
@@ -52,7 +53,7 @@ export function AdminInvitationPanel({ accessToken, productCode, planCode }: Adm
   const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
 
   const loadCodes = async (token = accessToken) => {
-    const client = createPlatformClient({ accessToken: token });
+    const client = createPlatformClient({ accessToken: token, csrfToken });
     const result = await client.listAdminInvitationCodes(100, 0, productCode, planCode);
     setItems(result.items);
     setTotal(result.total);
@@ -68,7 +69,7 @@ export function AdminInvitationPanel({ accessToken, productCode, planCode }: Adm
       setCopied(false);
       setMessage(null);
       try {
-        const client = createPlatformClient({ accessToken });
+        const client = createPlatformClient({ accessToken, csrfToken });
         const session = await client.getAdminSession();
         if (cancelled) return;
         if (session.role !== "owner" && session.role !== "admin") {
@@ -131,7 +132,7 @@ export function AdminInvitationPanel({ accessToken, productCode, planCode }: Adm
     setRawCode("");
     setCopied(false);
     try {
-      const result = await createPlatformClient({ accessToken }).createAdminInvitationCode(payload);
+      const result = await createPlatformClient({ accessToken, csrfToken }).createAdminInvitationCode(payload);
       setRawCode(result.code);
       setMessage("邀请码已创建。原文只显示这一次，请立即复制并安全交付。平台不会再次返回原文。");
       try {
@@ -151,7 +152,7 @@ export function AdminInvitationPanel({ accessToken, productCode, planCode }: Adm
     setLoading(true);
     setMessage(null);
     try {
-      await createPlatformClient({ accessToken }).revokeAdminInvitationCode(invitationId);
+      await createPlatformClient({ accessToken, csrfToken }).revokeAdminInvitationCode(invitationId);
       setRawCode("");
       setMessage("邀请码已撤销。");
       try {

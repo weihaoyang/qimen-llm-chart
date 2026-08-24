@@ -1937,6 +1937,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
                 <AdminInvitationPanel
                   key={platformWorkspace.session.access_token}
                   accessToken={platformWorkspace.session.access_token}
+                  csrfToken={platformWorkspace.session.csrf_token}
                   productCode={platformConfig.productCode}
                   planCode={AGENT_PLAN_CODE}
                 />
