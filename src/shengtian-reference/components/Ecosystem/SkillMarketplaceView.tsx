@@ -21,31 +21,57 @@ import {
 import { SkillMarketplaceItem, EquityTransaction } from '../../types';
 import { INITIAL_MARKETPLACE_ITEMS, INITIAL_EQUITY_ACCOUNT } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface SkillMarketplaceViewProps {
+  battleId?: string;
   onLoadTemplate?: (templateId: string) => void;
   userEquity?: number;
   onRequestPurchase?: (item: SkillMarketplaceItem) => void;
 }
 
 export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
+  battleId,
   onLoadTemplate,
   userEquity,
   onRequestPurchase,
 }) => {
   const [items] = useState<SkillMarketplaceItem[]>(INITIAL_MARKETPLACE_ITEMS);
+  const [ownedTemplateIds, setOwnedTemplateIds] = useState<string[]>(items.filter((item) => item.isOwned).map((item) => item.id));
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [activationError, setActivationError] = useState<string | null>(null);
   const equityBalance = userEquity ?? 0;
   const [transactions] = useState<EquityTransaction[]>(INITIAL_EQUITY_ACCOUNT.transactions);
   const [filterType, setFilterType] = useState<'ALL' | 'TEMPLATE' | 'AI_KNOWLEDGE_PACK'>('ALL');
   const [activeTab, setActiveTab] = useState<'MARKET' | 'WALLET'>('MARKET');
 
+  React.useEffect(() => {
+    if (!battleId) return;
+    let cancelled = false;
+    void sessionApi.module(battleId, 'marketplace').then(({ state }) => {
+      const ids = (state as { ownedTemplateIds?: unknown } | null)?.ownedTemplateIds;
+      if (!cancelled && Array.isArray(ids)) setOwnedTemplateIds(ids.filter((value): value is string => typeof value === 'string'));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId]);
+
   const handlePurchase = (item: SkillMarketplaceItem) => {
-    if (item.isOwned) {
+    if (ownedTemplateIds.includes(item.id)) {
       if (onLoadTemplate) onLoadTemplate(item.id);
       return;
     }
 
-    onRequestPurchase?.(item);
+    if (!onRequestPurchase) return;
+    if (!battleId) { onRequestPurchase(item); return; }
+    setActivatingId(item.id);
+    setActivationError(null);
+    void sessionApi.activateTemplate(battleId, item.id).then(({ ownedTemplateIds: ids }) => {
+      setOwnedTemplateIds(ids);
+      if (onLoadTemplate) onLoadTemplate(item.id);
+    }).catch((error) => {
+      setActivationError(error instanceof Error ? error.message : '模板尚未解锁，请先完成平台购买。');
+      onRequestPurchase(item);
+    }).finally(() => setActivatingId(null));
   };
 
   const filteredItems = items.filter(item => {
@@ -132,7 +158,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
               <div
                 key={item.id}
                 className={`card-tactical rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between shadow-2xl relative overflow-hidden group ${
-                  item.isOwned
+                  ownedTemplateIds.includes(item.id)
                     ? 'border-emerald-500/60 bg-emerald-950/20 hud-corner'
                     : isAI
                     ? 'border-purple-500/40 bg-purple-950/20'
@@ -196,19 +222,20 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
                   <div className="flex items-center gap-1.5 font-mono-code text-xs">
                     <Coins className="w-4 h-4 text-amber-400" />
                     <span className="text-white font-bold text-sm">
-                      {item.isOwned ? '已解锁' : `${item.price} 权益点 · 平台结算`}
+                      {ownedTemplateIds.includes(item.id) ? '已解锁' : `${item.price} · 验证平台权益`}
                     </span>
                   </div>
 
                   <button
                     onClick={() => handlePurchase(item)}
+                    disabled={activatingId === item.id}
                     className={`px-4 py-2 rounded-xl text-xs font-bold font-mono-code flex items-center gap-1.5 transition-all cursor-pointer shadow-md ${
-                      item.isOwned
+                      ownedTemplateIds.includes(item.id)
                         ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                         : 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black'
                     }`}
                   >
-                    {item.isOwned ? (
+                    {ownedTemplateIds.includes(item.id) ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
                         <span>载入当前战局</span>
@@ -272,6 +299,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
           </div>
         </div>
       )}
+      {activationError && <div className="rounded-xl border border-amber-700/60 bg-amber-950/40 px-4 py-3 text-xs text-amber-200">{activationError}</div>}
 
     </div>
   );

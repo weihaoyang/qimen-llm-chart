@@ -802,6 +802,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {activeMainView === 'MARKETPLACE' && (
           <div className="space-y-4">
             <SkillMarketplaceView
+              battleId={session.activeBattle?.id}
               userEquity={userProfile.equityBalance}
               onRequestPurchase={() => setIsStoreModalOpen(true)}
               onLoadTemplate={() => {
