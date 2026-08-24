@@ -68,15 +68,16 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
   const handleCopy = () => {
     if (!generatedLink) return;
     soundManager.playSuccess();
-    navigator.clipboard.writeText(generatedLink);
-    setIsCopied(true);
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#00F0FF', '#3A7DFF', '#FFFFFF'],
-    });
-    setTimeout(() => setIsCopied(false), 3000);
+    void navigator.clipboard.writeText(generatedLink).then(() => {
+      setIsCopied(true);
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#00F0FF', '#3A7DFF', '#FFFFFF'],
+      });
+      window.setTimeout(() => setIsCopied(false), 3000);
+    }).catch(() => setError('复制失败，请手动复制链接。'));
   };
 
   return (

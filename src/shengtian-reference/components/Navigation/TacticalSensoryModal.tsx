@@ -37,7 +37,7 @@ export const TacticalSensoryModal: React.FC<TacticalSensoryModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const stressLevel = battlefield.emotionalTelemetry?.stress || 82;
+  const stressLevel = battlefield.emotionalTelemetry?.stress ?? 0;
   const currentPersona = battlefield.selectedPersona || 'GUARDIAN';
   const personaName = 
     currentPersona === 'GUARDIAN' ? '守护者 (底线对冲)' :
