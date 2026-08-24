@@ -765,6 +765,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {activeMainView === 'DECISION_BOARD' && (
           <div className="space-y-4">
             <DecisionBoardView
+              battleId={session.activeBattle?.id}
               battlefield={battlefield}
               onUpdateBattlefield={updateBattlefield}
             />

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Users, 
   ShieldCheck, 
@@ -29,18 +29,23 @@ import {
   BoardRole
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface DecisionBoardViewProps {
+  battleId?: string;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onSelectGhostStrategy?: (ghost: GhostStrategyBranch) => void;
 }
 
 export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
+  battleId,
   battlefield,
   onUpdateBattlefield,
 }) => {
   const board = battlefield.decisionBoard;
+  const hydratedRef = useRef(false);
+  const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isRedacted, setIsRedacted] = useState(board.isRedacted);
   
@@ -58,12 +63,43 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   const [ghostPros, setGhostPros] = useState('');
   const [ghostCons, setGhostCons] = useState('');
 
+  useEffect(() => {
+    if (!battleId) return;
+    let cancelled = false;
+    hydratedRef.current = false;
+    void sessionApi.module(battleId, 'decision-board').then(({ state }) => {
+      const snapshot = state && typeof state === 'object' ? state as { state?: unknown } : null;
+      if (cancelled) return;
+      if (snapshot?.state && typeof snapshot.state === 'object') {
+        onUpdateBattlefield((previous) => ({ ...previous, decisionBoard: snapshot.state as BattlefieldState['decisionBoard'] }));
+      }
+      hydratedRef.current = true;
+    }).catch((error) => {
+      if (!cancelled) {
+        hydratedRef.current = true;
+        setPersistenceMessage(error instanceof Error ? error.message : '读取决策委员会状态失败。');
+      }
+    });
+    return () => { cancelled = true; };
+  }, [battleId, onUpdateBattlefield]);
+
+  useEffect(() => {
+    if (!battleId || !hydratedRef.current) return;
+    const timer = window.setTimeout(() => {
+      void sessionApi.saveModule(battleId, 'decision-board', board, { source: 'decision_board' })
+        .then(() => setPersistenceMessage('委员会状态已保存。'))
+        .catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '委员会状态保存失败，请重试。'));
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [battleId, board, onUpdateBattlefield]);
+
   const handleCopyInviteLink = () => {
     const link = `https://shengtianbanzi.ai/board/${board.roomId}?token=${board.shareToken}`;
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    soundManager.playSuccess();
-    setTimeout(() => setCopied(false), 2500);
+    void navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      soundManager.playSuccess();
+      window.setTimeout(() => setCopied(false), 2500);
+    }).catch(() => setPersistenceMessage('邀请链接复制失败，请手动复制。'));
   };
 
   const toggleRedaction = () => {
@@ -159,6 +195,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      {persistenceMessage && <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 py-2 text-xs text-blue-200">{persistenceMessage}</div>}
       
       {/* Top Banner: Asynchronous Decision Board Controls */}
       <div className="surface-obsidian rounded-2xl p-5 sm:p-6 border border-white/[0.08] shadow-2xl relative overflow-hidden hud-corner">
