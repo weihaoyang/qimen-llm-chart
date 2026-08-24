@@ -871,6 +871,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onSubmitRealityProposal={handleSubmitRealityProposal}
         onAddArchiveAnnotation={handleAddArchiveAnnotation}
         userEquity={userProfile.equityBalance}
+        battleId={session.activeBattle?.id}
       />
 
       {/* 3. AI Symbiote Hub Modal (情感的纽带 - AI共生体中枢) */}

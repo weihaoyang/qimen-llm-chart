@@ -5,7 +5,7 @@ import { beginUsageOperation, finishUsageOperation, failUsageOperation } from "@
 import { asText, isUuid } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
 
-const operations = new Set(["world_pulse_intervention", "deep_archive_unlock", "reality_echo_resolution", "conclave_action"]);
+const operations = new Set(["world_pulse_intervention", "deep_archive_unlock", "reality_echo_resolution", "conclave_action", "archon_proposal", "archon_annotation"]);
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   let reservationId = "";

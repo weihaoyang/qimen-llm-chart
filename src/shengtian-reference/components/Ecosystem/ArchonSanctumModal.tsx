@@ -11,6 +11,7 @@ import {
   ArchonRealityProposal 
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 import { 
   X, 
   Crown, 
@@ -34,9 +35,10 @@ interface ArchonSanctumModalProps {
   isOpen: boolean;
   onClose: () => void;
   archonState: ArchonTierState;
-  onSubmitRealityProposal: (proposal: Partial<ArchonRealityProposal>) => void;
-  onAddArchiveAnnotation: (archiveId: string, lemma: string) => void;
+  onSubmitRealityProposal: (proposal: Partial<ArchonRealityProposal>) => void | Promise<void>;
+  onAddArchiveAnnotation: (archiveId: string, lemma: string) => void | Promise<void>;
   userEquity: number;
+  battleId?: string;
 }
 
 export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
@@ -46,6 +48,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
   onSubmitRealityProposal,
   onAddArchiveAnnotation,
   userEquity,
+  battleId,
 }) => {
   const [activeTab, setActiveTab] = useState<'PRECOGNITION' | 'ANNOTATIONS' | 'PROPOSALS'>('PRECOGNITION');
   
@@ -59,37 +62,53 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
   // Annotation form
   const [newLemma, setNewLemma] = useState('');
   const [selectedArchiveId, setSelectedArchiveId] = useState('archive-ltcm-1998');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleProposalSubmit = (e: React.FormEvent) => {
+  const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!propTitle.trim() || !propDilemma.trim()) return;
+    if (!propTitle.trim() || !propDilemma.trim() || submitting) return;
+    setError('');
+    setSubmitting(true);
+    try {
+      if (battleId) await sessionApi.consumeUsage(battleId, 'archon_proposal', `archon-proposal:${battleId}:${propTitle.trim()}:${propDilemma.trim()}`);
 
-    onSubmitRealityProposal({
+      await onSubmitRealityProposal({
       title: propTitle,
       crisisType: propType || '产业结构性危机',
       industry: propIndustry || '高科技 / 互联网',
       backgroundDilemma: propDilemma,
       status: 'SUBMITTED',
-      bountyEquityReward: 50,
+      bountyEquityReward: 0,
       observersIntervenedCount: 0,
       communitySuccessRate: 0,
-    });
+      });
 
-    setShowProposalForm(false);
-    setPropTitle('');
-    setPropDilemma('');
-    soundManager.playSuccess();
+      setShowProposalForm(false);
+      setPropTitle('');
+      setPropDilemma('');
+      soundManager.playSuccess();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : '提案提交失败，请重试。');
+    } finally { setSubmitting(false); }
   };
 
-  const handleAnnotationSubmit = (e: React.FormEvent) => {
+  const handleAnnotationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLemma.trim()) return;
+    if (!newLemma.trim() || submitting) return;
+    setError('');
+    setSubmitting(true);
+    try {
+      if (battleId) await sessionApi.consumeUsage(battleId, 'archon_annotation', `archon-annotation:${battleId}:${selectedArchiveId}:${newLemma.trim()}`);
 
-    onAddArchiveAnnotation(selectedArchiveId, newLemma);
-    setNewLemma('');
-    soundManager.playStrategyLocked();
+      await onAddArchiveAnnotation(selectedArchiveId, newLemma);
+      setNewLemma('');
+      soundManager.playStrategyLocked();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : '引理铭刻失败，请重试。');
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -202,6 +221,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
         {/* Tab Contents */}
         <div className="flex-1 p-6 overflow-y-auto space-y-4">
+          {error && <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-3 py-2 text-xs text-red-200">{error}</div>}
           
           {/* TAB 1: PRECOGNITION RADAR */}
           {activeTab === 'PRECOGNITION' && (
@@ -329,7 +349,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
                     <div className="flex items-center justify-between text-[11px] font-mono-code text-slate-400">
                       <span>执笔：{ann.authorArchonName} ({ann.authorSigil})</span>
-                      <span className="text-emerald-400">✓ Aethel 系统核心引理认证</span>
+                      <span className="text-slate-400">待审核 · 仅对本人战局可见</span>
                     </div>
                   </div>
                 ))}
@@ -426,7 +446,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                         type="submit"
                         className="px-4 py-1.5 rounded-lg bg-amber-500 text-black font-bold font-mono-code text-xs"
                       >
-                        正式提交审查
+                        {submitting ? '提交中…' : '正式提交审查'}
                       </button>
                     </div>
                   </form>
