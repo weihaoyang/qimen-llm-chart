@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WorldPulseEvent } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 import confetti from 'canvas-confetti';
 import { 
   Globe, 
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 
 interface WorldPulseViewProps {
+  battleId?: string;
   userEquity: number;
   onSpendEquity: (amount: number, title: string) => boolean;
   onInterveneEvent: (event: WorldPulseEvent) => void;
@@ -110,6 +112,7 @@ const TICKER_NEWS = [
 ];
 
 export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
+  battleId,
   userEquity,
   onSpendEquity,
   onInterveneEvent,
@@ -121,6 +124,17 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   const [rotAngle, setRotAngle] = useState(0);
   const [isObservingOnly, setIsObservingOnly] = useState(false);
   const [tickerOffset, setTickerOffset] = useState(0);
+  const [intervenedEvents, setIntervenedEvents] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!battleId) return;
+    let cancelled = false;
+    void sessionApi.module(battleId, 'world-pulse').then(({ state }) => {
+      const ids = (state as { intervenedEventIds?: unknown } | null)?.intervenedEventIds;
+      if (!cancelled && Array.isArray(ids)) setIntervenedEvents(ids.filter((value): value is string => typeof value === 'string'));
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [battleId]);
 
   // Ticker Animation
   useEffect(() => {
@@ -347,8 +361,15 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   }, [events, selectedEvent]);
 
   const handleIntervene = (event: EnhancedPulseEvent) => {
+    if (intervenedEvents.includes(event.id)) {
+      onInterveneEvent(event);
+      return;
+    }
     const success = onSpendEquity(event.equityCostToIntervene, `介入奇点事件：${event.title}`);
     if (success) {
+      const nextEvents = Array.from(new Set([...intervenedEvents, event.id]));
+      setIntervenedEvents(nextEvents);
+      if (battleId) void sessionApi.saveModule(battleId, 'world-pulse', { intervenedEventIds: nextEvents }).catch(() => undefined);
       soundManager.playStrategyLocked();
       confetti({
         particleCount: 120,

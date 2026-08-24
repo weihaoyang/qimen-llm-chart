@@ -773,6 +773,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {/* VIEW 4: World's Pulse (Global 3D Earth Event Radar) */}
         {activeMainView === 'WORLD_PULSE' && (
           <WorldPulseView
+            battleId={session.activeBattle?.id}
             userEquity={userProfile.equityBalance}
             onSpendEquity={handleSpendEquity}
             onInterveneEvent={handleInterveneWorldEvent}
