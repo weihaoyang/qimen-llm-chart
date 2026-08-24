@@ -24,13 +24,17 @@ import {
   CounterfactualReviewItem 
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
+import { resolveJob } from '../../services/aiService';
 
 interface CognitiveDNASandboxProps {
   dnaRecords: DecisionDNARecord[];
+  battleId?: string;
 }
 
 export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
   dnaRecords,
+  battleId,
 }) => {
   const [activeTab, setActiveTab] = useState<'RADAR' | 'INSIGHTS' | 'COUNTERFACTUAL' | 'ARCHIVE'>('RADAR');
   const radar = useMemo<DecisionDNARadarMetrics>(() => {
@@ -41,8 +45,40 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
     return { riskAppetite: Math.round(45 + outcomeScore * 30), infoRigor: evidenceScore, decisionSpeed: Math.min(100, 40 + dnaRecords.length * 8), adversityTenacity: Math.round(35 + outcomeScore * 55), counterIntuition: Math.min(100, 30 + reflectionScore / 2), valueAlignment: Math.min(100, 30 + reflectionScore / 1.5) };
   }, [dnaRecords]);
   const insights = useMemo<CognitivePatternInsight[]>(() => dnaRecords.length ? [{ id: 'derived-evidence', type: 'WINNING_FORMULA', title: '从已保存复盘中提取的决策规律', detail: `已分析 ${dnaRecords.length} 条本人复盘记录。`, evidence: dnaRecords.flatMap((record) => record.extractedDNA).slice(0, 4).join('；') || '当前复盘尚未提取明确 DNA。', actionableGuidance: '继续完成真实复盘，积累足够样本后再生成稳定模式。', createdAt: '实时计算' }] : [], [dnaRecords]);
-  const counterfactuals = useMemo<CounterfactualReviewItem[]>(() => [], []);
+  const [counterfactuals, setCounterfactuals] = useState<CounterfactualReviewItem[]>([]);
   const [selectedCfId, setSelectedCfId] = useState<string>('');
+  const [counterfactualLoading, setCounterfactualLoading] = useState(false);
+  const [counterfactualError, setCounterfactualError] = useState<string | null>(null);
+
+  const generateCounterfactual = async () => {
+    const record = dnaRecords[0];
+    if (!battleId || !record || counterfactualLoading) return;
+    setCounterfactualLoading(true);
+    setCounterfactualError(null);
+    try {
+      const response = await sessionApi.ai(battleId, 'review', {
+        idempotencyKey: `counterfactual:${battleId}:${record.id}`,
+        question: `请基于已保存复盘“${record.battlefieldTitle}”构造一条明确的反事实替代路径。当前策略：${record.selectedStrategy}；用户反思：${record.userReflection}。不要伪造事实，严格返回 review JSON，并在 summary、facts、whatChanged、nextAdjustment 中说明假设、代价和验证边界。`,
+        counterfactual: { recordId: record.id, strategy: record.selectedStrategy, reflection: record.userReflection },
+      });
+      const result = await resolveJob(battleId, response.job);
+      const value = result as Record<string, unknown>;
+      const item: CounterfactualReviewItem = {
+        id: `counterfactual-${record.id}`,
+        strategyName: `替代路径：${record.selectedStrategy}`,
+        scenarioName: record.battlefieldTitle,
+        hypotheticalPremise: String(value.facts ?? record.userReflection),
+        simulatedOutcome: String(value.summary ?? value.whatChanged ?? '服务端未返回可用结局。'),
+        survivalProbability: typeof value.survivalProbability === 'number' ? value.survivalProbability : -1,
+        retainedValuation: String(value.retainedValuation ?? '服务端未评估'),
+        aiComparativeHindsight: String(value.nextAdjustment ?? '请结合实际执行结果继续核验。'),
+      };
+      setCounterfactuals([item]);
+      setSelectedCfId(item.id);
+    } catch (error) {
+      setCounterfactualError(error instanceof Error ? error.message : '反事实推演失败，请重试。');
+    } finally { setCounterfactualLoading(false); }
+  };
 
   const activeCounterfactual = counterfactuals.find(c => c.id === selectedCfId) || counterfactuals[0];
 
@@ -252,6 +288,10 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
             <p className="text-xs text-slate-400 leading-relaxed">
               基于事后已明确的市场真实反应，重新模拟那些“被你放弃的备选路径”。通过反事实对照，看清不同选择背后的真实代价，校准未来决策直觉。
             </p>
+            <button onClick={() => void generateCounterfactual()} disabled={!battleId || !dnaRecords.length || counterfactualLoading} className="mt-3 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
+              {counterfactualLoading ? '正在生成反事实推演…' : '基于最近一次真实复盘生成替代路径'}
+            </button>
+            {counterfactualError && <p className="mt-2 text-xs text-red-300">{counterfactualError}</p>}
           </div>
 
           {/* Alternative Pathway Selector */}
@@ -285,7 +325,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
               <span className="text-purple-300 font-bold">反事实假设：{activeCounterfactual.strategyName}</span>
               <span className="text-emerald-400 font-bold text-sm">
-                模拟存活概率: {activeCounterfactual.survivalProbability}%
+                {activeCounterfactual.survivalProbability >= 0 ? `服务端估计存活概率: ${activeCounterfactual.survivalProbability}%` : '服务端未提供可验证存活概率'}
               </span>
             </div>
 

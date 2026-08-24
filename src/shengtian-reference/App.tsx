@@ -881,6 +881,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           <div className="space-y-4">
             <CognitiveDNASandbox
               dnaRecords={dnaRecords}
+              battleId={session.activeBattle?.id}
             />
           </div>
         )}
