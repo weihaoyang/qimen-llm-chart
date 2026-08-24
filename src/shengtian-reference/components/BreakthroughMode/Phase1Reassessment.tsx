@@ -24,10 +24,9 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
   onUpdateBattlefield,
   onProceedToPhase2,
 }) => {
-  const [confirmedTruths, setConfirmedTruths] = useState<Record<string, boolean>>({
-    'asset-chips-1': true,
-    'asset-info-1': true,
-  });
+  const [confirmedTruths, setConfirmedTruths] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(battlefield.assets.map((asset) => [asset.id, asset.tag === 'FACT'])),
+  );
 
   const handleToggleConfirm = (assetId: string) => {
     setConfirmedTruths(prev => ({
@@ -68,7 +67,7 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
           <div className="text-right shrink-0">
             <span className="text-[11px] text-slate-400 font-mono-code block">硬性收缩跑道</span>
             <span className="text-2xl font-black font-mono-code text-red-400 tracking-tight">
-              59 天 <span className="text-xs text-red-500 font-normal">(-8天 挤压水分)</span>
+              {Math.max(0, battlefield.financials.calculatedDays)} 天 <span className="text-xs text-red-500 font-normal">（当前可验证现金跑道）</span>
             </span>
           </div>
         </div>
@@ -82,7 +81,7 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
         </div>
 
         <p className="text-xs text-red-100 leading-relaxed font-medium bg-black/60 p-4 rounded-xl border border-red-800/80">
-          “预设情景：你的校友VP出于合规避嫌与职业自保，已正式回绝所有私人沟通；同时对手B公司刚获得充足弹药并开启全面免费抢客。你的原‘全力拿下VP’策略核心支点已事实性失效。现在，基于此绝境重新推演。”
+          系统会将未被验证的资产按风险折损，并要求你在当前可验证事实与约束下重新推演。该状态不会自动把推测写入事实，确认结果仅在你提交后进入战局记录。
         </p>
 
         <div className="flex items-center justify-between text-[11px] text-red-300/80 pt-1 font-mono-code">
@@ -105,15 +104,14 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
 
         <div className="space-y-3">
           {battlefield.assets.map((asset) => {
-            const isVPAsset = asset.id === 'asset-chips-1';
-            const isInfoAsset = asset.id === 'asset-info-1';
+            const isRelationalAsset = asset.category === 'CHIPS' && asset.tag === 'OPPORTUNITY';
             const isFact = asset.tag === 'FACT';
 
             return (
               <div
                 key={asset.id}
                 className={`p-3.5 rounded-xl border transition-all ${
-                  isVPAsset
+                  isRelationalAsset
                     ? 'bg-red-950/30 border-red-700/80 ring-1 ring-red-500/30'
                     : isFact
                     ? 'bg-black/50 border-white/[0.06]'
@@ -141,11 +139,11 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
                     <div className="text-right text-[11px]">
                       <span className="text-slate-500 block font-mono-code">修正可信度:</span>
                       <span className="font-mono-code font-bold text-slate-200">
-                        {isVPAsset ? (
-                          <span className="text-red-400 line-through mr-1">75%</span>
+                        {isRelationalAsset ? (
+                          <span className="text-red-400 line-through mr-1">{asset.confidence}%</span>
                         ) : null}
                         <span className={isFact ? 'text-emerald-400' : 'text-amber-400'}>
-                          {isVPAsset ? '20% (避嫌衰减)' : isFact ? '100%' : `${Math.round(asset.confidence * 0.6)}%`}
+                          {isRelationalAsset ? `${Math.round(asset.confidence * 0.6)}% (关系折损)` : isFact ? '100%' : `${Math.round(asset.confidence * 0.6)}%`}
                         </span>
                       </span>
                     </div>
@@ -163,10 +161,10 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
                   </div>
                 </div>
 
-                {isVPAsset && (
+                {isRelationalAsset && (
                   <div className="mt-2.5 pt-2 border-t border-red-900/60 text-[11px] text-red-300 flex items-center gap-1.5 font-mono-code">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                    <span>AI质问：该人脉资源系校友私交，但在企业采购审计压力下，对方无法为你承担违规风险。</span>
+                    <span>关系型机会不是硬性事实；在高压场景中，必须按可验证兑现概率折损。</span>
                   </div>
                 )}
               </div>

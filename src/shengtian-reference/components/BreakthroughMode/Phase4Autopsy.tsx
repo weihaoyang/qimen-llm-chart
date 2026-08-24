@@ -27,18 +27,23 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   onSaveDNARecord,
   onReturnToStandardMode,
 }) => {
-  const selectedStrategyId = battlefield.lockedAsymmetricStrategyId || 'FIELD_SHIFT';
-  const selectedStrategy = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyId];
+  const selectedStrategyId = battlefield.lockedAsymmetricStrategyId;
+  const selectedStrategy = selectedStrategyId ? ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyId] : null;
 
   const [fatalQuestion, setFatalQuestion] = useState('正在请求 AI 致命问题…');
   const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
+    if (!selectedStrategy) {
+      setFatalQuestion('请先在第三阶段锁定正式策略。');
+      setFatalQuestionError('当前战局没有已锁定策略。');
+      return () => { cancelled = true; };
+    }
     void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
       .then((question) => { if (!cancelled) { setFatalQuestion(question); setFatalQuestionError(null); } })
       .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });
     return () => { cancelled = true; };
-  }, [selectedStrategy.name, battlefield.id]);
+  }, [selectedStrategy?.name, battlefield.id]);
   
   const [reflectionText, setReflectionText] = useState('');
   const [isSaved, setIsSaved] = useState(false);
@@ -46,8 +51,8 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveAndExit = async () => {
-    if (!reflectionText.trim() || fatalQuestionError || isSaving) {
-      setSaveError('请先完成反思，并确保致命问题已成功生成。');
+    if (!selectedStrategy || !reflectionText.trim() || fatalQuestionError || isSaving) {
+      setSaveError('请先锁定策略、完成反思，并确保致命问题已成功生成。');
       return;
     }
     setIsSaving(true);
@@ -121,26 +126,26 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
           <div className="bg-black/50 p-3.5 rounded-xl border border-white/[0.06]">
             <span className="text-[10px] font-mono-code text-blue-400 block mb-1">01 初始战局</span>
-            <strong className="text-slate-100 block mb-1">大客户续约危机</strong>
-            <span className="text-slate-500 text-[11px] font-mono-code">现金跑道67天 / 70%流失概率</span>
+            <strong className="text-slate-100 block mb-1">{battlefield.title}</strong>
+            <span className="text-slate-500 text-[11px] font-mono-code">可验证现金跑道 {battlefield.financials.calculatedDays} 天</span>
           </div>
 
           <div className="bg-black/50 p-3.5 rounded-xl border border-white/[0.06]">
             <span className="text-[10px] font-mono-code text-red-400 block mb-1">02 风险击穿</span>
-            <strong className="text-slate-100 block mb-1">对手突袭 &amp; 人脉失效</strong>
-            <span className="text-slate-500 text-[11px] font-mono-code">校友VP避嫌 / 资产自动降级</span>
+            <strong className="text-slate-100 block mb-1">事实与约束重新核验</strong>
+            <span className="text-slate-500 text-[11px] font-mono-code">已记录底牌 {battlefield.assets.length} 项</span>
           </div>
 
           <div className="bg-black/50 p-3.5 rounded-xl border border-white/[0.06]">
             <span className="text-[10px] font-mono-code text-amber-400 block mb-1">03 认知对抗</span>
-            <strong className="text-slate-100 block mb-1">击碎降价自杀偏误</strong>
-            <span className="text-slate-500 text-[11px] font-mono-code">识破恐慌性决策与沉没成本</span>
+            <strong className="text-slate-100 block mb-1">红队认知对抗</strong>
+            <span className="text-slate-500 text-[11px] font-mono-code">已记录攻击 {battlefield.redTeamLog.length} 次</span>
           </div>
 
           <div className="bg-black/50 p-3.5 rounded-xl border border-emerald-900/60 ring-1 ring-emerald-500/40">
             <span className="text-[10px] font-mono-code text-emerald-400 block mb-1">04 锁定破局策略</span>
-            <strong className="text-emerald-300 block mb-1">{selectedStrategy.name}</strong>
-            <span className="text-slate-400 text-[11px] font-mono-code">存活率 {selectedStrategy.survivalProbability}% / 升维重构</span>
+            <strong className="text-emerald-300 block mb-1">{selectedStrategy?.name ?? '未锁定策略'}</strong>
+            <span className="text-slate-400 text-[11px] font-mono-code">策略锁定后才进入复盘记录</span>
           </div>
         </div>
       </div>
@@ -180,21 +185,8 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
           <span className="text-[11px] text-slate-400 font-mono-code">将永久写入系统底座</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="bg-black/50 p-4 rounded-xl border border-amber-900/60 text-amber-200">
-            <span className="font-mono-code text-[10px] text-amber-400 block mb-1">DNA RULE #01</span>
-            <strong>【警惕单一客户收入占比&gt;30%致命依赖】</strong>
-          </div>
-
-          <div className="bg-black/50 p-4 rounded-xl border border-amber-900/60 text-amber-200">
-            <span className="font-mono-code text-[10px] text-amber-400 block mb-1">DNA RULE #02</span>
-            <strong>【高压商业环境下人脉信任度衰减0.6x】</strong>
-          </div>
-
-          <div className="bg-black/50 p-4 rounded-xl border border-amber-900/60 text-amber-200">
-            <span className="font-mono-code text-[10px] text-amber-400 block mb-1">DNA RULE #03</span>
-            <strong>【绝不在现金跑道跌破60天后开启被动防守】</strong>
-          </div>
+        <div className="rounded-xl border border-amber-900/60 bg-black/50 p-4 text-xs text-amber-200">
+          AI 将在你提交反思后，根据本次战局的事实、红队记录和反思文本生成决策DNA。提交前不展示预设规则。
         </div>
       </div>
 
