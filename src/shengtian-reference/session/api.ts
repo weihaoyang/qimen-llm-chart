@@ -60,7 +60,7 @@ export const sessionApi = {
   activateTemplate: (battleId:string, templateId:string) => request<{ templateId:string; ownedTemplateIds:string[] }>(`/api/battles/${battleId}/templates/${templateId}`, { method:"POST", body:JSON.stringify({}) }),
   memories: () => request<{ memories: Array<Record<string, unknown>> }>(`/api/battles/memories`),
   deleteMemory: (id:string) => request<{ deleted:boolean }>(`/api/battles/memories?id=${encodeURIComponent(id)}`, { method:"DELETE" }),
-  saveMemory: (input:{ battleId?:string|null; title:string; memory:Record<string, unknown>; source?:Record<string, unknown> }) => request<{ memory: Record<string, unknown> }>(`/api/battles/memories`, { method:"POST", body:JSON.stringify(input) }),
+  saveMemory: (input:{ id?:string; battleId?:string|null; title:string; memory:Record<string, unknown>; source?:Record<string, unknown>; consentStatus?:"active"|"paused"|"revoked" }) => request<{ memory: Record<string, unknown> }>(`/api/battles/memories`, { method:"POST", body:JSON.stringify(input) }),
   collaborators: (battleId:string) => request<{ collaborators: Collaborator[] }>(`/api/battles/${battleId}/collaborators`),
   inviteCollaborator: (battleId:string, input:{ subjectType:string; subjectId:string; role:"viewer"|"contributor"|"advisor"; permissions?:Record<string, unknown> }) => request<{ collaborator: Collaborator }>(`/api/battles/${battleId}/collaborators`, { method:"POST", body:JSON.stringify(input) }),
   updateCollaborator: (battleId:string, collaboratorId:string, input:{ status?:"invited"|"active"|"revoked"; action?:"accept" }) => request<{ collaborator: Collaborator }>(`/api/battles/${battleId}/collaborators`, { method:"PATCH", body:JSON.stringify({ collaboratorId, ...input }) }),

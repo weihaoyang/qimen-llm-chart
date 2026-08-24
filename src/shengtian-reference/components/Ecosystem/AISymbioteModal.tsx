@@ -46,6 +46,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(symbiote.customName);
   const [memories, setMemories] = useState<SymbioteLongTermMemory[]>(symbiote.longTermMemories);
+  const [memoryStatuses, setMemoryStatuses] = useState<Record<string, string>>({});
   const [memoryError, setMemoryError] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -58,6 +59,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
         return { id: String(row.id), crisisTitle: String(row.title ?? memory.crisisTitle ?? '未命名战局记忆'), userKeyChoice: String(memory.userKeyChoice ?? ''), outcome: 'VICTORY' as const, outcomeLabel: String(memory.outcomeLabel ?? '已保存'), memoryQuote: String(memory.memoryQuote ?? memory.quote ?? ''), lessonLearned: String(memory.lessonLearned ?? memory.lesson ?? ''), timestamp: String(row.updatedAt ?? row.createdAt ?? '') };
       });
       setMemories(mapped);
+      setMemoryStatuses(Object.fromEntries(rows.map((row) => [String(row.id), String(row.consentStatus ?? 'active')])));
     }).catch((error) => { if (!cancelled) setMemoryError(error instanceof Error ? error.message : '读取共生记忆失败。'); });
     return () => { cancelled = true; };
   }, [isOpen, battleId]);
@@ -65,6 +67,15 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   const handleDeleteMemory = async (id: string) => {
     try { await sessionApi.deleteMemory(id); setMemories((current) => current.filter((memory) => memory.id !== id)); }
     catch (error) { setMemoryError(error instanceof Error ? error.message : '删除记忆失败，请重试。'); }
+  };
+
+  const handleSetMemoryConsent = async (id: string, consentStatus: 'active' | 'paused' | 'revoked') => {
+    const row = (await sessionApi.memories()).memories.find((item) => String(item.id) === id);
+    if (!row) return;
+    try {
+      await sessionApi.saveMemory({ id, battleId: row.battleId as string | null | undefined, title: String(row.title ?? '未命名记忆'), memory: (row.memory as Record<string, unknown>) ?? {}, source: (row.source as Record<string, unknown>) ?? {}, consentStatus });
+      setMemoryStatuses((current) => ({ ...current, [id]: consentStatus }));
+    } catch (error) { setMemoryError(error instanceof Error ? error.message : '更新记忆授权失败，请重试。'); }
   };
 
   if (!isOpen) return null;
@@ -259,7 +270,12 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
 
                   <div className="text-[11px] font-mono-code text-slate-400 pt-2 border-t border-white/[0.04] flex items-center justify-between">
                     <span className="text-amber-300/90">启示: {mem.lessonLearned}</span>
-                    <span className="flex items-center gap-2">{mem.timestamp}<button onClick={() => void handleDeleteMemory(mem.id)} className="text-red-300 hover:text-red-200">删除</button></span>
+                    <span className="flex items-center gap-2">{mem.timestamp}
+                      <span className={memoryStatuses[mem.id] === 'paused' ? 'text-amber-300' : memoryStatuses[mem.id] === 'revoked' ? 'text-red-300' : 'text-emerald-300'}>{memoryStatuses[mem.id] === 'paused' ? '已暂停' : memoryStatuses[mem.id] === 'revoked' ? '已撤销' : '已授权'}</span>
+                      {memoryStatuses[mem.id] === 'active' ? <button onClick={() => void handleSetMemoryConsent(mem.id, 'paused')} className="text-amber-300 hover:text-amber-200">暂停学习</button> : <button onClick={() => void handleSetMemoryConsent(mem.id, 'active')} className="text-cyan-300 hover:text-cyan-200">恢复学习</button>}
+                      <button onClick={() => void handleSetMemoryConsent(mem.id, 'revoked')} className="text-red-300 hover:text-red-200">撤销</button>
+                      <button onClick={() => void handleDeleteMemory(mem.id)} className="text-red-300 hover:text-red-200">删除</button>
+                    </span>
                   </div>
                 </div>
               ))}
