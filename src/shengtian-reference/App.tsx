@@ -186,6 +186,29 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       ],
     };
   });
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
+  const profileHydratedRef = React.useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void sessionApi.profile().then(({ profile }) => {
+      const saved = profile?.profile?.uiProfile;
+      if (!cancelled && saved && typeof saved === 'object' && !Array.isArray(saved)) {
+        setUserProfile((previous) => ({ ...previous, ...(saved as Partial<UserProfile>), equityBalance: previous.equityBalance }));
+      }
+      profileHydratedRef.current = true;
+    }).catch(() => { profileHydratedRef.current = true; });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!profileHydratedRef.current) return;
+    const timer = window.setTimeout(() => {
+      const { equityBalance: _equityBalance, ...persisted } = userProfile;
+      void sessionApi.saveProfile({ uiProfile: persisted }).catch((error) => setPersistenceError(error instanceof Error ? error.message : '用户档案保存失败，请重试。'));
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [userProfile]);
 
   // Masterpiece Puzzles State
   const [realityEchoes, setRealityEchoes] = useState<RealityEcho[]>(INITIAL_REALITY_ECHOES);
@@ -282,7 +305,6 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [isSensoryModalOpen, setIsSensoryModalOpen] = useState(false);
-  const [persistenceError, setPersistenceError] = useState<string | null>(null);
   
   // Aethel Ecosystem Modals
   const [isDeepArchivesModalOpen, setIsDeepArchivesModalOpen] = useState(false);
