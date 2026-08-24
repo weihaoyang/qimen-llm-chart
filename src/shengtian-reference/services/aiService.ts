@@ -1,8 +1,8 @@
-import { BattlefieldState, CardAsset, AsymmetricStrategyPackage, InterviewMessage } from '../types';
+import { BattlefieldState, CardAsset, AsymmetricStrategyPackage, InterviewMessage, AnonymousCaseStudy } from '../types';
 import { sessionApi } from '../session/api';
 
 const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
-const resolveJob = async (battleId: string, initial: unknown) => {
+export const resolveJob = async (battleId: string, initial: unknown) => {
   if (!initial || typeof initial !== 'object') return initial;
   const job = initial as Record<string, unknown>;
   const jobId = typeof job.jobId === 'string' ? job.jobId : typeof job.id === 'string' ? job.id : null;
@@ -29,6 +29,24 @@ export interface RedTeamResponse {
 }
 
 export class TacticalAIService {
+  public static async generateCaseStudyReview(battleId: string, caseStudy: AnonymousCaseStudy, choiceId: string): Promise<Record<string, unknown>> {
+    const choice = caseStudy.choices.find((item) => item.id === choiceId);
+    const response = await fetch(`/api/battles/${battleId}/ai/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': `case-study:${battleId}:${caseStudy.id}:${choiceId}` },
+      body: JSON.stringify({
+        idempotencyKey: `case-study:${battleId}:${caseStudy.id}:${choiceId}`,
+        question: `请对官方匿名案例“${caseStudy.title}”进行用户选择复盘。用户选择：${choice?.name ?? choiceId}。案例困境：${caseStudy.coreDilemma}。严格返回 review JSON。`,
+        caseStudy: { id: caseStudy.id, title: caseStudy.title, dilemma: caseStudy.coreDilemma, choice },
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : `案例复盘请求失败（${response.status}）`);
+    const result = await resolveJob(battleId, data.job);
+    if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('案例复盘没有返回结构化结果。');
+    return result as Record<string, unknown>;
+  }
+
   public static async answerInterview(
     history: InterviewMessage[],
     userReply: string,

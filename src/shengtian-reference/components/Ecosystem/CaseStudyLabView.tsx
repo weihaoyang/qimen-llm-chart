@@ -21,6 +21,7 @@ import { AnonymousCaseStudy } from '../../types';
 import { INITIAL_ANONYMOUS_CASES } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
+import { TacticalAIService } from '../../services/aiService';
 
 interface CaseStudyLabViewProps {
   battleId?: string;
@@ -34,17 +35,21 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   const [userSelectedChoiceId, setUserSelectedChoiceId] = useState<string | null>(null);
   const [hasSimulated, setHasSimulated] = useState<boolean>(false);
   const [bountyClaimed, setBountyClaimed] = useState<boolean>(false);
+  const [simulationResult, setSimulationResult] = useState<Record<string, unknown> | null>(null);
+  const [simulationError, setSimulationError] = useState<string | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   React.useEffect(() => {
     if (!battleId) return;
     let cancelled = false;
     void sessionApi.module(battleId, 'case-study-lab').then(({ state }) => {
-      const saved = state as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; bountyClaimed?: unknown } | null;
+      const saved = state as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; bountyClaimed?: unknown; simulationResult?: unknown } | null;
       if (cancelled || !saved) return;
       if (typeof saved.selectedCaseId === 'string') setSelectedCaseId(saved.selectedCaseId);
       if (typeof saved.userSelectedChoiceId === 'string') setUserSelectedChoiceId(saved.userSelectedChoiceId);
       if (typeof saved.hasSimulated === 'boolean') setHasSimulated(saved.hasSimulated);
       if (typeof saved.bountyClaimed === 'boolean') setBountyClaimed(saved.bountyClaimed);
+      if (saved.simulationResult && typeof saved.simulationResult === 'object' && !Array.isArray(saved.simulationResult)) setSimulationResult(saved.simulationResult as Record<string, unknown>);
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [battleId]);
@@ -52,10 +57,10 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   React.useEffect(() => {
     if (!battleId) return;
     const timer = window.setTimeout(() => {
-      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed }).catch(() => undefined);
+      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult }).catch(() => undefined);
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [battleId, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed]);
+  }, [battleId, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult]);
 
   const activeCase = cases.find(c => c.id === selectedCaseId) || cases[0];
 
@@ -64,20 +69,27 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
     soundManager.playBlip(750, 0.04);
   };
 
-  const handleRunSimulation = () => {
-    if (!userSelectedChoiceId) return;
-    setHasSimulated(true);
-    soundManager.playSuccess();
-    
-    // The simulation state is persisted below. Any reward is platform-ledger
-    // controlled and must not be marked as credited by the browser.
-    setBountyClaimed(false);
+  const handleRunSimulation = async () => {
+    if (!userSelectedChoiceId || !battleId || isSimulating) return;
+    setSimulationError(null);
+    setIsSimulating(true);
+    try {
+      const result = await TacticalAIService.generateCaseStudyReview(battleId, activeCase, userSelectedChoiceId);
+      setSimulationResult(result);
+      setHasSimulated(true);
+      setBountyClaimed(false);
+      soundManager.playSuccess();
+    } catch (error) {
+      setSimulationError(error instanceof Error ? error.message : '案例复盘失败，请重试。');
+    } finally { setIsSimulating(false); }
   };
 
   const handleResetSimulation = () => {
     setHasSimulated(false);
     setUserSelectedChoiceId(null);
     setBountyClaimed(false);
+    setSimulationResult(null);
+    setSimulationError(null);
     soundManager.playBlip(600, 0.03);
   };
 
@@ -279,7 +291,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-40 text-black text-xs font-bold font-mono-code flex items-center gap-2 shadow-xl shadow-amber-950/60 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-black" />
-              <span>提交推演并生成【决策对比报告】</span>
+              <span>{isSimulating ? '正在生成结构化复盘…' : '提交推演并生成【决策对比报告】'}</span>
               <ArrowRight className="w-4 h-4 text-black" />
             </button>
           </div>
@@ -341,6 +353,19 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               {activeCase.keyTakeaway}
             </div>
 
+          </div>
+        )}
+
+        {simulationError && <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-xs text-red-200">{simulationError}</div>}
+        {simulationResult && (
+          <div className="rounded-2xl border border-cyan-500/40 bg-cyan-950/20 p-5 space-y-3 text-xs">
+            <h4 className="font-bold text-cyan-200">服务端结构化复盘结果</h4>
+            <p className="text-slate-200">{String(simulationResult.summary ?? '已完成复盘，具体字段见下方。')}</p>
+            <div className="grid gap-2 sm:grid-cols-2 text-slate-300">
+              <div><span className="text-slate-500">事实：</span>{String(simulationResult.facts ?? '—')}</div>
+              <div><span className="text-slate-500">变化：</span>{String(simulationResult.whatChanged ?? '—')}</div>
+              <div><span className="text-slate-500">下一调整：</span>{String(simulationResult.nextAdjustment ?? '—')}</div>
+            </div>
           </div>
         )}
 
