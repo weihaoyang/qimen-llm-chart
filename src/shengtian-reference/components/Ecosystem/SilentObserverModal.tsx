@@ -20,7 +20,7 @@ import { soundManager } from '../../utils/soundEffects';
 interface SilentObserverModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportDraftAsBattlefield: (draft: SilentObserverAlert['suggestedBattlefieldDraft']) => void;
+  onImportDraftAsBattlefield: (draft: SilentObserverAlert['suggestedBattlefieldDraft']) => void | Promise<void>;
 }
 
 export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
@@ -29,6 +29,7 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
   onImportDraftAsBattlefield,
 }) => {
   const [alerts, setAlerts] = useState<SilentObserverAlert[]>(INITIAL_SILENT_OBSERVER_ALERTS);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -37,11 +38,14 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
     soundManager.playBlip(600, 0.03);
   };
 
-  const handleLoadDraft = (draft: SilentObserverAlert['suggestedBattlefieldDraft'], alertId: string) => {
-    onImportDraftAsBattlefield(draft);
-    handleDismiss(alertId);
-    onClose();
-    soundManager.playSuccess();
+  const handleLoadDraft = async (draft: SilentObserverAlert['suggestedBattlefieldDraft'], alertId: string) => {
+    setLoadError(null);
+    try {
+      await onImportDraftAsBattlefield(draft);
+      handleDismiss(alertId);
+      onClose();
+      soundManager.playSuccess();
+    } catch (error) { setLoadError(error instanceof Error ? error.message : '创建战局失败，请重试。'); }
   };
 
   return (
@@ -74,6 +78,7 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
         <p className="text-xs text-slate-300 leading-relaxed">
           静默观察者在后台以只读方式关联你的日历会议、项目管理看板与关键邮件流。当检测到会议突发骤降、关键里程碑延期或合同节点逼近等<strong>异常信号</strong>时，主动生成推演战局草稿，防患于未然。
         </p>
+        {loadError && <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-3 py-2 text-xs text-red-200">{loadError}</div>}
 
         {/* Alerts List */}
         <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">

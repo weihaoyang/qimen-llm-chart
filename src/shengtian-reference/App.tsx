@@ -492,25 +492,25 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     }));
   };
 
-  const handleImportObserverDraft = (draft: SilentObserverAlert['suggestedBattlefieldDraft']) => {
-    setBattlefield(prev => ({
-      ...prev,
+  const handleImportObserverDraft = async (draft: SilentObserverAlert['suggestedBattlefieldDraft']) => {
+    const result = await sessionApi.create({
       title: draft.title,
-      subtitle: `由静默观察者雷达捕获生成 · 关门倒计时 ${draft.deadlineDays} 天`,
-      targetDeadlineDays: draft.deadlineDays,
-      confidence: draft.initialConfidence,
-    }));
+      objective: draft.dilemma,
+      minimumOutcome: '',
+      idealOutcome: '',
+      opponentSummary: '由静默观察者工作流异常信号生成',
+      hardDeadline: new Date(Date.now() + Math.max(1, draft.deadlineDays) * 86400000).toISOString(),
+    });
+    await session.refresh();
+    session.selectBattle(result.battle);
     setActiveMainView('WAR_ROOM');
     setActiveStandardTab('cards');
-    soundManager.playSuccess();
   };
 
   const handleInterveneWorldEvent = (event: WorldPulseEvent) => {
     setBattlefield(prev => ({
       ...prev,
-      id: `battlefield-${event.id}`,
-      title: event.title,
-      subtitle: `${event.region} · ${event.code}`,
+      subtitle: `${prev.subtitle} · 已介入世界脉冲：${event.code}`,
       targetDeadlineDays: Math.max(1, Math.round(event.expiresInMins / 60)),
     }));
     setActiveMainView('WAR_ROOM');
