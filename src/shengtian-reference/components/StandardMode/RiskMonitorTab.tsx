@@ -33,7 +33,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
     let cancelled = false;
     void sessionApi.module(battleId, 'risk-monitor').then(({ state }) => {
       const breakers = (state as { riskBreakers?: unknown } | null)?.riskBreakers;
-      if (!cancelled || !Array.isArray(breakers)) return;
+      if (cancelled || !Array.isArray(breakers)) return;
       onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers as BattlefieldState['riskBreakers'] }));
     }).catch(() => undefined);
     return () => { cancelled = true; };
