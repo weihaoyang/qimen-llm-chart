@@ -67,10 +67,6 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   const [collaborationMessage, setCollaborationMessage] = useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!selectedConclaveId && conclaves[0]?.id) setSelectedConclaveId(conclaves[0].id);
-  }, [conclaves, selectedConclaveId]);
-
-  React.useEffect(() => {
     let cancelled = false;
     void sessionApi.collaborators(battleId).then(({ collaborators: value }) => {
       if (!cancelled) setCollaborators(value);
@@ -94,7 +90,8 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
     }
   };
 
-  const currentConclave = conclaves.find(c => c.id === selectedConclaveId) || conclaves[0];
+  const effectiveSelectedConclaveId = selectedConclaveId || conclaves[0]?.id || '';
+  const currentConclave = conclaves.find(c => c.id === effectiveSelectedConclaveId) || conclaves[0];
 
   const handleInject = async () => {
     if (!currentConclave) return;

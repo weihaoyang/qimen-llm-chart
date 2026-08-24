@@ -47,7 +47,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   const hydratedRef = useRef(false);
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [isRedacted, setIsRedacted] = useState(board.isRedacted);
+  const isRedacted = board.isRedacted;
   
   // New comment input
   const [newCommentText, setNewCommentText] = useState('');
@@ -95,10 +95,6 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   }, [battleId, onUpdateBattlefield]);
 
   useEffect(() => {
-    setIsRedacted(board.isRedacted);
-  }, [board.isRedacted]);
-
-  useEffect(() => {
     if (!battleId || !hydratedRef.current) return;
     const timer = window.setTimeout(() => {
       void sessionApi.saveModule(battleId, 'decision-board', board, { source: 'decision_board' })
@@ -123,7 +119,6 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
   const toggleRedaction = () => {
     const next = !isRedacted;
-    setIsRedacted(next);
     onUpdateBattlefield(prev => ({
       ...prev,
       decisionBoard: {
