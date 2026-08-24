@@ -9,7 +9,6 @@ import {
   Bot 
 } from 'lucide-react';
 import { AIPersonaType, AIPersonaConfig } from '../../types';
-import { AI_PERSONA_CONFIGS } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 
 interface AIPersonaSelectorModalProps {
@@ -25,9 +24,21 @@ export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
   selectedPersona,
   onSelectPersona,
 }) => {
-  if (!isOpen) return null;
+  const [personas, setPersonas] = React.useState<AIPersonaConfig[]>([]);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
 
-  const personas = Object.values(AI_PERSONA_CONFIGS);
+  React.useEffect(() => {
+    if (!isOpen || personas.length) return;
+    let cancelled = false;
+    void fetch('/api/catalog/personas', { credentials: 'include' }).then(async (response) => {
+      if (!response.ok) throw new Error(`AI 人格目录读取失败（${response.status}）。`);
+      const payload = await response.json() as { personas?: AIPersonaConfig[] };
+      if (!cancelled) setPersonas(Array.isArray(payload.personas) ? payload.personas : []);
+    }).catch((error) => { if (!cancelled) setLoadError(error instanceof Error ? error.message : 'AI 人格目录读取失败，请重试。'); });
+    return () => { cancelled = true; };
+  }, [isOpen, personas.length]);
+
+  if (!isOpen) return null;
 
   const getPersonaIcon = (iconName: string) => {
     switch (iconName) {
@@ -71,8 +82,9 @@ export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
         </p>
 
         {/* 4 Persona Cards Grid */}
+        {loadError && <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3 py-2 text-xs text-red-200">{loadError}</div>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {personas.map((persona) => {
+          {!personas.length && !loadError ? <div className="col-span-full rounded-xl border border-white/[0.08] px-4 py-6 text-center text-xs text-slate-400">正在读取官方 AI 人格目录…</div> : personas.map((persona) => {
             const isSelected = selectedPersona === persona.id;
             const Icon = getPersonaIcon(persona.avatarIcon);
 
