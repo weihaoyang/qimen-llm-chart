@@ -116,7 +116,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
             </div>
             <input 
               type="range"
-              min="10"
+              min="0"
               max="100"
               value={energy}
               onChange={(e) => setEnergy(Number(e.target.value))}
@@ -137,7 +137,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
             </div>
             <input 
               type="range"
-              min="10"
+              min="0"
               max="100"
               value={stress}
               onChange={(e) => setStress(Number(e.target.value))}
@@ -158,7 +158,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
             </div>
             <input 
               type="range"
-              min="10"
+              min="0"
               max="100"
               value={confidence}
               onChange={(e) => setConfidence(Number(e.target.value))}

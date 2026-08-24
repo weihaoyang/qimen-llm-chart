@@ -29,6 +29,8 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   const calibrator = battlefield.valueCalibrator;
   const [values, setValues] = useState<CoreValueItem[]>(calibrator.coreValues);
   const [isSaved, setIsSaved] = useState(false);
+  const [newValueKeyword, setNewValueKeyword] = useState('');
+  const [newValueDescription, setNewValueDescription] = useState('');
 
   if (!isOpen) return null;
 
@@ -74,6 +76,14 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
       setIsSaved(false);
       onClose();
     }, 1000);
+  };
+
+  const handleAddValue = () => {
+    const keyword = newValueKeyword.trim();
+    if (!keyword) return;
+    setValues((current) => [...current, { id: `value-${Date.now()}`, name: keyword, keyword, description: newValueDescription.trim() || '用户定义的核心价值底线', rank: current.length + 1 }]);
+    setNewValueKeyword('');
+    setNewValueDescription('');
   };
 
   return (
@@ -141,6 +151,14 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
               </div>
             </div>
           ))}
+          <div className="rounded-xl border border-dashed border-purple-700/60 bg-purple-950/20 p-3 space-y-2">
+            <div className="text-[11px] text-purple-200">添加你的真实价值底线</div>
+            <div className="flex gap-2">
+              <input value={newValueKeyword} onChange={(event) => setNewValueKeyword(event.target.value)} placeholder="例如：团队稳定" className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-black/60 px-2.5 py-2 text-xs text-white" />
+              <button onClick={handleAddValue} disabled={!newValueKeyword.trim()} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">添加</button>
+            </div>
+            <input value={newValueDescription} onChange={(event) => setNewValueDescription(event.target.value)} placeholder="描述这条底线在决策中的含义（可选）" className="w-full rounded-lg border border-white/[0.1] bg-black/60 px-2.5 py-2 text-xs text-white" />
+          </div>
         </div>
 
         {/* Strategy Alignment Scan Report */}

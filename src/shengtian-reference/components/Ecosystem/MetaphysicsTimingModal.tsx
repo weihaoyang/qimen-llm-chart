@@ -22,6 +22,23 @@ interface MetaphysicsTimingModalProps {
   onLockExecution?: () => void;
 }
 
+const deriveTiming = (battleId: string): MetaphysicsTimingState => {
+  const now = new Date();
+  const seed = [...battleId].reduce((sum, char) => sum + char.charCodeAt(0), now.getDate());
+  const gongs = ['坎一宫', '艮八宫', '震三宫', '巽四宫', '离九宫', '坤二宫', '兑七宫', '乾六宫'];
+  const doors = ['开门', '生门', '休门', '景门', '杜门', '惊门'];
+  const stars = ['天辅', '天任', '天冲', '天英', '天芮', '天柱'];
+  const deities = ['值符', '六合', '太阴', '九地', '九天', '螣蛇'];
+  const terms = ['立春', '雨水', '惊蛰', '清明', '谷雨', '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑', '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒'];
+  return {
+    isViewed: true,
+    solarTerm: terms[(now.getMonth() * 2 + Math.floor(now.getDate() / 15)) % terms.length],
+    lunarDate: now.toISOString().slice(0, 10),
+    qiMenChart: { gong: gongs[seed % gongs.length], door: doors[seed % doors.length], star: stars[seed % stars.length], deity: deities[seed % deities.length], elementEnergy: ['木', '火', '土', '金', '水'][seed % 5] },
+    symbolicReflection: '这是基于当前时间与战局标识生成的心智映照，不是事实预测或外部信息源。',
+  };
+};
+
 export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   isOpen,
   onClose,
@@ -39,8 +56,7 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
     onUpdateBattlefield(prev => ({
       ...prev,
       metaphysicsTiming: {
-        ...prev.metaphysicsTiming,
-        isViewed: true,
+        ...deriveTiming(prev.id),
       }
     }));
     soundManager.playSuccess();
