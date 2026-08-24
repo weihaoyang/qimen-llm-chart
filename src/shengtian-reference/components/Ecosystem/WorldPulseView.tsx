@@ -132,7 +132,9 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
     if (!battleId) return;
     let cancelled = false;
     void sessionApi.module(battleId, 'world-pulse').then(({ state }) => {
-      const ids = (state as { intervenedEventIds?: unknown } | null)?.intervenedEventIds;
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { intervenedEventIds?: unknown } | null;
+      const ids = saved?.intervenedEventIds;
       if (!cancelled && Array.isArray(ids)) setIntervenedEvents(ids.filter((value): value is string => typeof value === 'string'));
     }).catch(() => undefined);
     return () => { cancelled = true; };

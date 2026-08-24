@@ -104,7 +104,9 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
     if (!battleId) return;
     let cancelled = false;
     void sessionApi.module(battleId, 'deep-archives').then(({ state }) => {
-      const unlocked = (state as { unlockedIds?: unknown } | null)?.unlockedIds;
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { unlockedIds?: unknown } | null;
+      const unlocked = saved?.unlockedIds;
       if (cancelled || !Array.isArray(unlocked)) return;
       const ids = new Set(unlocked.filter((value): value is string => typeof value === 'string'));
       setArchives(HISTORICAL_ARCHIVES.map((archive) => ({ ...archive, isUnlocked: archive.isUnlocked || ids.has(archive.id) })));

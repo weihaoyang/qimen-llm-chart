@@ -38,7 +38,9 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
     if (!battleId) return;
     let cancelled = false;
     void sessionApi.module(battleId, 'marketplace').then(({ state }) => {
-      const ids = (state as { ownedTemplateIds?: unknown } | null)?.ownedTemplateIds;
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { ownedTemplateIds?: unknown } | null;
+      const ids = saved?.ownedTemplateIds;
       if (!cancelled && Array.isArray(ids)) setOwnedTemplateIds(ids.filter((value): value is string => typeof value === 'string'));
     }).catch(() => undefined);
     return () => { cancelled = true; };

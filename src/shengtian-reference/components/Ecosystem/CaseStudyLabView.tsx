@@ -38,29 +38,33 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   const [simulationResult, setSimulationResult] = useState<Record<string, unknown> | null>(null);
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [stateHydrated, setStateHydrated] = useState(false);
 
   React.useEffect(() => {
     if (!battleId) return;
     let cancelled = false;
     void sessionApi.module(battleId, 'case-study-lab').then(({ state }) => {
-      const saved = state as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; bountyClaimed?: unknown; simulationResult?: unknown } | null;
-      if (cancelled || !saved) return;
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; bountyClaimed?: unknown; simulationResult?: unknown } | null;
+      if (cancelled) return;
+      if (!saved) { setStateHydrated(true); return; }
       if (typeof saved.selectedCaseId === 'string') setSelectedCaseId(saved.selectedCaseId);
       if (typeof saved.userSelectedChoiceId === 'string') setUserSelectedChoiceId(saved.userSelectedChoiceId);
       if (typeof saved.hasSimulated === 'boolean') setHasSimulated(saved.hasSimulated);
       if (typeof saved.bountyClaimed === 'boolean') setBountyClaimed(saved.bountyClaimed);
       if (saved.simulationResult && typeof saved.simulationResult === 'object' && !Array.isArray(saved.simulationResult)) setSimulationResult(saved.simulationResult as Record<string, unknown>);
-    }).catch(() => undefined);
+      setStateHydrated(true);
+    }).catch(() => { if (!cancelled) setStateHydrated(true); });
     return () => { cancelled = true; };
   }, [battleId]);
 
   React.useEffect(() => {
-    if (!battleId) return;
+    if (!battleId || !stateHydrated) return;
     const timer = window.setTimeout(() => {
       void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult }).catch(() => undefined);
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [battleId, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult]);
+  }, [battleId, stateHydrated, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult]);
 
   const activeCase = cases.find(c => c.id === selectedCaseId) || cases[0];
 

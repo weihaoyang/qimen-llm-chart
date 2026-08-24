@@ -176,13 +176,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   }, [session.activeBattle?.id]);
   
   // User Calibration & Sigil State
-  const [isCalibrated, setIsCalibrated] = useState<boolean>(() => {
-    return false;
-  });
-
-  const [showCalibrationFlow, setShowCalibrationFlow] = useState<boolean>(() => {
-    return true;
-  });
+  const [isCalibrated, setIsCalibrated] = useState(false);
+  const [profileHydrated, setProfileHydrated] = useState(false);
+  const [showCalibrationFlow, setShowCalibrationFlow] = useState(false);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     const defaultSigil = generateDeciderSigil({
@@ -215,11 +211,24 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     let cancelled = false;
     void sessionApi.profile().then(({ profile }) => {
       const saved = profile?.profile?.uiProfile;
-      if (!cancelled && saved && typeof saved === 'object' && !Array.isArray(saved)) {
-        setUserProfile((previous) => ({ ...previous, ...(saved as Partial<UserProfile>), equityBalance: previous.equityBalance }));
+      if (cancelled) return;
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+        const persisted = saved as Partial<UserProfile>;
+        setUserProfile((previous) => ({ ...previous, ...persisted, equityBalance: previous.equityBalance }));
+        const calibrated = persisted.isCalibrated === true;
+        setIsCalibrated(calibrated);
+        setShowCalibrationFlow(!calibrated);
+      } else {
+        setShowCalibrationFlow(true);
       }
       profileHydratedRef.current = true;
-    }).catch(() => { profileHydratedRef.current = true; });
+      setProfileHydrated(true);
+    }).catch(() => {
+      if (cancelled) return;
+      profileHydratedRef.current = true;
+      setProfileHydrated(true);
+      setShowCalibrationFlow(true);
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -408,7 +417,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     if (!session.battles.length) return;
-    const timer = window.setTimeout(() => setBattlefieldList(session.battles.map((battle) => ({ id:battle.id, title:battle.title, subtitle:battle.objective, status:battle.status === 'archived' ? 'ARCHIVED' : battle.status === 'closed' ? 'STABLE' : 'CRITICAL', updatedAt:new Date(battle.updatedAt).toLocaleString(), isShared:false, daysLeft:battle.hardDeadline ? Math.max(1, Math.ceil((new Date(battle.hardDeadline).getTime() - Date.now()) / 86400000)) : 30, confidence:70, industry:'现实决策推演' }))), 0);
+    const timer = window.setTimeout(() => setBattlefieldList(session.battles.map((battle) => ({ id:battle.id, title:battle.title, subtitle:battle.objective, status:battle.status === 'archived' ? 'ARCHIVED' : battle.status === 'closed' ? 'STABLE' : 'CRITICAL', updatedAt:new Date(battle.updatedAt).toLocaleString(), isShared:false, daysLeft:battle.hardDeadline ? Math.max(0, Math.ceil((new Date(battle.hardDeadline).getTime() - Date.now()) / 86400000)) : 0, confidence:0, industry:'现实决策推演' }))), 0);
     return () => window.clearTimeout(timer);
   }, [session.battles]);
 
@@ -790,8 +799,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onResetToStandard={handleExitSingularity}
         isRiskTriggered={isRiskTriggered}
         selectedPersona={battlefield.selectedPersona || userProfile.aiPersona || 'ANALYST'}
-        observerAlertCount={2}
-        stressLevel={battlefield.emotionalTelemetry?.stress || 82}
+        observerAlertCount={pendingDustCount + (battlefield.riskBreakers?.filter((breaker) => breaker.isTriggered).length ?? 0)}
+        stressLevel={battlefield.emotionalTelemetry?.stress ?? 0}
         userEquity={userProfile.equityBalance}
         sigil={userProfile.sigil}
         currentBattlefieldTitle={battlefield.title}
@@ -934,7 +943,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       </footer>
 
       {/* ONBOARDING & CALIBRATION FLOW (First visit or re-calibration) */}
-      {showCalibrationFlow && (
+      {profileHydrated && showCalibrationFlow && (
         <CalibrationFlow
           onCompleteCalibration={handleCompleteCalibration}
           onCancel={() => setShowCalibrationFlow(false)}

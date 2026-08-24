@@ -32,7 +32,9 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
   React.useEffect(() => {
     let cancelled = false;
     void sessionApi.module(battleId, 'risk-monitor').then(({ state }) => {
-      const breakers = (state as { riskBreakers?: unknown } | null)?.riskBreakers;
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { riskBreakers?: unknown } | null;
+      const breakers = saved?.riskBreakers;
       if (cancelled) return;
       if (Array.isArray(breakers)) {
         onUpdateBattlefield(prev => ({ ...prev, riskBreakers: breakers as BattlefieldState['riskBreakers'] }));

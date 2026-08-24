@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   BattlefieldState, 
   CausalGraphNode, 
@@ -40,75 +40,36 @@ interface SingularityDeductionViewProps {
   onSaveDNARecord: (record: any) => void;
 }
 
-const INITIAL_NODES: CausalGraphNode[] = [
-  {
-    id: 'node-cash-burn',
-    label: '42天现金耗尽点',
-    category: 'ANCHOR',
-    probability: 0.95,
-    gravityWeight: 90,
-    x: 0,
-    y: 80,
-    z: 0,
-    description: '常规路径下资金消耗殆尽的宿命收束点。若不打破规则，95%几率在此终结。',
-    status: 'DEFAULT',
-  },
-  {
-    id: 'node-competitor-squeeze',
-    label: '资方与竞品双重绞杀',
-    category: 'TRAP',
-    probability: 0.88,
-    gravityWeight: 75,
-    x: -120,
-    y: 20,
-    z: -40,
-    description: '对手利用资本规模压制供应链，迫使团队在传统存量赛道内流血牺牲。',
-    status: 'DEFAULT',
-  },
-  {
-    id: 'node-client-leverage',
-    label: '核心专利产业化授权',
-    category: 'SINGULARITY',
-    probability: 0.22,
-    gravityWeight: 40,
-    x: 130,
-    y: -70,
-    z: 60,
-    description: '【推荐破局奇点】跳出传统销售模式，将核心底层专利对产业龙头进行独家授权过桥。',
-    status: 'TARGETED',
-  },
-  {
-    id: 'node-team-core',
-    label: '骨干研发火种',
-    category: 'FACT',
-    probability: 1.0,
-    gravityWeight: 20,
-    x: 40,
-    y: -110,
-    z: -80,
-    description: '团队在微纳米光学领域的原创专利矩阵，是唯一的不可替代底牌。',
-    status: 'DEFAULT',
-  },
-  {
-    id: 'node-ecosystem-alliance',
-    label: '跨界产业资本联合体',
-    category: 'VARIABLE',
-    probability: 0.35,
-    gravityWeight: 50,
-    x: -80,
-    y: -60,
-    z: 90,
-    description: '引入非传统VC的产业战略投资人，以订单包销形式提供无稀释过桥资金。',
-    status: 'DEFAULT',
-  },
-];
-
-const INITIAL_EDGES: CausalGraphEdge[] = [
-  { source: 'node-competitor-squeeze', target: 'node-cash-burn', strength: 0.9, isFatalCollapseLine: true },
-  { source: 'node-team-core', target: 'node-client-leverage', strength: 0.8 },
-  { source: 'node-client-leverage', target: 'node-ecosystem-alliance', strength: 0.75 },
-  { source: 'node-ecosystem-alliance', target: 'node-cash-burn', strength: -0.85 },
-];
+function buildSingularityGraph(battlefield: BattlefieldState) {
+  const days = Math.max(1, Math.round(battlefield.financials?.calculatedDays || battlefield.targetDeadlineDays || 30));
+  const cash = battlefield.financials?.availableCash ?? 0;
+  const monthlyBurn = battlefield.financials?.monthlyBurn ?? 0;
+  const burnRisk = monthlyBurn > 0 ? Math.min(0.98, Math.max(0.2, 1 - days / 180)) : 0.55;
+  const primaryAsset = battlefield.assets?.[0];
+  const primaryRisk = battlefield.riskBreakers?.[0];
+  const assetLabel = primaryAsset?.title || '当前可用核心资产';
+  const assetDescription = primaryAsset?.description || '请在底牌盘点中确认一项可用于改变博弈维度的资产。';
+  const nodes: CausalGraphNode[] = [
+    { id:'node-cash-burn', label:`${days}天现金耗尽点`, category:'ANCHOR', probability:burnRisk, gravityWeight:90, x:0, y:80, z:0, description:`基于当前战局现金 ${cash.toLocaleString()} 和月度支出 ${monthlyBurn.toLocaleString()} 推导的现金压力收束点。`, status:'DEFAULT' },
+    { id:'node-constraint-trap', label:primaryRisk?.name || '关键约束挤压', category:'TRAP', probability:Math.min(0.96, 0.55 + (primaryRisk?.isTriggered ? 0.25 : 0)), gravityWeight:75, x:-120, y:20, z:-40, description:primaryRisk?.condition || '当前约束尚未完成事实核验，可能限制常规路径。', status:'DEFAULT' },
+    { id:'node-asset-leverage', label:`${assetLabel} · 非对称支点`, category:'SINGULARITY', probability:Math.max(0.12, Math.min(0.7, 1 - burnRisk)), gravityWeight:40, x:130, y:-70, z:60, description:`推荐从真实底牌“${assetLabel}”寻找改变交易结构的路径：${assetDescription}`, status:'TARGETED' },
+    { id:'node-fact-core', label:'已确认事实与关系', category:'FACT', probability:1, gravityWeight:20, x:40, y:-110, z:-80, description:`当前战局已记录 ${battlefield.interviewHistory?.length ?? 0} 条采访记录和 ${battlefield.assets?.length ?? 0} 项底牌。`, status:'DEFAULT' },
+    { id:'node-alternative-path', label:'替代路径与外部协同', category:'VARIABLE', probability:Math.max(0.2, Math.min(0.8, 0.35 + (battlefield.assets?.length ?? 0) * 0.04)), gravityWeight:50, x:-80, y:-60, z:90, description:'将可验证资源、关系和时间窗口组合成一条可停止、可复盘的替代路径。', status:'DEFAULT' },
+  ];
+  const edges: CausalGraphEdge[] = [
+    { source:'node-constraint-trap', target:'node-cash-burn', strength:0.9, isFatalCollapseLine:true },
+    { source:'node-fact-core', target:'node-asset-leverage', strength:0.8 },
+    { source:'node-asset-leverage', target:'node-alternative-path', strength:0.75 },
+    { source:'node-alternative-path', target:'node-cash-burn', strength:-0.85 },
+  ];
+  const initialAlpha = Math.max(0.05, Math.min(0.49, 1 - burnRisk));
+  const rippleSequence = [
+    { step:1, title:'【锁定事实】冻结未经核验的常规假设', description:`先核对采访、约束和底牌，避免在 ${days} 天窗口内继续消耗现金。`, leverageAction:'把不确定性变成可验证任务', status:'PENDING' as const, alphaGain:0.12 },
+    { step:2, title:`【非对称支点】调动 ${assetLabel}`, description:`围绕真实资产设计一项可停止的交易或协同动作，而不是继续跟随对手的比较维度。`, leverageAction:'以可验证资产换取时间或流动性', status:'PENDING' as const, alphaGain:0.2 },
+    { step:3, title:'【奇点引爆】锁定首个可逆执行承诺', description:'记录负责人、截止时间、成功信号和止损条件，完成一次可复盘的现实动作。', leverageAction:'把策略从想法变成可审计执行', status:'PENDING' as const, alphaGain:0.24 },
+  ];
+  return { nodes, edges, initialAlpha, rippleSequence };
+}
 
 export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> = ({
   battlefield,
@@ -117,56 +78,33 @@ export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> =
   onExitSingularityMode,
   onSaveDNARecord,
 }) => {
+  const graph = useMemo(() => buildSingularityGraph(battlefield), [battlefield]);
   const [singularityState, setSingularityState] = useState<SingularityDeductionState>({
-    alphaProbability: 0.1845,
-    previousAlpha: 0.1845,
+    alphaProbability: graph.initialAlpha,
+    previousAlpha: graph.initialAlpha,
     isWarningState: false,
     isHorizonBreached: false,
     observerFogIntensity: 0,
     competingObserversCount: 2,
-    singularityTargetNodeId: 'node-client-leverage',
-    rippleSequence: [
-      {
-        step: 1,
-        title: '【撕裂自欺】封存全部存量亏损业务线',
-        description: '单方面终止跟进3个低毛利定制项目，节省每月固定支出 65%。',
-        leverageAction: '剥离伪需求，保全核心现金火种',
-        status: 'PENDING',
-        alphaGain: 0.155,
-      },
-      {
-        step: 2,
-        title: '【非对称支点】向产业龙头提交独家专利过桥授权提案',
-        description: '绕过财务投资人，直接与产业头部达成「¥1,500万订单预付款+独家专利授权」。',
-        leverageAction: '以核心技术垄断权置换绝对流动性',
-        status: 'PENDING',
-        alphaGain: 0.245,
-      },
-      {
-        step: 3,
-        title: '【奇点引爆】签署过桥意向并锁定对赌保护屏障',
-        description: '完成首期 ¥500万资金到账，正式突破 50% 宿命地平线，彻底脱离重力下坠。',
-        leverageAction: '确立高维生存轨道',
-        status: 'PENDING',
-        alphaGain: 0.285,
-      },
-    ],
+    singularityTargetNodeId: 'node-asset-leverage',
+    rippleSequence: graph.rippleSequence,
   });
 
-  const [selectedNode, setSelectedNode] = useState<CausalGraphNode | undefined>(INITIAL_NODES[2]);
+  const [selectedNode, setSelectedNode] = useState<CausalGraphNode | undefined>(graph.nodes[2]);
   const [stateHydrated, setStateHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void sessionApi.module(battleId, 'singularity-deduction').then(({ state }) => {
-      const saved = state as { singularityState?: SingularityDeductionState; selectedNodeId?: string } | null;
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { singularityState?: SingularityDeductionState; selectedNodeId?: string } | null;
       if (cancelled) return;
       if (saved?.singularityState) setSingularityState(saved.singularityState);
-      if (saved?.selectedNodeId) setSelectedNode(INITIAL_NODES.find((node) => node.id === saved.selectedNodeId) ?? INITIAL_NODES[2]);
+      if (saved?.selectedNodeId) setSelectedNode(graph.nodes.find((node) => node.id === saved.selectedNodeId) ?? graph.nodes[2]);
       setStateHydrated(true);
     }).catch(() => { if (!cancelled) setStateHydrated(true); });
     return () => { cancelled = true; };
-  }, [battleId]);
+  }, [battleId, graph.nodes]);
 
   useEffect(() => {
     if (!stateHydrated) return;
@@ -217,11 +155,11 @@ export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> =
   const handleResetSingularity = () => {
     setSingularityState(prev => ({
       ...prev,
-      alphaProbability: 0.1845,
-      previousAlpha: 0.1845,
+      alphaProbability: graph.initialAlpha,
+      previousAlpha: graph.initialAlpha,
       isWarningState: false,
       isHorizonBreached: false,
-      rippleSequence: prev.rippleSequence.map(s => ({ ...s, status: 'PENDING' })),
+      rippleSequence: graph.rippleSequence,
     }));
     soundManager.playBlip(500, 0.05);
   };
@@ -285,12 +223,12 @@ export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> =
 
       {/* CENTRAL 3D STARFIELD: Causal Horizon */}
       <CausalHorizonStarfield
-        nodes={INITIAL_NODES}
-        edges={INITIAL_EDGES}
+        nodes={graph.nodes}
+        edges={graph.edges}
         selectedNodeId={selectedNode?.id}
         onSelectNode={setSelectedNode}
         onTargetSingularity={(nodeId) => {
-          setSelectedNode(INITIAL_NODES.find((node) => node.id === nodeId) ?? selectedNode);
+          setSelectedNode(graph.nodes.find((node) => node.id === nodeId) ?? selectedNode);
           soundManager.playBlip(900, 0.05);
         }}
       />
