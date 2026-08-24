@@ -16,11 +16,19 @@ export const ExportBriefModal: React.FC<ExportBriefModalProps> = ({
   battlefield,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const lockedStrategyId = battlefield.lockedAsymmetricStrategyId || 'FIELD_SHIFT';
-  const lockedStrategy = ASYMMETRIC_STRATEGY_PACKAGES[lockedStrategyId];
+  const lockedStrategy = battlefield.lockedAsymmetricStrategyId ? ASYMMETRIC_STRATEGY_PACKAGES[battlefield.lockedAsymmetricStrategyId] : null;
+  const strategySection = lockedStrategy ? `* **锁定策略**: ${lockedStrategy.name} (${lockedStrategy.codeName})
+* **预估存活率**: ${lockedStrategy.survivalProbability}%
+* **核心支点**: ${lockedStrategy.primaryLever}
+* **第一步行动**: ${lockedStrategy.initialFirstStep}
+* **关键行动窗口**: ${lockedStrategy.criticalWindow}
+* **领先监控指标**:
+${lockedStrategy.leadingIndicators.map(ind => `  1. ${ind}`).join('\n')}
+* **绝对中止红线 (Abort Criteria)**: ${lockedStrategy.abortCriteria}` : '* **锁定策略**: 尚未锁定。请先完成路径推演与用户确认。';
 
   const briefMarkdown = `# 《胜天半子 · 战局现实推演决策简报》
 **战局名称**: ${battlefield.title}
@@ -43,24 +51,19 @@ ${battlefield.assets.map(a => `- **[${a.tag}]** ${a.title}: ${a.description} (�
 ---
 
 ### 三、 破局非对称策略总纲
-* **锁定策略**: ${lockedStrategy.name} (${lockedStrategy.codeName})
-* **预估存活率**: ${lockedStrategy.survivalProbability}%
-* **核心支点**: ${lockedStrategy.primaryLever}
-* **第一步行动**: ${lockedStrategy.initialFirstStep}
-* **关键行动窗口**: ${lockedStrategy.criticalWindow}
-* **领先监控指标**:
-${lockedStrategy.leadingIndicators.map(ind => `  1. ${ind}`).join('\n')}
-* **绝对中止红线 (Abort Criteria)**: ${lockedStrategy.abortCriteria}
+${strategySection}
 
 ---
 *胜天半子系统 · 专业决策推演与认知熔炉*
 `;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(briefMarkdown);
-    setCopied(true);
-    soundManager.playBlip(900, 0.04);
-    setTimeout(() => setCopied(false), 2000);
+    setCopyError(null);
+    void navigator.clipboard.writeText(briefMarkdown).then(() => {
+      setCopied(true);
+      soundManager.playBlip(900, 0.04);
+      window.setTimeout(() => setCopied(false), 2000);
+    }).catch(() => setCopyError('复制失败，请手动选择并复制简报内容。'));
   };
 
   const handlePrint = () => {
@@ -109,6 +112,7 @@ ${lockedStrategy.leadingIndicators.map(ind => `  1. ${ind}`).join('\n')}
           </button>
 
           <div className="flex items-center gap-2">
+            {copyError && <span className="text-xs text-red-300">{copyError}</span>}
             <button
               onClick={handleCopy}
               className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-xl shadow-blue-950/50 cursor-pointer"
