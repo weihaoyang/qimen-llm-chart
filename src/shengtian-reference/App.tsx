@@ -717,6 +717,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           battlefield.breakthroughActive ? (
             <SingularityDeductionView
               battlefield={battlefield}
+              battleId={session.activeBattle?.id ?? battlefield.id}
               onUpdateBattlefield={updateBattlefield}
               onExitSingularityMode={handleExitSingularity}
               onSaveDNARecord={handleSaveDNARecord}

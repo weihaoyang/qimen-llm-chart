@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   BattlefieldState, 
   CausalGraphNode, 
@@ -14,6 +14,7 @@ import {
 import { HorizonGauge } from './HorizonGauge';
 import { CausalHorizonStarfield } from './CausalHorizonStarfield';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 import confetti from 'canvas-confetti';
 import { 
   Flame, 
@@ -33,6 +34,7 @@ import {
 
 interface SingularityDeductionViewProps {
   battlefield: BattlefieldState;
+  battleId: string;
   onUpdateBattlefield: React.Dispatch<React.SetStateAction<BattlefieldState>>;
   onExitSingularityMode: () => void;
   onSaveDNARecord: (record: any) => void;
@@ -110,6 +112,7 @@ const INITIAL_EDGES: CausalGraphEdge[] = [
 
 export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> = ({
   battlefield,
+  battleId,
   onUpdateBattlefield,
   onExitSingularityMode,
   onSaveDNARecord,
@@ -151,6 +154,27 @@ export const SingularityDeductionView: React.FC<SingularityDeductionViewProps> =
   });
 
   const [selectedNode, setSelectedNode] = useState<CausalGraphNode | undefined>(INITIAL_NODES[2]);
+  const [stateHydrated, setStateHydrated] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void sessionApi.module(battleId, 'singularity-deduction').then(({ state }) => {
+      const saved = state as { singularityState?: SingularityDeductionState; selectedNodeId?: string } | null;
+      if (cancelled) return;
+      if (saved?.singularityState) setSingularityState(saved.singularityState);
+      if (saved?.selectedNodeId) setSelectedNode(INITIAL_NODES.find((node) => node.id === saved.selectedNodeId) ?? INITIAL_NODES[2]);
+      setStateHydrated(true);
+    }).catch(() => { if (!cancelled) setStateHydrated(true); });
+    return () => { cancelled = true; };
+  }, [battleId]);
+
+  useEffect(() => {
+    if (!stateHydrated) return;
+    const timer = window.setTimeout(() => {
+      void sessionApi.saveModule(battleId, 'singularity-deduction', { singularityState, selectedNodeId: selectedNode?.id }).catch(() => undefined);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [battleId, stateHydrated, singularityState, selectedNode?.id]);
 
   // Execute Step in Ripple Sequence
   const handleExecuteRippleStep = (stepNumber: number) => {
