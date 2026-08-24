@@ -10,6 +10,7 @@ import {
   AIPersonaType 
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 import { 
   X, 
   Bot, 
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 
 interface AISymbioteModalProps {
+  battleId?: string;
   isOpen: boolean;
   onClose: () => void;
   symbiote: AISymbioteState;
@@ -35,6 +37,7 @@ interface AISymbioteModalProps {
 }
 
 export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
+  battleId,
   isOpen,
   onClose,
   symbiote,
@@ -42,6 +45,27 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(symbiote.customName);
+  const [memories, setMemories] = useState<SymbioteLongTermMemory[]>(symbiote.longTermMemories);
+  const [memoryError, setMemoryError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    void sessionApi.memories().then(({ memories: rows }) => {
+      if (cancelled) return;
+      const mapped = rows.filter((row) => !battleId || row.battleId === battleId).map((row) => {
+        const memory = row.memory && typeof row.memory === 'object' ? row.memory as Record<string, unknown> : {};
+        return { id: String(row.id), crisisTitle: String(row.title ?? memory.crisisTitle ?? '未命名战局记忆'), userKeyChoice: String(memory.userKeyChoice ?? ''), outcome: 'VICTORY' as const, outcomeLabel: String(memory.outcomeLabel ?? '已保存'), memoryQuote: String(memory.memoryQuote ?? memory.quote ?? ''), lessonLearned: String(memory.lessonLearned ?? memory.lesson ?? ''), timestamp: String(row.updatedAt ?? row.createdAt ?? '') };
+      });
+      setMemories(mapped);
+    }).catch((error) => { if (!cancelled) setMemoryError(error instanceof Error ? error.message : '读取共生记忆失败。'); });
+    return () => { cancelled = true; };
+  }, [isOpen, battleId]);
+
+  const handleDeleteMemory = async (id: string) => {
+    try { await sessionApi.deleteMemory(id); setMemories((current) => current.filter((memory) => memory.id !== id)); }
+    catch (error) { setMemoryError(error instanceof Error ? error.message : '删除记忆失败，请重试。'); }
+  };
 
   if (!isOpen) return null;
 
@@ -212,12 +236,12 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                 </h3>
               </div>
               <span className="text-xs font-mono-code text-slate-400">
-                已沉淀 {symbiote.longTermMemories.length} 条重大抉择记忆
+                已沉淀 {memories.length} 条重大抉择记忆
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {symbiote.longTermMemories.map((mem) => (
+              {memories.map((mem) => (
                 <div
                   key={mem.id}
                   className="p-4 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-cyan-500/40 space-y-3 transition-all shadow-lg"
@@ -235,11 +259,12 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
 
                   <div className="text-[11px] font-mono-code text-slate-400 pt-2 border-t border-white/[0.04] flex items-center justify-between">
                     <span className="text-amber-300/90">启示: {mem.lessonLearned}</span>
-                    <span>{mem.timestamp}</span>
+                    <span className="flex items-center gap-2">{mem.timestamp}<button onClick={() => void handleDeleteMemory(mem.id)} className="text-red-300 hover:text-red-200">删除</button></span>
                   </div>
                 </div>
               ))}
             </div>
+            {memoryError && <p className="text-xs text-red-300">{memoryError}</p>}
           </div>
 
         </div>

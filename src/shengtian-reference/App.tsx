@@ -410,6 +410,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     const battleId = session.activeBattle?.id;
     if (battleId) {
       void fetch(`/api/battles/${battleId}/reviews`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ outcome:record.survivalOutcome, facts:record.extractedDNA.join('\n'), whatChanged:record.userReflection, diagnosis:{ reasoning:{ expected:50, actual:75, note:'Decision DNA review' } }, nextAdjustment:record.fatalQuestion }) });
+      void sessionApi.saveMemory({ battleId, title: record.battlefieldTitle, memory: { userKeyChoice: record.selectedStrategy, outcome: record.survivalOutcome, outcomeLabel: record.survivalOutcome, memoryQuote: record.userReflection, lessonLearned: record.extractedDNA.join('；'), timestamp: record.timestamp }, source: { type: 'decision_dna', recordId: record.id } }).catch(() => undefined);
     }
   };
 
@@ -876,6 +877,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       <AISymbioteModal
         isOpen={isAISymbioteModalOpen}
         onClose={() => setIsAISymbioteModalOpen(false)}
+        battleId={session.activeBattle?.id}
         symbiote={symbioteState}
         onUpdateSymbioteName={handleUpdateSymbioteName}
       />
