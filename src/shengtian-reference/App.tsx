@@ -1052,6 +1052,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         battlefield={battlefield}
+        battleId={session.activeBattle?.id}
       />
 
       {/* Emotional Telemetry HUD */}

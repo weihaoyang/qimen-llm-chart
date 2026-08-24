@@ -1,36 +1,46 @@
 import React, { useState } from 'react';
 import { FileText, Copy, Check, X, Printer, ShieldCheck } from 'lucide-react';
 import { BattlefieldState } from '../types';
-import { ASYMMETRIC_STRATEGY_PACKAGES } from '../data/presets';
 import { soundManager } from '../utils/soundEffects';
 
 interface ExportBriefModalProps {
   isOpen: boolean;
   onClose: () => void;
   battlefield: BattlefieldState;
+  battleId?: string;
 }
 
 export const ExportBriefModal: React.FC<ExportBriefModalProps> = ({
   isOpen,
   onClose,
   battlefield,
+  battleId,
 }) => {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [reportMarkdown, setReportMarkdown] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (!isOpen || !battleId) return;
+    let cancelled = false;
+    setReportLoading(true);
+    setReportError(null);
+    void fetch(`/api/battles/${battleId}/report?format=markdown`, { credentials: 'include' })
+      .then(async (response) => {
+        const text = await response.text();
+        if (!response.ok) throw new Error(text || `报告生成失败（${response.status}）。`);
+        if (!cancelled) setReportMarkdown(text);
+      })
+      .catch((error) => { if (!cancelled) setReportError(error instanceof Error ? error.message : '报告生成失败，请重试。'); })
+      .finally(() => { if (!cancelled) setReportLoading(false); });
+    return () => { cancelled = true; };
+  }, [isOpen, battleId]);
 
   if (!isOpen) return null;
 
-  const lockedStrategy = battlefield.lockedAsymmetricStrategyId ? ASYMMETRIC_STRATEGY_PACKAGES[battlefield.lockedAsymmetricStrategyId] : null;
-  const strategySection = lockedStrategy ? `* **锁定策略**: ${lockedStrategy.name} (${lockedStrategy.codeName})
-* **预估存活率**: ${lockedStrategy.survivalProbability}%
-* **核心支点**: ${lockedStrategy.primaryLever}
-* **第一步行动**: ${lockedStrategy.initialFirstStep}
-* **关键行动窗口**: ${lockedStrategy.criticalWindow}
-* **领先监控指标**:
-${lockedStrategy.leadingIndicators.map(ind => `  1. ${ind}`).join('\n')}
-* **绝对中止红线 (Abort Criteria)**: ${lockedStrategy.abortCriteria}` : '* **锁定策略**: 尚未锁定。请先完成路径推演与用户确认。';
-
-  const briefMarkdown = `# 《胜天半子 · 战局现实推演决策简报》
+  const fallbackMarkdown = `# 《胜天半子 · 战局现实推演决策简报》
 **战局名称**: ${battlefield.title}
 **当前状态**: ${battlefield.breakthroughActive ? '破局模式 · 战情指挥' : '标准模式 · 决策顾问'}
 **生成时间**: ${new Date().toLocaleString()}
@@ -51,11 +61,12 @@ ${battlefield.assets.map(a => `- **[${a.tag}]** ${a.title}: ${a.description} (�
 ---
 
 ### 三、 破局非对称策略总纲
-${strategySection}
+* **锁定策略**: ${battlefield.lockedAsymmetricStrategyId ?? '尚未锁定'}
 
 ---
 *胜天半子系统 · 专业决策推演与认知熔炉*
 `;
+  const briefMarkdown = reportMarkdown ?? fallbackMarkdown;
 
   const handleCopy = () => {
     setCopyError(null);
@@ -99,7 +110,7 @@ ${strategySection}
 
         {/* Brief Text Preview */}
         <div className="flex-1 overflow-y-auto bg-black/60 p-4 rounded-xl border border-white/[0.06] text-xs font-mono-code text-slate-300 whitespace-pre-wrap leading-relaxed">
-          {briefMarkdown}
+          {reportLoading ? '正在从服务端读取完整战局报告…' : reportError ? reportError : briefMarkdown}
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] shrink-0">
