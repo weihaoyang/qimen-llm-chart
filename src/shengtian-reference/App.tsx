@@ -331,7 +331,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     const battleId = session.activeBattle?.id;
     if (!battleId || !moduleHydratedRef.current['inventory']) return;
     const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
-    const timer = window.setTimeout(() => { void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) }); }, 450);
+    const timer = window.setTimeout(() => {
+      void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
+        .then((response) => { if (!response.ok) throw new Error(`底牌保存失败（${response.status}）。`); })
+        .catch((error) => setPersistenceError(error instanceof Error ? error.message : '底牌保存失败，请重试。'));
+    }, 450);
     return () => window.clearTimeout(timer);
   }, [session.activeBattle?.id, battlefield.assets]);
 
@@ -359,10 +363,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       }],
     ];
     const timers = states.filter(([moduleId]) => moduleHydratedRef.current[moduleId]).map(([moduleId, state]) => window.setTimeout(() => {
-      void fetch(`/api/battles/${battleId}/modules/${moduleId}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state, consent: { source: 'user_session' } }) });
+      void saveBattleModule(battleId, moduleId, state, { source: 'user_session' })
+        .catch((error) => setPersistenceError(error instanceof Error ? error.message : '战局模块保存失败，请重试。'));
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog, saveBattleModule]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);
@@ -389,6 +394,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   const updateBattlefield = React.useCallback((updater: React.SetStateAction<BattlefieldState>) => {
     setBattlefield(updater);
+  }, []);
+
+  const saveBattleModule = React.useCallback(async (battleId: string, moduleId: string, state: unknown, consent: Record<string, unknown> = {}) => {
+    const response = await fetch(`/api/battles/${battleId}/modules/${moduleId}`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state, consent }),
+    });
+    if (!response.ok) throw new Error(`模块 ${moduleId} 保存失败（${response.status}）。`);
   }, []);
 
   useEffect(() => {
@@ -482,9 +495,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   useEffect(() => {
     const battleId = session.activeBattle?.id;
     if (!battleId || !moduleHydratedRef.current['decision-dna']) return;
-    const timer = window.setTimeout(() => { void fetch(`/api/battles/${battleId}/modules/decision-dna`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ state:{ records:dnaRecords }, consent:{ source:'user_session' } }) }); }, 300);
+    const timer = window.setTimeout(() => {
+      void saveBattleModule(battleId, 'decision-dna', { records: dnaRecords }, { source: 'user_session' })
+        .catch((error) => setPersistenceError(error instanceof Error ? error.message : '决策 DNA 保存失败，请重试。'));
+    }, 300);
     return () => window.clearTimeout(timer);
-  }, [session.activeBattle?.id, dnaRecords]);
+  }, [session.activeBattle?.id, dnaRecords, saveBattleModule]);
 
   const handleSaveDNARecord = async (record: DecisionDNARecord) => {
     const battleId = session.activeBattle?.id;

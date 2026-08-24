@@ -158,6 +158,7 @@ export interface InterviewMessage {
     label: string;
     value: string | number;
   };
+  parameterAccepted?: boolean;
 }
 
 export interface AsymmetricStrategyPackage {
@@ -777,4 +778,3 @@ export interface AISymbioteState {
   victoriesTogether: number;
   longTermMemories: SymbioteLongTermMemory[];
 }
-

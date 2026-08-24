@@ -74,8 +74,6 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
       onUpdateBattlefield(prev => ({
         ...prev,
         interviewHistory: [...prev.interviewHistory, aiMsg],
-        idealOutcome: response.parameterExtracted?.key === 'ideal_outcome' ? String(response.parameterExtracted.value) : prev.idealOutcome,
-        bottomLine: response.parameterExtracted?.key === 'bottom_line' ? String(response.parameterExtracted.value) : prev.bottomLine,
       }));
       soundManager.playBlip(900, 0.05);
     } catch (error) {
@@ -89,6 +87,16 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleAcceptParameter = (messageId: string, parameter: NonNullable<InterviewMessage['parameterExtracted']>) => {
+    onUpdateBattlefield((previous) => ({
+      ...previous,
+      interviewHistory: previous.interviewHistory.map((message) => message.id === messageId ? { ...message, parameterAccepted: true } : message),
+      idealOutcome: parameter.key === 'ideal_outcome' ? String(parameter.value) : previous.idealOutcome,
+      bottomLine: parameter.key === 'bottom_line' ? String(parameter.value) : previous.bottomLine,
+    }));
+    soundManager.playSuccess();
   };
 
   // Quick preset answers for instant exploration
@@ -156,12 +164,19 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                   
                   {msg.parameterExtracted && (
-                    <div className="mt-2.5 pt-2 border-t border-white/[0.1] flex items-center gap-2 text-xs font-mono-code">
+                    <div className="mt-2.5 pt-2 border-t border-white/[0.1] flex flex-wrap items-center gap-2 text-xs font-mono-code">
                       <span className="bg-amber-950/90 text-amber-300 border border-amber-600/60 px-1.5 py-0.5 rounded text-[10px] font-bold">
                         参数捕获
                       </span>
                       <span className="text-slate-400">{msg.parameterExtracted.label}:</span>
                       <span className="text-amber-200 font-bold">{String(msg.parameterExtracted.value)}</span>
+                      {msg.parameterAccepted ? (
+                        <span className="text-emerald-300">已确认写入战局</span>
+                      ) : (
+                        <button type="button" onClick={() => handleAcceptParameter(msg.id, msg.parameterExtracted!)} className="rounded-md border border-emerald-700/70 bg-emerald-950/60 px-2 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900/70">
+                          确认采纳
+                        </button>
+                      )}
                     </div>
                   )}
 
