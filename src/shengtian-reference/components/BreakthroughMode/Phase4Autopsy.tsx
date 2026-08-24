@@ -30,15 +30,11 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   const selectedStrategyId = battlefield.lockedAsymmetricStrategyId;
   const selectedStrategy = selectedStrategyId ? ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyId] : null;
 
-  const [fatalQuestion, setFatalQuestion] = useState('正在请求 AI 致命问题…');
-  const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(null);
+  const [fatalQuestion, setFatalQuestion] = useState(selectedStrategy ? '正在请求 AI 致命问题…' : '请先在第三阶段锁定正式策略。');
+  const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(selectedStrategy ? null : '当前战局没有已锁定策略。');
   useEffect(() => {
     let cancelled = false;
-    if (!selectedStrategy) {
-      setFatalQuestion('请先在第三阶段锁定正式策略。');
-      setFatalQuestionError('当前战局没有已锁定策略。');
-      return () => { cancelled = true; };
-    }
+    if (!selectedStrategy) return () => { cancelled = true; };
     void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
       .then((question) => { if (!cancelled) { setFatalQuestion(question); setFatalQuestionError(null); } })
       .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });

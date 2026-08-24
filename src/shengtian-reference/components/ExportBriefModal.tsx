@@ -25,9 +25,11 @@ export const ExportBriefModal: React.FC<ExportBriefModalProps> = ({
   React.useEffect(() => {
     if (!isOpen || !battleId) return;
     let cancelled = false;
-    setReportLoading(true);
-    setReportError(null);
-    void fetch(`/api/battles/${battleId}/report?format=markdown`, { credentials: 'include' })
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      setReportLoading(true);
+      setReportError(null);
+      void fetch(`/api/battles/${battleId}/report?format=markdown`, { credentials: 'include' })
       .then(async (response) => {
         const text = await response.text();
         if (!response.ok) throw new Error(text || `报告生成失败（${response.status}）。`);
@@ -35,7 +37,8 @@ export const ExportBriefModal: React.FC<ExportBriefModalProps> = ({
       })
       .catch((error) => { if (!cancelled) setReportError(error instanceof Error ? error.message : '报告生成失败，请重试。'); })
       .finally(() => { if (!cancelled) setReportLoading(false); });
-    return () => { cancelled = true; };
+    }, 0);
+    return () => { cancelled = true; window.clearTimeout(timer); };
   }, [isOpen, battleId]);
 
   if (!isOpen) return null;
