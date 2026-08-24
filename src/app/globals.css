@@ -22,6 +22,7 @@
   --mono-font: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
+
 html {
   height: 100%;
 }
@@ -1854,6 +1855,38 @@ a {
   height: 100%;
   border: 0;
   background: transparent;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+}
+
+/* Long Agent answers must scroll inside the result surface.  Several desktop
+   layout rules intentionally clip the tab shell; without an explicit flex
+   boundary the answer is painted below the viewport and becomes unreachable. */
+.agent-panel__section--result {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.agent-panel__section--result > .inspector-scroll {
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+.agent-panel__section--result .agent-thread,
+.agent-panel__section--result > .agent-result {
+  min-height: min-content;
+  padding-bottom: 20px;
+}
+
+@media (max-width: 1180px) {
+  .agent-panel__section--result {
+    overflow: visible !important;
+  }
+  .agent-panel__section--result > .inspector-scroll {
+    height: auto !important;
+    max-height: min(62svh, 760px) !important;
+    overflow-y: auto !important;
+  }
 }
 
 .agent-spin {
@@ -7745,4 +7778,18 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     height: auto !important;
     overflow: visible !important;
   }
+}
+
+/* Final guard: answer content owns a real scrollport even when an upstream
+   workbench shell clips its tab panel. */
+html body .agent-panel__section--result {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+html body .agent-panel__section--result > .inspector-scroll {
+  min-height: 0 !important;
+  max-height: min(70svh, 860px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
 }
