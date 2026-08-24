@@ -12,6 +12,7 @@ import { savePlatformFlashMessage } from "@/lib/platform/flash";
 import { createPlatformClient } from "@/lib/platform/client";
 import { requirePlatformClientConfig } from "@/lib/platform/config";
 import { clearPlatformSession, savePlatformSession } from "@/lib/platform/session";
+import type { PlatformSession } from "@singularity-sequence/web-sdk";
 
 export default function PlatformCallbackPage() {
   const [message, setMessage] = useState("正在恢复平台登录状态。");
@@ -40,12 +41,23 @@ export default function PlatformCallbackPage() {
           redirectUri,
           oauthRequest.verifier,
         );
+        const tokenSession = result.session as PlatformSession;
         const session = {
           ...result.session,
           access_token: "",
           refresh_token: "",
           csrf_token: result.csrf_token,
         };
+        const bridgeResponse = await fetch("/api/platform/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            access_token: tokenSession.access_token,
+            refresh_token: tokenSession.refresh_token,
+            csrf_token: result.csrf_token,
+          }),
+        });
+        if (!bridgeResponse.ok) throw new Error("无法保存排盘工作台登录状态，请重试。");
         savePlatformSession(session);
         await restorePlatformAccessState(session);
         window.history.replaceState({}, document.title, window.location.pathname);

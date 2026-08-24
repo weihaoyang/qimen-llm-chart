@@ -60,6 +60,12 @@
 - 平台支付结果恢复页
 - 平台 gate 控制 AI 分析
 
+### 账户权益与 AI 请求的强制规则
+
+“账户栏显示有余额”不等于“AI 请求已经授权”。两者必须通过同一账户 session 连接：账户权益可用时，Agent 请求必须带平台 Bearer token，并且不能被旧 guest checkout token 覆盖。兑换后必须重新读取 gate/usage、同步全部 Agent state 并清空 guest 状态。
+
+详细流程、测试矩阵和发布验收见 [`docs/AI_ACCESS_RUNBOOK.md`](./AI_ACCESS_RUNBOOK.md)。
+
 也就是说，代码结构已经准备好，当前可以直接按正式参数联调。
 
 ## 平台侧当前已确认

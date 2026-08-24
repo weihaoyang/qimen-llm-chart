@@ -20,6 +20,7 @@ const MAX_HISTORY_MESSAGES = 18;
 const MAX_STRUCTURED_TEXT_LENGTH = 180_000;
 const MAX_JSON_LENGTH = 260_000;
 const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
+const QMDJ_SESSION_COOKIE_NAMES = new Set(["qmdj_platform_access", "qmdj_platform_refresh", "qmdj_platform_csrf"]);
 
 const readPlatformCookieHeader = (cookieHeader: string | null) => (cookieHeader ?? "")
   .split(";")
@@ -35,6 +36,12 @@ const readCookieValue = (cookieHeader: string | null, name: string) => {
     .find((part) => part.startsWith(prefix))
     ?.slice(prefix.length) ?? "";
 };
+
+const readCookieHeaderFor = (cookieHeader: string | null, names: Set<string>) => (cookieHeader ?? "")
+  .split(";")
+  .map((part) => part.trim())
+  .filter((part) => names.has(part.split("=", 1)[0] ?? ""))
+  .join("; ");
 
 const isWorkbenchMode = (value: unknown): value is WorkbenchMode =>
   typeof value === "string" && WORKBENCH_MODES.includes(value as WorkbenchMode);
@@ -61,6 +68,11 @@ export async function POST(request: Request) {
     accessToken = readBearerToken(request.headers.get("authorization")) ?? "";
     platformCookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
     platformCsrfToken = readCookieValue(request.headers.get("cookie"), "ssp_csrf");
+    const qmdjCookieHeader = readCookieHeaderFor(request.headers.get("cookie"), QMDJ_SESSION_COOKIE_NAMES);
+    const qmdjAccessToken = readCookieValue(request.headers.get("cookie"), "qmdj_platform_access");
+    if (!accessToken && qmdjAccessToken) accessToken = qmdjAccessToken;
+    if (!platformCookieHeader && qmdjCookieHeader) platformCookieHeader = qmdjCookieHeader;
+    if (!platformCsrfToken) platformCsrfToken = readCookieValue(request.headers.get("cookie"), "qmdj_platform_csrf");
     guestToken = readGuestCheckoutToken(request.headers.get("x-guest-checkout-token")) ?? "";
     if (!accessToken && !platformCookieHeader && !guestToken) {
       return NextResponse.json(

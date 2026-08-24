@@ -594,6 +594,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     } catch {
       // The local session is cleared even if the platform logout request has expired.
     }
+    await fetch("/api/platform/session", { method: "DELETE" }).catch(() => undefined);
     clearPlatformSession();
     clearActiveAgentSession();
     setPlatformWorkspace((current) => ({ ...current, status: "guest", session: null, profile: null, gate: null, usage: null }));

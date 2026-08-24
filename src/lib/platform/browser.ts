@@ -289,6 +289,12 @@ export const toPlatformSession = (value: PlatformCallbackSession): PlatformSessi
 export const restorePlatformAccessState = async (
   session: PlatformSession,
 ): Promise<PlatformAccessState> => {
+  if (!session.access_token || !session.refresh_token) {
+    const bridge = await fetch("/api/platform/session", { cache: "no-store" });
+    const body = await bridge.json().catch(() => ({})) as { session?: PlatformSession; error?: string };
+    if (!bridge.ok || !body.session) throw new Error(body.error ?? "平台登录已过期，请重新登录。");
+    session = { ...session, ...body.session };
+  }
   const authenticatedClient = createPlatformClient({
     accessToken: session.access_token,
     csrfToken: session.csrf_token,

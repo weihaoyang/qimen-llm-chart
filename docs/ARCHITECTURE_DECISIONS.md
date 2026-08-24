@@ -24,6 +24,16 @@ Record only decisions that affect boundaries, data contracts, dependencies, depl
 - Consequences: 产品只保存本次工作流恢复所需的临时订单上下文，平台继续作为身份、订单、支付和 entitlement 真相；账户和游客两条路径都可恢复，模型失败不会提交用量。
 - Evidence: `src/app/api/agent/route.ts`, `src/app/billing/result/billing-result-client.tsx`, `src/lib/platform/browser.ts`, targeted route tests.
 
+### ADR-004 — 账户权益状态优先于旧游客会话
+
+- Date: 2026-08-25
+- Status: accepted
+- Context: 邀请码兑换后页面已经显示账户剩余次数，但本地恢复的旧 guest Agent state 仍可能被选为共享请求状态，造成 `/api/agent` 没有 Bearer token，服务端按未授权拒绝。
+- Decision: 当已认证账户存在可用平台权益时，所有 Agent 入口统一使用账户状态；兑换/登录成功后同步全部 Agent state 为 `account`，清空 guest checkout token/order。客户端余额只用于显示，服务端仍必须执行 gate → reserve → model → commit/release。
+- Alternatives: 让账户和 guest 状态按最后写入时间竞争；只在 UI 层显示账户余额；依据本地余额直接放行。
+- Consequences: 账户和游客主体不会串线；旧 guest 会话仍可在未登录账户路径使用，但不能覆盖已认证账户。需要在兑换、刷新恢复和 AI 请求头测试中锁定这一不变量。
+- Evidence: `docs/AI_ACCESS_RUNBOOK.md`, `src/components/app-shell.tsx`, production release `20260825-2318-qmdj-agent-auth`, `/api/health`, `/api/version`.
+
 ### ADR-003 — 胜天半子以 Battle Domain 作为唯一产品业务核心
 
 - Date: 2026-08-20
