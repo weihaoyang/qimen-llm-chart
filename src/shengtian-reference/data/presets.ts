@@ -64,76 +64,13 @@ export const AI_PERSONA_CONFIGS: Record<string, AIPersonaConfig> = {
 };
 
 export const INITIAL_DECISION_BOARD: DecisionBoardState = {
-  roomId: 'ROOM-8839-DECISION-BOARD',
-  shareToken: 'tok_sec_9941a8fe72',
-  expiresInHours: 48,
+  roomId: '',
+  shareToken: '',
+  expiresInHours: 0,
   isRedacted: true,
-  members: [
-    {
-      id: 'mem-1',
-      name: '陈顾问 (前SaaS上市公司商业VP)',
-      avatar: '陈',
-      role: 'STRATEGIST',
-      roleTitle: '资深战略参谋',
-      invitedAt: '2026-08-22 09:15',
-      status: 'ONLINE',
-    },
-    {
-      id: 'mem-2',
-      name: '张总 (天使轮领投合伙人)',
-      avatar: '张',
-      role: 'COMMENTATOR',
-      roleTitle: '战局评论员',
-      invitedAt: '2026-08-22 09:30',
-      status: 'ACTIVE',
-    },
-    {
-      id: 'mem-3',
-      name: '李导师 (清华经管特聘创业导师)',
-      avatar: '李',
-      role: 'OBSERVER',
-      roleTitle: '特邀观察员',
-      invitedAt: '2026-08-22 09:45',
-      status: 'ONLINE',
-    },
-  ],
-  comments: [
-    {
-      id: 'cmt-1',
-      authorName: '张总 (天使轮领投合伙人)',
-      authorRole: 'COMMENTATOR',
-      avatar: '张',
-      targetType: 'CARD',
-      targetTitle: '[CHIP-01] 大客户校友VP',
-      content: '提醒创始人：校友关系在上市企业采购内审高压下价值为0甚至为负，对方绝不敢承担越级担保责任，请立即停止单一依赖！',
-      timestamp: '10分钟前',
-      upvotes: 4,
-    },
-    {
-      id: 'cmt-2',
-      authorName: '陈顾问 (前SaaS上市公司商业VP)',
-      authorRole: 'STRATEGIST',
-      avatar: '陈',
-      targetType: 'STRATEGY',
-      targetTitle: '策略分支: 改变战场 · 联合私有化',
-      content: '方向非常对！但我为你增加了一条平行的【合纵连横】幽灵策略线：引入国内排名前三的公有云大客户部作为共同投标方，我们只做工作流定制，让云厂商承担SLA兜底。',
-      timestamp: '5分钟前',
-      upvotes: 7,
-    },
-  ],
-  ghostStrategies: [
-    {
-      id: 'ghost-strat-1',
-      creatorName: '陈顾问 (资深战略参谋)',
-      creatorRoleTitle: '前SaaS上市公司商业VP',
-      strategyName: '合纵连横 · 联合头部公有云厂商联合竞标',
-      coreThesis: '借助云巨头的大客户框架协议直接绕过B公司的价格战，将纯软件转化为云生态联合解决方案。',
-      estimatedSurvivalProb: 74,
-      suggestedAction: '立即联系阿里云/腾讯云行业生态总监，签署联合投标排他备忘录。',
-      pros: '借助巨头资质背书，极大提升大客户法务合规通过率',
-      cons: '需让渡20%软件服务毛利给云厂商',
-    },
-  ],
+  members: [],
+  comments: [],
+  ghostStrategies: [],
 };
 
 export const INITIAL_ANONYMOUS_CASES: AnonymousCaseStudy[] = [
@@ -1186,4 +1123,3 @@ export const INITIAL_AI_SYMBIOTE: import('../types').AISymbioteState = {
     },
   ],
 };
-

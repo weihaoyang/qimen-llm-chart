@@ -8,17 +8,11 @@ import React, { useState } from 'react';
 import { BoardRole } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi, type Collaborator } from '../../session/api';
-import confetti from 'canvas-confetti';
 import { 
   X, 
   Share2, 
-  Copy, 
-  CheckCircle2, 
   ShieldCheck, 
-  Users, 
-  Clock, 
-  Lock, 
-  Sparkles 
+  Clock
 } from 'lucide-react';
 
 interface CausalLinkModalProps {
@@ -36,17 +30,12 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
 }) => {
   const [selectedRole, setSelectedRole] = useState<BoardRole>('STRATEGIST');
   const [enableRedaction, setEnableRedaction] = useState(true);
-  const [isCopied, setIsCopied] = useState(false);
   const [subjectId, setSubjectId] = useState('');
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   if (!isOpen) return null;
-
-  const generatedLink = collaborator && typeof window !== 'undefined'
-    ? `${window.location.origin}/?battle=${encodeURIComponent(battleId)}&invite=${encodeURIComponent(collaborator.id)}`
-    : '';
 
   const roleMap = { OBSERVER: 'viewer', COMMENTATOR: 'contributor', STRATEGIST: 'advisor' } as const;
 
@@ -65,21 +54,6 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
     } finally { setIsSaving(false); }
   };
 
-  const handleCopy = () => {
-    if (!generatedLink) return;
-    soundManager.playSuccess();
-    void navigator.clipboard.writeText(generatedLink).then(() => {
-      setIsCopied(true);
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#00F0FF', '#3A7DFF', '#FFFFFF'],
-      });
-      window.setTimeout(() => setIsCopied(false), 3000);
-    }).catch(() => setError('复制失败，请手动复制链接。'));
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md font-sans overflow-y-auto">
       <div className="max-w-xl w-full surface-obsidian-war border border-white/[0.15] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative my-auto">
@@ -92,13 +66,13 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span>生成因果协同链接 · CAUSAL LINK</span>
+                <span>创建受控协作者 · CAUSAL LINK</span>
                 <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                  ENCRYPTED 48H
+                  ACCOUNT INVITE
                 </span>
               </h3>
               <p className="text-xs text-slate-400 font-mono-code">
-                创建一次性加密链接 · 邀请智囊或合伙人多方推演
+                向指定的平台账户授予受控协作权限
               </p>
             </div>
           </div>
@@ -154,7 +128,7 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
             <button onClick={() => void handleInvite()} disabled={isSaving || Boolean(collaborator)} className="px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold">{isSaving ? '发送中…' : collaborator ? '已发送' : '发送邀请'}</button>
           </div>
           {error ? <p className="text-xs text-rose-300">{error}</p> : null}
-          {collaborator ? <p className="text-[11px] text-emerald-300">邀请已保存。对方登录后打开下方链接即可接受，链接不会伪造或写入浏览器状态。</p> : null}
+          {collaborator ? <p className="text-[11px] text-emerald-300">邀请已保存。受邀者以该平台账户登录后，可在其战局协作入口接受邀请；当前版本不伪造 URL 令牌或链接过期语义。</p> : null}
         </div>
 
         {/* Redaction Switch */}
@@ -176,42 +150,16 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
           />
         </div>
 
-        {/* Generated Link & Copy */}
+        {/* Invitation delivery state */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-mono-code text-slate-400">
-            <span>加密链接 (48小时后自动作废)</span>
+            <span>邀请交付状态</span>
             <span className="text-amber-400 flex items-center gap-1">
-              <Clock className="w-3 h-3" /> 有效期 48:00:00
+              <Clock className="w-3 h-3" /> 需受邀账户主动接受
             </span>
           </div>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              readOnly
-              value={generatedLink || '发送邀请后生成真实协作链接'}
-              className="flex-1 bg-black/60 border border-white/[0.1] rounded-xl px-3 py-2 text-xs font-mono-code text-slate-300 focus:outline-none"
-            />
-            <button
-              onClick={handleCopy}
-              className={`py-2 px-4 rounded-xl font-mono-code font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
-                isCopied
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900'
-              }`}
-            >
-              {isCopied ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>已复制</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>复制链接</span>
-                </>
-              )}
-            </button>
+          <div className="rounded-xl border border-white/[0.1] bg-black/60 px-3 py-2 text-xs font-mono-code text-slate-300">
+            {collaborator ? `已向 ${collaborator.subjectType}:${collaborator.subjectId} 创建待接受的 ${collaborator.role} 协作邀请。` : '填写受邀者平台账户 ID 并发送邀请后，服务端会保存一条待接受的协作记录。'}
           </div>
         </div>
 
