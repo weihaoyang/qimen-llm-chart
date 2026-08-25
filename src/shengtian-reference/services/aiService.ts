@@ -116,7 +116,9 @@ export class TacticalAIService {
       const data = await response.json();
       const result = await resolveJob(String(battlefield.id), data.job);
       const text = JSON.stringify(result ?? data.analysis ?? data.text ?? '').replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(text);
+      const parsed = JSON.parse(text) as RedTeamResponse;
+      if (!parsed || typeof parsed !== 'object' || typeof parsed.failureProbability !== 'number') throw new Error('红队结果缺少有效失败概率。');
+      return { ...parsed, failureProbability: parsed.failureProbability <= 1 ? parsed.failureProbability * 100 : Math.min(100, parsed.failureProbability) };
     } catch (e) {
       throw e instanceof Error ? e : new Error('红队服务暂时不可用，请重试。');
     }

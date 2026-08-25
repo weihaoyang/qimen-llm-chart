@@ -27,11 +27,12 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
   onUpdateBattlefield,
   onProceedToPhase3,
 }) => {
+  const displayFailureProbability = (value: number) => Math.round(value <= 1 ? value * 100 : value);
   const [userDraft, setUserDraft] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentCritique, setCurrentCritique] = useState<RedTeamResponse | null>(() => {
     const last = battlefield.redTeamLog[battlefield.redTeamLog.length - 1];
-    return last ? { critique: last.redTeamCritique, biasWarning: last.biasWarning, failureProbability: last.failureProbability, fatalVulnerability: '来自已保存红队记录，重新提交可获得新的结构化攻击。', suggestedFocus: '继续核验记录中的失败条件。' } : null;
+    return last ? { critique: last.redTeamCritique, biasWarning: last.biasWarning, failureProbability: displayFailureProbability(last.failureProbability), fatalVulnerability: '来自已保存红队记录，重新提交可获得新的结构化攻击。', suggestedFocus: '继续核验记录中的失败条件。' } : null;
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -161,7 +162,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
                       <span>红队打击报告 (Red Team Simulation)</span>
                     </span>
                     <span className="font-bold text-red-400 bg-red-950 px-2.5 py-0.5 rounded-full border border-red-700 font-mono-code">
-                      失败概率: {log.failureProbability}%
+                      失败概率: {displayFailureProbability(log.failureProbability)}%
                     </span>
                   </div>
 
