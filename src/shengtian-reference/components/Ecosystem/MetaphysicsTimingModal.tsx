@@ -50,7 +50,11 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   const [isRevealed, setIsRevealed] = useState(timing.isViewed);
 
   useEffect(() => {
-    if (isOpen) setIsRevealed(timing.isViewed);
+    if (isOpen) {
+      // Rehydrate the modal's draft flag from the battle snapshot on open.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsRevealed(timing.isViewed);
+    }
   }, [isOpen, timing.isViewed]);
 
   if (!isOpen) return null;

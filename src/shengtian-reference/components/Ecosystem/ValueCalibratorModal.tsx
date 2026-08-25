@@ -34,7 +34,11 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      // Rehydrate the editable draft when the modal opens; this is an
+      // intentional synchronization from the battle snapshot into local form state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValues(calibrator.coreValues);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsSaved(false);
     }
   }, [isOpen, calibrator.coreValues]);
