@@ -92,7 +92,8 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     if (!battlefield.id || isGenerating) return;
     setIsGenerating(true);
     try {
-      const idempotencyKey = `cards-${battlefield.id}-current-snapshot`;
+      const snapshotKey = JSON.stringify({ title: battlefield.title, subtitle: battlefield.subtitle, assets: battlefield.assets.map((asset) => ({ id: asset.id, title: asset.title, description: asset.description, tag: asset.tag, confidence: asset.confidence })) }).slice(0, 900);
+      const idempotencyKey = `cards-${battlefield.id}-${snapshotKey}`.slice(0, 160);
       const response = await fetch(`/api/battles/${battlefield.id}/cards/generate`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json','Idempotency-Key':idempotencyKey}, body:JSON.stringify({ idempotencyKey, question:'请根据当前战局生成可核验的现实底牌，返回 cards 数组，每项包含 category、title、description、numericValue、unit。' }) });
       if (!response.ok) throw new Error('卡牌生成失败');
       const inventoryResponse = await fetch(`/api/battles/${battlefield.id}/inventory`, { credentials:'include' });
