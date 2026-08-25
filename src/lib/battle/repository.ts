@@ -16,6 +16,7 @@ type CommitmentRow = { id:string; battle_id:string; move_id:string; version:numb
 
 const ownership = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 const writableBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active' AND bc.role IN ('contributor','advisor'))`;
+const writableCasePredicate34 = (alias: string) => `(${alias}.platform_subject_type=$3 AND ${alias}.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=${alias}.id AND bc.subject_type=$3 AND bc.subject_id=$4 AND bc.status='active' AND bc.role IN ('contributor','advisor'))`;
 const asRecord = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const asStrings = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const iso = (value: Date|null|undefined) => value?.toISOString() ?? null;
@@ -173,7 +174,7 @@ export const listJunctions = async (subject: AccountSubject, battleId: string) =
 };
 
 export const saveMoveSet = async (subject: AccountSubject, battleId: string, junctionId: string, moves: Array<Omit<Move, "id"|"battleId"|"junctionId"|"version"|"state">>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT c.id FROM battle_cases c JOIN battle_junctions j ON j.battle_id=c.id WHERE c.id=$1 AND j.id=$2 AND c.platform_subject_type=$3 AND c.platform_subject_id=$4 FOR UPDATE`, [battleId,junctionId,...ownership(subject)]);
+  const owner = await client.query(`SELECT c.id FROM battle_cases c JOIN battle_junctions j ON j.battle_id=c.id WHERE c.id=$1 AND j.id=$2 AND (${writableCasePredicate34('c')}) FOR UPDATE`, [battleId,junctionId,...ownership(subject)]);
   if (!owner.rowCount) return null;
   const version = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_moves WHERE battle_id=$1`, [battleId])).rows[0].version;
   const saved: Move[] = [];
@@ -193,14 +194,14 @@ export const listMoves = async (subject: AccountSubject, battleId: string, junct
 };
 
 export const deleteDraftMove = async (subject: AccountSubject, battleId: string, moveId: string) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT c.id FROM battle_cases c JOIN battle_moves m ON m.battle_id=c.id WHERE c.id=$1 AND m.id=$2 AND c.platform_subject_type=$3 AND c.platform_subject_id=$4 FOR UPDATE`, [battleId, moveId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT c.id FROM battle_cases c JOIN battle_moves m ON m.battle_id=c.id WHERE c.id=$1 AND m.id=$2 AND (${writableCasePredicate34('c')}) FOR UPDATE`, [battleId, moveId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const deleted = await client.query(`DELETE FROM battle_moves WHERE id=$1 AND battle_id=$2 AND state='draft' RETURNING id`, [moveId, battleId]);
   return Boolean(deleted.rowCount);
 });
 
 export const updateDraftMoveSource = async (subject: AccountSubject, battleId: string, moveId: string, source: Record<string, unknown>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT m.id FROM battle_moves m JOIN battle_cases c ON c.id=m.battle_id WHERE m.id=$1 AND m.battle_id=$2 AND c.platform_subject_type=$3 AND c.platform_subject_id=$4 AND m.state='draft' FOR UPDATE`, [moveId, battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT m.id FROM battle_moves m JOIN battle_cases c ON c.id=m.battle_id WHERE m.id=$1 AND m.battle_id=$2 AND (${writableCasePredicate34('c')}) AND m.state='draft' FOR UPDATE`, [moveId, battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const result = await client.query<MoveRow>(`UPDATE battle_moves SET source_json=$3::jsonb WHERE id=$1 AND battle_id=$2 AND state='draft' RETURNING id,battle_id,junction_id,version,kind,title,key_variable,rationale,action_json,cost_json,upside_json,failure_cost_json,validation_json,stop_json,assumptions_json,source_json,state`, [moveId, battleId, JSON.stringify(source)]);
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
