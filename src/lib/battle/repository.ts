@@ -15,6 +15,7 @@ type ResourceRow = { snapshot_json:Json };
 type CommitmentRow = { id:string; battle_id:string; move_id:string; version:number; snapshot_json:Json; committed_at:Date; ended_at:Date|null; status:"active"|"verified"|"stopped"|"superseded" };
 
 const ownership = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
+const writableBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active' AND bc.role IN ('contributor','advisor'))`;
 const asRecord = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const asStrings = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const iso = (value: Date|null|undefined) => value?.toISOString() ?? null;
@@ -69,7 +70,7 @@ export const listBattleFacts = async (subject: AccountSubject, battleId: string)
 };
 
 export const addBattleFacts = async (subject: AccountSubject, battleId: string, input: Array<Pick<BattleFact, "kind"|"content"|"source"|"confidence"|"occurredAt"|"verifiedAt">>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const facts: BattleFact[] = [];
   for (const item of input) {
@@ -88,7 +89,7 @@ export const listBattleConstraints = async (subject: AccountSubject, battleId: s
 };
 
 export const replaceBattleConstraints = async (subject: AccountSubject, battleId: string, input: Array<Omit<BattleConstraint, "id"|"battleId">>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   await client.query(`DELETE FROM battle_constraints WHERE battle_id=$1`, [battleId]);
   const constraints: BattleConstraint[] = [];
@@ -108,7 +109,7 @@ export const listInventory = async (subject: AccountSubject, battleId: string) =
 };
 
 export const replaceInventory = async (subject: AccountSubject, battleId: string, input: Array<Omit<InventoryItem, "id"|"battleId">>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1`, [battleId]);
   const items: InventoryItem[] = [];
@@ -122,7 +123,7 @@ export const replaceInventory = async (subject: AccountSubject, battleId: string
 });
 
 export const saveGravityLine = async (subject: AccountSubject, battleId: string, gravity: GravityLine) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const version = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_gravity_lines WHERE battle_id=$1`, [battleId])).rows[0].version;
   await client.query(`INSERT INTO battle_gravity_lines(id,battle_id,version,summary,assumptions_json,expected_outcome,resource_cost_json,failure_reasons_json,confidence,source_json) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,$8::jsonb,$9,$10::jsonb)`, [randomUUID(),battleId,version,gravity.summary,JSON.stringify(gravity.assumptions),gravity.expectedOutcome,JSON.stringify(gravity.resourceCost),JSON.stringify(gravity.failureReasons),gravity.confidence,JSON.stringify(gravity.source)]);
@@ -137,7 +138,7 @@ export const getLatestGravityLine = async (subject: AccountSubject, battleId: st
 };
 
 export const saveResourceSnapshot = async (subject: AccountSubject, battleId: string, snapshot: ResourceSnapshot) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const version = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_resource_snapshots WHERE battle_id=$1`, [battleId])).rows[0].version;
   await client.query(`INSERT INTO battle_resource_snapshots(id,battle_id,version,snapshot_json) VALUES($1,$2,$3,$4::jsonb)`, [randomUUID(),battleId,version,JSON.stringify(snapshot)]);
@@ -152,7 +153,7 @@ export const getLatestResourceSnapshot = async (subject: AccountSubject, battleI
 };
 
 export const replaceJunctions = async (subject: AccountSubject, battleId: string, input: Array<Omit<Junction, "id"|"battleId">>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   await client.query(`DELETE FROM battle_junctions WHERE battle_id=$1 AND status='open'`, [battleId]);
   const junctions: Junction[] = [];
