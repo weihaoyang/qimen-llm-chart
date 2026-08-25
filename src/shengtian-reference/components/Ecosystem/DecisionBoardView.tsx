@@ -49,6 +49,9 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const isRedacted = board.isRedacted;
+  const memberCount = (role: BoardRole) => board.members.filter((member) => member.role === role).length;
+  const roleLabel = (role: BoardRole) => role === 'OBSERVER' ? '观察者' : role === 'COMMENTATOR' ? '评论员' : '参谋';
+  const roleMember = (role: BoardRole) => board.members.find((member) => member.role === role);
   
   // New comment input
   const [newCommentText, setNewCommentText] = useState('');
@@ -286,7 +289,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
                 </div>
               </div>
               <span className="text-[10px] font-mono-code px-2 py-0.5 rounded-full bg-slate-900 text-slate-300 border border-white/[0.08]">
-                1 人在线
+                {memberCount('OBSERVER')} 人接入
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
@@ -294,8 +297,8 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             </p>
           </div>
           <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] font-mono-code text-slate-400 flex items-center justify-between">
-            <span>李导师 · 特邀观察员</span>
-            <span className="text-emerald-400 font-bold">● 活跃</span>
+            <span>{roleMember('OBSERVER')?.name ?? '暂无已授权观察者'}</span>
+            <span className="text-emerald-400 font-bold">{roleMember('OBSERVER') ? `● ${roleLabel('OBSERVER')}` : '○ 等待邀请'}</span>
           </div>
         </div>
 
@@ -313,7 +316,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
                 </div>
               </div>
               <span className="text-[10px] font-mono-code px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-700">
-                1 人在线
+                {memberCount('COMMENTATOR')} 人接入
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
@@ -321,8 +324,8 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             </p>
           </div>
           <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] font-mono-code text-slate-400 flex items-center justify-between">
-            <span>张总 · 天使轮领投</span>
-            <span className="text-emerald-400 font-bold">● 活跃</span>
+            <span>{roleMember('COMMENTATOR')?.name ?? '暂无已授权评论员'}</span>
+            <span className="text-emerald-400 font-bold">{roleMember('COMMENTATOR') ? `● ${roleLabel('COMMENTATOR')}` : '○ 等待邀请'}</span>
           </div>
         </div>
 

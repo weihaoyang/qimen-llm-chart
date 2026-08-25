@@ -359,6 +359,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       ['archon-tier', archonState],
       ['ai-symbiote', symbioteState],
       ['battlefield-aux', {
+        financials: battlefield.financials,
+        bottomLine: battlefield.bottomLine,
+        keyActors: battlefield.keyActors,
+        targetDeadlineDays: battlefield.targetDeadlineDays,
         emotionalTelemetry: battlefield.emotionalTelemetry,
         valueCalibrator: battlefield.valueCalibrator,
         metaphysicsTiming: battlefield.metaphysicsTiming,
@@ -378,7 +382,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '战局模块保存失败，请重试。'));
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog, saveBattleModule]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.financials, battlefield.bottomLine, battlefield.keyActors, battlefield.targetDeadlineDays, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog, saveBattleModule]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);

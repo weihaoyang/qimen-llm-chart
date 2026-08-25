@@ -59,7 +59,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
 
     try {
       const response = await TacticalAIService.answerInterview(
-        battlefield.interviewHistory,
+        [...battlefield.interviewHistory, userMsg],
         textToSend,
         battlefield
       );

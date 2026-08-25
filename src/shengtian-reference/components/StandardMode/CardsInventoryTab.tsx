@@ -49,6 +49,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   });
   const [activeTagFilter, setActiveTagFilter] = useState<'ALL' | 'FACTS' | 'RISKS_HYPO'>('ALL');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   
   // Card Form State
   const [formTitle, setFormTitle] = useState('');
@@ -91,17 +92,23 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   const handleGenerateCards = async () => {
     if (!battlefield.id || isGenerating) return;
     setIsGenerating(true);
+    setGenerationError(null);
     try {
       const snapshotKey = JSON.stringify({ title: battlefield.title, subtitle: battlefield.subtitle, assets: battlefield.assets.map((asset) => ({ id: asset.id, title: asset.title, description: asset.description, tag: asset.tag, confidence: asset.confidence })) }).slice(0, 900);
       const idempotencyKey = `cards-${battlefield.id}-${snapshotKey}`.slice(0, 160);
       const response = await fetch(`/api/battles/${battlefield.id}/cards/generate`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json','Idempotency-Key':idempotencyKey}, body:JSON.stringify({ idempotencyKey, question:'请根据当前战局生成可核验的现实底牌，返回 cards 数组，每项包含 category、title、description、numericValue、unit。' }) });
-      if (!response.ok) throw new Error('卡牌生成失败');
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null) as { error?: unknown } | null;
+        throw new Error(typeof detail?.error === 'string' ? detail.error : `卡牌生成失败（${response.status}）。`);
+      }
       const inventoryResponse = await fetch(`/api/battles/${battlefield.id}/inventory`, { credentials:'include' });
       const payload = await inventoryResponse.json() as { inventory?: Array<Record<string, unknown>> };
       if (Array.isArray(payload.inventory)) {
         const categoryMap: Record<string, CardAsset['category']> = { cash:'FINANCIAL', time:'TIME', information:'INFO', skill:'CHIPS', asset:'CHIPS', relationship:'CHIPS', credential:'CHIPS', channel:'CHIPS', other:'CHIPS' };
         onUpdateBattlefield((previous) => ({ ...previous, assets:payload.inventory!.map((item) => ({ id:String(item.id), category:categoryMap[String(item.category)] ?? 'CHIPS', title:String(item.label ?? ''), description:String(item.description ?? ''), tag:'FACT', confidence:80, numericValue:typeof item.quantity === 'number' ? item.quantity : undefined, unit:typeof item.unit === 'string' ? item.unit : undefined, createdAt:String(item.createdAt ?? new Date().toISOString()) })) }));
       }
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : '卡牌生成失败，请重试。');
     } finally { setIsGenerating(false); }
   };
 
@@ -285,7 +292,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
       <div className="surface-obsidian rounded-2xl p-5 shadow-2xl border border-white/[0.08] hud-corner">
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
           <div><span className="text-xs font-bold text-white">现实底牌盘点</span><p className="mt-1 text-[11px] text-slate-500">AI 只生成待核验候选，保存后仍需你确认事实属性。</p></div>
-          <button type="button" onClick={() => void handleGenerateCards()} disabled={isGenerating} className="rounded-xl border border-cyan-600/60 bg-cyan-950/50 px-3 py-2 text-xs font-bold text-cyan-200 disabled:opacity-50">{isGenerating ? '正在生成…' : 'AI 生成底牌候选'}</button>
+          <div className="flex items-center gap-2">{generationError && <span className="text-[11px] text-red-300">{generationError}</span>}<button type="button" onClick={() => void handleGenerateCards()} disabled={isGenerating} className="rounded-xl border border-cyan-600/60 bg-cyan-950/50 px-3 py-2 text-xs font-bold text-cyan-200 disabled:opacity-50">{isGenerating ? '正在生成…' : generationError ? '重试生成' : 'AI 生成底牌候选'}</button></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           
