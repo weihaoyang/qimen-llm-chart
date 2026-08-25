@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   Plus, 
   GitBranch, 
@@ -56,6 +56,34 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   const [activeCommitmentId, setActiveCommitmentId] = useState<string | null>(null);
   const [commitPending, setCommitPending] = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState<string | null>(null);
+  const moduleHydratedRef = useRef(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    moduleHydratedRef.current = false;
+    void sessionApi.module(battleId, 'path-simulation').then(({ state }) => {
+      const envelope = state as { state?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { strategies?: unknown } | null;
+      if (!cancelled && Array.isArray(saved?.strategies)) {
+        const restored = saved.strategies.filter((item): item is StrategyBranch => Boolean(item && typeof item === 'object' && typeof (item as StrategyBranch).id === 'string'));
+        if (restored.length) onUpdateBattlefield((previous) => previous.strategies.length ? previous : { ...previous, strategies: restored });
+      }
+      moduleHydratedRef.current = true;
+    }).catch((error) => {
+      if (!cancelled) setPersistenceMessage(error instanceof Error ? error.message : '路径草案读取失败，请重试。');
+      moduleHydratedRef.current = true;
+    });
+    return () => { cancelled = true; };
+  }, [battleId, onUpdateBattlefield]);
+
+  React.useEffect(() => {
+    if (!moduleHydratedRef.current) return;
+    const timer = window.setTimeout(() => {
+      void sessionApi.saveModule(battleId, 'path-simulation', { strategies: battlefield.strategies }, { source: 'path_simulation' })
+        .catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '路径草案保存失败，请重试。'));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [battleId, battlefield.strategies]);
 
   React.useEffect(() => {
     let cancelled = false;
