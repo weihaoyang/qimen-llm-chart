@@ -33,7 +33,6 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [userSelectedChoiceId, setUserSelectedChoiceId] = useState<string | null>(null);
   const [hasSimulated, setHasSimulated] = useState<boolean>(false);
-  const [bountyClaimed, setBountyClaimed] = useState<boolean>(false);
   const [simulationResult, setSimulationResult] = useState<Record<string, unknown> | null>(null);
   const [simulationError, setSimulationError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -63,13 +62,12 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
     let cancelled = false;
     void sessionApi.module(battleId, 'case-study-lab').then(({ state }) => {
       const envelope = state as { state?: unknown } | null;
-      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; bountyClaimed?: unknown; simulationResult?: unknown } | null;
+      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { selectedCaseId?: unknown; userSelectedChoiceId?: unknown; hasSimulated?: unknown; simulationResult?: unknown } | null;
       if (cancelled) return;
       if (!saved) { setStateHydrated(true); return; }
       if (typeof saved.selectedCaseId === 'string') setSelectedCaseId(saved.selectedCaseId);
       if (typeof saved.userSelectedChoiceId === 'string') setUserSelectedChoiceId(saved.userSelectedChoiceId);
       if (typeof saved.hasSimulated === 'boolean') setHasSimulated(saved.hasSimulated);
-      if (typeof saved.bountyClaimed === 'boolean') setBountyClaimed(saved.bountyClaimed);
       if (saved.simulationResult && typeof saved.simulationResult === 'object' && !Array.isArray(saved.simulationResult)) setSimulationResult(saved.simulationResult as Record<string, unknown>);
       setStateHydrated(true);
     }).catch(() => { if (!cancelled) setStateHydrated(true); });
@@ -79,11 +77,11 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   React.useEffect(() => {
     if (!battleId || !stateHydrated) return;
     const timer = window.setTimeout(() => {
-      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult })
+      void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, simulationResult })
         .catch((error) => setSimulationError(error instanceof Error ? error.message : '案例推演状态保存失败，请重试。'));
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [battleId, stateHydrated, selectedCaseId, userSelectedChoiceId, hasSimulated, bountyClaimed, simulationResult]);
+  }, [battleId, stateHydrated, selectedCaseId, userSelectedChoiceId, hasSimulated, simulationResult]);
 
   const activeCase = cases.find(c => c.id === selectedCaseId) || cases[0];
 
@@ -102,7 +100,6 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
       const result = await TacticalAIService.generateCaseStudyReview(battleId, activeCase, userSelectedChoiceId);
       setSimulationResult(result);
       setHasSimulated(true);
-      setBountyClaimed(false);
       soundManager.playSuccess();
     } catch (error) {
       setSimulationError(error instanceof Error ? error.message : '案例复盘失败，请重试。');
@@ -112,7 +109,6 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   const handleResetSimulation = () => {
     setHasSimulated(false);
     setUserSelectedChoiceId(null);
-    setBountyClaimed(false);
     setSimulationResult(null);
     setSimulationError(null);
     soundManager.playBlip(600, 0.03);
@@ -163,7 +159,6 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
                 setSelectedCaseId(cs.id);
                 setHasSimulated(false);
                 setUserSelectedChoiceId(null);
-                setBountyClaimed(false);
                 soundManager.playBlip(700, 0.04);
               }}
               className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden shadow-xl cursor-pointer ${
