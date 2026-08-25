@@ -207,9 +207,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const profileHydratedRef = React.useRef(false);
   const saveBattleModule = React.useCallback(async (battleId: string, moduleId: string, state: unknown, consent: Record<string, unknown> = {}) => {
+    const persistedState = Array.isArray(state) ? { items: state } : state;
     const response = await fetch(`/api/battles/${battleId}/modules/${moduleId}`, {
       method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state, consent }),
+      body: JSON.stringify({ state: persistedState, consent }),
     });
     if (!response.ok) throw new Error(`模块 ${moduleId} 保存失败（${response.status}）。`);
   }, []);
@@ -301,7 +302,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           if (!result.ok) continue;
           const payload = await result.json() as { state?: { state?: unknown } | null };
           const value = payload.state?.state;
-          if (!cancelled && value && typeof value === 'object') apply(value as never);
+          const restored = value && typeof value === 'object' && !Array.isArray(value) && Array.isArray((value as { items?: unknown }).items)
+            ? (value as { items: unknown }).items
+            : value;
+          if (!cancelled && restored && typeof restored === 'object') apply(restored as never);
         } catch { /* first run may not have a module snapshot yet */ }
         moduleHydratedRef.current[moduleId] = true;
       }
