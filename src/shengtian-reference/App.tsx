@@ -512,6 +512,15 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const handleSaveDNARecord = async (record: DecisionDNARecord) => {
     const battleId = session.activeBattle?.id;
     if (battleId) {
+      const extracted = record.extractedDNA.filter((item) => item.trim());
+      await sessionApi.saveReview(battleId, {
+        outcome: record.survivalOutcome,
+        facts: extracted.join('；'),
+        whatChanged: record.userReflection,
+        nextAdjustment: extracted[1] ?? extracted[0] ?? '继续核验事实与执行信号。',
+        diagnosis: { source: 'breakthrough_autopsy', fatalQuestion: record.fatalQuestion, strategy: record.selectedStrategy },
+        commitmentId: null,
+      });
       const memory = await sessionApi.saveMemory({ battleId, title: record.battlefieldTitle, memory: { userKeyChoice: record.selectedStrategy, outcome: record.survivalOutcome, outcomeLabel: record.survivalOutcome, memoryQuote: record.userReflection, lessonLearned: record.extractedDNA.join('；'), timestamp: record.timestamp }, source: { type: 'decision_dna', recordId: record.id } });
       if (!memory) throw new Error('决策记忆保存失败，请重试。');
     }
@@ -527,11 +536,20 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   // Equity manipulation
-  const handleSpendEquity = (_amount: number, _reason: string): boolean => {
-    // Never mutate a browser-side equity balance. Paid actions must go through
-    // the platform gate/checkout flow and return an authoritative entitlement.
-    setIsStoreModalOpen(true);
-    return false;
+  const handleSpendEquity = (amount: number, reason: string): boolean => {
+    // The browser never owns an equity balance. Record the paid operation with
+    // the server-side usage contract; the endpoint performs gate + reserve /
+    // commit atomically and is idempotent for the same battle/reason pair.
+    const battleId = session.activeBattle?.id;
+    if (!battleId) {
+      setIsStoreModalOpen(true);
+      return false;
+    }
+    const idempotencyKey = `equity:${battleId}:${amount}:${reason}`;
+    void sessionApi.consumeUsage(battleId, `equity:${reason}`, idempotencyKey).catch((error) => {
+      setPersistenceError(error instanceof Error ? error.message : '权益扣减失败，请先完成购买或稍后重试。');
+    });
+    return true;
   };
 
   const handleAddEquity = (_amount: number, _reason: string) => {
@@ -626,7 +644,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   
   // 1. Reality Echoes Handlers
   const handleResolveDustEvent = (echoId: string, eventId: string, option: CausalDustOption) => {
-    if (option.costEquity > 0 && !session.activeBattle?.id) {
+    if (option.costEquity > 0) {
       if (!handleSpendEquity(option.costEquity, '平息因果尘埃')) return;
     }
 
@@ -669,7 +687,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   // 2. Conclaves Handlers
   const handleInjectEquityToConclave = (conclaveId: string, amount: number) => {
-    if (!session.activeBattle?.id && !handleSpendEquity(amount, '向密会公共资源池注入')) return;
+    if (amount > 0 && !handleSpendEquity(amount, '向密会公共资源池注入')) return;
     setConclaves(prev => prev.map(c => {
       if (c.id !== conclaveId) return c;
       return {
@@ -680,7 +698,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   const handleCreateConclave = (newConclave: Partial<ObserverConclave>) => {
-    if (!session.activeBattle?.id && !handleSpendEquity(100, '铸造专属密会公会')) return;
+    if (!handleSpendEquity(100, '铸造专属密会公会')) return;
     const fullConclave: ObserverConclave = {
       id: `conclave-${Date.now()}`,
       name: newConclave.name || '新因果密会',
