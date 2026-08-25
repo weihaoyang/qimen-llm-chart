@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Radio, 
   Calendar, 
@@ -15,12 +15,14 @@ import {
 } from 'lucide-react';
 import { SilentObserverAlert, BattlefieldState } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface SilentObserverModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImportDraftAsBattlefield: (draft: SilentObserverAlert['suggestedBattlefieldDraft']) => void | Promise<void>;
 }
+type ConnectorItem = { provider: 'calendar'|'email'|'project_board'; status: 'not_connected'|'pending_authorization'|'authorized'|'revoked' };
 
 export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
   isOpen,
@@ -32,6 +34,12 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
   // as if they were live user telemetry.
   const [alerts, setAlerts] = useState<SilentObserverAlert[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [connectors, setConnectors] = useState<ConnectorItem[]>([]);
+  const [connectorBusy, setConnectorBusy] = useState<string | null>(null);
+
+  useEffect(() => { if (!isOpen) return; void sessionApi.connectors().then((value) => setConnectors(value.connectors)).catch((error) => setLoadError(error instanceof Error ? error.message : '读取连接状态失败。')); }, [isOpen]);
+  const providerLabel = (provider: string) => provider === 'calendar' ? '日历' : provider === 'email' ? '邮件' : '项目看板';
+  const updateConnector = async (provider: 'calendar'|'email'|'project_board', action: 'authorize'|'revoke') => { setConnectorBusy(provider); setLoadError(null); try { await sessionApi.updateConnector(provider, action); const value = await sessionApi.connectors(); setConnectors(value.connectors); } catch (error) { setLoadError(error instanceof Error ? error.message : '更新连接状态失败。'); } finally { setConnectorBusy(null); } };
 
   if (!isOpen) return null;
 
@@ -89,7 +97,7 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
               <p className="text-slate-200 font-bold">外部连接器尚未授权</p>
               <p>日历、邮件和项目看板目前没有可读取的 qmdj 内部同步记录。授权完成并产生同步记录后，异常信号才会显示在这里。</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-left">
-                {['日历 · 未连接', '邮件 · 未连接', '项目看板 · 未连接'].map((label) => <span key={label} className="rounded-lg border border-white/[0.08] bg-slate-950/60 px-3 py-2">{label}</span>)}
+                {(connectors.length ? connectors : [{ provider: 'calendar', status: 'not_connected' }, { provider: 'email', status: 'not_connected' }, { provider: 'project_board', status: 'not_connected' }] as ConnectorItem[]).map((connector) => <span key={connector.provider} className="rounded-lg border border-white/[0.08] bg-slate-950/60 px-3 py-2 flex items-center justify-between gap-2"><span>{providerLabel(connector.provider)} · {connector.status === 'pending_authorization' ? '待授权确认' : connector.status === 'authorized' ? '已授权' : connector.status === 'revoked' ? '已撤销' : '未连接'}</span><button disabled={connectorBusy === connector.provider} onClick={() => void updateConnector(connector.provider, connector.status === 'authorized' || connector.status === 'pending_authorization' ? 'revoke' : 'authorize')} className="text-blue-300 hover:text-blue-200 disabled:opacity-50">{connector.status === 'authorized' || connector.status === 'pending_authorization' ? '撤销' : '登记授权'}</button></span>)}
               </div>
               <p className="text-slate-500">当前不会伪造外部实时信号，也不会读取浏览器本地数据。</p>
             </div>
