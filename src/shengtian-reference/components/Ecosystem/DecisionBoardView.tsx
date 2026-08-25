@@ -180,8 +180,8 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
     const newGhost: GhostStrategyBranch = {
       id: `ghost-${Date.now()}`,
-      creatorName: '你 (指挥官)',
-      creatorRoleTitle: '用户提交的幽灵策略',
+      creatorName: '你 (战局拥有者)',
+      creatorRoleTitle: '拥有者提交的并行策略',
       strategyName: ghostName.trim(),
       coreThesis: ghostThesis.trim(),
       estimatedSurvivalProb: ghostProb,
@@ -219,16 +219,16 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
           
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <span className={`w-2.5 h-2.5 rounded-full ${board.members.length > 0 ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
               <h2 className="text-base font-bold text-white flex items-center gap-2 font-serif-sc">
                 <span>加密决策委员会 (Asynchronous Decision Board)</span>
                 <span className="text-[11px] font-mono-code bg-blue-950 text-blue-300 border border-blue-800 px-2.5 py-0.5 rounded-full">
-                  ROOM #{board.roomId}
+                  {board.roomId ? `ROOM #${board.roomId}` : '等待协作邀请'}
                 </span>
               </h2>
             </div>
             <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
-              引入外部信任智囊的“第二大脑”。通过有时效的加密链接邀请导师、顾问或战友进行异步推演。外部视角的幽灵策略线与穿透质询，可彻底打破个人认知盲区。
+              引入已授权协作者进行异步推演。协作者身份与权限由服务端校验；策略线和讨论只代表参与者的输入，不构成结果预测。
             </p>
           </div>
 
@@ -250,10 +250,12 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             {/* Copy Tokenized Link Button */}
             <button
               onClick={handleCopyInviteLink}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-bold font-mono-code flex items-center gap-2 shadow-lg shadow-blue-950/60 transition-all cursor-pointer border border-blue-400"
+              disabled={!board.roomId || !board.shareToken}
+              title={board.roomId && board.shareToken ? '复制服务端签发的协作邀请链接' : '请先在战局协作者功能中创建并接受邀请'}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:cursor-not-allowed disabled:opacity-50 text-white text-xs font-bold font-mono-code flex items-center gap-2 shadow-lg shadow-blue-950/60 transition-all cursor-pointer border border-blue-400"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copied ? '加密邀请链接已复制' : '复制48小时顾问邀请链接'}</span>
+              <span>{copied ? '协作邀请链接已复制' : board.roomId && board.shareToken ? '复制服务端协作邀请链接' : '请先创建协作者邀请'}</span>
             </button>
           </div>
         </div>
@@ -263,11 +265,11 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
           <div className="flex items-center gap-3">
             <span className="text-slate-300">当前战局状态: <strong className="text-amber-300">{displayTitle}</strong></span>
             <span className="text-slate-500">|</span>
-            <span>有效期: <strong className="text-slate-200">剩余 {board.expiresInHours} 小时</strong></span>
+            <span>邀请状态: <strong className="text-slate-200">{board.roomId && board.shareToken ? `令牌剩余 ${board.expiresInHours} 小时` : '尚未签发分享令牌'}</strong></span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="text-slate-300">{board.members.length} 位特邀委员会成员已接入</span>
+            <span className="text-slate-300">{board.members.filter((member) => member.status === 'ACTIVE').length} 位协作者已接入</span>
           </div>
         </div>
       </div>
@@ -347,7 +349,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-              可独立为你绘制平行对比策略线（如“合纵连横”），与你的主策略同屏推演胜率。
+              可独立绘制平行对比策略线（如“合纵连横”）；其中数字为参谋主观估计，须由事实与执行记录验证。
             </p>
           </div>
           <div className="mt-3 pt-2.5 border-t border-white/[0.06] text-[11px] font-mono-code text-slate-400 flex items-center justify-between">
@@ -374,7 +376,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-purple-300 bg-purple-950/80 hover:bg-purple-900 border border-purple-700 flex items-center gap-1.5 cursor-pointer transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>以参谋身份新增幽灵线</span>
+              <span>新增并行策略线</span>
             </button>
           </div>
 
@@ -394,7 +396,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
                     <span className="text-slate-300 font-bold">{ghost.creatorName}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-slate-400">参谋预测胜率:</span>
+                    <span className="text-slate-400">参谋主观估计:</span>
                     <span className="text-emerald-400 font-bold text-sm">{ghost.estimatedSurvivalProb}%</span>
                   </div>
                 </div>
@@ -431,7 +433,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-white font-bold">{battlefield.strategies[0]?.name || '尚未锁定策略'}</span>
               <span className="text-emerald-400 font-mono-code font-bold">
-                当前胜率预估: {battlefield.strategies[0] ? `${battlefield.strategies[0].estimatedSurvivalProb}%` : '尚无策略数据'}
+                当前策略主观估计: {battlefield.strategies[0] ? `${battlefield.strategies[0].estimatedSurvivalProb}%` : '尚无策略数据'}
               </span>
             </div>
             <p className="text-slate-400 leading-relaxed">
@@ -541,7 +543,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <GitPullRequest className="w-4 h-4 text-purple-400" />
-                <span>以参谋角色绘制【并行幽灵策略线】</span>
+                <span>新增【并行策略线】</span>
               </h3>
               <button 
                 onClick={() => setIsAddingGhost(false)}
@@ -601,7 +603,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
               <div>
                 <label className="block text-slate-300 font-mono-code mb-1">
-                  预估胜率评估: <span className="text-emerald-400 font-bold">{ghostProb}%</span>
+                  主观可行性估计: <span className="text-emerald-400 font-bold">{ghostProb}%</span>
                 </label>
                 <input 
                   type="range"

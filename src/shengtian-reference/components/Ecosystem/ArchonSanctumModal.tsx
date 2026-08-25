@@ -288,10 +288,10 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-white font-mono-code">
-                    历史深网档案 · 执政官永久引理注记
+                    历史档案 · 本人待审引理注记
                   </h3>
                   <p className="text-xs text-slate-400">
-                    你的因果引理将铭刻于全服深网档案中，成为所有执棋官推演的历史航标。
+                    你的引理会保存到当前战局，供你后续复盘；提交后保持待审核状态，不会自动公开或广播。
                   </p>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                     className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-mono-code font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shadow-md"
                   >
                     <Crown className="w-3.5 h-3.5" />
-                    <span>铭刻引理至历史档案</span>
+                  <span>保存引理至本人战局</span>
                   </button>
                 </div>
               </form>
@@ -367,7 +367,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                     现实提案权 (Reality UGC Proposal)
                   </h3>
                   <p className="text-xs text-slate-400">
-                    向 Aethel 因果网络提交你所洞察的全新危机战局。被采纳后向全服广播，并获得全服推演分润。
+                    提交你观察到的危机战局，作为当前账户的私有待审提案。审核、公开、奖励或分润均不在此页面自动发生。
                   </p>
                 </div>
 
@@ -376,7 +376,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                   className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black text-xs font-mono-code font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-950"
                 >
                   <PlusCircle className="w-4 h-4" />
-                  <span>提交全新现实战局提案</span>
+                  <span>提交本人待审提案</span>
                 </button>
               </div>
 
@@ -396,7 +396,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                       </div>
                       <span className="text-xs font-mono-code text-amber-400 font-bold flex items-center gap-1">
                         <Zap className="w-3.5 h-3.5" />
-                        悬赏分润: +{prop.bountyEquityReward} 权益
+                        目录标注奖励: +{prop.bountyEquityReward} 权益（待平台规则核发）
                       </span>
                     </div>
 
@@ -406,8 +406,8 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                     </p>
 
                     <div className="flex items-center justify-between text-xs font-mono-code text-slate-400 pt-2 border-t border-white/[0.04]">
-                      <span>全服参与执棋官: {prop.observersIntervenedCount} 人</span>
-                      <span className="text-sky-300">社区破局成功率: {prop.communitySuccessRate}%</span>
+                      <span>当前提案记录参与数: {prop.observersIntervenedCount}（目录快照）</span>
+                      <span className="text-sky-300">目录结局标签: {prop.communitySuccessRate}%</span>
                     </div>
                   </div>
                 ))}

@@ -106,13 +106,13 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                俯瞰不同非对称路径导向的平行未来，在视觉化数据与残酷代价中做出决断。
+                比较官方策略模板的假设时间线与代价；所有百分比均为模板标注，须由你的事实、执行记录和复盘验证。
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 font-mono-code text-xs">
-            <span className="text-slate-400">已选策略存活率:</span>
+            <span className="text-slate-400">模板结局标注:</span>
             <span className="text-xl font-black text-emerald-400">
               {currentPkg.survivalProbability}%
             </span>
@@ -149,7 +149,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
                     </span>
                   </div>
                   <span className="text-xs font-mono-code font-black text-emerald-400">
-                    存活率 {pkg.survivalProbability}%
+                    模板标注 {pkg.survivalProbability}%
                   </span>
                 </div>
 

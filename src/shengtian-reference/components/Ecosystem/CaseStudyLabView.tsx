@@ -116,6 +116,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
 
   const selectedChoice = activeCase.choices.find(c => c.id === userSelectedChoiceId);
   const authorChoice = activeCase.choices.find(c => c.isAuthorActualChoice);
+  const leadingHistoricalChoice = activeCase.choices.slice().sort((a, b) => b.communityChoicePercent - a.communityChoicePercent)[0];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -134,7 +135,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
-              这里是决策者的无风险兵棋练习场。所有案例均来自真实创业者与高管的脱敏绝境复盘。你将从头推演他们的生死关头，推演完成后生成【全网决策对比报告】，校准你的战略直觉。
+              这里是官方只读案例目录的无风险兵棋练习场。案例内容与统计均为目录快照，不代表实时全网数据；你的选择和复盘仅保存到当前战局。
             </p>
           </div>
 
@@ -173,7 +174,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
                 </span>
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <Flame className="w-3.5 h-3.5 text-red-400" />
-                  <span>{cs.totalSimulations} 人已推演</span>
+                  <span>目录历史样本 {cs.totalSimulations} 次</span>
                 </span>
               </div>
 
@@ -257,7 +258,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
                       </span>
                       {hasSimulated && (
                         <span className="text-emerald-400 font-bold text-xs">
-                          存活率 {choice.survivalRate}%
+                          官方案例结局标签 {choice.survivalRate}%
                         </span>
                       )}
                     </div>
@@ -270,7 +271,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
                   {hasSimulated && (
                     <div className="mt-3 pt-2.5 border-t border-white/[0.06] space-y-1.5 text-[11px] font-mono-code">
                       <div className="flex items-center justify-between text-slate-400">
-                        <span>全网决策者选择占比:</span>
+                        <span>官方目录历史样本占比:</span>
                         <span className="text-slate-200 font-bold">{choice.communityChoicePercent}%</span>
                       </div>
                       <div className="w-full bg-black/60 h-2 rounded-full overflow-hidden border border-white/[0.06]">
@@ -340,7 +341,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-800/50">
                 <span className="text-blue-300 block mb-1">你的选择:</span>
                 <p className="text-white font-bold text-sm mb-1">{selectedChoice?.name}</p>
-                <span className="text-slate-400 text-[11px]">推演存活率: {selectedChoice?.survivalRate}%</span>
+                <span className="text-slate-400 text-[11px]">官方案例结局标签: {selectedChoice?.survivalRate}%（非对你战局的预测）</span>
               </div>
 
               <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-800/50">
@@ -350,11 +351,11 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               </div>
 
               <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-800/50">
-                <span className="text-purple-300 block mb-1">全网群体共识分布:</span>
+                <span className="text-purple-300 block mb-1">官方目录历史样本分布:</span>
                 <p className="text-white font-bold text-sm mb-1">
-                  {activeCase.choices.sort((a,b) => b.communityChoicePercent - a.communityChoicePercent)[0].communityChoicePercent}% 偏向【{activeCase.choices[2]?.typeLabel}】
+                  {leadingHistoricalChoice?.communityChoicePercent ?? 0}% 偏向【{leadingHistoricalChoice?.typeLabel ?? '待标注'}】
                 </p>
-                <span className="text-slate-400 text-[11px]">样本量: {activeCase.totalSimulations} 次博弈</span>
+                <span className="text-slate-400 text-[11px]">目录快照样本量: {activeCase.totalSimulations} 次博弈</span>
               </div>
             </div>
 

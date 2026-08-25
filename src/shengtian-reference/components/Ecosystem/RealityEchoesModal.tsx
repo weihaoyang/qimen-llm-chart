@@ -199,7 +199,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  平息所有【因果尘埃】并渡过回响期后，系统将自动核发完整的因果终局权益。
+                  平息所有【因果尘埃】并渡过回响期后，可提交权益核发申请；是否核发以统一平台的审核与 entitlement 结果为准。
                 </p>
                 {currentEcho.equilibriumStatus === 'EQUILIBRIUM_REACHED' && !currentEcho.finalRewardUnlocked && currentEcho.rewardClaimStatus !== 'pending_platform' ? (
                   <button
