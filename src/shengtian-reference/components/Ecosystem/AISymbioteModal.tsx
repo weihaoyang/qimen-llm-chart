@@ -186,7 +186,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                 </span>
                 <span className="flex items-center gap-1 text-emerald-400">
                   <TrendingUp className="w-3.5 h-3.5" />
-                  共生破局胜率: {Math.round((symbiote.victoriesTogether / symbiote.totalBattlesFoughtTogether) * 100)}%
+                  共生破局胜率: {symbiote.totalBattlesFoughtTogether > 0 ? `${Math.round((symbiote.victoriesTogether / symbiote.totalBattlesFoughtTogether) * 100)}%` : '暂无样本'}
                 </span>
               </div>
             </div>

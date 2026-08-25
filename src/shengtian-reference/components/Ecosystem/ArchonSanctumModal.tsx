@@ -150,7 +150,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-slate-400">奇点推演胜场:</span>
             <span className="text-amber-300 font-bold">
-              {archonState.promotionRequirements.singularityVictories.current} / {archonState.promotionRequirements.singularityVictories.required} (已达标)
+              {archonState.promotionRequirements.singularityVictories.current} / {archonState.promotionRequirements.singularityVictories.required} ({archonState.promotionRequirements.singularityVictories.met ? '已达标' : '未达标'})
             </span>
           </div>
 
@@ -158,7 +158,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-slate-400">密会天梯排位:</span>
             <span className="text-amber-300 font-bold">
-              全球第 #{archonState.promotionRequirements.conclaveGlobalRank.current} 席 (已达标)
+              全球第 #{archonState.promotionRequirements.conclaveGlobalRank.current} 席 ({archonState.promotionRequirements.conclaveGlobalRank.met ? '已达标' : '未达标'})
             </span>
           </div>
 
@@ -166,7 +166,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-slate-400">深网无解历史难题:</span>
             <span className="text-amber-300 font-bold">
-              {archonState.promotionRequirements.unsolvableArchiveSolved.current} 案已破局
+              {archonState.promotionRequirements.unsolvableArchiveSolved.current} / {archonState.promotionRequirements.unsolvableArchiveSolved.required} 案 ({archonState.promotionRequirements.unsolvableArchiveSolved.met ? '已达标' : '未达标'})
             </span>
           </div>
         </div>

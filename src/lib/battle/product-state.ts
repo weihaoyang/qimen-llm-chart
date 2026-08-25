@@ -116,9 +116,10 @@ export async function finishAiJob(subject: AccountSubject, battleId: string, job
 }
 
 export async function failAiJob(subject: AccountSubject, battleId: string, jobId: string, errorCode: string, message: string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='failed',error_code=$3,error_message=$4,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND c.status='active')) RETURNING j.id`, [jobId,battleId,errorCode,message,...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='failed',error_code=$3,error_message=$4,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND c.status='active')) RETURNING j.id`, [jobId,battleId,errorCode,message,...owner(subject)]);
   return Boolean(result.rowCount);
 }
+
 
 export async function listMemories(subject: AccountSubject) {
   const result = await query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`SELECT id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at FROM battle_memory_records WHERE platform_subject_type=$1 AND platform_subject_id=$2 AND consent_status <> 'deleted' ORDER BY updated_at DESC`, owner(subject));

@@ -630,6 +630,7 @@ export interface RealityEcho {
   equilibriumProgress: number; // 0 - 100%
   causalDustEvents: CausalDustEvent[];
   finalRewardUnlocked: boolean;
+  rewardClaimStatus?: 'unrequested' | 'pending_platform' | 'credited' | 'rejected';
   finalRewardEquity: number;
   postDeductionNarrative: string;
 }

@@ -92,7 +92,8 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     if (!battlefield.id || isGenerating) return;
     setIsGenerating(true);
     try {
-      const response = await fetch(`/api/battles/${battlefield.id}/cards/generate`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json','Idempotency-Key':`cards-${battlefield.id}-${Math.floor(Date.now()/60000)}`}, body:JSON.stringify({ idempotencyKey:`cards-${battlefield.id}-${Math.floor(Date.now()/60000)}`, question:'请根据当前战局生成可核验的现实底牌，返回 cards 数组，每项包含 category、title、description、numericValue、unit。' }) });
+      const idempotencyKey = `cards-${battlefield.id}-current-snapshot`;
+      const response = await fetch(`/api/battles/${battlefield.id}/cards/generate`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json','Idempotency-Key':idempotencyKey}, body:JSON.stringify({ idempotencyKey, question:'请根据当前战局生成可核验的现实底牌，返回 cards 数组，每项包含 category、title、description、numericValue、unit。' }) });
       if (!response.ok) throw new Error('卡牌生成失败');
       const inventoryResponse = await fetch(`/api/battles/${battlefield.id}/inventory`, { credentials:'include' });
       const payload = await inventoryResponse.json() as { inventory?: Array<Record<string, unknown>> };

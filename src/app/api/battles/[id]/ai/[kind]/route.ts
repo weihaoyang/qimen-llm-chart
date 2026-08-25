@@ -36,12 +36,15 @@ const validateStructured = (kind: string, value: Record<string, unknown> | null)
 
 export async function handleAiPost(request: Request, context: { params: Promise<{ id:string; kind?:string }> }, forcedKind?: string) {
   let reservationId = "";
+  let jobId = "";
+  let jobSubject: Awaited<ReturnType<typeof requireAccountSubject>> | null = null;
   try {
     const { id, kind: routeKind } = await context.params;
     const rawKind = forcedKind ?? routeKind ?? "";
     if (!isUuid(id) || !kinds.has(rawKind)) return NextResponse.json({ error:"AI 能力标识无效。" }, { status:400 });
     const kind = normalizeKind(rawKind);
     const subject = await requireAccountSubject(request);
+    jobSubject = subject;
     const loaded = await loadBattleInput(subject, id);
     if (!loaded) return NextResponse.json({ error:"战局不存在。" }, { status:404 });
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
@@ -49,6 +52,7 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     const input = { battle: loaded.battle, input: loaded.input, request: body ?? {} };
     const created = await createAiJob(subject, id, kind, idempotencyKey, input, "battle-v1");
     if (!created) return NextResponse.json({ error:"战局无权访问。" }, { status:403 });
+    jobId = created.jobId;
     if (created.reused) return NextResponse.json({ job: await getAiJob(subject,id,created.jobId) });
     await startAiJob(subject,id,created.jobId);
     const accessToken = readBearerToken(request.headers.get("authorization"));
@@ -86,6 +90,7 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     reservationId = "";
     return NextResponse.json({ job: await getAiJob(subject,id,created.jobId), usage });
   } catch (error) {
+    if (jobSubject && jobId) { try { await failAiJob(jobSubject, (await context.params).id, jobId, error instanceof Error ? "ai_request_failed" : "ai_request_failed", error instanceof Error ? error.message : "AI 推演失败。"); } catch {} }
     if (reservationId) { try { const token=readBearerToken(request.headers.get("authorization")); const cookieHeader=readPlatformCookieHeader(request.headers.get("cookie")); const csrfToken=readCookieValue(request.headers.get("cookie"),"ssp_csrf"); if (token) await releasePlatformUsage(token,reservationId,{planCode:AGENT_PLAN_CODE}); else await releasePlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken}); } catch {} }
     return error instanceof AccountSubjectError ? NextResponse.json({error:error.message},{status:error.status}) : NextResponse.json({error:error instanceof Error ? error.message : "AI 推演失败。"},{status:500});
   }

@@ -209,7 +209,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   平息所有【因果尘埃】并渡过回响期后，系统将自动核发完整的因果终局权益。
                 </p>
-                {currentEcho.equilibriumStatus === 'EQUILIBRIUM_REACHED' && !currentEcho.finalRewardUnlocked ? (
+                {currentEcho.equilibriumStatus === 'EQUILIBRIUM_REACHED' && !currentEcho.finalRewardUnlocked && currentEcho.rewardClaimStatus !== 'pending_platform' ? (
                   <button
                     onClick={() => onClaimEquilibriumReward(currentEcho.id)}
                     className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs font-mono-code flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg shadow-amber-950"
@@ -217,6 +217,10 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                     <span>领取终极因果结算奖励 (+{currentEcho.finalRewardEquity} 权益)</span>
                   </button>
+                ) : currentEcho.rewardClaimStatus === 'pending_platform' ? (
+                  <div className="text-center py-1.5 rounded-lg bg-amber-950/50 border border-amber-800 text-amber-300 text-xs font-mono-code">
+                    ✓ 奖励申请已提交，等待统一平台核发
+                  </div>
                 ) : currentEcho.finalRewardUnlocked ? (
                   <div className="text-center py-1.5 rounded-lg bg-emerald-950/50 border border-emerald-800 text-emerald-300 text-xs font-mono-code">
                     ✓ 终局因果奖励已入账

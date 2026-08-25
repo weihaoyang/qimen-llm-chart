@@ -99,7 +99,7 @@ export class TacticalAIService {
     battlefield: BattlefieldState
   ): Promise<RedTeamResponse> {
     try {
-      const idempotencyKey = `red-team:${battlefield.id}:${Date.now()}:${userPlan.trim().slice(0, 160)}`;
+      const idempotencyKey = `red-team:${battlefield.id}:${userPlan.trim().slice(0, 160)}`;
       const response = await fetch(`/api/battles/${battlefield.id}/red-team`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
@@ -120,7 +120,7 @@ export class TacticalAIService {
 
   public static async generateFatalQuestion(strategyName: string, battlefield: BattlefieldState): Promise<string> {
     try {
-      const idempotencyKey = `fatal-question:${battlefield.id}:${strategyName}:${Date.now()}`;
+      const idempotencyKey = `fatal-question:${battlefield.id}:${strategyName.trim()}`;
       const response = await fetch(`/api/battles/${battlefield.id}/ai/interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
@@ -145,7 +145,7 @@ export class TacticalAIService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        idempotencyKey: `breakthrough-review:${battlefield.id}:${Date.now()}:${strategyName}:${reflection.slice(0, 80)}`,
+        idempotencyKey: `breakthrough-review:${battlefield.id}:${strategyName.trim()}:${fatalQuestion.trim()}:${reflection.trim().slice(0, 160)}`,
         question: `请复盘战局“${battlefield.title}”中策略“${strategyName}”。致命问题：${fatalQuestion}。用户反思：${reflection}。严格返回 review JSON，并把可执行的决策DNA规律放入 facts 或 nextAdjustment。`,
         review: { strategyName, fatalQuestion, reflection },
       }),

@@ -650,11 +650,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   const handleClaimEquilibriumReward = (echoId: string) => {
     const echo = realityEchoes.find(e => e.id === echoId);
-    if (!echo || echo.finalRewardUnlocked) return;
+    if (!echo || echo.finalRewardUnlocked || echo.rewardClaimStatus === 'pending_platform') return;
 
     // The reward is recorded as a completed module state; entitlement crediting is
     // performed by the platform ledger and must not be fabricated in the browser.
-    setRealityEchoes(prev => prev.map(e => e.id === echoId ? { ...e, finalRewardUnlocked: true } : e));
+    setRealityEchoes(prev => prev.map(e => e.id === echoId ? { ...e, rewardClaimStatus: 'pending_platform' } : e));
+    setPersistenceError('终局奖励申请已记录，等待统一平台权益核发；浏览器不会伪造入账。');
     soundManager.playSuccess();
   };
 

@@ -346,7 +346,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-800/50">
                 <span className="text-amber-300 block mb-1">当事人当年真实选择:</span>
                 <p className="text-white font-bold text-sm mb-1">{authorChoice?.name}</p>
-                <span className="text-slate-400 text-[11px]">真实最终结果: 存活脱险</span>
+                <span className="text-slate-400 text-[11px]">真实最终结果: {activeCase.authorActualOutcome || '官方案例未提供结局标签'}</span>
               </div>
 
               <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-800/50">
