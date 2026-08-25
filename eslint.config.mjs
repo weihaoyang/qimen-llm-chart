@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     // Isolated local verification builds use NEXT_DIST_DIR=.next-<name>.
     // They contain generated bundles, never source files.
     ".next-*/**",
+    ".codex-release-stage-*/**",
     "out/**",
     "outputs/**",
     "build/**",
