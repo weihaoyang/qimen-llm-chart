@@ -7,15 +7,49 @@ const owner = (subject: AccountSubject) => [subject.subjectType, subject.subject
 const json = (value: unknown) => JSON.stringify(value ?? {});
 const parse = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
 
+function redactViewerModule(moduleId: string, state: Record<string, unknown>) {
+  if (moduleId !== "decision-board") return state;
+  const redacted: Record<string, unknown> = { ...state };
+  delete redacted.shareToken;
+  delete redacted.roomToken;
+  if (Array.isArray(redacted.comments)) {
+    redacted.comments = redacted.comments.map((comment) => {
+      const item = parse(comment);
+      return { ...item, authorName: "委员会成员", content: "（评论内容已按观察者权限脱敏）" };
+    });
+  }
+  if (Array.isArray(redacted.ghostStrategies)) {
+    redacted.ghostStrategies = redacted.ghostStrategies.map((strategy) => {
+      const item = parse(strategy);
+      return {
+        ...item,
+        creatorName: "外部参谋",
+        coreThesis: "（策略论证已按观察者权限脱敏）",
+        suggestedAction: "（执行动作已按观察者权限脱敏）",
+        pros: "（优势已脱敏）",
+        cons: "（代价已脱敏）",
+      };
+    });
+  }
+  return redacted;
+}
+
 export const hashSnapshot = (value: unknown) => createHash("sha256").update(json(value)).digest("hex");
 
 export async function getModuleState(subject: AccountSubject, battleId: string, moduleId: string) {
-  const result = await query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
-    `SELECT s.version,s.state_json,s.consent_json,s.updated_at FROM battle_module_states s JOIN battle_cases b ON b.id=s.battle_id WHERE s.battle_id=$1 AND s.module_id=$2 AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active')) ORDER BY s.version DESC LIMIT 1`,
+  const result = await query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date; access_role:string }>(
+    `SELECT s.version,s.state_json,s.consent_json,s.updated_at,
+      CASE WHEN b.platform_subject_type=$3 AND b.platform_subject_id=$4 THEN 'owner'
+           ELSE COALESCE((SELECT c.role FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active' LIMIT 1),'viewer') END AS access_role
+      FROM battle_module_states s JOIN battle_cases b ON b.id=s.battle_id
+      WHERE s.battle_id=$1 AND s.module_id=$2 AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active'))
+      ORDER BY s.version DESC LIMIT 1`,
     [battleId, moduleId, ...owner(subject)],
   );
   const row = result.rows[0];
-  return row ? { version: row.version, state: parse(row.state_json), consent: parse(row.consent_json), updatedAt: row.updated_at.toISOString() } : null;
+  if (!row) return null;
+  const state = parse(row.state_json);
+  return { version: row.version, state: row.access_role === "viewer" ? redactViewerModule(moduleId, state) : state, consent: parse(row.consent_json), updatedAt: row.updated_at.toISOString() };
 }
 
 export async function saveModuleState(subject: AccountSubject, battleId: string, moduleId: string, state: Record<string, unknown>, consent: Record<string, unknown> = {}) {
