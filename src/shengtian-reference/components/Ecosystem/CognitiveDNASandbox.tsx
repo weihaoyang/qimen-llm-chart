@@ -361,7 +361,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
               </div>
               <div className="p-3 rounded-xl bg-purple-950/60 border border-purple-800">
                 <span className="text-purple-300 block text-[10px]">反事实对齐结论:</span>
-                <span className="text-emerald-300 font-bold">验证了当前主策略的优越性</span>
+                <span className="text-emerald-300 font-bold">已基于服务端复盘结果生成，需结合事实与执行记录人工核验</span>
               </div>
             </div>
 
