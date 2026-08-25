@@ -7788,8 +7788,16 @@ html body .agent-panel__section--result {
 }
 html body .agent-panel__section--result > .inspector-scroll {
   min-height: 0 !important;
-  max-height: min(70svh, 860px) !important;
+  height: clamp(260px, 58svh, 760px) !important;
+  max-height: clamp(260px, 58svh, 760px) !important;
+  flex: 0 0 auto !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+  overscroll-behavior: contain;
+}
+html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll-area-viewport"] {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
   overscroll-behavior: contain;
 }
