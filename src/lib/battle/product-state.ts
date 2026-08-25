@@ -20,7 +20,7 @@ export async function getModuleState(subject: AccountSubject, battleId: string, 
 
 export async function saveModuleState(subject: AccountSubject, battleId: string, moduleId: string, state: Record<string, unknown>, consent: Record<string, unknown> = {}) {
   return withTransaction(async (client) => {
-    const access = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...owner(subject)]);
+    const access = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND c.status='active' AND c.role IN ('contributor','advisor'))) FOR UPDATE`, [battleId, ...owner(subject)]);
     if (!access.rowCount) return null;
     const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id=$2`, [battleId, moduleId])).rows[0].version;
     const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(state), json(consent)]);
