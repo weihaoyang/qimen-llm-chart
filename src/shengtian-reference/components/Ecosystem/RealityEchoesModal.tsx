@@ -47,7 +47,6 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
   userEquity,
 }) => {
   const [selectedEchoId, setSelectedEchoId] = useState<string>(echoes[0]?.id || '');
-  const [selectedDustEvent, setSelectedDustEvent] = useState<CausalDustEvent | null>(null);
   const [resolvingOptionId, setResolvingOptionId] = useState<string | null>(null);
   const [usageError, setUsageError] = useState<string | null>(null);
 
@@ -55,13 +54,8 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
 
   const currentEcho = echoes.find(e => e.id === selectedEchoId) || echoes[0];
 
-  const handleSelectDust = (dust: CausalDustEvent) => {
-    setSelectedDustEvent(dust);
-    soundManager.playBlip(750, 0.03);
-  };
-
-  const handleExecuteResolution = async (option: CausalDustOption) => {
-    if (!currentEcho || !selectedDustEvent) return;
+  const handleExecuteResolution = async (dust: CausalDustEvent, option: CausalDustOption) => {
+    if (!currentEcho || dust.status !== 'PENDING') return;
     if (!battleId && userEquity < option.costEquity) {
       soundManager.playBlip(400, 0.08);
       return;
@@ -71,7 +65,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
     setUsageError(null);
     if (battleId) {
       try {
-        await sessionApi.consumeUsage(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${selectedDustEvent.id}:${option.id}`);
+        await sessionApi.consumeUsage(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${dust.id}:${option.id}`);
       } catch (error) {
         setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
         setResolvingOptionId(null);
@@ -79,9 +73,8 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
       }
     }
     window.setTimeout(() => {
-      onResolveDustEvent(currentEcho.id, selectedDustEvent.id, option);
+      onResolveDustEvent(currentEcho.id, dust.id, option);
       setResolvingOptionId(null);
-      setSelectedDustEvent(null);
       soundManager.playSuccess();
     }, 600);
   };
@@ -265,7 +258,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                   ) : (
                     currentEcho.causalDustEvents.map((dust) => {
                       const isPending = dust.status === 'PENDING';
-                      const isSelected = selectedDustEvent?.id === dust.id;
+                      const isSelected = false;
 
                       return (
                         <div
@@ -346,7 +339,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                                     </span>
 
                                     <button
-                                      onClick={() => handleExecuteResolution(opt)}
+                                      onClick={() => void handleExecuteResolution(dust, opt)}
                                       disabled={resolvingOptionId === opt.id}
                                       className="py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-bold text-xs font-mono-code flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                                     >
