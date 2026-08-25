@@ -54,7 +54,8 @@ export class TacticalAIService {
   ): Promise<{ text: string; parameterExtracted?: { key: string; label: string; value: string | number } }> {
     try {
       const battleId = String(currentBattle.id ?? '');
-      const idempotencyKey = `interview:${battleId}:${history.length}:${userReply.trim().slice(0, 120)}`;
+      const historyFingerprint = history.map((item) => `${item.sender}:${item.text.trim()}`).join('|').slice(-800);
+      const idempotencyKey = `interview:${battleId}:${historyFingerprint}:${userReply.trim().slice(0, 240)}`;
       const response = await fetch(`/api/battles/${currentBattle.id}/ai/interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
