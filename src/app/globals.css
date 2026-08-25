@@ -7801,3 +7801,101 @@ html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll
   overflow-y: auto !important;
   overscroll-behavior: contain;
 }
+
+/*
+ * Agent rail scroll contract (desktop)
+ *
+ * The workbench used to have three competing scrollports: the resizable
+ * panel, the sidebar and the answer area.  A long streamed answer could make
+ * the panel itself grow beyond the viewport, leaving neither the wheel nor a
+ * scrollbar attached to the visible right rail.  Keep one owner only: the
+ * sidebar.  The answer remains ordinary content inside that rail.
+ */
+@media (min-width: 1181px) {
+  html body .product-chart #qimen-workbench-layout > #qimen-agent,
+  html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"],
+  html body .product-chart #qimen-workbench-layout > [data-layout="agent-sidebar"] {
+    align-self: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout > #qimen-agent > .analysis-panel,
+  html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"] > .analysis-panel,
+  html body .product-chart #qimen-workbench-layout > [data-layout="agent-sidebar"] > .analysis-panel {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel,
+  html body .product-chart #qimen-workbench-layout > #qimen-agent > .analysis-panel > .sidebar-panel,
+  html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"] > .sidebar-panel,
+  html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"] > .analysis-panel > .sidebar-panel,
+  html body .product-chart #qimen-workbench-layout > [data-layout="agent-sidebar"] > .sidebar-panel,
+  html body .product-chart #qimen-workbench-layout > [data-layout="agent-sidebar"] > .analysis-panel > .sidebar-panel {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .inspector-tabs,
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .inspector-tabs__content {
+    display: block !important;
+    flex: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .agent-panel__section--result,
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .agent-panel__section--result > .inspector-scroll,
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .agent-panel__section--result > .inspector-scroll > [data-slot="scroll-area-viewport"] {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overscroll-behavior: auto !important;
+  }
+
+  /* Beat the older grid/flex compatibility rules with the real rendered
+     hierarchy: Panel#qimen-agent > .analysis-panel > .sidebar-panel. */
+  html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent#qimen-agent > .analysis-panel.analysis-panel > .sidebar-panel.sidebar-panel > .inspector-tabs.inspector-tabs {
+    display: block !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent#qimen-agent > .analysis-panel.analysis-panel > .sidebar-panel.sidebar-panel > .inspector-tabs.inspector-tabs > .inspector-tabs__content {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent#qimen-agent > .analysis-panel.analysis-panel > .sidebar-panel.sidebar-panel > .inspector-tabs.inspector-tabs > .inspector-tabs__content > .agent-panel.agent-panel {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
