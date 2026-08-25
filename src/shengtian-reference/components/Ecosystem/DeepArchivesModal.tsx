@@ -80,6 +80,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   if (!selectedArchive) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 text-sm text-red-200">{usageError ?? '官方深网档案目录为空。'}</div>;
 
   const handleUnlock = async (archive: DeepArchiveItem) => {
+    if (isRestoring || archive.isUnlocked) return;
     setUsageError(null);
     if (battleId) {
       try {
@@ -245,7 +246,8 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
                 </div>
                 <button
                   onClick={() => void handleUnlock(selectedArchive)}
-                  className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mono-code font-bold text-xs shadow-lg shadow-purple-950 cursor-pointer"
+                  disabled={isRestoring}
+                  className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-mono-code font-bold text-xs shadow-lg shadow-purple-950 cursor-pointer"
                 >
                   解密此历史案例 ({selectedArchive.unlockCostEquity} 权益点)
                 </button>
