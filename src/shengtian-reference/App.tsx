@@ -821,7 +821,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         userEquity={userProfile.equityBalance}
         sigil={userProfile.sigil}
         currentBattlefieldTitle={battlefield.title}
-        currentBattlefieldDays={battlefield.financials?.calculatedDays ?? 42}
+        currentBattlefieldDays={battlefield.financials?.calculatedDays}
       />
 
       {/* Main Content Area */}
@@ -1066,7 +1066,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         isOpen={isBreakthroughModalOpen}
         onClose={() => setIsBreakthroughModalOpen(false)}
         onConfirm={handleLaunchSingularity}
-        calculatedDays={battlefield.financials?.calculatedDays ?? 42}
+        calculatedDays={battlefield.financials?.calculatedDays ?? 0}
       />
 
       {/* Cognitive DNA Archive Modal */}

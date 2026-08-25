@@ -428,7 +428,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-white font-bold">{battlefield.strategies[0]?.name || '尚未锁定策略'}</span>
               <span className="text-emerald-400 font-mono-code font-bold">
-                当前胜率预估: {battlefield.strategies[0]?.estimatedSurvivalProb || 55}%
+                当前胜率预估: {battlefield.strategies[0] ? `${battlefield.strategies[0].estimatedSurvivalProb}%` : '尚无策略数据'}
               </span>
             </div>
             <p className="text-slate-400 leading-relaxed">
