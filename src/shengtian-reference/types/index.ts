@@ -159,6 +159,9 @@ export interface InterviewMessage {
     value: string | number;
   };
   parameterAccepted?: boolean;
+  extractedFacts?: Array<{ kind: 'fact'|'assumption'|'unknown'|'goal'|'emotion'; content: string; confidence: number }>;
+  extractedConstraints?: Array<{ kind: string; label: string; description: string; hard: boolean; severity: number }>;
+  extractedAccepted?: boolean;
 }
 
 export interface AsymmetricStrategyPackage {

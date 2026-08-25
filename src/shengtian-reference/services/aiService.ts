@@ -51,7 +51,7 @@ export class TacticalAIService {
     history: InterviewMessage[],
     userReply: string,
     currentBattle: Partial<BattlefieldState>
-  ): Promise<{ text: string; parameterExtracted?: { key: string; label: string; value: string | number } }> {
+  ): Promise<{ text: string; parameterExtracted?: { key: string; label: string; value: string | number }; extractedFacts?: Array<{ kind: 'fact'|'assumption'|'unknown'|'goal'|'emotion'; content: string; confidence: number }>; extractedConstraints?: Array<{ kind: string; label: string; description: string; hard: boolean; severity: number }> }> {
     try {
       const battleId = String(currentBattle.id ?? '');
       const historyFingerprint = history.map((item) => `${item.sender}:${item.text.trim()}`).join('|').slice(-800);
@@ -68,7 +68,8 @@ export class TacticalAIService {
       if (!response.ok) throw new Error(`采访服务请求失败（${response.status}）`);
       const data = await response.json();
       const rawResult = await resolveJob(String(currentBattle.id), data.job);
-      const rawText = typeof rawResult === 'object' && rawResult ? String((rawResult as { assistantMessage?: unknown; summary?: unknown }).assistantMessage ?? (rawResult as { summary?: unknown }).summary ?? JSON.stringify(rawResult)) : String(rawResult ?? data.analysis ?? data.text ?? '');
+      const structured = rawResult && typeof rawResult === 'object' && !Array.isArray(rawResult) ? rawResult as Record<string, unknown> : {};
+      const rawText = typeof rawResult === 'object' && rawResult ? String((structured.assistantMessage ?? structured.summary ?? JSON.stringify(rawResult))) : String(rawResult ?? data.analysis ?? data.text ?? '');
       
       let text = rawText;
       let parameterExtracted = undefined;
@@ -88,7 +89,9 @@ export class TacticalAIService {
         text = text.replace('[RESPONSE]', '').trim();
       }
 
-      return { text, parameterExtracted };
+      const extractedFacts = Array.isArray(structured.extractedFacts) ? structured.extractedFacts.flatMap((item) => { const value = item && typeof item === 'object' ? item as Record<string, unknown> : {}; const kind = value.kind; const content = typeof value.content === 'string' ? value.content.trim() : ''; const confidence = typeof value.confidence === 'number' ? Math.max(0, Math.min(100, value.confidence)) : 70; return ['fact','assumption','unknown','goal','emotion'].includes(String(kind)) && content ? [{ kind: kind as 'fact'|'assumption'|'unknown'|'goal'|'emotion', content, confidence }] : []; }) : [];
+      const extractedConstraints = Array.isArray(structured.extractedConstraints) ? structured.extractedConstraints.flatMap((item) => { const value = item && typeof item === 'object' ? item as Record<string, unknown> : {}; const label = typeof value.label === 'string' ? value.label.trim() : ''; const description = typeof value.description === 'string' ? value.description.trim() : ''; return label && description ? [{ kind: typeof value.kind === 'string' ? value.kind : 'other', label, description, hard: value.hard !== false, severity: typeof value.severity === 'number' ? Math.max(1, Math.min(5, value.severity)) : 3 }] : []; }) : [];
+      return { text, parameterExtracted, extractedFacts, extractedConstraints };
     } catch (e) {
       console.error(e);
       throw e instanceof Error ? e : new Error('采访服务暂时不可用，请重试。');

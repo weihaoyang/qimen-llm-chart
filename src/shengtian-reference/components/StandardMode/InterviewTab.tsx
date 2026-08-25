@@ -15,6 +15,7 @@ import {
 import { BattlefieldState, InterviewMessage } from '../../types';
 import { TacticalAIService } from '../../services/aiService';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 interface InterviewTabProps {
   battlefield: BattlefieldState;
@@ -69,6 +70,8 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
         text: response.text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         parameterExtracted: response.parameterExtracted,
+        extractedFacts: response.extractedFacts,
+        extractedConstraints: response.extractedConstraints,
       };
 
       onUpdateBattlefield(prev => ({
@@ -86,6 +89,22 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
       onUpdateBattlefield(prev => ({ ...prev, interviewHistory: [...prev.interviewHistory, errorMsg] }));
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleAcceptExtracted = async (messageId: string, message: InterviewMessage) => {
+    if (message.extractedAccepted || (!message.extractedFacts?.length && !message.extractedConstraints?.length)) return;
+    try {
+      if (message.extractedFacts?.length) await sessionApi.addFacts(battlefield.id, message.extractedFacts.map((fact) => ({ ...fact, source: 'user', occurredAt: null, verifiedAt: null })));
+      if (message.extractedConstraints?.length) {
+        const current = await sessionApi.constraints(battlefield.id);
+        const allowedKinds = new Set(['cash','time','energy','legal','contract','health','relationship','reputation','privacy','other']);
+        await sessionApi.replaceConstraints(battlefield.id, [...current.constraints, ...message.extractedConstraints.map((constraint) => ({ ...constraint, kind: allowedKinds.has(constraint.kind) ? constraint.kind : 'other', source: { type: 'interview_confirmation', messageId } }))]);
+      }
+      onUpdateBattlefield((previous) => ({ ...previous, interviewHistory: previous.interviewHistory.map((item) => item.id === messageId ? { ...item, extractedAccepted: true } : item) }));
+      soundManager.playSuccess();
+    } catch (error) {
+      onUpdateBattlefield((previous) => ({ ...previous, interviewHistory: previous.interviewHistory.map((item) => item.id === messageId ? { ...item, text: `${item.text}\n\n[确认写入失败：${error instanceof Error ? error.message : '请重试'}]` } : item) }));
     }
   };
 
@@ -179,6 +198,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
                       )}
                     </div>
                   )}
+                  {(msg.extractedFacts?.length || msg.extractedConstraints?.length) ? <div className="mt-2.5 pt-2 border-t border-white/[0.1] space-y-2 text-xs font-mono-code"><div className="flex items-center justify-between"><span className="text-cyan-300 font-bold">结构化提取：事实 {msg.extractedFacts?.length ?? 0} 条 · 约束 {msg.extractedConstraints?.length ?? 0} 条</span>{msg.extractedAccepted ? <span className="text-emerald-300">已确认写入战局</span> : <button type="button" onClick={() => void handleAcceptExtracted(msg.id, msg)} className="rounded-md border border-cyan-700/70 bg-cyan-950/60 px-2 py-1 text-[10px] font-bold text-cyan-300 hover:bg-cyan-900/70">审阅并写入</button>}</div><div className="space-y-1 text-[11px] text-slate-400">{msg.extractedFacts?.map((fact, index) => <div key={`fact-${index}`}>事实候选：{fact.content}（置信度 {fact.confidence}%）</div>)}{msg.extractedConstraints?.map((constraint, index) => <div key={`constraint-${index}`}>约束候选：{constraint.label}：{constraint.description}</div>)}</div></div> : null}
 
                   <div className={`text-[10px] font-mono-code mt-1 text-right ${isAI ? 'text-slate-500' : 'text-blue-200'}`}>
                     {msg.timestamp}
