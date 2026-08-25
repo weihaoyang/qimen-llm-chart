@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Sparkles, 
   Moon, 
@@ -48,6 +48,10 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
 }) => {
   const timing = battlefield.metaphysicsTiming;
   const [isRevealed, setIsRevealed] = useState(timing.isViewed);
+
+  useEffect(() => {
+    if (isOpen) setIsRevealed(timing.isViewed);
+  }, [isOpen, timing.isViewed]);
 
   if (!isOpen) return null;
 

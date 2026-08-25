@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Compass, 
   ShieldCheck, 
@@ -31,6 +31,13 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [newValueKeyword, setNewValueKeyword] = useState('');
   const [newValueDescription, setNewValueDescription] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setValues(calibrator.coreValues);
+      setIsSaved(false);
+    }
+  }, [isOpen, calibrator.coreValues]);
 
   if (!isOpen) return null;
 
