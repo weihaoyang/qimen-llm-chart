@@ -403,6 +403,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [agentResultCopied, setAgentResultCopied] = useState(false);
+  const [agentSubmitNonce, setAgentSubmitNonce] = useState(0);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
   const [parametersOpen, setParametersOpen] = useState(false);
   const parametersPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -446,8 +447,6 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   // The Battle Domain uses the same paid Agent entitlement as the chart
   // workbench. A guest checkout token must be forwarded explicitly; login is
   // only required for persistence, not for consuming a paid guest turn.
-  const guestAgentAccess = Object.values(agentState).find((state) => state.authMode === "guest" && state.checkoutToken && state.usageAvailable > 0);
-
   useEffect(() => {
     const resolvedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const currentState = getInitialState(new Date(), resolvedTimeZone);
@@ -1368,6 +1367,13 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     }));
     setAgentResultCopied(false);
 
+    // The entitled workbench is driven by the official AI SDK chat transport.
+    // The legacy fetch path below remains for non-stream products/compatibility.
+    if (canUseAgentState(sharedState)) {
+      setAgentSubmitNonce((value) => value + 1);
+      return;
+    }
+
     try {
       if (canUseAgentState(sharedState)) {
         const sessionStructuredText = currentState.sessionStructuredText || structuredText;
@@ -1375,7 +1381,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         const accessToken = sharedState.authMode === "account" ? (await refreshPlatformAccount()).session.access_token : undefined;
         const response = await fetch("/api/agent", {
           method: "POST",
-          headers: buildAgentRequestHeaders(sharedState, accessToken),
+          headers: { ...buildAgentRequestHeaders(sharedState, accessToken), "X-Agent-Stream": "1" },
           body: JSON.stringify({
             mode,
             researchTool: mode === "research" ? researchTool : undefined,
@@ -1386,6 +1392,41 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
             jsonPayload: sessionJsonPayload,
           }),
         });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({})) as { error?: string };
+          throw new Error(result.error ?? "分析失败，请重试。");
+        }
+        if (response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let streamedContent = "";
+          setAgentState((current) => ({
+            ...current,
+            [mode]: { ...current[mode], content: "", loading: true, error: null },
+          }));
+          while (true) {
+            const chunk = await reader.read();
+            if (chunk.done) break;
+            streamedContent += decoder.decode(chunk.value, { stream: true });
+            const content = streamedContent;
+            setAgentState((current) => ({
+              ...current,
+              [mode]: { ...current[mode], content, loading: true, error: null },
+            }));
+          }
+          streamedContent += decoder.decode();
+          const nextConversation: AgentConversationMessage[] = [
+            ...currentState.conversation,
+            { role: "user", content: conversationQuestion },
+            { role: "assistant", content: streamedContent },
+          ];
+          const nextAvailable = Math.max(sharedState.usageAvailable - 1, 0);
+          const nextState = { ...currentState, checkoutToken: sharedState.checkoutToken, orderId: sharedState.orderId, authMode: sharedState.authMode, question: "", focus, content: streamedContent, loading: false, error: null, conversation: nextConversation, usageAvailable: nextAvailable, usageConsumed: sharedState.usageConsumed + 1 };
+          setAgentState((current) => ({ ...current, [mode]: nextState }));
+          saveActiveAgentSession({ orderId: sharedState.orderId, checkoutToken: sharedState.checkoutToken, checkoutMode: sharedState.authMode, mode, focus, structuredText: sessionStructuredText, jsonPayload: sessionJsonPayload, messages: nextConversation, usageAvailable: nextAvailable, usageConsumed: nextState.usageConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
+          setPlatformWorkspace((current) => ({ ...current, usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextState.usageConsumed } : current.usage }));
+          return;
+        }
         const result = (await response.json()) as {
           content?: string;
           model?: string;
@@ -1524,6 +1565,53 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     });
   }, []);
 
+  const streamSharedState = getAccountAgentState(agentState[mode])
+    ?? (canUseAgentState(agentState[mode])
+      ? agentState[mode]
+      : Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState[mode]);
+  const agentStreamConfig = canUseAgentState(streamSharedState) ? {
+    chatId: `qmdj-agent-${mode}`,
+    requestBody: {
+      mode,
+      focus: streamSharedState.focus,
+      researchTool: mode === "research" ? researchTool : undefined,
+      structuredText: streamSharedState.sessionStructuredText || structuredText,
+      jsonPayload: streamSharedState.sessionJsonPayload || jsonPayload,
+    } satisfies Record<string, unknown>,
+    requestHeaders: async () => {
+      const accessToken = streamSharedState.authMode === "account"
+        ? (await refreshPlatformAccount()).session.access_token
+        : undefined;
+      return buildAgentRequestHeaders(streamSharedState, accessToken);
+    },
+    submitNonce: agentSubmitNonce,
+    onStart: () => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: true, error: null } })),
+    onFinish: (messages: AgentConversationMessage[]) => {
+      const assistant = messages.filter((message) => message.role === "assistant").at(-1)?.content ?? "";
+      const nextAvailable = Math.max(streamSharedState.usageAvailable - 1, 0);
+      const nextConsumed = streamSharedState.usageConsumed + 1;
+      const nextState = {
+        ...agentState[mode],
+        authMode: streamSharedState.authMode,
+        checkoutToken: streamSharedState.checkoutToken,
+        orderId: streamSharedState.orderId,
+        question: "",
+        content: assistant,
+        loading: false,
+        error: null,
+        conversation: messages,
+        usageAvailable: nextAvailable,
+        usageConsumed: nextConsumed,
+        sessionStructuredText: streamSharedState.sessionStructuredText || structuredText,
+        sessionJsonPayload: streamSharedState.sessionJsonPayload || jsonPayload,
+      };
+      setAgentState((current) => ({ ...current, [mode]: nextState }));
+      saveActiveAgentSession({ orderId: nextState.orderId, checkoutToken: nextState.checkoutToken, checkoutMode: nextState.authMode, mode, focus: nextState.focus, structuredText: nextState.sessionStructuredText, jsonPayload: nextState.sessionJsonPayload, messages, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
+      setPlatformWorkspace((current) => ({ ...current, usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextConsumed } : current.usage }));
+    },
+    onError: (message: string) => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: false, error: message } })),
+  } : undefined;
+
   const agentInspector = (
     <InspectorPanel
       surface={product === "chart" ? "chart" : "shengtian"}
@@ -1559,6 +1647,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       onAgentQuestionChange={handleAgentQuestionChange}
       selectedPalace={mode === "qimen" ? selectedPalace : null}
       structuredText={structuredText}
+      agentStreamConfig={agentStreamConfig}
     />
   );
 

@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { AgentAnalysisAngle, AgentConversationMessage } from "@/lib/agent/chat";
 import type { Position } from "3meta";
 import type { WorkbenchMode } from "@/lib/workbench/types";
+import { AgentChatThread } from "@/components/agent-chat-thread";
 
 type InspectorPanelProps = {
   surface?: "chart" | "shengtian";
@@ -43,6 +44,15 @@ type InspectorPanelProps = {
   onCopyText: () => Promise<void>;
   onCopyJson: () => Promise<void>;
   selectedPalace?: Position | null;
+  agentStreamConfig?: {
+    chatId: string;
+    requestBody: Record<string, unknown>;
+    requestHeaders: () => Promise<Record<string, string>>;
+    submitNonce: number;
+    onStart: () => void;
+    onFinish: (messages: AgentConversationMessage[]) => void;
+    onError: (message: string) => void;
+  };
 };
 
 export function InspectorPanel({
@@ -76,6 +86,7 @@ export function InspectorPanel({
   onCopyText,
   onCopyJson,
   selectedPalace = null,
+  agentStreamConfig,
 }: InspectorPanelProps) {
   const isChartSurface = surface === "chart";
   const modeLabel: Record<WorkbenchMode, string> = {
@@ -309,7 +320,20 @@ export function InspectorPanel({
               </div>
             </div>
             <ScrollArea className="inspector-scroll inspector-scroll-plain">
-              {agentConversation.length > 0 ? (
+              {agentStreamConfig ? (
+                <AgentChatThread
+                  chatId={agentStreamConfig.chatId}
+                  initialMessages={agentConversation}
+                  requestBody={agentStreamConfig.requestBody}
+                  requestHeaders={agentStreamConfig.requestHeaders}
+                  submitNonce={agentStreamConfig.submitNonce}
+                  question={agentQuestion}
+                  disabled={agentLoading}
+                  onStart={agentStreamConfig.onStart}
+                  onFinish={agentStreamConfig.onFinish}
+                  onError={agentStreamConfig.onError}
+                />
+              ) : agentConversation.length > 0 ? (
                 <div className="agent-thread">
                   {agentConversation.map((message, index) => (
                     <article className={`agent-thread__message agent-thread__message--${message.role}`} key={`${message.role}-${index}`}>

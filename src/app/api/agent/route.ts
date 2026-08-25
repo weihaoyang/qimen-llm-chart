@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requestAgentAnalysis } from "@/lib/agent/chat";
+import { requestAgentAnalysis, streamAgentAnalysis } from "@/lib/agent/chat";
 import {
   commitGuestUsage,
   commitPlatformUsage,
@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       focus?: unknown;
       researchTool?: unknown;
       history?: unknown;
+      messages?: unknown;
       structuredText?: unknown;
       jsonPayload?: unknown;
       analysisProduct?: unknown;
@@ -167,6 +168,28 @@ export async function POST(request: Request) {
       }
     }
 
+    // AI SDK UI transports send the complete message list. Normalize it to
+    // the product's compact conversation contract so follow-up turns use the
+    // same server-side prompt path as the legacy JSON client.
+    let transportHistory: Array<{ role: "user" | "assistant"; content: string }> | undefined;
+    if (body.messages !== undefined) {
+      if (!Array.isArray(body.messages) || body.messages.length > MAX_HISTORY_MESSAGES) {
+        return NextResponse.json({ error: "对话上下文过长，请从当前问题重新开始。" }, { status: 400 });
+      }
+      transportHistory = [];
+      for (const item of body.messages) {
+        if (!item || typeof item !== "object") return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        const role = (item as { role?: unknown }).role;
+        if (role !== "user" && role !== "assistant") return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        const parts = (item as { parts?: unknown }).parts;
+        const content = Array.isArray(parts)
+          ? parts.filter((part): part is { type: "text"; text: string } => Boolean(part) && typeof part === "object" && (part as { type?: unknown }).type === "text" && typeof (part as { text?: unknown }).text === "string").map((part) => part.text).join("")
+          : typeof (item as { content?: unknown }).content === "string" ? (item as { content: string }).content : "";
+        if (!content || content.length > 4000) return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        transportHistory.push({ role, content });
+      }
+    }
+
     reservationPlanCode = analysisProduct === "kline" ? KLINE_PLAN_CODE : AGENT_PLAN_CODE;
     let reservation: { reservation_id: string };
     if (accessToken || platformCookieHeader) {
@@ -194,21 +217,57 @@ export async function POST(request: Request) {
       throw new Error("无法预留本次分析。请刷新后重试。");
     }
 
-    const result = await requestAgentAnalysis({
+    const normalizedHistory = transportHistory ?? (Array.isArray(body.history)
+      ? body.history.map((item) => ({
+          role: (item as { role: "user" | "assistant" }).role,
+          content: (item as { content: string }).content,
+        }))
+      : undefined);
+    const latestUserQuestion = normalizedHistory?.filter((item) => item.role === "user").at(-1)?.content;
+    const analysisPayload = {
       mode: body.mode,
-      question: typeof body.question === "string" ? body.question : undefined,
+      question: typeof body.question === "string" ? body.question : latestUserQuestion,
       focus: typeof body.focus === "string" ? body.focus : undefined,
       researchTool: typeof body.researchTool === "string" ? body.researchTool : undefined,
-      history: Array.isArray(body.history)
-        ? body.history.map((item) => ({
-            role: (item as { role: "user" | "assistant" }).role,
-            content: (item as { content: string }).content,
-          }))
-        : undefined,
+      history: normalizedHistory,
       structuredText: body.structuredText,
       jsonPayload: body.jsonPayload,
       analysisProduct,
-    });
+    } as const;
+
+    if (request.headers.get("x-agent-stream") === "1" && analysisProduct === "agent") {
+      let streamSettled = false;
+      const release = async () => {
+        if (streamSettled || !reservationId) return;
+        streamSettled = true;
+        if (reservationMode === "account") {
+          if (accessToken) await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
+          else await releasePlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
+        } else {
+          await releaseGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+        }
+        reservationId = "";
+      };
+      const commit = async () => {
+        if (streamSettled || !reservationId) return;
+        streamSettled = true;
+        if (reservationMode === "account") {
+          if (accessToken) await commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
+          else await commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
+        } else {
+          await commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+        }
+        reservationId = "";
+      };
+      const result = streamAgentAnalysis(analysisPayload, {
+        onFinish: commit,
+        onError: async () => { await release(); },
+        onAbort: async () => { await release(); },
+      });
+      return result.toTextStreamResponse({ headers: { "Cache-Control": "no-cache", "X-Accel-Buffering": "no" } });
+    }
+
+    const result = await requestAgentAnalysis(analysisPayload);
 
     const usage = reservationMode === "account"
       ? accessToken

@@ -2,6 +2,8 @@ import type { WorkbenchMode } from "@/lib/workbench/types";
 import { selectBaziClassicsContext } from "./bazi-classics";
 import { BAZI_SYSTEM_PROMPT } from "./bazi-guidance";
 import { formatAgentSkillsPrompt, selectAgentSkills } from "./skills";
+import { createOpenAI } from "@ai-sdk/openai";
+import { streamText } from "ai";
 
 export type AgentRequestPayload = {
   mode: WorkbenchMode;
@@ -681,6 +683,30 @@ export const requestAgentAnalysis = async (
   }
 
   return { content, model: data.model ?? config.model };
+};
+
+/**
+ * Open-source AI SDK transport for the interactive workbench. The existing
+ * JSON request remains the compatibility path for benchmarks; the workbench
+ * uses this stream so text is visible while it is generated.
+ */
+export const streamAgentAnalysis = (
+  payload: AgentRequestPayload,
+  options?: { env?: AgentEnvironment; onFinish?: (text: string) => Promise<void> | void; onError?: (error: unknown) => Promise<void> | void; onAbort?: () => Promise<void> | void },
+) => {
+  const config = getAgentConfig(options?.env ?? process.env);
+  const provider = createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl });
+  const isChoiceContract = payload.outputContract === "choice_json" || payload.outputContract === "choice_json_forced";
+  return streamText({
+    model: provider(config.model),
+    messages: buildAgentMessages(payload),
+    maxOutputTokens: isChoiceContract ? 900 : payload.analysisProduct === "kline" ? 3800 : 2600,
+    temperature: isChoiceContract ? 0 : 0.4,
+    providerOptions: isChoiceContract ? { openai: { response_format: { type: "json_object" } } } : undefined,
+    onFinish: async ({ text }) => { await options?.onFinish?.(text); },
+    onError: async ({ error }) => { await options?.onError?.(error); },
+    onAbort: async () => { await options?.onAbort?.(); },
+  });
 };
 
 /**
