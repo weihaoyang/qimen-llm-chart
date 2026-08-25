@@ -134,7 +134,6 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                     key={echo.id}
                     onClick={() => {
                       setSelectedEchoId(echo.id);
-                      setSelectedDustEvent(null);
                       soundManager.playBlip(750, 0.03);
                     }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer ${
