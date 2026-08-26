@@ -205,6 +205,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     };
   });
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
+  const [verifiedArchonProgress, setVerifiedArchonProgress] = useState<Awaited<ReturnType<typeof sessionApi.profile>>['archonProgress'] | null>(null);
   const profileHydratedRef = React.useRef(false);
   const saveBattleModule = React.useCallback(async (battleId: string, moduleId: string, state: unknown, consent: Record<string, unknown> = {}) => {
     const persistedState = Array.isArray(state) ? { items: state } : state;
@@ -217,7 +218,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     let cancelled = false;
-    void sessionApi.profile().then(({ profile }) => {
+    void sessionApi.profile().then(({ profile, archonProgress }) => {
+      setVerifiedArchonProgress(archonProgress);
       const saved = profile?.profile?.uiProfile;
       if (cancelled) return;
       if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
@@ -286,6 +288,23 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     longTermMemories: [],
   });
 
+  const applyVerifiedArchon = React.useCallback((previous: ArchonTierState): ArchonTierState => {
+    if (!verifiedArchonProgress) return previous;
+    const progress = verifiedArchonProgress;
+    return {
+      ...previous,
+      isUnlocked: progress.privileges.realityProposal,
+      archonRankTitle: progress.rankTitle,
+      archonSealsCount: progress.seals,
+      promotionRequirements: {
+        singularityVictories: { current:progress.reviewedBattles, required:3, met:progress.reviewedBattles >= 3 },
+        conclaveGlobalRank: { current:progress.collaborationBattles, required:3, met:progress.collaborationBattles >= 3 },
+        unsolvableArchiveSolved: { current:progress.archiveUnlocks, required:1, met:progress.archiveUnlocks >= 1 },
+      },
+      privileges: progress.privileges,
+    };
+  }, [verifiedArchonProgress]);
+
   useEffect(() => {
     const battleId = session.activeBattle?.id;
     if (!battleId) return;
@@ -305,10 +324,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           const restored = value && typeof value === 'object' && !Array.isArray(value) && Array.isArray((value as { items?: unknown }).items)
             ? (value as { items: unknown }).items
             : value;
-          if (!cancelled && restored && typeof restored === 'object') apply(restored as never);
+          if (!cancelled && restored && typeof restored === 'object') {
+            if (moduleId === 'archon-tier') setArchonState(applyVerifiedArchon(restored as ArchonTierState));
+            else apply(restored as never);
+          }
         } catch { /* first run may not have a module snapshot yet */ }
         moduleHydratedRef.current[moduleId] = true;
       }
+      if (!cancelled && verifiedArchonProgress) setArchonState(applyVerifiedArchon);
     };
     void loadModules();
     void sessionApi.module(battleId, 'battlefield-aux').then(({ state }) => {
@@ -320,7 +343,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       moduleHydratedRef.current['battlefield-aux'] = true;
     }).catch(() => { moduleHydratedRef.current['battlefield-aux'] = true; });
     return () => { cancelled = true; };
-  }, [session.activeBattle?.id]);
+  }, [session.activeBattle?.id, applyVerifiedArchon, verifiedArchonProgress]);
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;

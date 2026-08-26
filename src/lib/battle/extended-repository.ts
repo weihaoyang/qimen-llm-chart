@@ -144,6 +144,36 @@ export const getStrategyProfile = async (subject: AccountSubject) => {
   return row ? { version:row.version, profile:record(row.profile_json), updatedAt:row.updated_at.toISOString() } satisfies StrategyProfile : null;
 };
 
+export const getArchonProgress = async (subject: AccountSubject) => {
+  const result = await query<{ reviewed_battles:string; committed_battles:string; collaboration_battles:string; archive_unlocks:string }>(
+    `SELECT
+       (SELECT COUNT(DISTINCT r.battle_id)::text FROM battle_reviews r JOIN battle_cases b ON b.id=r.battle_id WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2) AS reviewed_battles,
+       (SELECT COUNT(DISTINCT c.battle_id)::text FROM battle_commitments c JOIN battle_cases b ON b.id=c.battle_id WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2) AS committed_battles,
+       (SELECT COUNT(DISTINCT c.battle_id)::text FROM battle_collaborators c WHERE c.subject_type=$1 AND c.subject_id=$2 AND c.status='active') AS collaboration_battles,
+       (SELECT COALESCE(SUM(jsonb_array_length(CASE WHEN jsonb_typeof(s.state_json->'unlockedIds')='array' THEN s.state_json->'unlockedIds' ELSE '[]'::jsonb END)),0)::text
+          FROM battle_module_states s JOIN battle_cases b ON b.id=s.battle_id
+         WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2 AND s.module_id='deep-archives'
+           AND s.version=(SELECT MAX(latest.version) FROM battle_module_states latest WHERE latest.battle_id=s.battle_id AND latest.module_id=s.module_id)) AS archive_unlocks`,
+    owner(subject),
+  );
+  const row = result.rows[0] ?? { reviewed_battles:"0", committed_battles:"0", collaboration_battles:"0", archive_unlocks:"0" };
+  const reviewedBattles = Number(row.reviewed_battles);
+  const committedBattles = Number(row.committed_battles);
+  const collaborationBattles = Number(row.collaboration_battles);
+  const archiveUnlocks = Number(row.archive_unlocks);
+  const score = reviewedBattles * 2 + committedBattles + collaborationBattles * 2 + archiveUnlocks;
+  return {
+    reviewedBattles,
+    committedBattles,
+    collaborationBattles,
+    archiveUnlocks,
+    score,
+    rankTitle: score >= 20 ? "首席执政官" : score >= 10 ? "高阶执棋官" : score >= 4 ? "正式观测者" : "见习观测者",
+    seals: Math.floor(score / 3),
+    privileges: { precognition:score >= 4, archiveAnnotation:score >= 10, realityProposal:score >= 20 },
+  };
+};
+
 export const saveStrategyProfile = async (subject: AccountSubject, profile: Record<string, unknown>) => withTransaction(async (client) => {
   // The profile is versioned so calibration can be audited. Serialize version
   // allocation across browser tabs before calculating MAX(version)+1.

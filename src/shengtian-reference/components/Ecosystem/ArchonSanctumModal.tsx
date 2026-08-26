@@ -69,6 +69,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
   const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!archonState.privileges.realityProposal) { setError('尚未达到现实提案所需的执政官位阶。'); return; }
     if (!propTitle.trim() || !propDilemma.trim() || submitting) return;
     setError('');
     setSubmitting(true);
@@ -97,6 +98,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
   const handleAnnotationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!archonState.privileges.archiveAnnotation) { setError('尚未达到档案批注所需的执政官位阶。'); return; }
     if (!newLemma.trim() || submitting) return;
     setError('');
     setSubmitting(true);
@@ -156,9 +158,9 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="text-slate-400">密会天梯排位:</span>
+            <span className="text-slate-400">有效协作战局:</span>
             <span className="text-amber-300 font-bold">
-              全球第 #{archonState.promotionRequirements.conclaveGlobalRank.current} 席 ({archonState.promotionRequirements.conclaveGlobalRank.met ? '已达标' : '未达标'})
+              {archonState.promotionRequirements.conclaveGlobalRank.current} / {archonState.promotionRequirements.conclaveGlobalRank.required} 场 ({archonState.promotionRequirements.conclaveGlobalRank.met ? '已达标' : '未达标'})
             </span>
           </div>
 
@@ -323,7 +325,8 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-mono-code font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shadow-md"
+                    disabled={!archonState.privileges.archiveAnnotation || submitting}
+                    className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 disabled:opacity-40 text-black font-mono-code font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shadow-md"
                   >
                     <Crown className="w-3.5 h-3.5" />
                   <span>保存引理至本人战局</span>
@@ -372,8 +375,9 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                 </div>
 
                 <button
-                  onClick={() => setShowProposalForm(true)}
-                  className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black text-xs font-mono-code font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-950"
+                  onClick={() => archonState.privileges.realityProposal ? setShowProposalForm(true) : setError('尚未达到现实提案所需的执政官位阶。')}
+                  disabled={!archonState.privileges.realityProposal}
+                  className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 disabled:opacity-40 text-black text-xs font-mono-code font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-950"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>提交本人待审提案</span>

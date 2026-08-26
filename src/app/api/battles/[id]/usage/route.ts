@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { getBattle } from "@/lib/battle/repository";
 import { beginUsageOperation, finishUsageOperation, failUsageOperation } from "@/lib/battle/product-state";
+import { getArchonProgress } from "@/lib/battle/extended-repository";
 import { asText, isUuid } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
 
@@ -20,6 +21,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const operation = asText(body?.operation, 80);
     const idempotencyKey = asText(body?.idempotencyKey, 160);
     if (!operation || !operations.has(operation) || !idempotencyKey) return NextResponse.json({ error: "权益操作参数无效。" }, { status: 400 });
+    if (operation === "archon_proposal" || operation === "archon_annotation") {
+      const progress = await getArchonProgress(subject);
+      const allowed = operation === "archon_proposal" ? progress.privileges.realityProposal : progress.privileges.archiveAnnotation;
+      if (!allowed) return NextResponse.json({ error: operation === "archon_proposal" ? "尚未达到现实提案所需的执政官位阶。" : "尚未达到档案批注所需的执政官位阶。", reasonCode:"archon_rank_required", archonProgress:progress }, { status:403 });
+    }
     operationRecord = await beginUsageOperation(subject, id, operation, idempotencyKey);
     if (!operationRecord) return NextResponse.json({ error: "战局不存在或无权访问。" }, { status: 404 });
     if (operationRecord.reused) {
