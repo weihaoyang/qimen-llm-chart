@@ -19,6 +19,129 @@ body:has(.product-chart),
   --paipan-violet: #55418c;
 }
 
+/* Mobile header: one owner and three explicit rows. */
+@media (max-width: 720px) {
+  body .page-shell.product-chart {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 8px 8px;
+    gap: 6px;
+    overflow-x: hidden;
+  }
+
+  body .product-chart .observatory-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "brand actions" "tabs tabs" "account account";
+    height: auto;
+    min-height: 0;
+    padding: 10px 8px 8px;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  body .product-chart .observatory-hero__copy { grid-area: brand; min-width: 0; display: block; }
+  body .product-chart .observatory-hero__copy h1,
+  body .product-chart .observatory-hero__copy .observatory-hero__workspace,
+  body .product-chart .observatory-hero__copy .observatory-hero__manifesto { display: none; }
+  body .product-chart .workspace-kicker { display: block; margin: 0; font-size: 1.35rem; line-height: 1; letter-spacing: -.06em; }
+
+  body .product-chart .workbench-tabs { grid-area: tabs; width: 100%; min-width: 0; overflow-x: auto; }
+  body .product-chart .workbench-tabs .semi-tabs-bar { display: flex !important; width: max-content !important; min-width: 100% !important; }
+  body .product-chart .workbench-tabs .semi-tabs-tab { flex: 0 0 auto; min-width: 72px !important; padding-inline: 10px !important; }
+
+  body .product-chart .platform-account {
+    grid-area: account;
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  body .product-chart .platform-account__status {
+    flex: 1 1 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+  }
+  body .product-chart .platform-account__status small { display: inline; margin-left: 6px; }
+
+  body .product-chart .hero-action {
+    grid-area: actions;
+    align-self: start;
+    justify-self: end;
+    margin: 0;
+    min-height: 34px;
+    padding: 7px 9px;
+    white-space: nowrap;
+  }
+}
+
+/* Desktop contract for the single, non-resizable workbench DOM. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart #qimen-workbench-layout.analysis-panel-group {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 6px minmax(320px, 0.34fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-chart,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    width: auto !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-chart {
+    grid-column: 1;
+    grid-row: 1;
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) auto !important;
+  }
+
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-workbench-separator {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid !important;
+    place-items: center;
+    width: 6px !important;
+    height: 100% !important;
+  }
+
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-chart > .canvas-panel {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+}
+
 /* Classic methods share the existing gated research Agent. The board stays
    primary; this rail owns questions, evidence and the answer. */
 @media (min-width: 1041px) {
