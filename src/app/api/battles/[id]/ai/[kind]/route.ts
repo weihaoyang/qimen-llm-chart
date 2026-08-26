@@ -72,6 +72,10 @@ export async function handleAiPost(request: Request, context: { params: Promise<
       throw new Error(schemaError);
     }
     const structured = parsedStructured as Record<string, unknown>;
+    // Refresh the execution lease after the provider returns and before any
+    // business state is written. If a recovery poll already timed the job out,
+    // abort without applying model output or committing usage.
+    if (!await startAiJob(subject, id, created.jobId)) throw new Error("AI 任务已超时或被终止，未应用模型结果。");
     if (kind === "cards") {
       const cards = asArray(structured.cards ?? structured.assets).map((item, index) => {
         const card = item && typeof item === "object" ? item as Record<string, unknown> : {};
@@ -86,7 +90,8 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     if (kind === "review") {
       await createReview(subject, id, { commitmentId: null, outcome: String(structured.summary), facts: String(structured.facts), whatChanged: String(structured.whatChanged), diagnosis: (structured.diagnosis && typeof structured.diagnosis === "object" && !Array.isArray(structured.diagnosis)) ? structured.diagnosis as Record<string, unknown> : {}, nextAdjustment: String(structured.nextAdjustment) });
     }
-    await finishAiJob(subject,id,created.jobId,structured,result.model);
+    const finished = await finishAiJob(subject,id,created.jobId,structured,result.model);
+    if (!finished) throw new Error("AI 任务已超时或不再处于可提交状态，未扣减本次权益。");
     const usage = accessToken ? await commitPlatformUsage(accessToken,reservationId,{planCode:AGENT_PLAN_CODE}) : await commitPlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken});
     reservationId = "";
     return NextResponse.json({ job: await getAiJob(subject,id,created.jobId), usage });
