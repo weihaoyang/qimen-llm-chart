@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import type { Position } from "3meta";
 import { GripVertical } from "lucide-react";
-import { Group, Panel, Separator } from "react-resizable-panels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
@@ -432,17 +431,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [klineAiError, setKlineAiError] = useState<string | null>(null);
   const [klineAiLoading, setKlineAiLoading] = useState(false);
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
-  // Keep the initial tree deterministic across SSR and hydration. CSS owns
-  // the chart's first paint; this state only controls narrow-only overlays and
-  // the non-chart compact fallback after React mounts.
-  const [isNarrowLayout, setIsNarrowLayout] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
-  // `react-resizable-panels` emits a server-only Suspense boundary under this
-  // Next runtime. Rendering it before hydration can shift the AppShell root
-  // and leave the workbench as an empty split surface. Start with the stable
-  // chart canvas, then enhance to the same draggable desktop layout after
-  // React owns the DOM.
-  const [resizablePanelsReady, setResizablePanelsReady] = useState(false);
   const platformSelectedChannel = platformWorkspace.channels.find((channel) => channel.ready)?.channel ?? "";
   // The Battle Domain uses the same paid Agent entitlement as the chart
   // workbench. A guest checkout token must be forwarded explicitly; login is
@@ -1660,32 +1649,6 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   };
 
   useEffect(() => {
-    setResizablePanelsReady(typeof ResizeObserver !== "undefined");
-
-    if (typeof window.matchMedia !== "function") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(max-width: 1180px)");
-    // On mobile WebViews the layout viewport can temporarily retain a desktop
-    // width during first paint while visualViewport already reports the real
-    // device width.  Use the smaller value so the chart never mounts as two
-    // squeezed desktop panels on a phone.
-    const syncLayout = () => {
-      const visualWidth = window.visualViewport?.width ?? Number.POSITIVE_INFINITY;
-      setIsNarrowLayout(mediaQuery.matches || visualWidth <= 1180);
-    };
-
-    syncLayout();
-    mediaQuery.addEventListener("change", syncLayout);
-    window.visualViewport?.addEventListener("resize", syncLayout);
-    return () => {
-      mediaQuery.removeEventListener("change", syncLayout);
-      window.visualViewport?.removeEventListener("resize", syncLayout);
-    };
-  }, []);
-
-  useEffect(() => {
     if (!chartAnalysisOpen) return;
 
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -1695,12 +1658,6 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [chartAnalysisOpen]);
-
-  useEffect(() => {
-    if (resizablePanelsReady && !isNarrowLayout) {
-      setChartAnalysisOpen(false);
-    }
-  }, [isNarrowLayout, resizablePanelsReady]);
 
   useEffect(() => {
     if (!parametersOpen) {
@@ -1994,7 +1951,6 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
 
   const chartAnalysisOverlay = product === "chart"
     && chartAnalysisOpen
-    && (isNarrowLayout || !resizablePanelsReady)
     && typeof document !== "undefined"
     ? createPortal(
       <div className="product-chart chart-analysis-portal">
@@ -2150,65 +2106,28 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
             {agentInspector}
           </section>
         </main>
-      ) : product === "chart" ? (
-        !resizablePanelsReady ? (
-          <>
-            <main className="analysis-layout analysis-layout--chart-compact" data-layout="chart-analysis-drawer">
-              <div className="chart-compact-canvas">
-                {workbenchCanvas}
-                {chartAnalysisToggle}
-              </div>
-            </main>
-            {chartAnalysisOverlay}
-          </>
-        ) : (
-          <>
-          <Group
+      ) : (
+        <>
+          <main
             id="qimen-workbench-layout"
-            orientation="horizontal"
             className="analysis-layout analysis-panel-group"
-            aria-label="排盘主盘与智能分析分栏"
+            aria-label={product === "chart" ? "排盘主盘与智能分析分栏" : "主盘与智能分析分栏"}
           >
-            <Panel id="qimen-chart" defaultSize="68%" minSize="54%" className="analysis-panel">
+            <section id="qimen-chart" className="analysis-panel">
               {workbenchCanvas}
-              {chartAnalysisToggle}
-            </Panel>
-            <Separator id="qimen-workbench-separator" className="analysis-panel-divider">
+              {product === "chart" ? chartAnalysisToggle : null}
+            </section>
+            <div id="qimen-workbench-separator" className="analysis-panel-divider" aria-hidden="true">
               <span className="analysis-panel-divider__grip" aria-hidden="true">
                 <GripVertical size={17} strokeWidth={1.8} />
               </span>
-            </Separator>
-            <Panel id="qimen-agent" defaultSize="32%" minSize="360px" className="analysis-panel">
+            </div>
+            <section id="qimen-agent" className="analysis-panel">
               {workbenchSidebar}
-            </Panel>
-          </Group>
+            </section>
+          </main>
           {chartAnalysisOverlay}
-          </>
-        )
-      ) : isNarrowLayout || !resizablePanelsReady ? (
-        <main className="analysis-layout analysis-layout--stacked" data-layout="agent-sidebar">
-          {workbenchCanvas}
-          {workbenchSidebar}
-        </main>
-      ) : (
-        <Group
-          id="qimen-workbench-layout"
-          orientation="horizontal"
-          className="analysis-layout analysis-panel-group"
-          aria-label="主盘与智能分析分栏"
-        >
-          <Panel id="qimen-chart" defaultSize="68%" minSize="54%" className="analysis-panel">
-            {workbenchCanvas}
-          </Panel>
-          <Separator id="qimen-workbench-separator" className="analysis-panel-divider">
-            <span className="analysis-panel-divider__grip" aria-hidden="true">
-              <GripVertical size={17} strokeWidth={1.8} />
-            </span>
-          </Separator>
-          <Panel id="qimen-agent" defaultSize="32%" minSize="360px" className="analysis-panel">
-            {workbenchSidebar}
-          </Panel>
-        </Group>
+        </>
       )}
 
       <footer className="qmdj-footer">

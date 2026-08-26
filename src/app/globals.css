@@ -2550,8 +2550,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 
 /* At wide desktop widths the Agent column leaves narrow square cells; use a
    single direct-reading primary column there. */
-@media (min-width: 1200px) {
-}
 
 /* Final cascade override for the live DOM (the legacy ID selectors above do
    not match the current component tree). */
@@ -2559,23 +2557,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 /* In the 16:9 desktop composition the chart shares the viewport with the
    Agent rail. Cap it by the available vertical space so the square never
    becomes a giant scrollable block. */
-@media (min-width: 1201px) {
-  .analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
-    width: min(100%, calc(100svh - 300px)) !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: none !important;
-    aspect-ratio: 1 / 1 !important;
-  }
-
-  .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item strong {
-    font-size: clamp(1.12rem, 1.8vw, 1.48rem) !important;
-  }
-
-  .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts dd {
-    font-size: clamp(1rem, 1.35vw, 1.22rem) !important;
-  }
-}
 
 /* The side-by-side desktop layout uses analysis-panel-group rather than the
    stacked modifier, so keep the same square and dense card contract there. */
@@ -3696,9 +3677,6 @@ body {
   }
 }
 
-@media (min-width: 1181px) {
-}
-
 /* The in-app preview commonly runs around 1080px wide. Keep the same
    content-led palace sizing in that desktop/tablet band; the old 1181px
    breakpoint left the grid's 1fr track stretching every card vertically. */
@@ -4467,12 +4445,6 @@ body {
     min-height: 0 !important;
     overflow-y: auto;
   }
-}
-
-@media (min-width: 1181px) {
-}
-
-@media (min-width: 1181px) {
 }
 
 @media (min-width: 1181px) and (min-height: 700px) {
@@ -5275,9 +5247,6 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
   line-height: 1.05 !important;
 }
 
-@media (max-width: 720px) {
-}
-
 /* Supersede the legacy three-column card rules above. */
 html body #qimen-workbench-layout .canvas-panel__content > .palace-grid-shell > .palace-grid {
   width: auto !important;
@@ -5611,18 +5580,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   height: 100% !important;
   min-height: 0 !important;
   align-self: stretch !important;
-}
-
-.analysis-layout.analysis-layout--stacked .canvas-panel,
-.analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content,
-.analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell {
-  height: auto !important;
-  min-height: 0 !important;
-}
-
-.analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell {
-  grid-template-rows: auto auto auto !important;
-  align-content: start !important;
 }
 
 /* Four pillars are a reading table, not a field of equal-weight cards.
@@ -6063,15 +6020,6 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
     min-height: 96px;
   }
 }
-.analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
-  width: auto !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  aspect-ratio: 1 / 1 !important;
-  align-self: center !important;
-  justify-self: center !important;
-}
 /* Fauvist tool language: saturated flat blocks, paper ground, and hard
    editorial edges. No gradients, no glass treatment. */
 body {
@@ -6190,18 +6138,6 @@ body {
   border-radius: 0 !important;
   border-color: #171717 !important;
 }
-
-@media (min-width: 1200px) {
-  .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-}
 html body #qimen-workbench-layout.analysis-layout.analysis-panel-group > #qimen-chart > .analysis-panel .palace-card__primary {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   grid-template-rows: minmax(0, 1fr) !important;
@@ -6232,9 +6168,6 @@ html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-ch
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
 }
-
-@media (min-width: 1200px) {
-}
 html body #qimen-workbench-layout > #qimen-chart .palace-card__topline {
   display: contents !important;
 }
@@ -6253,54 +6186,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
   gap: 0 !important;
 }
 
-@container (max-width: 219px) {
-}
-
-@media (min-width: 1200px) {
-}
-
 /* Final cascade override for the live DOM. */
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  grid-template-rows: minmax(0, 1fr) !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts .palace-card__fact--status {
-  grid-column: span 2 !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item span {
-  font-size: clamp(0.98rem, 1.65vw, 1.12rem) !important;
-  color: currentColor !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item strong {
-  font-size: clamp(1.42rem, 2.45vw, 1.9rem) !important;
-  line-height: 1 !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts .palace-card__fact {
-  gap: clamp(0.22rem, 0.45vw, 0.45rem) !important;
-  padding: 4px clamp(0.32rem, 0.7vw, 0.55rem) !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts dt {
-  font-size: clamp(0.9rem, 1.45vw, 1.1rem) !important;
-  font-weight: 900 !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts dd {
-  font-size: clamp(1.22rem, 2.05vw, 1.58rem) !important;
-  line-height: 1 !important;
-}
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--heaven dt,
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--heaven dd { color: #b73425 !important; }
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--earth dt,
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--earth dd { color: #176c58 !important; }
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--hidden dt,
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--hidden dd { color: #55418c !important; }
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--branch dt,
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--branch dd { color: #a05d12 !important; }
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--status dt,
-.analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__fact--status dd { color: #171717 !important; }
 
 /* Mirror the dense contract in the side-by-side desktop layout. */
 @media (min-width: 1201px) {
@@ -6315,67 +6201,8 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
   }
 }
 
-@media (min-width: 1201px) {
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
-    width: min(100%, 68vh) !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: none !important;
-    aspect-ratio: 1 / 1 !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item strong {
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    font-size: clamp(0.95rem, 1.3vw, 1.25rem) !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts dd {
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    font-size: clamp(0.88rem, 1.1vw, 1.12rem) !important;
-  }
-}
-
 /* A nine-palace chart must remain a nine-cell square on a phone. The older
    single-column fallback made each palace only a few pixels tall. */
-@media (max-width: 720px) {
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
-    width: 100% !important;
-    height: auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    aspect-ratio: 1 / 1 !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card {
-    width: auto !important;
-    height: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: minmax(0, 1fr) !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item span,
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts dt {
-    font-size: 0.66rem !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item strong {
-    font-size: 0.84rem !important;
-  }
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid .palace-card .palace-card__facts dd {
-    font-size: 0.74rem !important;
-  }
-}
 
 /* One sizing contract for the desktop workbench.
    The left rail owns the available height; the canvas consumes it; the
@@ -6384,13 +6211,11 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
    square from either collapsing to its intrinsic content or growing past its
    panel. */
 @media (min-width: 721px) {
-  html body .analysis-layout.analysis-panel-group > .analysis-panel,
-  html body .analysis-layout.analysis-layout--stacked > .analysis-panel {
+  html body .analysis-layout.analysis-panel-group > .analysis-panel {
     min-height: 0 !important;
   }
 
-  html body .analysis-layout.analysis-panel-group .canvas-panel,
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel {
+  html body .analysis-layout.analysis-panel-group .canvas-panel {
     align-self: stretch !important;
     height: 100% !important;
     min-height: 0 !important;
@@ -6398,24 +6223,21 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     grid-template-rows: auto minmax(0, 1fr) !important;
   }
 
-  html body .analysis-layout.analysis-panel-group .canvas-panel__content,
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content {
+  html body .analysis-layout.analysis-panel-group .canvas-panel__content {
     height: 100% !important;
     min-height: 0 !important;
     grid-template-rows: minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
 
-  html body .analysis-layout.analysis-panel-group .palace-grid-shell,
-  html body .analysis-layout.analysis-layout--stacked .palace-grid-shell {
+  html body .analysis-layout.analysis-panel-group .palace-grid-shell {
     height: 100% !important;
     min-height: 0 !important;
     grid-template-rows: auto auto minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
 
-  html body .analysis-layout.analysis-panel-group .palace-grid-shell > .palace-grid,
-  html body .analysis-layout.analysis-layout--stacked .palace-grid-shell > .palace-grid {
+  html body .analysis-layout.analysis-panel-group .palace-grid-shell > .palace-grid {
     width: auto !important;
     height: 100% !important;
     min-width: 0 !important;
@@ -6429,8 +6251,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  html body .analysis-layout.analysis-panel-group .palace-grid > .palace-card,
-  html body .analysis-layout.analysis-layout--stacked .palace-grid > .palace-card {
+  html body .analysis-layout.analysis-panel-group .palace-grid > .palace-card {
     width: auto !important;
     height: 100% !important;
     min-width: 0 !important;
@@ -7362,89 +7183,10 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
   /* The mobile renderer intentionally drops the desktop panel IDs.  Keep a
      class-based contract for that DOM instead of relying on desktop-only
      selectors; otherwise legacy stacked-layout rules silently win. */
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary-item,
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__fact {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary-item {
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    padding-inline: 3px !important;
-  }
 
   /* Facts remain a 3 × 2 instrument field; a compact vertical key/value
      treatment gives every stem its own real column instead of squeezing a
      label and value into five pixels. */
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__fact {
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0 !important;
-  }
-
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts dt {
-    font-size: 8px !important;
-  }
-
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts dd {
-    font-size: clamp(11px, 3.1vw, 13px) !important;
-  }
-
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__primary-item strong,
-  html body .analysis-layout.analysis-layout--stacked .canvas-panel__content .palace-grid > .palace-card .palace-card__facts dd {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  body .product-chart .analysis-layout.analysis-layout--stacked .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout,
-  body .product-chart .analysis-layout.analysis-layout--stacked .canvas-panel[data-mode="qimen"] .palace-grid-shell {
-    display: grid !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    align-content: start !important;
-  }
-
-  body .product-chart .analysis-layout.analysis-layout--stacked .canvas-panel[data-mode="qimen"] .palace-grid-shell > .palace-grid {
-    display: grid !important;
-    width: 100% !important;
-    height: auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    max-width: 100% !important;
-    max-height: none !important;
-    aspect-ratio: 1 / 1 !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-    justify-self: center !important;
-  }
-
-  body .product-chart .analysis-layout.analysis-layout--stacked .canvas-panel[data-mode="qimen"] .palace-grid-shell > .palace-grid > .palace-card {
-    width: 100% !important;
-    height: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-  }
 
   body .product-chart .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout,
   body .product-chart .canvas-panel[data-mode="qimen"] .palace-grid-shell {
@@ -7480,8 +7222,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     min-height: 0 !important;
   }
 
-  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel,
-  body .product-chart .chart-compact-canvas > .canvas-panel[data-mode="qimen"] {
+  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel {
     display: grid !important;
     height: auto !important;
     min-height: 0 !important;
@@ -7489,8 +7230,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     overflow: visible !important;
   }
 
-  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout,
-  body .product-chart .chart-compact-canvas > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout {
+  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout {
     display: grid !important;
     width: 100% !important;
     height: auto !important;
@@ -7499,8 +7239,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     overflow: visible !important;
   }
 
-  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell,
-  body .product-chart .chart-compact-canvas > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
+  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
     display: grid !important;
     width: 100% !important;
     height: auto !important;
@@ -7509,8 +7248,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     overflow: visible !important;
   }
 
-  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid,
-  body .product-chart .chart-compact-canvas > .canvas-panel[data-mode="qimen"] > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
+  body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
     display: grid !important;
     width: 100% !important;
     height: auto !important;
