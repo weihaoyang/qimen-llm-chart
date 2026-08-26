@@ -127,10 +127,27 @@ export async function listMemories(subject: AccountSubject) {
 }
 
 export async function saveMemory(subject: AccountSubject, input: { id?:string; battleId?:string|null; title:string; memory:Record<string, unknown>; source?:Record<string, unknown>; consentStatus?:"active"|"paused"|"revoked" }) {
-  const id = input.id ?? randomUUID();
-  const result = await query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`INSERT INTO battle_memory_records(id,battle_id,platform_subject_type,platform_subject_id,title,memory_json,source_json,consent_status) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8) ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title,memory_json=EXCLUDED.memory_json,source_json=EXCLUDED.source_json,consent_status=EXCLUDED.consent_status,updated_at=now() WHERE battle_memory_records.platform_subject_type=$3 AND battle_memory_records.platform_subject_id=$4 RETURNING id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at`, [id,input.battleId ?? null,...owner(subject),input.title,json(input.memory),json(input.source ?? {}),input.consentStatus ?? "active"]);
-  const row = result.rows[0];
-  return row ? { id:row.id, battleId:row.battle_id, title:row.title, memory:parse(row.memory_json), source:parse(row.source_json), consentStatus:row.consent_status, createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() } : null;
+  return withTransaction(async (client) => {
+    // A memory may only reference a battle the subject can access. Without
+    // this check a client could attach an otherwise valid memory to another
+    // account's battle UUID, creating cross-account metadata leakage and
+    // making later consent/deletion semantics ambiguous.
+    if (input.battleId) {
+      const access = await client.query(
+        `SELECT b.id FROM battle_cases b
+         WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3)
+           OR EXISTS (SELECT 1 FROM battle_collaborators c
+                      WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND c.status='active'))
+         LIMIT 1`,
+        [input.battleId, ...owner(subject)],
+      );
+      if (!access.rowCount) return null;
+    }
+    const id = input.id ?? randomUUID();
+    const result = await client.query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`INSERT INTO battle_memory_records(id,battle_id,platform_subject_type,platform_subject_id,title,memory_json,source_json,consent_status) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8) ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title,memory_json=EXCLUDED.memory_json,source_json=EXCLUDED.source_json,consent_status=EXCLUDED.consent_status,updated_at=now() WHERE battle_memory_records.platform_subject_type=$3 AND battle_memory_records.platform_subject_id=$4 RETURNING id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at`, [id,input.battleId ?? null,...owner(subject),input.title,json(input.memory),json(input.source ?? {}),input.consentStatus ?? "active"]);
+    const row = result.rows[0];
+    return row ? { id:row.id, battleId:row.battle_id, title:row.title, memory:parse(row.memory_json), source:parse(row.source_json), consentStatus:row.consent_status, createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() } : null;
+  });
 }
 
 export async function deleteMemory(subject: AccountSubject, id:string) {

@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     const title = asText(body?.title, 200); const memory = asRecord(body?.memory); const battleId = body?.battleId == null ? null : body.battleId;
     if (!title || !memory || (battleId !== null && !isUuid(battleId))) return NextResponse.json({error:"记忆字段无效。"},{status:400});
     const value = await saveMemory(await requireAccountSubject(request), { id: typeof body?.id === "string" ? body.id : undefined, battleId: battleId as string|null, title, memory, source: asRecord(body?.source) ?? {}, consentStatus: body?.consentStatus === "paused" || body?.consentStatus === "revoked" ? body.consentStatus : "active" });
+    if (!value) return NextResponse.json({ error:"战局不存在或无记忆写入权限。", reasonCode:"battle_access_denied" }, { status:403 });
     return NextResponse.json({ memory:value }, { status:201 });
   } catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({error:error.message},{status:error.status}) : NextResponse.json({error:"保存 AI 记忆失败。"},{status:500}); }
 }
