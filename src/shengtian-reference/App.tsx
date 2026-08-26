@@ -644,10 +644,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   
   // 1. Reality Echoes Handlers
   const handleResolveDustEvent = (echoId: string, eventId: string, option: CausalDustOption) => {
-    if (option.costEquity > 0) {
-      if (!handleSpendEquity(option.costEquity, '平息因果尘埃')) return;
-    }
-
+    // The RealityEchoes panel performs the server-side usage reservation and
+    // commit before invoking this state transition. Do not charge again here:
+    // this callback only applies the already-authorized result to the battle
+    // snapshot, keeping retries idempotent.
     setRealityEchoes(prev => prev.map(echo => {
       if (echo.id !== echoId) return echo;
 
@@ -687,7 +687,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   // 2. Conclaves Handlers
   const handleInjectEquityToConclave = (conclaveId: string, amount: number) => {
-    if (amount > 0 && !handleSpendEquity(amount, '向密会公共资源池注入')) return;
+    if (!Number.isFinite(amount) || amount <= 0) return;
     setConclaves(prev => prev.map(c => {
       if (c.id !== conclaveId) return c;
       return {
@@ -698,7 +698,6 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   const handleCreateConclave = (newConclave: Partial<ObserverConclave>) => {
-    if (!handleSpendEquity(100, '铸造专属密会公会')) return;
     const fullConclave: ObserverConclave = {
       id: `conclave-${Date.now()}`,
       name: newConclave.name || '新因果密会',
