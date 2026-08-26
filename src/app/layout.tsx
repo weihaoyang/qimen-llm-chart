@@ -5,6 +5,7 @@ import "react-iztro/lib/Izpalace/Izpalace.css";
 import "react-iztro/lib/IzpalaceCenter/IzpalaceCenter.css";
 import "@douyinfe/semi-ui/lib/es/_base/base.css";
 import "./globals.css";
+import "./paipan/paipan.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shengtian.singseq.com"),
