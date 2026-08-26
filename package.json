@@ -9,7 +9,7 @@
     "build": "next build --webpack",
     "db:migrate": "node ops/migrate.mjs apply",
     "db:status": "node ops/migrate.mjs status",
-    "css:audit": "node ops/prune-css.mjs src/app/globals.css src/app/shengtian.css src/app/paipan/paipan.css && node ops/dedupe-css.mjs src/app/globals.css src/app/shengtian.css src/app/paipan/paipan.css",
+    "css:audit": "node ops/prune-css.mjs src/app/globals.css src/shengtian-reference/index.css src/app/paipan/paipan.css && node ops/dedupe-css.mjs src/app/globals.css src/shengtian-reference/index.css src/app/paipan/paipan.css",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run"
