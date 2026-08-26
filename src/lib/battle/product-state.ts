@@ -56,6 +56,10 @@ export async function saveModuleState(subject: AccountSubject, battleId: string,
   return withTransaction(async (client) => {
     const access = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND c.status='active' AND c.role IN ('contributor','advisor'))) FOR UPDATE`, [battleId, ...owner(subject)]);
     if (!access.rowCount) return null;
+    // Serialize version allocation for this battle/module pair. A plain
+    // MAX(version)+1 is racy across two tabs or collaborators and can produce
+    // duplicate versions (or force one writer to fail on the unique index).
+    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-module:${battleId}:${moduleId}`]);
     const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id=$2`, [battleId, moduleId])).rows[0].version;
     const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(state), json(consent)]);
     await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
