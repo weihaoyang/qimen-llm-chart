@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
     const title = asText(body?.title, 200); const memory = asRecord(body?.memory); const battleId = body?.battleId == null ? null : body.battleId;
-    if (!title || !memory || (battleId !== null && !isUuid(battleId))) return NextResponse.json({error:"记忆字段无效。"},{status:400});
+    if (!title || !memory || (body?.id !== undefined && (typeof body.id !== "string" || !isUuid(body.id))) || (battleId !== null && !isUuid(battleId))) return NextResponse.json({error:"记忆字段无效。"},{status:400});
     const value = await saveMemory(await requireAccountSubject(request), { id: typeof body?.id === "string" ? body.id : undefined, battleId: battleId as string|null, title, memory, source: asRecord(body?.source) ?? {}, consentStatus: body?.consentStatus === "paused" || body?.consentStatus === "revoked" ? body.consentStatus : "active" });
     if (!value) return NextResponse.json({ error:"战局不存在或无记忆写入权限。", reasonCode:"battle_access_denied" }, { status:403 });
     return NextResponse.json({ memory:value }, { status:201 });

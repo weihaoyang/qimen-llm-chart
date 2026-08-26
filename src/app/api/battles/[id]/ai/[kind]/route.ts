@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { loadBattleInput } from "@/lib/battle/service";
-import { createAiJob, failAiJob, finishAiJob, getAiJob, startAiJob, hashSnapshot } from "@/lib/battle/product-state";
+import { createAiJob, failAiJob, finishAiJob, getAiJob, startAiJob, hashSnapshot, listActiveMemorySummaries } from "@/lib/battle/product-state";
 import { requestAgentAnalysis } from "@/lib/agent/chat";
 import { isUuid, asText } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
@@ -48,7 +48,8 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     const loaded = await loadBattleInput(subject, id);
     if (!loaded) return NextResponse.json({ error:"战局不存在。" }, { status:404 });
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-    const input = { battle: loaded.battle, input: loaded.input, request: body ?? {} };
+    const authorizedMemories = await listActiveMemorySummaries(subject);
+    const input = { battle: loaded.battle, input: loaded.input, authorizedMemories, request: body ?? {} };
     const idempotencyKey = asText(body?.idempotencyKey, 160) || `auto:${kind}:${hashSnapshot(input)}`;
     const created = await createAiJob(subject, id, kind, idempotencyKey, input, "battle-v1");
     if (!created) return NextResponse.json({ error:"战局无权访问。" }, { status:403 });

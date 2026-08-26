@@ -58,6 +58,20 @@ export const updateBattle = async (subject: AccountSubject, id: string, input: P
 export const deleteBattle = async (subject: AccountSubject, id: string) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [id, ...ownership(subject)]);
   if (!owner.rowCount) return null;
+  // Long-term symbiote memories use ON DELETE SET NULL to preserve referential
+  // auditability. Scrub their private payload before deleting the battle so
+  // they cannot survive as readable, source-less account memories.
+  await client.query(
+    `UPDATE battle_memory_records
+        SET battle_id=NULL,
+            title='已删除战局记忆',
+            memory_json='{}'::jsonb,
+            source_json=jsonb_build_object('deletedBattleId',$1,'reason','battle_deleted'),
+            consent_status='deleted',
+            updated_at=now()
+      WHERE battle_id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`,
+    [id, ...ownership(subject)],
+  );
   const result = await client.query<{id:string}>(`DELETE FROM battle_cases WHERE id=$1 RETURNING id`, [id]);
   return Boolean(result.rowCount);
 });
