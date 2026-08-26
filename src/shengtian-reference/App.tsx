@@ -576,6 +576,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        battleId: session.activeBattle?.id ?? null,
         dimension,
         expected: null,
         actual: answers[index] ? 1 : 0,

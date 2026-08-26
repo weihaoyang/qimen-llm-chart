@@ -139,6 +139,9 @@ export const getStrategyProfile = async (subject: AccountSubject) => {
 };
 
 export const saveStrategyProfile = async (subject: AccountSubject, profile: Record<string, unknown>) => withTransaction(async (client) => {
+  // The profile is versioned so calibration can be audited. Serialize version
+  // allocation across browser tabs before calculating MAX(version)+1.
+  await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-profile:${subject.subjectType}:${subject.subjectId}`]);
   const version = (await client.query<{version:number}>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_strategy_profiles WHERE platform_subject_type=$1 AND platform_subject_id=$2`, owner(subject))).rows[0].version;
   const row = await client.query<{version:number;profile_json:Json;updated_at:Date}>(`INSERT INTO battle_strategy_profiles(id,platform_subject_type,platform_subject_id,version,profile_json) VALUES($1,$2,$3,$4,$5::jsonb) RETURNING version,profile_json,updated_at`, [randomUUID(),...owner(subject),version,JSON.stringify(profile)]);
   return { version:row.rows[0].version, profile:record(row.rows[0].profile_json), updatedAt:row.rows[0].updated_at.toISOString() } satisfies StrategyProfile;
