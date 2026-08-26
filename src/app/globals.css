@@ -2551,15 +2551,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 /* At wide desktop widths the Agent column leaves narrow square cells; use a
    single direct-reading primary column there. */
 @media (min-width: 1200px) {
-  html body #qimen-workbench-layout > #qimen-chart .palace-card__primary {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 
 /* Final cascade override for the live DOM (the legacy ID selectors above do
@@ -3325,10 +3316,6 @@ body {
   align-self: start;
 }
 
-.canvas-panel__content {
-  align-content: start;
-}
-
 .sidebar-quick-controls__field > span {
   font-weight: 600;
 }
@@ -3351,11 +3338,6 @@ body {
 
 /* Shared 16:9 workbench: keep the chart and inspector at one height. */
 @media (min-width: 1181px) and (min-height: 640px) {
-  html body #qimen-workbench-layout { align-items: stretch !important; min-height: 0 !important; height: 100% !important; }
-  html body #qimen-workbench-layout > #qimen-chart,
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel,
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]),
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel { align-self: stretch !important; height: 100% !important; min-height: 0 !important; max-height: none !important; }
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel { align-self: stretch !important; display: grid !important; flex: 1 1 auto !important; height: 100% !important; min-height: 0 !important; max-height: none !important; grid-template-rows: auto minmax(0, 1fr) !important; overflow: hidden !important; }
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content { display: grid !important; grid-template-rows: minmax(0, 1fr) !important; height: 100% !important; min-height: 0 !important; align-content: stretch !important; align-items: stretch !important; overflow: hidden !important; }
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell { height: 100% !important; min-height: 0 !important; align-self: stretch !important; align-content: stretch !important; grid-template-rows: auto auto minmax(0, 1fr) !important; }
@@ -3368,32 +3350,6 @@ body {
    surface.  Keep the inspector scrollable, but let the nine-palace board use
    the full row so the left side never collapses above a blank page trough. */
 @media (min-width: 1181px) and (min-height: 640px) {
-  html body #qimen-workbench-layout {
-    align-items: stretch !important;
-    min-height: 0 !important;
-    height: 100% !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart,
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel,
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]),
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel {
-    align-self: stretch !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
-    align-self: stretch !important;
-    display: grid !important;
-    flex: 1 1 auto !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    grid-template-rows: auto minmax(0, 1fr) !important;
-    overflow: hidden !important;
-  }
 
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content {
     display: grid !important;
@@ -3409,28 +3365,6 @@ body {
     min-height: 0 !important;
     align-self: stretch !important;
     grid-template-rows: auto auto minmax(0, 1fr) !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid {
-    height: 100% !important;
-    min-height: 0 !important;
-    align-self: stretch !important;
-    align-content: stretch !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card {
-    height: 100% !important;
-    min-height: 0 !important;
-    align-self: stretch !important;
-  }
-
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel {
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
   }
 }
 
@@ -3763,24 +3697,12 @@ body {
 }
 
 @media (min-width: 1181px) {
-  .analysis-panel > .canvas-panel {
-    height: auto !important;
-  }
-
-  .analysis-panel > .sidebar-panel {
-    height: 100% !important;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 }
 
 /* The in-app preview commonly runs around 1080px wide. Keep the same
    content-led palace sizing in that desktop/tablet band; the old 1181px
    breakpoint left the grid's 1fr track stretching every card vertically. */
 @media (min-width: 721px) and (max-width: 1180px) and (min-height: 700px) {
-  .canvas-panel__content {
-    align-content: start;
-  }
 
   .canvas-panel__content > .palace-grid-shell {
     min-height: 0;
@@ -3850,12 +3772,6 @@ body {
 
   .analysis-layout {
     grid-template-columns: 1fr;
-  }
-
-  .canvas-panel,
-  .sidebar-panel {
-    height: auto;
-    overflow: visible;
   }
 
   .sidebar-panel {
@@ -4013,10 +3929,6 @@ html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sideba
     padding: 10px;
   }
 
-  .workbench-tabs {
-    grid-column: auto;
-  }
-
   .analysis-layout,
   .sidebar-panel {
     grid-template-columns: 1fr;
@@ -4046,10 +3958,6 @@ html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sideba
 
   .agent-panel .command-button {
     width: 100%;
-  }
-
-  .summary-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -4503,21 +4411,6 @@ body {
 
   /* Shared-height 16:9 board: the left chart must occupy the same workbench
      row as the inspector instead of collapsing to its intrinsic content. */
-  html body #qimen-workbench-layout {
-    align-items: stretch !important;
-    min-height: 0 !important;
-    height: 100% !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart,
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel,
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]),
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel {
-    align-self: stretch !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-  }
 
   html body #qimen-workbench-layout .canvas-panel {
     display: grid !important;
@@ -4554,19 +4447,6 @@ body {
     align-content: stretch !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
-  html body #qimen-workbench-layout .palace-grid > .palace-card {
-    height: 100% !important;
-    min-height: 0 !important;
-    align-self: stretch !important;
-  }
-
-  html body #qimen-workbench-layout :is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel {
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow-y: auto !important;
-  }
 }
 
 @media (min-width: 1181px) {
@@ -4590,38 +4470,9 @@ body {
 }
 
 @media (min-width: 1181px) {
-  #qimen-chart {
-    height: auto !important;
-    min-height: 0 !important;
-  }
-
-  :is(#qimen-agent, [data-layout="agent-sidebar"]) {
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden;
-  }
-
-  .analysis-panel > .canvas-panel {
-    height: auto !important;
-  }
-
-  .analysis-panel > .sidebar-panel {
-    height: 100% !important;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 }
 
 @media (min-width: 1181px) {
-  .analysis-panel > .canvas-panel {
-    height: auto !important;
-  }
-
-  .analysis-panel > .sidebar-panel {
-    height: 100% !important;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
 }
 
 @media (min-width: 1181px) and (min-height: 700px) {
@@ -5425,11 +5276,6 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
 }
 
 @media (max-width: 720px) {
-  .palace-grid > .palace-card { gap: 4px !important; padding: 5px !important; }
-  .palace-card__header h3 { font-size: clamp(0.98rem, 4.8vw, 1.15rem) !important; }
-  .palace-card__primary-item { padding: 2px 4px !important; }
-  .palace-card__primary-item strong { font-size: clamp(0.92rem, 4vw, 1.08rem) !important; }
-  .palace-card__facts dd { font-size: clamp(0.76rem, 3.4vw, 0.9rem) !important; }
 }
 
 /* Supersede the legacy three-column card rules above. */
@@ -6388,15 +6234,6 @@ html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-ch
 }
 
 @media (min-width: 1200px) {
-  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-card__primary {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-card__facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 html body #qimen-workbench-layout > #qimen-chart .palace-card__topline {
   display: contents !important;
@@ -6417,27 +6254,9 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 }
 
 @container (max-width: 219px) {
-  html body #qimen-workbench-layout > #qimen-chart .palace-card__primary {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 
 @media (min-width: 1200px) {
-  html body #qimen-workbench-layout > #qimen-chart .palace-card__primary {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 
 /* Final cascade override for the live DOM. */
@@ -6493,23 +6312,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     max-width: 100% !important;
     max-height: none !important;
     aspect-ratio: 1 / 1 !important;
-  }
-  .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__primary {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: minmax(0, 1fr) !important;
-  }
-  .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__facts {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
-  }
-  .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__facts .palace-card__fact--status {
-    grid-column: span 2 !important;
-  }
-  .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item strong {
-    font-size: clamp(1.12rem, 1.8vw, 1.48rem) !important;
-  }
-  .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__facts dd {
-    font-size: clamp(1rem, 1.35vw, 1.22rem) !important;
   }
 }
 
@@ -6974,17 +6776,6 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 
 .summary-strip > .summary-chip--pillars {
   grid-column: span 4 !important;
-}
-
-html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence) {
-  grid-template-columns: minmax(0, 1fr) !important;
-  grid-template-rows: minmax(0, 1fr) !important;
-}
-
-html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence) > .palace-grid-shell {
-  grid-column: 1 !important;
-  grid-row: 1 !important;
-  width: 100% !important;
 }
 
 @media (max-width: 720px) {
