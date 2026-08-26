@@ -147,6 +147,7 @@ export default function App() {
 }
 
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
+  const canWriteBattle = session.activeBattle?.accessRole !== 'viewer';
   const moduleHydratedRef = React.useRef<Record<string, boolean>>({});
   const inviteHandledRef = React.useRef<string | null>(null);
   const emptyDecisionBoard: DecisionBoardState = {
@@ -176,7 +177,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   }, [session.activeBattle?.id]);
   
   // User Calibration & Sigil State
-  const [isCalibrated, setIsCalibrated] = useState(false);
+  const [, setIsCalibrated] = useState(false);
   const [profileHydrated, setProfileHydrated] = useState(false);
   const [showCalibrationFlow, setShowCalibrationFlow] = useState(false);
 
@@ -246,6 +247,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     if (!profileHydratedRef.current) return;
     const timer = window.setTimeout(() => {
       const { equityBalance: _equityBalance, ...persisted } = userProfile;
+      void _equityBalance;
       void sessionApi.saveProfile({ uiProfile: persisted }).catch((error) => setPersistenceError(error instanceof Error ? error.message : '用户档案保存失败，请重试。'));
     }, 500);
     return () => window.clearTimeout(timer);
@@ -363,7 +365,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
-    if (!battleId || !moduleHydratedRef.current['inventory']) return;
+    if (!battleId || !canWriteBattle || !moduleHydratedRef.current['inventory']) return;
     const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
     const timer = window.setTimeout(() => {
       void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
@@ -371,11 +373,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '底牌保存失败，请重试。'));
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [session.activeBattle?.id, battlefield.assets]);
+  }, [session.activeBattle?.id, battlefield.assets, canWriteBattle]);
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
-    if (!battleId) return;
+    if (!battleId || !canWriteBattle) return;
     const states: Array<[string, unknown]> = [
       ['reality-echoes', realityEchoes],
       ['observer-conclaves', conclaves],
@@ -405,7 +407,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '战局模块保存失败，请重试。'));
     }, 300));
     return () => timers.forEach(window.clearTimeout);
-  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.financials, battlefield.bottomLine, battlefield.keyActors, battlefield.targetDeadlineDays, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog, saveBattleModule]);
+  }, [session.activeBattle?.id, realityEchoes, conclaves, archonState, symbioteState, battlefield.financials, battlefield.bottomLine, battlefield.keyActors, battlefield.targetDeadlineDays, battlefield.emotionalTelemetry, battlefield.valueCalibrator, battlefield.metaphysicsTiming, battlefield.selectedPersona, battlefield.interviewHistory, battlefield.breakthroughActive, battlefield.breakthroughPhase, battlefield.forcedWorstCaseActive, battlefield.breakthroughConfirmedTruths, battlefield.lockedAsymmetricStrategyId, battlefield.cognitiveBiasesDetected, battlefield.redTeamLog, saveBattleModule, canWriteBattle]);
 
   // Modals state
   const [isBreakthroughModalOpen, setIsBreakthroughModalOpen] = useState(false);
@@ -436,14 +438,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
-    if (!battleId) return;
+    if (!battleId || !canWriteBattle) return;
     const timer = window.setTimeout(() => {
       void fetch(`/api/battles/${battleId}`, { method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title:battlefield.title, objective:battlefield.subtitle, idealOutcome:battlefield.idealOutcome ?? session.activeBattle?.idealOutcome ?? undefined }) })
         .then((response) => { if (!response.ok) throw new Error(`战局元数据保存失败（${response.status}）。`); })
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '战局元数据保存失败，请重试。'));
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [session.activeBattle?.id, battlefield.title, battlefield.subtitle, battlefield.idealOutcome, battlefield.targetDeadlineDays]);
+  }, [session.activeBattle?.id, session.activeBattle?.idealOutcome, battlefield.title, battlefield.subtitle, battlefield.idealOutcome, battlefield.targetDeadlineDays, canWriteBattle]);
 
   useEffect(() => {
     const battle = session.activeBattle;
@@ -528,13 +530,13 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
-    if (!battleId || !moduleHydratedRef.current['decision-dna']) return;
+    if (!battleId || !canWriteBattle || !moduleHydratedRef.current['decision-dna']) return;
     const timer = window.setTimeout(() => {
       void saveBattleModule(battleId, 'decision-dna', { records: dnaRecords }, { source: 'user_session' })
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '决策 DNA 保存失败，请重试。'));
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [session.activeBattle?.id, dnaRecords, saveBattleModule]);
+  }, [session.activeBattle?.id, dnaRecords, saveBattleModule, canWriteBattle]);
 
   const handleSaveDNARecord = async (record: DecisionDNARecord) => {
     const battleId = session.activeBattle?.id;
@@ -581,6 +583,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   const handleAddEquity = (_amount: number, _reason: string) => {
+    void _amount;
+    void _reason;
     // Rewards are credited by the platform ledger after server verification.
     setPersistenceError('权益奖励需由统一平台确认，当前不会在浏览器本地增加。');
   };
@@ -853,6 +857,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       battlefield.breakthroughActive ? 'bg-[#05080D] text-slate-100' : 'bg-[#080B12] text-slate-100'
     } tactical-grid`}>
       {persistenceError && <div className="fixed top-3 right-3 z-[100] max-w-sm rounded-xl border border-red-500/50 bg-red-950/90 px-4 py-3 text-xs text-red-100 shadow-xl">{persistenceError}<button className="ml-3 text-red-300 underline" onClick={() => setPersistenceError(null)}>关闭</button></div>}
+      {!canWriteBattle && <div className="border-b border-sky-700/50 bg-sky-950/70 px-4 py-2 text-center text-xs font-mono-code text-sky-200">观察者只读模式 · 你可以查看战局和协作内容，但采访确认、AI 推演、策略锁定及状态保存需要 contributor、advisor 或 owner 权限。</div>}
       
       {/* Top Standard Clean Header */}
       <Header

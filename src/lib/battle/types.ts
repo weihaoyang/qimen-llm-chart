@@ -34,6 +34,7 @@ export type Battle = {
   scenarioId?: string | null;
   scenarioVersion?: number | null;
   sourceType?: "user_created" | "official_catalog" | "legacy_import";
+  accessRole?: "owner" | "viewer" | "contributor" | "advisor";
 };
 
 export type BattleFact = {

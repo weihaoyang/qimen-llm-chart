@@ -21,6 +21,7 @@ export type SessionBattle = {
   scenarioId?: string | null;
   scenarioVersion?: number | null;
   updatedAt: string;
+  accessRole?: "owner" | "viewer" | "contributor" | "advisor";
 };
 
 export type Collaborator = {
