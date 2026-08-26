@@ -2,6 +2,47 @@ import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { asRecord, asText, isUuid } from "@/lib/battle/input";
 import { createCalibration, createReview, listReviews } from "@/lib/battle/extended-repository";
+
 type Context = { params: Promise<{ id: string }> };
-export async function GET(request:Request,context:Context){try{const id=(await context.params).id;if(!isUuid(id))return NextResponse.json({error:"战局标识无效。"},{status:400});const value=await listReviews(await requireAccountSubject(request),id);return value===null?NextResponse.json({error:"战局不存在。"},{status:404}):NextResponse.json({reviews:value});}catch(error){return error instanceof AccountSubjectError?NextResponse.json({error:error.message},{status:error.status}):NextResponse.json({error:"读取复盘失败。"},{status:500});}}
-export async function POST(request:Request,context:Context){try{const id=(await context.params).id;if(!isUuid(id))return NextResponse.json({error:"战局标识无效。"},{status:400});const body=await request.json().catch(()=>null) as Record<string,unknown>|null;const outcome=asText(body?.outcome,12000);const facts=asText(body?.facts,12000,false);const whatChanged=asText(body?.whatChanged,12000,false);const nextAdjustment=asText(body?.nextAdjustment,12000,false);const commitmentId=body?.commitmentId===null||body?.commitmentId===undefined?null:body.commitmentId;if(!outcome||facts===null||whatChanged===null||nextAdjustment===null||(commitmentId!==null&&!isUuid(commitmentId)))return NextResponse.json({error:"复盘必须包含实际结果和合法落子令。"},{status:400});const subject=await requireAccountSubject(request);const value=await createReview(subject,id,{commitmentId:commitmentId as string|null,outcome,facts,whatChanged,diagnosis:asRecord(body?.diagnosis)??{},nextAdjustment});if(value===null)return NextResponse.json({error:"战局不存在或落子令不属于当前账户。"},{status:404});const calibration=[];const diagnosis=asRecord(body?.diagnosis)??{};for(const dimension of ["information","reasoning","resource","time","risk","execution","relationship"] as const){const item=diagnosis[dimension];if(!item||typeof item!=="object"||Array.isArray(item))continue;const row=item as Record<string,unknown>;if(typeof row.expected!=="number"||typeof row.actual!=="number")continue;const event=await createCalibration(subject,{battleId:id,commitmentId:value.commitmentId,dimension,expected:row.expected,actual:row.actual,note:typeof row.note==="string"?row.note:""});if(event)calibration.push(event);}return NextResponse.json({review:value,calibration},{status:201});}catch(error){return error instanceof AccountSubjectError?NextResponse.json({error:error.message},{status:error.status}):NextResponse.json({error:"保存复盘失败。"},{status:500});}}
+
+export async function GET(request: Request, context: Context) {
+  try {
+    const id = (await context.params).id;
+    if (!isUuid(id)) return NextResponse.json({ error: "战局标识无效。" }, { status: 400 });
+    const value = await listReviews(await requireAccountSubject(request), id);
+    return value === null ? NextResponse.json({ error: "战局不存在。" }, { status: 404 }) : NextResponse.json({ reviews: value });
+  } catch (error) {
+    return error instanceof AccountSubjectError ? NextResponse.json({ error:error.message }, { status:error.status }) : NextResponse.json({ error:"读取复盘失败。" }, { status:500 });
+  }
+}
+
+export async function POST(request: Request, context: Context) {
+  try {
+    const id = (await context.params).id;
+    if (!isUuid(id)) return NextResponse.json({ error:"战局标识无效。" }, { status:400 });
+    const body = await request.json().catch(() => null) as Record<string,unknown> | null;
+    const outcome = asText(body?.outcome, 12000);
+    const facts = asText(body?.facts, 12000, false);
+    const whatChanged = asText(body?.whatChanged, 12000, false);
+    const nextAdjustment = asText(body?.nextAdjustment, 12000, false);
+    const commitmentId = body?.commitmentId === null || body?.commitmentId === undefined ? null : body.commitmentId;
+    const idempotencyKey = asText(body?.idempotencyKey, 160);
+    if (!outcome || facts === null || whatChanged === null || nextAdjustment === null || (commitmentId !== null && !isUuid(commitmentId))) return NextResponse.json({ error:"复盘必须包含实际结果和合法落子令。" }, { status:400 });
+    const subject = await requireAccountSubject(request);
+    const diagnosis = asRecord(body?.diagnosis) ?? {};
+    const value = await createReview(subject, id, { commitmentId:commitmentId as string|null, outcome, facts, whatChanged, diagnosis, nextAdjustment }, idempotencyKey);
+    if (value === null) return NextResponse.json({ error:"战局不存在或落子令不属于当前账户。" }, { status:404 });
+    const calibration = [];
+    if (!value.reused) for (const dimension of ["information","reasoning","resource","time","risk","execution","relationship"] as const) {
+      const item = diagnosis[dimension];
+      if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+      const row = item as Record<string,unknown>;
+      if (typeof row.expected !== "number" || typeof row.actual !== "number") continue;
+      const event = await createCalibration(subject, { battleId:id, commitmentId:value.commitmentId, dimension, expected:row.expected, actual:row.actual, note:typeof row.note === "string" ? row.note : "" });
+      if (event) calibration.push(event);
+    }
+    return NextResponse.json({ review:value, calibration }, { status:value.reused ? 200 : 201 });
+  } catch (error) {
+    return error instanceof AccountSubjectError ? NextResponse.json({ error:error.message }, { status:error.status }) : NextResponse.json({ error:"保存复盘失败。" }, { status:500 });
+  }
+}

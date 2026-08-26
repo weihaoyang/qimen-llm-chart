@@ -518,6 +518,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     if (battleId) {
       const extracted = record.extractedDNA.filter((item) => item.trim());
       await sessionApi.saveReview(battleId, {
+        idempotencyKey: `decision-dna:${record.id}`,
         outcome: record.survivalOutcome,
         facts: extracted.join('；'),
         whatChanged: record.userReflection,

@@ -76,7 +76,7 @@ export const sessionApi = {
   profile: () => request<{ profile: { profile: Record<string, unknown> } | null }>(`/api/battles/profile`),
   saveProfile: (profile: Record<string, unknown>) => request<{ profile: unknown }>(`/api/battles/profile`, { method:"PUT", body:JSON.stringify({ profile }) }),
   saveCalibration: (input: { battleId?: string | null; dimension: string; expected?: number | null; actual?: number | null; note?: string }) => request<{ event: unknown }>(`/api/battles/calibration`, { method:"POST", body:JSON.stringify(input) }),
-  saveReview: (battleId:string, input:{ outcome:string; facts:string; whatChanged:string; nextAdjustment:string; diagnosis?:Record<string, unknown>; commitmentId?:string|null }) => request<{ review: Record<string, unknown> }>(`/api/battles/${battleId}/reviews`, { method:"POST", body:JSON.stringify(input) }),
+  saveReview: (battleId:string, input:{ outcome:string; facts:string; whatChanged:string; nextAdjustment:string; diagnosis?:Record<string, unknown>; commitmentId?:string|null; idempotencyKey?:string }) => request<{ review: Record<string, unknown> }>(`/api/battles/${battleId}/reviews`, { method:"POST", body:JSON.stringify(input) }),
   deleteMemory: (id:string) => request<{ deleted:boolean }>(`/api/battles/memories?id=${encodeURIComponent(id)}`, { method:"DELETE" }),
   saveMemory: (input:{ id?:string; battleId?:string|null; title:string; memory:Record<string, unknown>; source?:Record<string, unknown>; consentStatus?:"active"|"paused"|"revoked" }) => request<{ memory: Record<string, unknown> }>(`/api/battles/memories`, { method:"POST", body:JSON.stringify(input) }),
   collaborators: (battleId:string) => request<{ collaborators: Collaborator[] }>(`/api/battles/${battleId}/collaborators`),

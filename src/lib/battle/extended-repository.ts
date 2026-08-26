@@ -119,17 +119,23 @@ export const listReviews = async (subject: AccountSubject, battleId: string) => 
   return result.rows.map(mapReview);
 };
 
-export const createReview = async (subject: AccountSubject, battleId: string, input: Omit<BattleReview,"id"|"battleId"|"reviewedAt">) => withTransaction(async (client) => {
+export const createReview = async (subject: AccountSubject, battleId: string, input: Omit<BattleReview,"id"|"battleId"|"reviewedAt">, idempotencyKey?: string | null) => withTransaction(async (client) => {
   const check = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...owner(subject)]);
   if (!check.rowCount) return null;
+  if (idempotencyKey) {
+    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-review:${battleId}:${idempotencyKey}`]);
+    const existing = await client.query<ReviewRow>(`SELECT id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment,reviewed_at FROM battle_reviews WHERE battle_id=$1 AND diagnosis_json->>'_idempotencyKey'=$2 ORDER BY reviewed_at DESC LIMIT 1`, [battleId, idempotencyKey]);
+    if (existing.rows[0]) return { ...mapReview(existing.rows[0]), reused:true };
+  }
   if (input.commitmentId) {
     const commitment = await client.query(`SELECT id FROM battle_commitments WHERE id=$1 AND battle_id=$2`, [input.commitmentId, battleId]);
     if (!commitment.rowCount) return null;
   }
   const id = randomUUID();
-  const row = await client.query<ReviewRow>(`INSERT INTO battle_reviews(id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8) RETURNING id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment,reviewed_at`, [id,battleId,input.commitmentId,input.outcome,input.facts,input.whatChanged,JSON.stringify(input.diagnosis),input.nextAdjustment]);
+  const diagnosis = idempotencyKey ? { ...input.diagnosis, _idempotencyKey:idempotencyKey } : input.diagnosis;
+  const row = await client.query<ReviewRow>(`INSERT INTO battle_reviews(id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8) RETURNING id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment,reviewed_at`, [id,battleId,input.commitmentId,input.outcome,input.facts,input.whatChanged,JSON.stringify(diagnosis),input.nextAdjustment]);
   await client.query(`UPDATE battle_cases SET status='review',updated_at=now() WHERE id=$1`, [battleId]);
-  return mapReview(row.rows[0]);
+  return { ...mapReview(row.rows[0]), reused:false };
 });
 
 export const getStrategyProfile = async (subject: AccountSubject) => {

@@ -16,6 +16,15 @@ import { ASYMMETRIC_STRATEGY_PACKAGES } from '../../data/presets';
 import { TacticalAIService } from '../../services/aiService';
 import { soundManager } from '../../utils/soundEffects';
 
+const stableRecordId = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `dna-${(hash >>> 0).toString(36)}`;
+};
+
 interface Phase4AutopsyProps {
   battlefield: BattlefieldState;
   onSaveDNARecord: (record: DecisionDNARecord) => Promise<void> | void;
@@ -62,7 +71,9 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
       const extractedDNA = [facts, nextAdjustment, summary].filter((value, index, values) => value && values.indexOf(value) === index);
       if (!extractedDNA.length) throw new Error('复盘结果没有可提炼的决策DNA。');
       await onSaveDNARecord({
-        id: `dna-${Date.now()}`,
+        // Deterministic across retries and refreshes so a partially completed
+        // review/memory write cannot create duplicate reviews.
+        id: stableRecordId(`${battlefield.id}|${selectedStrategy.codeName}|${fatalQuestion}|${reflectionText.trim()}`),
         battlefieldTitle: battlefield.title,
         timestamp: new Date().toISOString(),
         selectedStrategy: selectedStrategy.codeName,
