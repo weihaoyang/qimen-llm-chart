@@ -431,22 +431,19 @@ body .product-chart .ziwei-panel__canvas .iztro-palace-fate span {
   border: 1px solid var(--paipan-ink) !important;
 }
 
-body .product-chart .ziwei-panel__canvas .iztro-star-major,
-body .product-chart .ziwei-panel__canvas .major-star {
+body .product-chart .ziwei-panel__canvas .iztro-star-major {
   color: #761f16 !important;
   font-weight: 950 !important;
 }
 
-body .product-chart .ziwei-panel__canvas .iztro-star-minor,
-body .product-chart .ziwei-panel__canvas .minor-star {
+body .product-chart .ziwei-panel__canvas .iztro-star-minor {
   color: #145845 !important;
   font-weight: 850 !important;
 }
 
 body .product-chart .ziwei-panel__canvas .iztro-star-adjective,
 body .product-chart .ziwei-panel__canvas .iztro-palace-ages,
-body .product-chart .ziwei-panel__canvas .iztro-palace-decadal,
-body .product-chart .ziwei-panel__canvas .adjective-star {
+body .product-chart .ziwei-panel__canvas .iztro-palace-decadal {
   color: #3f2f78 !important;
   font-weight: 850 !important;
 }
