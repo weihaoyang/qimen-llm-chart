@@ -42,9 +42,16 @@ export async function PUT(request: Request, context: Context) {
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
     const state = asRecord(body?.state);
     if (!state) return NextResponse.json({ error: "模块状态必须是 JSON 对象。" }, { status:400 });
+    // Module snapshots contain user-authored comments, memories and event
+    // histories. Bound the serialized payload before it reaches JSONB so a
+    // malformed client cannot exhaust request memory or inflate the database.
+    const serializedState = JSON.stringify(state);
+    if (serializedState.length > 512_000) return NextResponse.json({ error: "模块状态过大，请精简历史记录后重试。", reasonCode: "payload_too_large" }, { status:413 });
+    const consent = asRecord(body?.consent) ?? {};
+    if (JSON.stringify(consent).length > 32_000) return NextResponse.json({ error: "授权信息过大。", reasonCode: "payload_too_large" }, { status:413 });
     const validationError = validateModuleState(moduleId, state);
     if (validationError) return NextResponse.json({ error: validationError, reasonCode: "module_state_invalid" }, { status: 400 });
-    const saved = await saveModuleState(await requireAccountSubject(request), id, moduleId, state, asRecord(body?.consent) ?? {});
+    const saved = await saveModuleState(await requireAccountSubject(request), id, moduleId, state, consent);
     return saved ? NextResponse.json({ state:saved }) : NextResponse.json({ error:"战局不存在或无写入权限。" }, { status:403 });
   } catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({ error:error.message }, { status:error.status }) : NextResponse.json({ error:"保存模块状态失败。" }, { status:500 }); }
 }
