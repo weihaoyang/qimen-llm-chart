@@ -1768,7 +1768,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       {/* The split only moves the life-decision control room to Shengtian.
           The chart product keeps the original per-chart Agent analysis beside
           Qimen/Bazi/Ziwei, including single-chart and sequence evidence. */}
-      {(product === "chart" || product === "shengtian") && mode !== "combined" ? agentInspector : null}
+      {(product === "chart" || product === "shengtian") && mode !== "combined" && !(product === "chart" && chartAnalysisOpen) ? agentInspector : null}
 
       {mode !== "research" ? null : <div className="research-sidebar-note">研究工具与 Agent 已在同一工作区显示；选择工具后，Agent 会收到对应的结构化文本和 JSON。</div>}
     </aside>
@@ -1966,12 +1966,22 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
               <strong>AI 分析</strong>
               <button type="button" onClick={() => setChartAnalysisOpen(false)} aria-label="关闭盘面分析">×</button>
             </header>
-            {workbenchSidebar}
+            {/* The compact analysis drawer owns a single inspector instance;
+                rendering the full sidebar here would duplicate its tabs while
+                the main workbench remains mounted underneath the portal. */}
+            {agentInspector}
           </section>
         </div>
       </div>,
       document.body,
     )
+    : null;
+
+  // Keep a stable DOM anchor for chart integrations and smoke tests even while
+  // the analysis drawer is closed. The interactive dialog remains portalized
+  // and is mounted only on demand.
+  const chartAnalysisAnchor = product === "chart" && !chartAnalysisOpen
+    ? <div data-layout="chart-analysis-drawer" aria-hidden="true" hidden />
     : null;
 
   return (
@@ -2126,6 +2136,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
               {workbenchSidebar}
             </section>
           </main>
+          {chartAnalysisAnchor}
           {chartAnalysisOverlay}
         </>
       )}
