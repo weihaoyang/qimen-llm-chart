@@ -474,6 +474,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     try {
       const result = await sessionApi.create({ title:'新建现实决策战局', objective:'描述需要解决的现实问题', minimumOutcome:'', idealOutcome:'', opponentSummary:'', hardDeadline:new Date(Date.now() + 30 * 86400000).toISOString() });
       await session.refresh();
+      // `refresh` restores the battle selected by the current URL (or the
+      // first list item). Explicitly select the newly-created battle so the
+      // following edits cannot be written into the previously active one.
+      session.selectBattle(result.battle);
       setSelectedBattlefieldId(result.battle.id);
       setActiveMainView('WAR_ROOM');
       setActiveStandardTab('interview');
