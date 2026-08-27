@@ -115,6 +115,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
       setPersistenceMessage('当前战局还没有可用的分享令牌，请先通过战局协作邀请创建协作者。');
       return;
     }
+    if (!battleId) return;
     const link = `${window.location.origin}/?battle=${encodeURIComponent(battleId)}&token=${encodeURIComponent(board.shareToken)}`;
     void navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
