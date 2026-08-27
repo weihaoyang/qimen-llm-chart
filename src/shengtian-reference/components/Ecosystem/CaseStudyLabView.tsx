@@ -24,10 +24,12 @@ import { TacticalAIService } from '../../services/aiService';
 
 interface CaseStudyLabViewProps {
   battleId?: string;
+  readOnly?: boolean;
 }
 
 export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   battleId,
+  readOnly = false,
 }) => {
   const [cases, setCases] = useState<AnonymousCaseStudy[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
@@ -75,25 +77,26 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   }, [battleId]);
 
   React.useEffect(() => {
-    if (!battleId || !stateHydrated) return;
+    if (!battleId || !stateHydrated || readOnly) return;
     const timer = window.setTimeout(() => {
       void sessionApi.saveModule(battleId, 'case-study-lab', { selectedCaseId, userSelectedChoiceId, hasSimulated, simulationResult })
         .catch((error) => setSimulationError(error instanceof Error ? error.message : '案例推演状态保存失败，请重试。'));
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [battleId, stateHydrated, selectedCaseId, userSelectedChoiceId, hasSimulated, simulationResult]);
+  }, [battleId, stateHydrated, readOnly, selectedCaseId, userSelectedChoiceId, hasSimulated, simulationResult]);
 
   const activeCase = cases.find(c => c.id === selectedCaseId) || cases[0];
 
   if (!activeCase) return <div className="rounded-2xl border border-amber-700/50 bg-amber-950/20 p-6 text-sm text-amber-200">正在加载官方匿名案例目录…</div>;
 
   const handleSelectChoice = (choiceId: string) => {
+    if (readOnly) return;
     setUserSelectedChoiceId(choiceId);
     soundManager.playBlip(750, 0.04);
   };
 
   const handleRunSimulation = async () => {
-    if (!userSelectedChoiceId || !battleId || isSimulating) return;
+    if (readOnly || !userSelectedChoiceId || !battleId || isSimulating) return;
     setSimulationError(null);
     setIsSimulating(true);
     try {
@@ -107,6 +110,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   };
 
   const handleResetSimulation = () => {
+    if (readOnly) return;
     setHasSimulated(false);
     setUserSelectedChoiceId(null);
     setSimulationResult(null);
@@ -308,7 +312,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
           <div className="flex justify-end pt-2">
             <button
               onClick={handleRunSimulation}
-              disabled={!userSelectedChoiceId}
+              disabled={readOnly || !userSelectedChoiceId}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-40 text-black text-xs font-bold font-mono-code flex items-center gap-2 shadow-xl shadow-amber-950/60 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-black" />
@@ -329,6 +333,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
               </div>
               <button
                 onClick={handleResetSimulation}
+                disabled={readOnly}
                 className="px-3 py-1.5 rounded-lg text-xs font-mono-code text-slate-300 hover:text-white bg-slate-900 border border-white/[0.1] flex items-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />

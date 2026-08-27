@@ -30,11 +30,13 @@ import { resolveJob } from '../../services/aiService';
 interface CognitiveDNASandboxProps {
   dnaRecords: DecisionDNARecord[];
   battleId?: string;
+  readOnly?: boolean;
 }
 
 export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
   dnaRecords,
   battleId,
+  readOnly = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'RADAR' | 'INSIGHTS' | 'COUNTERFACTUAL' | 'ARCHIVE'>('RADAR');
   const radar = useMemo<DecisionDNARadarMetrics>(() => {
@@ -65,6 +67,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
   }, [battleId]);
 
   const generateCounterfactual = async () => {
+    if (readOnly) return;
     const record = dnaRecords[0];
     if (!battleId || !record || counterfactualLoading) return;
     setCounterfactualLoading(true);
@@ -303,7 +306,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
             <p className="text-xs text-slate-400 leading-relaxed">
               基于事后已明确的市场真实反应，重新模拟那些“被你放弃的备选路径”。通过反事实对照，看清不同选择背后的真实代价，校准未来决策直觉。
             </p>
-            <button onClick={() => void generateCounterfactual()} disabled={!battleId || !dnaRecords.length || counterfactualLoading} className="mt-3 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
+            <button onClick={() => void generateCounterfactual()} disabled={readOnly || !battleId || !dnaRecords.length || counterfactualLoading} className="mt-3 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40">
               {counterfactualLoading ? '正在生成反事实推演…' : '基于最近一次真实复盘生成替代路径'}
             </button>
             {counterfactualError && <p className="mt-2 text-xs text-red-300">{counterfactualError}</p>}

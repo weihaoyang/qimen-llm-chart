@@ -20,6 +20,7 @@ interface MetaphysicsTimingModalProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onLockExecution?: () => void;
+  readOnly?: boolean;
 }
 
 const deriveTiming = (battleId: string): MetaphysicsTimingState => {
@@ -45,6 +46,7 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   battlefield,
   onUpdateBattlefield,
   onLockExecution,
+  readOnly = false,
 }) => {
   const timing = battlefield.metaphysicsTiming;
   const [isRevealed, setIsRevealed] = useState(timing.isViewed);
@@ -60,6 +62,7 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   if (!isOpen) return null;
 
   const handleReveal = () => {
+    if (readOnly) return;
     setIsRevealed(true);
     onUpdateBattlefield(prev => ({
       ...prev,
@@ -71,6 +74,7 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   };
 
   const handleConfirmAndLock = () => {
+    if (readOnly) return;
     if (onLockExecution) onLockExecution();
     onClose();
     soundManager.playBlip(900, 0.05);
@@ -125,13 +129,13 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
               <Sparkles className="w-8 h-8" />
             </div>
 
-            <button
+            {!readOnly && <button
               onClick={handleReveal}
               className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black text-xs font-bold font-mono-code flex items-center gap-2 shadow-2xl shadow-amber-950/80 cursor-pointer transition-all"
             >
               <Eye className="w-4 h-4" />
               <span>开启天时映照仪式 (Observe Timing)</span>
-            </button>
+            </button>}
           </div>
         ) : (
           /* Cosmic Qi Men Chart Plate */
@@ -168,12 +172,12 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
 
             {/* Lock Action Button */}
             <div className="pt-2 flex justify-end gap-3">
-              <button
+              {!readOnly && <button
                 onClick={onClose}
                 className="px-4 py-2.5 rounded-xl text-xs font-mono-code text-slate-400 hover:text-white bg-slate-900 border border-white/[0.08] cursor-pointer"
               >
                 收纳天时记录
-              </button>
+              </button>}
               <button
                 onClick={handleConfirmAndLock}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white text-xs font-bold font-mono-code flex items-center gap-2 shadow-xl shadow-red-950/60 cursor-pointer"

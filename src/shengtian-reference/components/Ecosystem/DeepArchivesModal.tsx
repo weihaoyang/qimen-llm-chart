@@ -30,6 +30,7 @@ interface DeepArchivesModalProps {
   onClose: () => void;
   userEquity: number;
   onSpendEquity: (amount: number, reason: string) => boolean;
+  readOnly?: boolean;
 }
 
 type CatalogArchive = (typeof DEEP_ARCHIVES_CATALOG)[number];
@@ -40,6 +41,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   onClose,
   userEquity,
   onSpendEquity,
+  readOnly = false,
 }) => {
   const [archives, setArchives] = useState<DeepArchiveItem[]>([]);
   const [selectedArchive, setSelectedArchive] = useState<DeepArchiveItem | null>(null);
@@ -80,6 +82,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   if (!selectedArchive) return <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 text-sm text-red-200">{usageError ?? '官方深网档案目录为空。'}</div>;
 
   const handleUnlock = async (archive: DeepArchiveItem) => {
+    if (readOnly) return;
     if (isRestoring || archive.isUnlocked) return;
     setUsageError(null);
     const nextArchives = archives.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a));
@@ -245,7 +248,7 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
                 </div>
                 <button
                   onClick={() => void handleUnlock(selectedArchive)}
-                  disabled={isRestoring}
+                  disabled={readOnly || isRestoring}
                   className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-mono-code font-bold text-xs shadow-lg shadow-purple-950 cursor-pointer"
                 >
                   解密此历史案例 ({selectedArchive.unlockCostEquity} 权益点)

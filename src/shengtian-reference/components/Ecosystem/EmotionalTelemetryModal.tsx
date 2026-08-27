@@ -19,6 +19,7 @@ interface EmotionalTelemetryModalProps {
   onClose: () => void;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
+  readOnly?: boolean;
 }
 
 export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = ({
@@ -26,6 +27,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
   onClose,
   battlefield,
   onUpdateBattlefield,
+  readOnly = false,
 }) => {
   const telemetry = battlefield.emotionalTelemetry;
   const [energy, setEnergy] = useState(telemetry.energy);
@@ -38,6 +40,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
 
     const today = new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
     const newLog = {
@@ -119,6 +122,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
               min="0"
               max="100"
               value={energy}
+              disabled={readOnly}
               onChange={(e) => setEnergy(Number(e.target.value))}
               className="w-full accent-emerald-500"
             />
@@ -140,6 +144,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
               min="0"
               max="100"
               value={stress}
+              disabled={readOnly}
               onChange={(e) => setStress(Number(e.target.value))}
               className="w-full accent-red-500"
             />
@@ -161,6 +166,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
               min="0"
               max="100"
               value={confidence}
+              disabled={readOnly}
               onChange={(e) => setConfidence(Number(e.target.value))}
               className="w-full accent-blue-500"
             />
@@ -172,6 +178,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
             <input 
               type="text"
               value={note}
+              disabled={readOnly}
               onChange={(e) => setNote(e.target.value)}
               placeholder="例如：刚收到对方邮件，心跳加快，准备深呼吸后再回复..."
               className="w-full bg-black/60 border border-white/[0.1] rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-red-500"
@@ -186,13 +193,13 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
 
           {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
-            <button
+            {!readOnly && <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-xl text-xs font-mono-code text-slate-400 hover:text-white bg-slate-900 border border-white/[0.08] cursor-pointer"
             >
               取消
-            </button>
+            </button>}
             <button
               type="submit"
               className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold font-mono-code flex items-center gap-1.5 shadow-lg shadow-red-950/60 cursor-pointer"

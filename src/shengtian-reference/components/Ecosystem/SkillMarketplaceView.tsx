@@ -12,6 +12,7 @@ import { sessionApi } from '../../session/api';
 
 interface SkillMarketplaceViewProps {
   battleId?: string;
+  readOnly?: boolean;
   onLoadTemplate?: (templateId: string) => void;
   userEquity?: number;
   onRequestPurchase?: (item: SkillMarketplaceItem) => void;
@@ -19,6 +20,7 @@ interface SkillMarketplaceViewProps {
 
 export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
   battleId,
+  readOnly = false,
   onLoadTemplate,
   userEquity,
   onRequestPurchase,
@@ -56,6 +58,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
   }, [battleId]);
 
   const handlePurchase = (item: SkillMarketplaceItem) => {
+    if (readOnly) return;
     if (ownedTemplateIds.includes(item.id)) {
       if (onLoadTemplate) onLoadTemplate(item.id);
       return;
@@ -228,7 +231,7 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
 
                   <button
                     onClick={() => handlePurchase(item)}
-                    disabled={activatingId === item.id}
+                    disabled={readOnly || activatingId === item.id}
                     className={`px-4 py-2 rounded-xl text-xs font-bold font-mono-code flex items-center gap-1.5 transition-all cursor-pointer shadow-md ${
                       ownedTemplateIds.includes(item.id)
                         ? 'bg-emerald-600 hover:bg-emerald-500 text-white'

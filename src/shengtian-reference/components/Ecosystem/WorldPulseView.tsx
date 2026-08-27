@@ -21,6 +21,7 @@ import {
 
 interface WorldPulseViewProps {
   battleId?: string;
+  readOnly?: boolean;
   userEquity: number;
   onSpendEquity: (amount: number, title: string) => boolean;
   onInterveneEvent: (event: WorldPulseEvent) => void;
@@ -31,6 +32,7 @@ type EnhancedPulseEvent = CatalogPulseEvent;
 
 export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   battleId,
+  readOnly = false,
   userEquity,
   onSpendEquity,
   onInterveneEvent,
@@ -302,6 +304,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   }, [events, selectedEvent]);
 
   const handleIntervene = async (event: EnhancedPulseEvent) => {
+    if (readOnly) return;
     if (intervenedEvents.includes(event.id)) {
       onInterveneEvent(event);
       return;
@@ -544,6 +547,7 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
                 </button>
                 <button
                   onClick={() => handleIntervene(selectedEvent)}
+                  disabled={readOnly}
                   className="py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono-code font-bold text-sm shadow-[0_0_15px_rgba(0,229,255,0.4)] flex items-center justify-center gap-2 transition-all"
                 >
                   <Zap className="w-4 h-4" />

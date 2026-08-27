@@ -963,6 +963,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {activeMainView === 'WORLD_PULSE' && (
           <WorldPulseView
             battleId={session.activeBattle?.id}
+            readOnly={!canWriteBattle}
             userEquity={userProfile.equityBalance}
             onSpendEquity={handleSpendEquity}
             onInterveneEvent={handleInterveneWorldEvent}
@@ -974,6 +975,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           <div className="space-y-4">
             <CaseStudyLabView
               battleId={session.activeBattle?.id}
+              readOnly={!canWriteBattle}
             />
           </div>
         )}
@@ -984,6 +986,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
             <CognitiveDNASandbox
               dnaRecords={dnaRecords}
               battleId={session.activeBattle?.id}
+              readOnly={!canWriteBattle}
             />
           </div>
         )}
@@ -993,6 +996,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           <div className="space-y-4">
             <SkillMarketplaceView
               battleId={session.activeBattle?.id}
+              readOnly={!canWriteBattle}
               userEquity={userProfile.equityBalance}
               onRequestPurchase={() => setIsStoreModalOpen(true)}
               onLoadTemplate={() => {
@@ -1050,6 +1054,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onResolveDustEvent={handleResolveDustEvent}
         onClaimEquilibriumReward={handleClaimEquilibriumReward}
         userEquity={userProfile.equityBalance}
+        readOnly={!canWriteBattle}
       />
 
       {/* 2. Archon Sanctum Modal (终极的向往 - 执政官阶层圣殿) */}
@@ -1061,6 +1066,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onAddArchiveAnnotation={handleAddArchiveAnnotation}
         userEquity={userProfile.equityBalance}
         battleId={session.activeBattle?.id}
+        readOnly={!canWriteBattle}
       />
 
       {/* 3. AI Symbiote Hub Modal (情感的纽带 - AI共生体中枢) */}
@@ -1070,6 +1076,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         battleId={session.activeBattle?.id}
         symbiote={symbioteState}
         onUpdateSymbioteName={handleUpdateSymbioteName}
+        readOnly={!canWriteBattle}
       />
 
       {/* Deep Archives Modal (History Snaps & Easter Egg) */}
@@ -1079,6 +1086,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         battleId={session.activeBattle?.id}
         userEquity={userProfile.equityBalance}
         onSpendEquity={handleSpendEquity}
+        readOnly={!canWriteBattle}
       />
 
       {/* Deduction Equity Store Modal */}
@@ -1164,6 +1172,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsEmotionalModalOpen(false)}
         battlefield={battlefield}
         onUpdateBattlefield={updateBattlefield}
+        readOnly={!canWriteBattle}
       />
 
       {/* Value Calibrator Modal */}
@@ -1172,6 +1181,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsValueModalOpen(false)}
         battlefield={battlefield}
         onUpdateBattlefield={updateBattlefield}
+        readOnly={!canWriteBattle}
       />
 
       {/* Metaphysics Timing Modal */}
@@ -1180,6 +1190,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsMetaphysicsModalOpen(false)}
         battlefield={battlefield}
         onUpdateBattlefield={updateBattlefield}
+        readOnly={!canWriteBattle}
       />
 
       {/* Silent Observer Alerts Modal */}

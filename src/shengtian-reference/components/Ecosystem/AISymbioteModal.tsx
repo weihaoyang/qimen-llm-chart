@@ -34,6 +34,7 @@ interface AISymbioteModalProps {
   onClose: () => void;
   symbiote: AISymbioteState;
   onUpdateSymbioteName: (newName: string) => void;
+  readOnly?: boolean;
 }
 
 export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
@@ -42,6 +43,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   onClose,
   symbiote,
   onUpdateSymbioteName,
+  readOnly = false,
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(symbiote.customName);
@@ -65,11 +67,13 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   }, [isOpen, battleId]);
 
   const handleDeleteMemory = async (id: string) => {
+    if (readOnly) return;
     try { await sessionApi.deleteMemory(id); setMemories((current) => current.filter((memory) => memory.id !== id)); }
     catch (error) { setMemoryError(error instanceof Error ? error.message : '删除记忆失败，请重试。'); }
   };
 
   const handleSetMemoryConsent = async (id: string, consentStatus: 'active' | 'paused' | 'revoked') => {
+    if (readOnly) return;
     try {
       const row = (await sessionApi.memories()).memories.find((item) => String(item.id) === id);
       if (!row) throw new Error('记忆不存在或已被删除。');
@@ -81,6 +85,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   if (!isOpen) return null;
 
   const handleSaveName = () => {
+    if (readOnly) return;
     if (!nameInput.trim()) return;
     onUpdateSymbioteName(nameInput.trim());
     setIsEditingName(false);
@@ -140,6 +145,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                 {!isEditingName && (
                   <button
                     onClick={() => setIsEditingName(true)}
+                    disabled={readOnly}
                     className="p-1 rounded-lg hover:bg-white/[0.05] text-slate-400 hover:text-cyan-300 text-xs flex items-center gap-1 cursor-pointer font-mono-code"
                   >
                     <Edit3 className="w-3 h-3" />
@@ -153,12 +159,14 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                   <input
                     type="text"
                     value={nameInput}
+                    disabled={readOnly}
                     onChange={(e) => setNameInput(e.target.value)}
                     className="bg-black border border-cyan-500/70 rounded-xl px-3 py-1.5 text-sm text-white font-mono-code font-bold focus:outline-none flex-1"
                     placeholder="输入共生体专属昵称..."
                   />
                   <button
                     onClick={handleSaveName}
+                    disabled={readOnly}
                     className="p-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-black font-bold cursor-pointer"
                   >
                     <Check className="w-4 h-4" />
@@ -272,9 +280,9 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                     <span className="text-amber-300/90">启示: {mem.lessonLearned}</span>
                     <span className="flex items-center gap-2">{mem.timestamp}
                       <span className={memoryStatuses[mem.id] === 'paused' ? 'text-amber-300' : memoryStatuses[mem.id] === 'revoked' ? 'text-red-300' : 'text-emerald-300'}>{memoryStatuses[mem.id] === 'paused' ? '已暂停' : memoryStatuses[mem.id] === 'revoked' ? '已撤销' : '已授权'}</span>
-                      {memoryStatuses[mem.id] === 'active' ? <button onClick={() => void handleSetMemoryConsent(mem.id, 'paused')} className="text-amber-300 hover:text-amber-200">暂停学习</button> : <button onClick={() => void handleSetMemoryConsent(mem.id, 'active')} className="text-cyan-300 hover:text-cyan-200">恢复学习</button>}
-                      <button onClick={() => void handleSetMemoryConsent(mem.id, 'revoked')} className="text-red-300 hover:text-red-200">撤销</button>
-                      <button onClick={() => void handleDeleteMemory(mem.id)} className="text-red-300 hover:text-red-200">删除</button>
+                      {memoryStatuses[mem.id] === 'active' ? <button disabled={readOnly} onClick={() => void handleSetMemoryConsent(mem.id, 'paused')} className="text-amber-300 hover:text-amber-200 disabled:opacity-40">暂停学习</button> : <button disabled={readOnly} onClick={() => void handleSetMemoryConsent(mem.id, 'active')} className="text-cyan-300 hover:text-cyan-200 disabled:opacity-40">恢复学习</button>}
+                      <button disabled={readOnly} onClick={() => void handleSetMemoryConsent(mem.id, 'revoked')} className="text-red-300 hover:text-red-200 disabled:opacity-40">撤销</button>
+                      <button disabled={readOnly} onClick={() => void handleDeleteMemory(mem.id)} className="text-red-300 hover:text-red-200 disabled:opacity-40">删除</button>
                     </span>
                   </div>
                 </div>

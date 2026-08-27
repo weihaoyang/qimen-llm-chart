@@ -39,6 +39,7 @@ interface ArchonSanctumModalProps {
   onAddArchiveAnnotation: (archiveId: string, lemma: string, annotation?: ArchonArchiveAnnotation) => void | Promise<void>;
   userEquity: number;
   battleId?: string;
+  readOnly?: boolean;
 }
 
 export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
@@ -49,6 +50,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
   onAddArchiveAnnotation,
   userEquity,
   battleId,
+  readOnly = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'PRECOGNITION' | 'ANNOTATIONS' | 'PROPOSALS'>('PRECOGNITION');
   
@@ -69,6 +71,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
   const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!archonState.privileges.realityProposal) { setError('尚未达到现实提案所需的执政官位阶。'); return; }
     if (!propTitle.trim() || !propDilemma.trim() || submitting) return;
     setError('');
@@ -89,6 +92,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
   const handleAnnotationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!archonState.privileges.archiveAnnotation) { setError('尚未达到档案批注所需的执政官位阶。'); return; }
     if (!newLemma.trim() || submitting) return;
     setError('');
@@ -295,6 +299,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                   <span className="text-amber-300 font-bold">铭刻新引理</span>
                   <select
                     value={selectedArchiveId}
+                    disabled={readOnly}
                     onChange={(e) => setSelectedArchiveId(e.target.value)}
                     className="bg-black border border-white/[0.15] rounded-lg px-2.5 py-1 text-xs text-slate-200"
                   >
@@ -308,6 +313,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                   rows={2}
                   required
                   value={newLemma}
+                  disabled={readOnly}
                   onChange={(e) => setNewLemma(e.target.value)}
                   placeholder="输入你的执政官因果引理（例如：‘所有基于正态分布的杠杆套利模型，在黑天鹅面前本质上都是在压路机前捡硬币...’）"
                   className="w-full bg-black/80 border border-white/[0.1] rounded-xl p-3 text-xs text-white font-serif-sc focus:outline-none focus:border-amber-500"
@@ -316,7 +322,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!archonState.privileges.archiveAnnotation || submitting}
+                    disabled={readOnly || !archonState.privileges.archiveAnnotation || submitting}
                     className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 disabled:opacity-40 text-black font-mono-code font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shadow-md"
                   >
                     <Crown className="w-3.5 h-3.5" />
@@ -367,7 +373,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
                 <button
                   onClick={() => archonState.privileges.realityProposal ? setShowProposalForm(true) : setError('尚未达到现实提案所需的执政官位阶。')}
-                  disabled={!archonState.privileges.realityProposal}
+                  disabled={readOnly || !archonState.privileges.realityProposal}
                   className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 disabled:opacity-40 text-black text-xs font-mono-code font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-950"
                 >
                   <PlusCircle className="w-4 h-4" />
@@ -417,6 +423,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                       type="text"
                       required
                       value={propTitle}
+                      disabled={readOnly}
                       onChange={(e) => setPropTitle(e.target.value)}
                       placeholder="战局标题 (如：全球半导体光刻胶断供生死72小时)"
                       className="w-full bg-black border border-white/[0.1] rounded-xl px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-amber-500"
@@ -425,6 +432,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                       rows={3}
                       required
                       value={propDilemma}
+                      disabled={readOnly}
                       onChange={(e) => setPropDilemma(e.target.value)}
                       placeholder="核心博弈困境与不可逆死线描述..."
                       className="w-full bg-black border border-white/[0.1] rounded-xl p-3 text-xs text-white font-serif-sc focus:outline-none focus:border-amber-500"
@@ -439,6 +447,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                       </button>
                       <button
                         type="submit"
+                        disabled={readOnly || submitting}
                         className="px-4 py-1.5 rounded-lg bg-amber-500 text-black font-bold font-mono-code text-xs"
                       >
                         {submitting ? '提交中…' : '正式提交审查'}

@@ -18,6 +18,7 @@ interface ValueCalibratorModalProps {
   onClose: () => void;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
+  readOnly?: boolean;
 }
 
 export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
@@ -25,6 +26,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   onClose,
   battlefield,
   onUpdateBattlefield,
+  readOnly = false,
 }) => {
   const calibrator = battlefield.valueCalibrator;
   const [values, setValues] = useState<CoreValueItem[]>(calibrator.coreValues);
@@ -46,6 +48,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   if (!isOpen) return null;
 
   const moveUp = (index: number) => {
+    if (readOnly) return;
     if (index === 0) return;
     const next = [...values];
     const temp = next[index];
@@ -60,6 +63,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   };
 
   const moveDown = (index: number) => {
+    if (readOnly) return;
     if (index === values.length - 1) return;
     const next = [...values];
     const temp = next[index];
@@ -74,6 +78,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   };
 
   const handleSave = () => {
+    if (readOnly) return;
     onUpdateBattlefield(prev => ({
       ...prev,
       valueCalibrator: {
@@ -90,6 +95,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   };
 
   const handleAddValue = () => {
+    if (readOnly) return;
     const keyword = newValueKeyword.trim();
     if (!keyword) return;
     setValues((current) => [...current, { id: `value-${Date.now()}`, name: keyword, keyword, description: newValueDescription.trim() || '用户定义的核心价值底线', rank: current.length + 1 }]);
@@ -145,7 +151,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => moveUp(idx)}
-                  disabled={idx === 0}
+                  disabled={readOnly || idx === 0}
                   className="px-2 py-1 rounded bg-slate-900 text-slate-300 hover:text-white disabled:opacity-30 border border-white/[0.06] cursor-pointer text-xs"
                   title="提高优先级"
                 >
@@ -153,7 +159,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
                 </button>
                 <button
                   onClick={() => moveDown(idx)}
-                  disabled={idx === values.length - 1}
+                  disabled={readOnly || idx === values.length - 1}
                   className="px-2 py-1 rounded bg-slate-900 text-slate-300 hover:text-white disabled:opacity-30 border border-white/[0.06] cursor-pointer text-xs"
                   title="降低优先级"
                 >
@@ -165,10 +171,10 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
           <div className="rounded-xl border border-dashed border-purple-700/60 bg-purple-950/20 p-3 space-y-2">
             <div className="text-[11px] text-purple-200">添加你的真实价值底线</div>
             <div className="flex gap-2">
-              <input value={newValueKeyword} onChange={(event) => setNewValueKeyword(event.target.value)} placeholder="例如：团队稳定" className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-black/60 px-2.5 py-2 text-xs text-white" />
-              <button onClick={handleAddValue} disabled={!newValueKeyword.trim()} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">添加</button>
+              <input disabled={readOnly} value={newValueKeyword} onChange={(event) => setNewValueKeyword(event.target.value)} placeholder="例如：团队稳定" className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-black/60 px-2.5 py-2 text-xs text-white" />
+              <button onClick={handleAddValue} disabled={readOnly || !newValueKeyword.trim()} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">添加</button>
             </div>
-            <input value={newValueDescription} onChange={(event) => setNewValueDescription(event.target.value)} placeholder="描述这条底线在决策中的含义（可选）" className="w-full rounded-lg border border-white/[0.1] bg-black/60 px-2.5 py-2 text-xs text-white" />
+            <input disabled={readOnly} value={newValueDescription} onChange={(event) => setNewValueDescription(event.target.value)} placeholder="描述这条底线在决策中的含义（可选）" className="w-full rounded-lg border border-white/[0.1] bg-black/60 px-2.5 py-2 text-xs text-white" />
           </div>
         </div>
 
@@ -196,12 +202,12 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
 
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
-          <button
+          {!readOnly && <button
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-mono-code text-slate-400 hover:text-white bg-slate-900 border border-white/[0.08] cursor-pointer"
           >
             关闭
-          </button>
+          </button>}
           <button
             onClick={handleSave}
             className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold font-mono-code flex items-center gap-1.5 shadow-lg shadow-purple-950/60 cursor-pointer"

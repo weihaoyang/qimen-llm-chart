@@ -35,6 +35,7 @@ interface RealityEchoesModalProps {
   onResolveDustEvent: (echoId: string, eventId: string, option: CausalDustOption) => void;
   onClaimEquilibriumReward: (echoId: string) => void;
   userEquity: number;
+  readOnly?: boolean;
 }
 
 export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
@@ -45,6 +46,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
   onResolveDustEvent,
   onClaimEquilibriumReward,
   userEquity,
+  readOnly = false,
 }) => {
   const [selectedEchoId, setSelectedEchoId] = useState<string>(echoes[0]?.id || '');
   const [resolvingOptionId, setResolvingOptionId] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
   const currentEcho = echoes.find(e => e.id === selectedEchoId) || echoes[0];
 
   const handleExecuteResolution = async (dust: CausalDustEvent, option: CausalDustOption) => {
+    if (readOnly) return;
     if (!currentEcho || dust.status !== 'PENDING') return;
     if (!battleId && userEquity < option.costEquity) {
       soundManager.playBlip(400, 0.08);
@@ -207,7 +210,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   平息所有【因果尘埃】并渡过回响期后，可提交权益核发申请；是否核发以统一平台的审核与 entitlement 结果为准。
                 </p>
-                {currentEcho.equilibriumStatus === 'EQUILIBRIUM_REACHED' && !currentEcho.finalRewardUnlocked && currentEcho.rewardClaimStatus !== 'pending_platform' ? (
+                {currentEcho.equilibriumStatus === 'EQUILIBRIUM_REACHED' && !currentEcho.finalRewardUnlocked && currentEcho.rewardClaimStatus !== 'pending_platform' && !readOnly ? (
                   <button
                     onClick={() => onClaimEquilibriumReward(currentEcho.id)}
                     className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs font-mono-code flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg shadow-amber-950"
@@ -345,7 +348,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
 
                                     <button
                                       onClick={() => void handleExecuteResolution(dust, opt)}
-                                      disabled={resolvingOptionId === opt.id}
+                                      disabled={readOnly || resolvingOptionId === opt.id}
                                       className="py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-bold text-xs font-mono-code flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                                     >
                                       {resolvingOptionId === opt.id ? (
