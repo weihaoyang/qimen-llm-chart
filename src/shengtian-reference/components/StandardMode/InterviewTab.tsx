@@ -112,15 +112,23 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
     }
   };
 
-  const handleAcceptParameter = (messageId: string, parameter: NonNullable<InterviewMessage['parameterExtracted']>) => {
+  const handleAcceptParameter = async (messageId: string, parameter: NonNullable<InterviewMessage['parameterExtracted']>) => {
     if (readOnly) return;
-    onUpdateBattlefield((previous) => ({
-      ...previous,
-      interviewHistory: previous.interviewHistory.map((message) => message.id === messageId ? { ...message, parameterAccepted: true } : message),
-      idealOutcome: parameter.key === 'ideal_outcome' ? String(parameter.value) : previous.idealOutcome,
-      bottomLine: parameter.key === 'bottom_line' ? String(parameter.value) : previous.bottomLine,
-    }));
-    soundManager.playSuccess();
+    const nextValue = String(parameter.value).trim();
+    if (!nextValue) return;
+    try {
+      if (parameter.key === 'ideal_outcome') await sessionApi.updateBattle(battlefield.id, { idealOutcome: nextValue });
+      else if (parameter.key === 'bottom_line') await sessionApi.updateBattle(battlefield.id, { minimumOutcome: nextValue });
+      onUpdateBattlefield((previous) => ({
+        ...previous,
+        interviewHistory: previous.interviewHistory.map((message) => message.id === messageId ? { ...message, parameterAccepted: true } : message),
+        idealOutcome: parameter.key === 'ideal_outcome' ? nextValue : previous.idealOutcome,
+        bottomLine: parameter.key === 'bottom_line' ? nextValue : previous.bottomLine,
+      }));
+      soundManager.playSuccess();
+    } catch (error) {
+      onUpdateBattlefield((previous) => ({ ...previous, interviewHistory: previous.interviewHistory.map((message) => message.id === messageId ? { ...message, text: `${message.text}\n\n[参数确认写入失败：${error instanceof Error ? error.message : '请重试'}]` } : message) }));
+    }
   };
 
   // Quick preset answers for instant exploration
