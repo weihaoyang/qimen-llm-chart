@@ -653,10 +653,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     }
     // Activation is a billable operation. The idempotency key is stable for
     // this battle so double-clicks/retries recover the same reservation.
-    await sessionApi.consumeUsage(
+    await sessionApi.consumeUsageAndSaveModule(
       battleId,
       'breakthrough_activation',
       `breakthrough-activation:${battleId}`,
+      'battlefield-aux',
+      { breakthroughActive: true, breakthroughPhase: 1, forcedWorstCaseActive: true },
     );
     setIsBreakthroughModalOpen(false);
     setActiveMainView('WAR_ROOM');
