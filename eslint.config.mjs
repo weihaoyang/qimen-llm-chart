@@ -16,6 +16,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "outputs/**",
     "build/**",
+    // God's Eye View is a separately-built static renderer mounted under
+    // public/. Its minified Vite output is not qmdj source and should not be
+    // parsed by the application lint pass.
+    "gods-eye-view/**",
+    "public/gods-eye-view/**",
     "node_modules/**",
     ".superpowers/**",
     "next-env.d.ts",
