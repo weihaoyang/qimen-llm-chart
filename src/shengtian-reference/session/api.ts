@@ -74,6 +74,7 @@ export const sessionApi = {
   replaceConstraints: (id:string, constraints:Array<Record<string, unknown>>) => request<{ constraints: Array<Record<string, unknown>> }>(`/api/battles/${id}/constraints`, { method:'PUT', body:JSON.stringify({ constraints }) }),
   triggerBreaker: (id:string, moveId:string, breakerId:string) => request<{ breaker: Record<string, unknown> }>(`/api/battles/${id}/moves/${moveId}/execution`, { method:"PATCH", body:JSON.stringify({ action:"trigger_breaker", breakerId }) }),
   consumeUsage: (id:string, operation:string, idempotencyKey:string) => request<{ usage: unknown }>(`/api/battles/${id}/usage`, { method:"POST", body:JSON.stringify({ operation, idempotencyKey }) }),
+  consumeUsageAndSaveModule: (id:string, operation:string, idempotencyKey:string, moduleId:string, state:Record<string,unknown>, consent:Record<string,unknown> = {}) => request<{ usage:unknown; module:unknown; reused?:boolean }>(`/api/battles/${id}/usage`, { method:"POST", body:JSON.stringify({ operation,idempotencyKey,moduleUpdate:{ moduleId,state,consent } }) }),
   clone: (scenarioId:string) => request<{ battle:{ battleId:string; scenarioId:string; scenarioVersion:number; sourceType:string } }>(`/api/scenarios/${scenarioId}/clone`, { method:"POST", body:JSON.stringify({}) }),
   create: (input: Record<string, unknown>) => request<{ battle: SessionBattle }>("/api/battles", { method:"POST", body:JSON.stringify(input) }),
   module: (battleId:string, moduleId:string) => request<{ state: unknown }>(`/api/battles/${battleId}/modules/${moduleId}`),

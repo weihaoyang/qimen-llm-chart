@@ -63,9 +63,15 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
 
     setResolvingOptionId(option.id);
     setUsageError(null);
+    const nextEchoes = echoes.map((echo) => {
+      if (echo.id !== currentEcho.id) return echo;
+      const causalDustEvents = echo.causalDustEvents.map((event) => event.id === dust.id ? { ...event, status:'RESOLVED' as const, resolvedOptionId:option.id, resolvedAt:new Date().toISOString(), resolutionFeedback:`你执行了【${option.action}】。${option.rewardDesc}` } : event);
+      const equilibriumProgress = Math.min(100,echo.equilibriumProgress+35);
+      return { ...echo,causalDustEvents,equilibriumProgress,equilibriumStatus:equilibriumProgress>=100 ? 'EQUILIBRIUM_REACHED' as const : echo.equilibriumStatus };
+    });
     if (battleId) {
       try {
-        await sessionApi.consumeUsage(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${dust.id}:${option.id}`);
+        await sessionApi.consumeUsageAndSaveModule(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${dust.id}:${option.id}`, 'reality-echoes', { items:nextEchoes });
       } catch (error) {
         setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
         setResolvingOptionId(null);

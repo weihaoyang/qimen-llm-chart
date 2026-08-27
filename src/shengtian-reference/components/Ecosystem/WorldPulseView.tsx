@@ -308,15 +308,13 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
     }
     setUsageError(null);
     let success = true;
+    const nextEvents = Array.from(new Set([...intervenedEvents, event.id]));
     if (battleId) {
-      try { await sessionApi.consumeUsage(battleId, 'world_pulse_intervention', `world-pulse:${battleId}:${event.id}`); }
+      try { await sessionApi.consumeUsageAndSaveModule(battleId, 'world_pulse_intervention', `world-pulse:${battleId}:${event.id}`, 'world-pulse', { intervenedEventIds:nextEvents }); }
       catch (error) { setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); success = false; }
     } else success = onSpendEquity(event.equityCostToIntervene, `介入奇点事件：${event.title}`);
     if (success) {
-      const nextEvents = Array.from(new Set([...intervenedEvents, event.id]));
       setIntervenedEvents(nextEvents);
-      if (battleId) void sessionApi.saveModule(battleId, 'world-pulse', { intervenedEventIds: nextEvents })
-        .catch((error) => setUsageError(error instanceof Error ? error.message : '世界脉搏介入状态保存失败，请重试。'));
       soundManager.playStrategyLocked();
       confetti({
         particleCount: 120,

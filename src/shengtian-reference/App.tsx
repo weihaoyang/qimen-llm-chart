@@ -149,6 +149,7 @@ export default function App() {
 
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
   const canWriteBattle = session.activeBattle?.accessRole !== 'viewer';
+  const respondInvitation = session.respondInvitation;
   const moduleHydratedRef = React.useRef<Record<string, boolean>>({});
   const inviteHandledRef = React.useRef<string | null>(null);
   const emptyDecisionBoard: DecisionBoardState = {
@@ -169,14 +170,14 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     const inviteId = new URLSearchParams(window.location.search).get('invite');
     if (!inviteId || inviteHandledRef.current === inviteId) return;
     inviteHandledRef.current = inviteId;
-    void session.respondInvitation(inviteId, 'accept').then(() => {
+    void respondInvitation(inviteId, 'accept').then(() => {
       const url = new URL(window.location.href);
       url.searchParams.delete('invite');
       window.history.replaceState({}, '', url);
     }).catch(() => {
       inviteHandledRef.current = null;
     });
-  }, [session.respondInvitation]);
+  }, [respondInvitation]);
   
   // User Calibration & Sigil State
   const [, setIsCalibrated] = useState(false);
@@ -733,6 +734,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   const handleCreateConclave = (newConclave: Partial<ObserverConclave>) => {
+    if (newConclave.id && newConclave.members && newConclave.activeCollectiveSimulations && newConclave.recentAnnouncements) {
+      setConclaves((previous) => [newConclave as ObserverConclave,...previous]);
+      return;
+    }
     const fullConclave: ObserverConclave = {
       id: `conclave-${Date.now()}`,
       name: newConclave.name || '新因果密会',
@@ -804,13 +809,13 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   // 3. Archon Tier Handlers
   const handleSubmitRealityProposal = (proposal: Partial<ArchonRealityProposal>) => {
     const newProp: ArchonRealityProposal = {
-      id: `prop-${Date.now()}`,
+      id: proposal.id || `prop-${crypto.randomUUID()}`,
       title: proposal.title || '全新现实危机提案',
       crisisType: proposal.crisisType || '产业结构性危机',
       industry: proposal.industry || '硬科技 / 先进制造',
       backgroundDilemma: proposal.backgroundDilemma || '',
       status: 'SUBMITTED',
-      submittedAt: new Date().toISOString(),
+      submittedAt: proposal.submittedAt || new Date().toISOString(),
       bountyEquityReward: 0,
       observersIntervenedCount: 0,
       communitySuccessRate: 0,
@@ -822,11 +827,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     }));
   };
 
-  const handleAddArchiveAnnotation = (archiveId: string, lemma: string) => {
+  const handleAddArchiveAnnotation = (archiveId: string, lemma: string, annotation?: ArchonTierState['archiveAnnotations'][number]) => {
     setArchonState(prev => ({
       ...prev,
       archiveAnnotations: [
-        {
+        annotation ?? {
           id: `ann-${Date.now()}`,
           archiveId,
           archiveTitle: archiveId.includes('ltcm') ? '1998 LTCM 长期资本管理公司奇点' : '1982 强生泰诺投毒公关保卫战',
@@ -930,6 +935,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           <ObserverConclavesView
             battleId={session.activeBattle?.id ?? battlefield.id}
             readOnly={!canWriteBattle}
+            currentUserId={userProfile.id}
+            currentUserName={userProfile.username}
+            currentUserSigil={userProfile.sigil?.name || '【未命名执棋者】'}
             conclaves={conclaves}
             userEquity={userProfile.equityBalance}
             onInjectEquityToConclave={handleInjectEquityToConclave}

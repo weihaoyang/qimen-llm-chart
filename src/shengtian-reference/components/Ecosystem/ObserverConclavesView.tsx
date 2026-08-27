@@ -35,6 +35,9 @@ import {
 interface ObserverConclavesViewProps {
   battleId: string;
   readOnly?: boolean;
+  currentUserId: string;
+  currentUserName: string;
+  currentUserSigil: string;
   conclaves: ObserverConclave[];
   userEquity: number;
   onInjectEquityToConclave: (conclaveId: string, amount: number) => void;
@@ -46,6 +49,9 @@ interface ObserverConclavesViewProps {
 export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   battleId,
   readOnly = false,
+  currentUserId,
+  currentUserName,
+  currentUserSigil,
   conclaves,
   userEquity,
   onInjectEquityToConclave,
@@ -105,7 +111,8 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
       return;
     }
     try {
-      if (battleId) await sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-inject:${battleId}:${currentConclave.id}:${equityInput}`);
+      const nextConclaves = conclaves.map((item) => item.id === currentConclave.id ? { ...item,collectiveEquityPool:item.collectiveEquityPool+equityInput } : item);
+      if (battleId) await sessionApi.consumeUsageAndSaveModule(battleId, 'conclave_action', `conclave-inject:${battleId}:${currentConclave.id}:${equityInput}`, 'observer-conclaves', { items:nextConclaves });
       onInjectEquityToConclave(currentConclave.id, equityInput);
       soundManager.playSuccess();
     } catch (error) { setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); }
@@ -116,23 +123,11 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
     if (readOnly) return;
     if (!newName.trim() || !newDoctrine.trim()) return;
 
+    const fullConclave: ObserverConclave = { id:`conclave-${crypto.randomUUID()}`,name:newName.trim(),codeName:newCodeName.toUpperCase()||'NEW CONCLAVE',sigilIcon:'Shield',glowColor:newGlowColor,doctrine:newDoctrine.trim(),level:1,founderName:currentUserName,membersCount:1,maxMembers:10,collectiveEquityPool:100,intervenedWorldEventsCount:0,globalRank:conclaves.length+1,isUserMember:true,userRole:'GRAND_MASTER',activeCollectiveSimulations:[],members:[{ id:currentUserId,name:`${currentUserName} (你)`,avatar:'你',role:'GRAND_MASTER',roleTitle:'密会创始人',sigilName:currentUserSigil,equityContributed:100,joinedAt:new Date().toISOString(),isUser:true }],recentAnnouncements:[{ id:`announcement-${crypto.randomUUID()}`,title:'密会正式建立',content:'密会公共因果网络已连通。',timestamp:new Date().toISOString() }] };
     try {
-      if (battleId) await sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-create:${battleId}:${newName.trim()}`);
+      if (battleId) await sessionApi.consumeUsageAndSaveModule(battleId, 'conclave_action', `conclave-create:${battleId}:${newName.trim()}`, 'observer-conclaves', { items:[fullConclave,...conclaves] });
     } catch (error) { setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); return; }
-    onCreateConclave({
-      name: newName,
-      codeName: newCodeName.toUpperCase() || 'NEW CONCLAVE',
-      doctrine: newDoctrine,
-      glowColor: newGlowColor,
-      level: 1,
-      membersCount: 1,
-      maxMembers: 10,
-      collectiveEquityPool: 100,
-      intervenedWorldEventsCount: 0,
-      globalRank: conclaves.length + 1,
-      isUserMember: true,
-      userRole: 'GRAND_MASTER',
-    });
+    onCreateConclave(fullConclave);
 
     setShowCreateModal(false);
     setNewName('');
@@ -144,7 +139,8 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
     if (readOnly) return;
     if (!newActionInput.trim() || !currentConclave) return;
     if (battleId) {
-      void sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-action:${battleId}:${currentConclave.id}:${simId}:${newActionInput.trim()}`).then(() => onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput)).catch((error) => setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'));
+      const nextConclaves = conclaves.map((item) => item.id !== currentConclave.id ? item : { ...item,activeCollectiveSimulations:item.activeCollectiveSimulations.map((simulation) => simulation.id !== simId ? simulation : { ...simulation,alphaProbability:Math.min(0.99,simulation.alphaProbability+0.12),synchronizedActions:[...simulation.synchronizedActions,{ memberRole:'高阶执棋官 (你)',actionName:newActionInput.trim(),impactAlpha:0.12,executedAt:new Date().toISOString() }] }) });
+      void sessionApi.consumeUsageAndSaveModule(battleId, 'conclave_action', `conclave-action:${battleId}:${currentConclave.id}:${simId}:${newActionInput.trim()}`, 'observer-conclaves', { items:nextConclaves }).then(() => onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput)).catch((error) => setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'));
     } else onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput);
     setNewActionInput('');
     soundManager.playStrategyLocked();

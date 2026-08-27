@@ -80,25 +80,43 @@ export async function saveModuleState(subject: AccountSubject, battleId: string,
   });
 }
 
-export async function beginUsageOperation(subject: AccountSubject, battleId: string, operation: string, idempotencyKey: string) {
+export async function beginUsageOperation(subject: AccountSubject, battleId: string, operation: string, idempotencyKey: string, payloadHash: string) {
   return withTransaction(async (client) => {
     const access = await client.query(`SELECT id FROM battle_cases b WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR ${writableCollaborator}) FOR UPDATE`, [battleId, ...owner(subject)]);
     if (!access.rowCount) return null;
-    const existing = await client.query<{ id:string; status:string; usage_json:unknown; error_message:string|null }>(`SELECT id,status,usage_json,error_message FROM battle_usage_operations WHERE battle_id=$1 AND operation=$2 AND idempotency_key=$3 FOR UPDATE`, [battleId, operation, idempotencyKey]);
-    if (existing.rowCount) return { operationId: existing.rows[0].id, status: existing.rows[0].status, usage: existing.rows[0].usage_json, errorMessage: existing.rows[0].error_message, reused: true };
+    const existing = await client.query<{ id:string; status:string; usage_json:unknown; error_message:string|null; payload_hash:string; reservation_id:string|null }>(`SELECT id,status,usage_json,error_message,payload_hash,reservation_id FROM battle_usage_operations WHERE battle_id=$1 AND operation=$2 AND idempotency_key=$3 FOR UPDATE`, [battleId, operation,idempotencyKey]);
+    if (existing.rowCount) {
+      const row = existing.rows[0];
+      if (row.payload_hash && row.payload_hash !== payloadHash) return { operationId:row.id,status:"conflict",usage:row.usage_json,reservationId:row.reservation_id,errorMessage:"幂等键已绑定到不同的业务状态。",reused:true };
+      if (row.status === "failed") {
+        await client.query(`UPDATE battle_usage_operations SET status='pending',payload_hash=$2,reservation_id=NULL,usage_json=NULL,error_message=NULL,completed_at=NULL WHERE id=$1`,[row.id,payloadHash]);
+        return { operationId:row.id,status:"pending",usage:null,reservationId:null,errorMessage:null,reused:false };
+      }
+      return { operationId:row.id,status:row.status,usage:row.usage_json,reservationId:row.reservation_id,errorMessage:row.error_message,reused:true };
+    }
     const id = randomUUID();
-    await client.query(`INSERT INTO battle_usage_operations(id,battle_id,operation,idempotency_key,status) VALUES($1,$2,$3,$4,'pending')`, [id, battleId, operation, idempotencyKey]);
-    return { operationId: id, status: 'pending', usage: null, errorMessage: null, reused: false };
+    await client.query(`INSERT INTO battle_usage_operations(id,battle_id,operation,idempotency_key,status,payload_hash) VALUES($1,$2,$3,$4,'pending',$5)`, [id, battleId, operation, idempotencyKey,payloadHash]);
+    return { operationId:id,status:'pending',usage:null,reservationId:null,errorMessage:null,reused:false };
   });
 }
 
+export async function setUsageOperationReservation(subject: AccountSubject,battleId:string,operationId:string,reservationId:string) {
+  const result = await query(`UPDATE battle_usage_operations u SET reservation_id=$4 FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status='pending' AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))`,[operationId,battleId,subject.subjectType,reservationId,subject.subjectId]);
+  return Boolean(result.rowCount);
+}
+
+export async function markUsageOperationCharged(subject: AccountSubject, battleId: string, operationId: string, usage: unknown) {
+  const result = await query(`UPDATE battle_usage_operations u SET status='charged',usage_json=$4::jsonb FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status='pending' AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))`,[operationId,battleId,subject.subjectType,JSON.stringify(usage ?? {}),subject.subjectId]);
+  return Boolean(result.rowCount);
+}
+
 export async function finishUsageOperation(subject: AccountSubject, battleId: string, operationId: string, usage: unknown) {
-  const result = await query(`UPDATE battle_usage_operations u SET status='succeeded',usage_json=$4::jsonb,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, JSON.stringify(usage ?? {}), subject.subjectId]);
+  const result = await query(`UPDATE battle_usage_operations u SET status='succeeded',usage_json=$4::jsonb,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status IN ('pending','charged') AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, JSON.stringify(usage ?? {}), subject.subjectId]);
   return Boolean(result.rowCount);
 }
 
 export async function failUsageOperation(subject: AccountSubject, battleId: string, operationId: string, message: string) {
-  const result = await query(`UPDATE battle_usage_operations u SET status='failed',error_message=$4,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, message, subject.subjectId]);
+  const result = await query(`UPDATE battle_usage_operations u SET status='failed',reservation_id=NULL,error_message=$4,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, message, subject.subjectId]);
   return Boolean(result.rowCount);
 }
 

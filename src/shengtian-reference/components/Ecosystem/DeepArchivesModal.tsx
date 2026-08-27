@@ -82,9 +82,10 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
   const handleUnlock = async (archive: DeepArchiveItem) => {
     if (isRestoring || archive.isUnlocked) return;
     setUsageError(null);
+    const nextArchives = archives.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a));
     if (battleId) {
       try {
-        await sessionApi.consumeUsage(battleId, 'deep_archive_unlock', `deep-archive:${battleId}:${archive.id}`);
+        await sessionApi.consumeUsageAndSaveModule(battleId, 'deep_archive_unlock', `deep-archive:${battleId}:${archive.id}`, 'deep-archives', { unlockedIds:nextArchives.filter((item) => item.isUnlocked).map((item) => item.id) });
       } catch (error) {
         setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
         return;
@@ -96,10 +97,8 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
 
     window.setTimeout(() => {
       setIsRestoring(false);
-      const nextArchives = archives.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a));
       setArchives(nextArchives);
       setSelectedArchive(prev => prev ? { ...prev, isUnlocked: true } : prev);
-      if (battleId) void sessionApi.saveModule(battleId, 'deep-archives', { unlockedIds: nextArchives.filter((item) => item.isUnlocked).map((item) => item.id) }).catch((error) => setUsageError(error instanceof Error ? error.message : '档案解锁状态保存失败，请重试。'));
       soundManager.playStrategyLocked();
       confetti({
         particleCount: 70,
