@@ -9,8 +9,19 @@ const json = (value: unknown) => JSON.stringify(value ?? {});
 const parse = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
 
 function redactViewerModule(moduleId: string, state: Record<string, unknown>) {
-  if (moduleId !== "decision-board") return state;
   const redacted: Record<string, unknown> = { ...state };
+  if (moduleId === "ai-symbiote") {
+    // Long-term memories are account-private even when the battle is shared.
+    // Expose aggregate bond progress, never the memory text/source.
+    if (Array.isArray(redacted.longTermMemories)) redacted.longTermMemories = redacted.longTermMemories.map((memory) => {
+      const item = parse(memory);
+      return { id:item.id, title:"已授权记忆", consentStatus:item.consentStatus ?? "active", updatedAt:item.updatedAt };
+    });
+    delete redacted.adaptiveToneNotes;
+    delete redacted.dialogueTendency;
+    return redacted;
+  }
+  if (moduleId !== "decision-board") return state;
   delete redacted.shareToken;
   delete redacted.roomToken;
   if (Array.isArray(redacted.comments)) {
