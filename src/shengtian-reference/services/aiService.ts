@@ -2,6 +2,34 @@ import { BattlefieldState, CardAsset, AsymmetricStrategyPackage, InterviewMessag
 import { sessionApi } from '../session/api';
 
 const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+
+const asJsonObject = (value: unknown): Record<string, unknown> | null => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value !== 'string') return null;
+  try {
+    const parsed = JSON.parse(value.replace(/^```json\s*/i, '').replace(/```$/i, '').trim());
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Extract the one user-visible question from the interview contract.
+ *
+ * The fatal-question affordance deliberately reuses the audited interview
+ * job. It must therefore understand its full structured result instead of
+ * expecting the model to return an ad-hoc text or summary field.
+ */
+export const fatalQuestionFromInterviewResult = (value: unknown): string | null => {
+  const result = asJsonObject(value);
+  if (!result) return typeof value === 'string' && value.trim() ? value.trim() : null;
+  for (const key of ['assistantMessage', 'nextQuestion', 'summary'] as const) {
+    const candidate = result[key];
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+  return null;
+};
+
 export const resolveJob = async (battleId: string, initial: unknown) => {
   if (!initial || typeof initial !== 'object') return initial;
   const job = initial as Record<string, unknown>;
@@ -130,12 +158,18 @@ export class TacticalAIService {
       const response = await fetch(`/api/battles/${battlefield.id}/ai/interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify({ idempotencyKey, question: `请针对策略“${strategyName}”提出一个致命且具体的单句问题。` })
+        body: JSON.stringify({
+          idempotencyKey,
+          history: [],
+          question: `请针对策略“${strategyName}”提出一个致命且具体的单句问题。必须严格返回 interview JSON：assistantMessage 为该问题；extractedFacts、extractedConstraints、updatedFields 均为 []；nextQuestion 为同一问题；confidence 为 0 到 1 的数字。不要返回 Markdown 或其他字段。`,
+        })
       });
       if (!response.ok) throw new Error(`致命问题服务请求失败（${response.status}）`);
       const data = await response.json();
       const result = await resolveJob(String(battlefield.id), data.job);
-      return String(typeof result === 'string' ? result : result ? (result as { summary?: unknown }).summary ?? JSON.stringify(result) : data.analysis || data.text || '').trim();
+      const question = fatalQuestionFromInterviewResult(result ?? data.analysis ?? data.text);
+      if (!question) throw new Error('致命问题服务没有返回 interview 合约中的问题文本。');
+      return question;
     } catch (e) {
       throw e instanceof Error ? e : new Error('致命问题服务暂时不可用，请重试。');
     }
