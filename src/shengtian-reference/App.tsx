@@ -222,8 +222,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
   useEffect(() => {
     let cancelled = false;
-    void sessionApi.profile().then(({ profile, archonProgress }) => {
+    void Promise.all([sessionApi.profile(), sessionApi.entitlement()]).then(([{ profile, archonProgress }, { usage }]) => {
       setVerifiedArchonProgress(archonProgress);
+      setUserProfile((previous) => ({ ...previous, equityBalance: Math.max(0, usage.available - usage.reserved) }));
       const saved = profile?.profile?.uiProfile;
       if (cancelled) return;
       if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
