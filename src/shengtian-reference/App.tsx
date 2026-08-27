@@ -901,6 +901,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
             <SingularityDeductionView
               battlefield={battlefield}
               battleId={session.activeBattle?.id ?? battlefield.id}
+              readOnly={!canWriteBattle}
               onUpdateBattlefield={updateBattlefield}
               onExitSingularityMode={handleExitSingularity}
               onSaveDNARecord={handleSaveDNARecord}
@@ -1149,6 +1150,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsBreakthroughModalOpen(false)}
         onConfirm={handleLaunchSingularity}
         calculatedDays={battlefield.financials?.calculatedDays ?? 0}
+        readOnly={!canWriteBattle}
       />
 
       {/* Cognitive DNA Archive Modal */}

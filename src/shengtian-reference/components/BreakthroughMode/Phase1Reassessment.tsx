@@ -17,18 +17,21 @@ interface Phase1ReassessmentProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onProceedToPhase2: () => void;
+  readOnly?: boolean;
 }
 
 export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
   battlefield,
   onUpdateBattlefield,
   onProceedToPhase2,
+  readOnly = false,
 }) => {
   const [confirmedTruths, setConfirmedTruths] = useState<Record<string, boolean>>(() =>
     battlefield.breakthroughConfirmedTruths ?? Object.fromEntries(battlefield.assets.map((asset) => [asset.id, asset.tag === 'FACT'])),
   );
 
   const handleToggleConfirm = (assetId: string) => {
+    if (readOnly) return;
     const next = { ...confirmedTruths, [assetId]: !confirmedTruths[assetId] };
     setConfirmedTruths(next);
     onUpdateBattlefield((previous) => ({ ...previous, breakthroughConfirmedTruths: next }));
@@ -36,6 +39,7 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
   };
 
   const handleNext = () => {
+    if (readOnly) return;
     soundManager.playBlip(900, 0.04);
     onProceedToPhase2();
   };
@@ -149,6 +153,7 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
 
                     <button
                       onClick={() => handleToggleConfirm(asset.id)}
+                      disabled={readOnly}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-colors cursor-pointer ${
                         confirmedTruths[asset.id] ?? isFact
                           ? 'bg-slate-800 text-slate-300 border-slate-700'
@@ -179,6 +184,7 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
         </div>
         <button
           onClick={handleNext}
+          disabled={readOnly}
           className="py-2.5 px-6 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-2 shadow-xl shadow-red-950/60 transition-all cursor-pointer"
         >
           <span>进入第二阶段：认知对抗 (AI红队首席指挥官)</span>

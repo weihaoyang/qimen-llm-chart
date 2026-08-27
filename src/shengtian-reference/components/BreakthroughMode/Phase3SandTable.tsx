@@ -28,6 +28,7 @@ interface Phase3SandTableProps {
   onProceedToPhase4: () => void;
   onOpenMetaphysicsModal?: () => void;
   onOpenValueModal?: () => void;
+  readOnly?: boolean;
 }
 
 export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
@@ -36,6 +37,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   onProceedToPhase4,
   onOpenMetaphysicsModal,
   onOpenValueModal,
+  readOnly = false,
 }) => {
   const [selectedStrategyKey, setSelectedStrategyKey] = useState<'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH'>(battlefield.lockedAsymmetricStrategyId ?? 'FIELD_SHIFT');
   const [activePivotalModal, setActivePivotalModal] = useState<{ day: number; label: string; risk: string } | null>(null);
@@ -46,11 +48,13 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   const currentPkg = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyKey];
 
   const handleSelectStrategy = (key: 'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH') => {
+    if (readOnly) return;
     setSelectedStrategyKey(key);
     soundManager.playBlip(700, 0.03);
   };
 
   const handleLockStrategy = async () => {
+    if (readOnly) return;
     if (isLocking || isLocked) return;
     setIsLocking(true);
     setLockError(null);
@@ -84,6 +88,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   };
 
   const handleNext = () => {
+    if (readOnly) return;
     soundManager.playBlip(900, 0.04);
     onProceedToPhase4();
   };
@@ -131,6 +136,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
             <button
               key={key}
               onClick={() => handleSelectStrategy(key)}
+              disabled={readOnly}
               className={`card-tactical p-5 rounded-2xl border text-left transition-all relative overflow-hidden shadow-2xl flex flex-col justify-between cursor-pointer group ${
                 isSelected
                   ? 'border-red-500 ring-2 ring-red-500/50 shadow-red-950/60 hud-corner-red'
@@ -371,6 +377,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
           {onOpenValueModal && (
             <button
               onClick={onOpenValueModal}
+              disabled={readOnly}
               className="py-2.5 px-3.5 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-700/80 text-purple-300 font-mono-code font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
               title="价值观对齐与道德代价核验"
             >
@@ -382,6 +389,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
           {onOpenMetaphysicsModal && (
             <button
               onClick={onOpenMetaphysicsModal}
+              disabled={readOnly}
               className="py-2.5 px-3.5 rounded-xl bg-amber-950/70 hover:bg-amber-900 border border-amber-600/80 text-amber-300 font-mono-code font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
               title="观天时 · 术数证据叠层与决策仪式"
             >
@@ -393,7 +401,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
           {!isLocked ? (
             <button
               onClick={handleLockStrategy}
-              disabled={isLocking}
+              disabled={readOnly || isLocking}
               className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold font-mono-code text-xs flex items-center gap-2 shadow-xl shadow-red-900/60 transition-all cursor-pointer"
             >
               <Lock className="w-4 h-4" />
@@ -402,6 +410,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
           ) : (
             <button
               onClick={handleNext}
+              disabled={readOnly}
               className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono-code text-xs flex items-center gap-2 shadow-xl shadow-emerald-950/60 transition-all cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />

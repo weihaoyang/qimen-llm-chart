@@ -29,12 +29,14 @@ interface Phase4AutopsyProps {
   battlefield: BattlefieldState;
   onSaveDNARecord: (record: DecisionDNARecord) => Promise<void> | void;
   onReturnToStandardMode: () => void;
+  readOnly?: boolean;
 }
 
 export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   battlefield,
   onSaveDNARecord,
   onReturnToStandardMode,
+  readOnly = false,
 }) => {
   const selectedStrategyId = battlefield.lockedAsymmetricStrategyId;
   const selectedStrategy = selectedStrategyId ? ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyId] : null;
@@ -43,12 +45,12 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(selectedStrategy ? null : '当前战局没有已锁定策略。');
   useEffect(() => {
     let cancelled = false;
-    if (!selectedStrategy) return () => { cancelled = true; };
+    if (!selectedStrategy || readOnly) return () => { cancelled = true; };
     void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
       .then((question) => { if (!cancelled) { setFatalQuestion(question); setFatalQuestionError(null); } })
       .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });
     return () => { cancelled = true; };
-  }, [selectedStrategy?.name, battlefield.id]);
+  }, [selectedStrategy?.name, battlefield.id, readOnly]);
   
   const [reflectionText, setReflectionText] = useState('');
   const [isSaved, setIsSaved] = useState(false);
@@ -56,6 +58,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveAndExit = async () => {
+    if (readOnly) return;
     if (!selectedStrategy || !reflectionText.trim() || fatalQuestionError || isSaving) {
       setSaveError('请先锁定策略、完成反思，并确保致命问题已成功生成。');
       return;
@@ -175,6 +178,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
           </label>
           <textarea
             value={reflectionText}
+            disabled={readOnly}
             onChange={(e) => setReflectionText(e.target.value)}
             rows={3}
             className="w-full bg-black/70 border border-white/[0.1] rounded-xl p-3.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors leading-relaxed resize-none"
@@ -205,7 +209,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
 
         <button
           onClick={handleSaveAndExit}
-          disabled={isSaved}
+          disabled={readOnly || isSaved}
           className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 shadow-xl transition-all cursor-pointer"
         >
           {saveError && <span className="text-xs text-red-300 max-w-sm">{saveError}</span>}

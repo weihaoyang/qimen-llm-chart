@@ -7,6 +7,7 @@ interface BreakthroughActivationModalProps {
   onClose: () => void;
   onConfirm: () => void;
   calculatedDays: number;
+  readOnly?: boolean;
 }
 
 export const BreakthroughActivationModal: React.FC<BreakthroughActivationModalProps> = ({
@@ -14,10 +15,12 @@ export const BreakthroughActivationModal: React.FC<BreakthroughActivationModalPr
   onClose,
   onConfirm,
   calculatedDays,
+  readOnly = false,
 }) => {
   if (!isOpen) return null;
 
   const handleConfirm = () => {
+    if (readOnly) return;
     soundManager.playBreakthroughActivation();
     onConfirm();
   };
@@ -90,6 +93,7 @@ export const BreakthroughActivationModal: React.FC<BreakthroughActivationModalPr
           </button>
           <button
             onClick={handleConfirm}
+            disabled={readOnly}
             className="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold tracking-wide shadow-lg shadow-red-900/60 flex items-center gap-2 transition-all glow-red"
           >
             <Cpu className="w-3.5 h-3.5" />

@@ -20,12 +20,14 @@ interface Phase2CognitiveWarfareProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onProceedToPhase3: () => void;
+  readOnly?: boolean;
 }
 
 export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
   battlefield,
   onUpdateBattlefield,
   onProceedToPhase3,
+  readOnly = false,
 }) => {
   const displayFailureProbability = (value: number) => Math.round(value <= 1 ? value * 100 : value);
   const [userDraft, setUserDraft] = useState('');
@@ -44,6 +46,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
   ];
 
   const handleSimulateRedTeam = async (planText?: string) => {
+    if (readOnly) return;
     const text = (planText || userDraft).trim();
     if (!text || isSimulating) return;
 
@@ -87,6 +90,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
   };
 
   const handleNext = () => {
+    if (readOnly) return;
     soundManager.playBlip(900, 0.04);
     onProceedToPhase3();
   };
@@ -196,6 +200,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
                 <button
                   key={idx}
                   onClick={() => handleSimulateRedTeam(item)}
+                  disabled={readOnly}
                   className="text-[11px] bg-black/40 hover:bg-red-950/80 text-slate-300 hover:text-red-200 border border-white/[0.08] hover:border-red-700/80 px-3 py-1.5 rounded-lg transition-all text-left font-sans cursor-pointer"
                 >
                   {item}
@@ -208,6 +213,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
           <div className="relative shrink-0 font-sans">
             <textarea
               value={userDraft}
+              disabled={readOnly}
               onChange={(e) => setUserDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -221,7 +227,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
             />
             <button
               onClick={() => handleSimulateRedTeam()}
-              disabled={!userDraft.trim() || isSimulating}
+              disabled={readOnly || !userDraft.trim() || isSimulating}
               className="absolute right-2.5 bottom-2.5 p-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white transition-colors cursor-pointer"
             >
               <Send className="w-4 h-4" />
@@ -277,6 +283,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
           <div className="pt-2">
             <button
               onClick={handleNext}
+              disabled={readOnly}
               className="w-full py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xl shadow-red-950/60 transition-all cursor-pointer"
             >
               <span>直面现实，进入战略推演沙盘 (三大非对称策略)</span>
