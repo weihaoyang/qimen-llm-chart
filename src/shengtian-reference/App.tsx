@@ -575,14 +575,17 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     // commit atomically and is idempotent for the same battle/reason pair.
     const battleId = session.activeBattle?.id;
     if (!battleId) {
+      setPersistenceError('请先复制官方案例或创建战局，权益操作必须绑定到你的战局。');
       setIsStoreModalOpen(true);
       return false;
     }
-    const idempotencyKey = `equity:${battleId}:${amount}:${reason}`;
-    void sessionApi.consumeUsage(battleId, `equity:${reason}`, idempotencyKey).catch((error) => {
-      setPersistenceError(error instanceof Error ? error.message : '权益扣减失败，请先完成购买或稍后重试。');
-    });
-    return true;
+    // Callers with a battleId use their operation-specific server endpoint.
+    // This synchronous fallback is intentionally fail-closed: arbitrary UI
+    // labels must never be sent as usage operation names or reported as paid.
+    void amount;
+    void reason;
+    setPersistenceError('该权益操作需要在战局上下文中完成，请重新打开模块后重试。');
+    return false;
   };
 
   const handleAddEquity = (_amount: number, _reason: string) => {
