@@ -7,32 +7,11 @@ import { isUuid, asText } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
 import { replaceInventory } from "@/lib/battle/repository";
 import { createAdvice, createReview } from "@/lib/battle/extended-repository";
+import { parseBattleAiJson, validateBattleAiResult, type BattleAiKind } from "@/lib/battle/ai-contract";
 
 const kinds = new Set(["interview", "cards", "red-team", "breakthrough", "review"]);
 const normalizeKind = (value: string) => value === "red-team" ? "red_team" : value;
-const parseStructured = (value: string) => {
-  try { const parsed = JSON.parse(value.replace(/^```json\s*/i, "").replace(/```$/i, "").trim()); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null; }
-  catch { return null; }
-};
 const asArray = (value: unknown) => Array.isArray(value) ? value : [];
-const requiredString = (value: unknown) => typeof value === "string" && value.trim().length > 0;
-const validateStructured = (kind: string, value: Record<string, unknown> | null) => {
-  if (!value) return "模型没有返回合法 JSON 对象。";
-  const requirements: Record<string, string[]> = {
-    interview: ["assistantMessage", "extractedFacts", "extractedConstraints", "updatedFields", "nextQuestion", "confidence"],
-    cards: ["cards"],
-    red_team: ["critique", "biasWarning", "failureProbability", "fatalVulnerability", "suggestedFocus"],
-    breakthrough: ["phases", "strategies", "actions", "stopConditions"],
-    review: ["summary", "facts", "whatChanged", "diagnosis", "nextAdjustment"],
-  };
-  for (const key of requirements[kind] ?? []) if (!(key in value)) return `模型输出缺少字段：${key}`;
-  if (kind === "cards" && !Array.isArray(value.cards)) return "cards 必须是数组。";
-  for (const key of ["extractedFacts", "extractedConstraints", "updatedFields", "phases", "strategies", "actions", "stopConditions"]) if (key in value && !Array.isArray(value[key])) return `${key} 必须是数组。`;
-  for (const key of ["assistantMessage", "nextQuestion", "critique", "biasWarning", "fatalVulnerability", "suggestedFocus", "summary", "facts", "whatChanged", "nextAdjustment"]) if (key in value && !requiredString(value[key])) return `${key} 必须是非空文本。`;
-  if ("confidence" in value && (typeof value.confidence !== "number" || value.confidence < 0 || value.confidence > 1)) return "confidence 必须是 0 到 1 之间的数字。";
-  if ("failureProbability" in value && (typeof value.failureProbability !== "number" || value.failureProbability < 0 || value.failureProbability > 1)) return "failureProbability 必须是 0 到 1 之间的数字。";
-  return null;
-};
 
 export async function handleAiPost(request: Request, context: { params: Promise<{ id:string; kind?:string }> }, forcedKind?: string) {
   let reservationId = "";
@@ -67,8 +46,8 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     reservationId = reservation.reservation_id;
     const question = asText(body?.question, 6000) || `请完成 ${kind} 模式的结构化现实推演。只返回合法 JSON，字段应包含 summary、facts、risks、actions、verificationSignals、stopConditions。`;
     const result = await requestAgentAnalysis({ mode:"research", researchTool:"battle", focus:kind, question, structuredText:JSON.stringify(input), jsonPayload:JSON.stringify(input), analysisProduct:"agent" });
-    const parsedStructured = parseStructured(result.content);
-    const schemaError = validateStructured(kind, parsedStructured);
+    const parsedStructured = parseBattleAiJson(result.content);
+    const schemaError = validateBattleAiResult(kind as BattleAiKind, parsedStructured);
     if (schemaError) {
       await failAiJob(subject, id, created.jobId, runToken, "invalid_structured_output", schemaError);
       throw new Error(schemaError);
