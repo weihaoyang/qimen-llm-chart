@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { sessionApi, type CatalogScenario, type SessionBattle } from "./api";
+import { sessionApi, type BattleInvitation, type CatalogScenario, type SessionBattle } from "./api";
 
 export function useBattleSession() {
   const [catalog, setCatalog] = useState<CatalogScenario[]>([]);
   const [battles, setBattles] = useState<SessionBattle[]>([]);
   const [activeBattle, setActiveBattle] = useState<SessionBattle | null>(null);
+  const [invitations, setInvitations] = useState<BattleInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,8 +17,9 @@ export function useBattleSession() {
       const catalogResult = await sessionApi.catalog();
       setCatalog(catalogResult.scenarios ?? []);
       try {
-        const battleResult = await sessionApi.battles();
+        const [battleResult, invitationResult] = await Promise.all([sessionApi.battles(), sessionApi.invitations()]);
         const nextBattles = battleResult.battles ?? [];
+        setInvitations(invitationResult.invitations ?? []);
         setBattles(nextBattles);
         const queryBattle = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("battle") : null;
         const selected = nextBattles.find((item) => item.id === queryBattle) ?? nextBattles[0] ?? null;
@@ -52,5 +54,16 @@ export function useBattleSession() {
     return next.battle;
   }, [refresh, selectBattle]);
 
-  return useMemo(() => ({ catalog, battles, activeBattle, loading, error, refresh, selectBattle, cloneScenario }), [catalog, battles, activeBattle, loading, error, refresh, selectBattle, cloneScenario]);
+  const respondInvitation = useCallback(async (invitationId:string, action:"accept"|"decline") => {
+    const result = await sessionApi.respondInvitation(invitationId, action);
+    if (action === "accept") {
+      const next = await sessionApi.battle(result.invitation.battleId);
+      await refresh();
+      selectBattle(next.battle);
+    } else {
+      setInvitations((current) => current.filter((item) => item.id !== invitationId));
+    }
+  }, [refresh, selectBattle]);
+
+  return useMemo(() => ({ catalog, battles, activeBattle, invitations, loading, error, refresh, selectBattle, cloneScenario, respondInvitation }), [catalog, battles, activeBattle, invitations, loading, error, refresh, selectBattle, cloneScenario, respondInvitation]);
 }

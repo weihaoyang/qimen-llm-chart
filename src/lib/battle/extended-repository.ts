@@ -196,6 +196,17 @@ export const upsertCollaborator = async (subject:AccountSubject,battleId:string,
 export const setCollaboratorStatus = async (subject:AccountSubject,battleId:string,collaboratorId:string,status:Collaborator["status"]) => { if(!await owned(subject,battleId))return null; const result=await query<CollaboratorRow>(`UPDATE battle_collaborators SET status=$3,updated_at=now() WHERE id=$1 AND battle_id=$2 RETURNING id,battle_id,subject_type,subject_id,role,status,permissions_json,created_at,updated_at`,[collaboratorId,battleId,status]);return result.rows[0]?mapCollaborator(result.rows[0]):undefined; };
 export const acceptCollaboratorInvitation = async (subject:AccountSubject,battleId:string,collaboratorId:string) => { const result=await query<CollaboratorRow>(`UPDATE battle_collaborators SET status='active',updated_at=now() WHERE id=$1 AND battle_id=$2 AND subject_type=$3 AND subject_id=$4 AND status='invited' RETURNING id,battle_id,subject_type,subject_id,role,status,permissions_json,created_at,updated_at`,[collaboratorId,battleId,...owner(subject)]); return result.rows[0]?mapCollaborator(result.rows[0]):null; };
 
+type InvitationRow = CollaboratorRow & { battle_title:string; invited_by_type:string; invited_by_id:string };
+export const listPendingInvitations = async (subject:AccountSubject) => {
+  const result = await query<InvitationRow>(`SELECT c.id,c.battle_id,c.subject_type,c.subject_id,c.role,c.status,c.permissions_json,c.created_at,c.updated_at,b.title AS battle_title,c.invited_by_type,c.invited_by_id FROM battle_collaborators c JOIN battle_cases b ON b.id=c.battle_id WHERE c.subject_type=$1 AND c.subject_id=$2 AND c.status='invited' ORDER BY c.created_at DESC LIMIT 100`,owner(subject));
+  return result.rows.map((row) => ({ ...mapCollaborator(row), battleTitle:row.battle_title, invitedBy:{ subjectType:row.invited_by_type, subjectId:row.invited_by_id } }));
+};
+export const respondToInvitation = async (subject:AccountSubject,collaboratorId:string,action:"accept"|"decline") => {
+  const status = action === "accept" ? "active" : "revoked";
+  const result = await query<CollaboratorRow>(`UPDATE battle_collaborators SET status=$4,updated_at=now() WHERE id=$1 AND subject_type=$2 AND subject_id=$3 AND status='invited' RETURNING id,battle_id,subject_type,subject_id,role,status,permissions_json,created_at,updated_at`,[collaboratorId,...owner(subject),status]);
+  return result.rows[0] ? mapCollaborator(result.rows[0]) : null;
+};
+
 type AllocationRow = { id:string; battle_id:string|null; label:string; resource_kind:ResourceAllocation["resourceKind"]; amount:string; unit:string; starts_at:Date|null; ends_at:Date|null; priority:number; status:ResourceAllocation["status"]; source_json:Json };
 const mapAllocation=(r:AllocationRow):ResourceAllocation=>({id:r.id,battleId:r.battle_id,label:r.label,resourceKind:r.resource_kind,amount:Number(r.amount),unit:r.unit,startsAt:iso(r.starts_at),endsAt:iso(r.ends_at),priority:r.priority,status:r.status,source:record(r.source_json)});
 export const listAllocations=async(subject:AccountSubject)=>{const result=await query<AllocationRow>(`SELECT id,battle_id,label,resource_kind,amount,unit,starts_at,ends_at,priority,status,source_json FROM battle_resource_allocations WHERE platform_subject_type=$1 AND platform_subject_id=$2 AND status NOT IN ('released','cancelled') ORDER BY starts_at NULLS LAST,priority DESC`,owner(subject));return result.rows.map(mapAllocation);};

@@ -36,6 +36,11 @@ export type Collaborator = {
   updatedAt: string;
 };
 
+export type BattleInvitation = Collaborator & {
+  battleTitle: string;
+  invitedBy: { subjectType:string; subjectId:string };
+};
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, credentials: "include", headers: { "Content-Type":"application/json", ...(init?.headers ?? {}) } });
   const data = await response.json().catch(() => ({}));
@@ -50,6 +55,8 @@ export const sessionApi = {
   scenario: (id:string) => request<{ scenario: Record<string, unknown> }>(`/api/scenarios/${encodeURIComponent(id)}`),
   templates: () => request<{ templates: Array<Record<string, unknown>> }>("/api/templates"),
   battles: () => request<{ battles: SessionBattle[] }>("/api/battles"),
+  invitations: () => request<{ invitations: BattleInvitation[] }>("/api/battles/invitations"),
+  respondInvitation: (invitationId:string, action:"accept"|"decline") => request<{ invitation: Collaborator }>("/api/battles/invitations", { method:"PATCH", body:JSON.stringify({ invitationId, action }) }),
   battle: (id:string) => request<{ battle: SessionBattle; scenario?: unknown }>(`/api/battles/${id}`),
   updateBattle: (id:string, input:Record<string, unknown>) => request<{ battle: SessionBattle }>(`/api/battles/${id}`, { method:"PATCH", body:JSON.stringify(input) }),
   deleteBattle: (id:string) => request<{ deleted:boolean }>(`/api/battles/${id}`, { method:"DELETE", body:JSON.stringify({ confirmation:"DELETE" }) }),

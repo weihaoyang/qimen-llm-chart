@@ -80,7 +80,7 @@ import { useBattleSession } from './session/useBattleSession';
 import { sessionApi } from './session/api';
 import type { CatalogScenario } from './session/api';
 
-function ScenarioChooser({ scenarios, error, onClone }: { scenarios: CatalogScenario[]; error: string | null; onClone: (scenarioId: string) => Promise<unknown> }) {
+function ScenarioChooser({ scenarios, invitations, error, onClone, onRespondInvitation }: { scenarios: CatalogScenario[]; invitations: ReturnType<typeof useBattleSession>['invitations']; error: string | null; onClone: (scenarioId: string) => Promise<unknown>; onRespondInvitation:(invitationId:string, action:'accept'|'decline')=>Promise<unknown> }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   return (
@@ -90,6 +90,7 @@ function ScenarioChooser({ scenarios, error, onClone }: { scenarios: CatalogScen
         <h1 className="mt-4 text-4xl font-black">选择一个现实战局，开始自己的推演</h1>
         <p className="mt-4 max-w-2xl text-slate-400">官方案例只读。点击复制后会创建属于你的战局，后续采访、策略、突破和复盘都只写入你的会话。</p>
         {error || actionError ? <div className="mt-6 rounded-xl border border-amber-700/50 bg-amber-950/30 p-4 text-sm text-amber-200">{actionError ?? error}。请登录平台账户后复制案例。</div> : null}
+        {invitations.length > 0 && <section className="mt-6 rounded-2xl border border-amber-600/40 bg-amber-950/20 p-5"><h2 className="font-bold text-amber-200">待处理协作邀请</h2><div className="mt-3 space-y-2">{invitations.map((invitation) => <div key={invitation.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-black/30 px-3 py-2 text-sm"><span><strong>{invitation.battleTitle}</strong> · {invitation.role}</span><span className="flex gap-3"><button className="text-emerald-300 underline" onClick={() => void onRespondInvitation(invitation.id, 'accept').catch((nextError) => setActionError(nextError instanceof Error ? nextError.message : '接受邀请失败。'))}>接受并进入</button><button className="text-slate-300 underline" onClick={() => void onRespondInvitation(invitation.id, 'decline').catch((nextError) => setActionError(nextError instanceof Error ? nextError.message : '拒绝邀请失败。'))}>拒绝</button></span></div>)}</div></section>}
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {scenarios.map((scenario) => (
             <article key={scenario.id} className="surface-card rounded-2xl p-5">
@@ -142,7 +143,7 @@ function createBattlefieldShell(activeBattle: NonNullable<ReturnType<typeof useB
 export default function App() {
   const session = useBattleSession();
   if (session.loading) return <div className="min-h-screen bg-[#04070d] text-slate-200 grid place-items-center font-mono-code">正在加载官方案例与战局…</div>;
-  if (!session.activeBattle) return <ScenarioChooser scenarios={session.catalog} error={session.error} onClone={session.cloneScenario} />;
+  if (!session.activeBattle) return <ScenarioChooser scenarios={session.catalog} invitations={session.invitations} error={session.error} onClone={session.cloneScenario} onRespondInvitation={session.respondInvitation} />;
   return <BattleWorkspace key={session.activeBattle.id} session={session} />;
 }
 
@@ -857,6 +858,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       battlefield.breakthroughActive ? 'bg-[#05080D] text-slate-100' : 'bg-[#080B12] text-slate-100'
     } tactical-grid`}>
       {persistenceError && <div className="fixed top-3 right-3 z-[100] max-w-sm rounded-xl border border-red-500/50 bg-red-950/90 px-4 py-3 text-xs text-red-100 shadow-xl">{persistenceError}<button className="ml-3 text-red-300 underline" onClick={() => setPersistenceError(null)}>关闭</button></div>}
+      {session.invitations.length > 0 && <div className="border-b border-amber-700/50 bg-amber-950/70 px-4 py-2 text-xs text-amber-100"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2"><span>待处理协作邀请：</span>{session.invitations.map((invitation) => <span key={invitation.id} className="inline-flex items-center gap-2 rounded-lg border border-amber-700/50 bg-black/30 px-2 py-1"><strong>{invitation.battleTitle}</strong><span>{invitation.role}</span><button className="text-emerald-300 underline" onClick={() => void session.respondInvitation(invitation.id, 'accept').catch((error) => setPersistenceError(error instanceof Error ? error.message : '接受邀请失败。'))}>接受</button><button className="text-slate-300 underline" onClick={() => void session.respondInvitation(invitation.id, 'decline').catch((error) => setPersistenceError(error instanceof Error ? error.message : '拒绝邀请失败。'))}>拒绝</button></span>)}</div></div>}
       {!canWriteBattle && <div className="border-b border-sky-700/50 bg-sky-950/70 px-4 py-2 text-center text-xs font-mono-code text-sky-200">观察者只读模式 · 你可以查看战局和协作内容，但采访确认、AI 推演、策略锁定及状态保存需要 contributor、advisor 或 owner 权限。</div>}
       
       {/* Top Standard Clean Header */}
