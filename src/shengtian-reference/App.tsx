@@ -752,15 +752,29 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     }));
   };
 
-  const handleClaimEquilibriumReward = (echoId: string) => {
+  const handleClaimEquilibriumReward = async (echoId: string) => {
     const echo = realityEchoes.find(e => e.id === echoId);
     if (!echo || echo.finalRewardUnlocked || echo.rewardClaimStatus === 'pending_platform') return;
-
-    // The reward is recorded as a completed module state; entitlement crediting is
-    // performed by the platform ledger and must not be fabricated in the browser.
-    setRealityEchoes(prev => prev.map(e => e.id === echoId ? { ...e, rewardClaimStatus: 'pending_platform' } : e));
-    setPersistenceError('终局奖励申请已记录，等待统一平台权益核发；浏览器不会伪造入账。');
-    soundManager.playSuccess();
+    const battleId = session.activeBattle?.id;
+    if (!battleId) {
+      setPersistenceError('终局奖励申请必须绑定到已保存战局。');
+      return;
+    }
+    try {
+      // The server verifies equilibrium and all resolved dust events while
+      // allocating the next module version. The browser only applies the
+      // returned snapshot; entitlement crediting remains platform-owned.
+      const result = await sessionApi.claimRealityEchoReward(battleId, echoId);
+      const envelope = result.state as { state?: unknown } | null;
+      const next = envelope?.state;
+      const items = next && typeof next === 'object' && !Array.isArray(next) ? (next as { items?: unknown }).items : null;
+      if (!Array.isArray(items)) throw new Error('服务器未返回有效的现实回响状态。');
+      setRealityEchoes(items as RealityEcho[]);
+      setPersistenceError('终局奖励申请已记录，等待统一平台权益核发；浏览器不会伪造入账。');
+      soundManager.playSuccess();
+    } catch (error) {
+      setPersistenceError(error instanceof Error ? error.message : '终局奖励申请失败，请重试。');
+    }
   };
 
   // 2. Conclaves Handlers

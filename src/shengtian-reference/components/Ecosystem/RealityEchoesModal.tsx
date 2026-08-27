@@ -33,7 +33,7 @@ interface RealityEchoesModalProps {
   onClose: () => void;
   echoes: RealityEcho[];
   onResolveDustEvent: (echoId: string, eventId: string, option: CausalDustOption) => void;
-  onClaimEquilibriumReward: (echoId: string) => void;
+  onClaimEquilibriumReward: (echoId: string) => void | Promise<void>;
   userEquity: number;
   readOnly?: boolean;
 }
@@ -50,6 +50,7 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
 }) => {
   const [selectedEchoId, setSelectedEchoId] = useState<string>(echoes[0]?.id || '');
   const [resolvingOptionId, setResolvingOptionId] = useState<string | null>(null);
+  const [claimingReward, setClaimingReward] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -86,6 +87,19 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
       setResolvingOptionId(null);
       soundManager.playSuccess();
     }, 600);
+  };
+
+  const handleClaimReward = async () => {
+    if (readOnly || claimingReward || !currentEcho) return;
+    setClaimingReward(true);
+    setUsageError(null);
+    try {
+      await onClaimEquilibriumReward(currentEcho.id);
+    } catch (error) {
+      setUsageError(error instanceof Error ? error.message : '终局奖励申请失败，请重试。');
+    } finally {
+      setClaimingReward(false);
+    }
   };
 
   return (
@@ -212,11 +226,12 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
                 </p>
                 {currentEcho.equilibriumStatus === 'EQUILIBRIUM_REACHED' && !currentEcho.finalRewardUnlocked && currentEcho.rewardClaimStatus !== 'pending_platform' && !readOnly ? (
                   <button
-                    onClick={() => onClaimEquilibriumReward(currentEcho.id)}
+                    onClick={() => void handleClaimReward()}
+                    disabled={claimingReward}
                     className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs font-mono-code flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg shadow-amber-950"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>领取终极因果结算奖励 (+{currentEcho.finalRewardEquity} 权益)</span>
+                    <span>{claimingReward ? '正在提交奖励申请…' : `领取终极因果结算奖励 (+${currentEcho.finalRewardEquity} 权益)`}</span>
                   </button>
                 ) : currentEcho.rewardClaimStatus === 'pending_platform' ? (
                   <div className="text-center py-1.5 rounded-lg bg-amber-950/50 border border-amber-800 text-amber-300 text-xs font-mono-code">

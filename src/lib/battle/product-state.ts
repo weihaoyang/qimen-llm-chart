@@ -89,6 +89,81 @@ export async function saveModuleState(subject: AccountSubject, battleId: string,
   });
 }
 
+type RealityEchoClaimResult = {
+  version: number;
+  state: Record<string, unknown>;
+  consent: Record<string, unknown>;
+  updatedAt: string;
+  reused: boolean;
+};
+
+/**
+ * Move one reality echo into the platform-review queue. The browser may render
+ * the claim button, but it cannot mint the reward or mark an incomplete echo
+ * as settled. Keeping this transition here also makes retries safe when two
+ * tabs submit the same claim at once.
+ */
+export async function claimRealityEchoReward(subject: AccountSubject, battleId: string, echoId: string): Promise<RealityEchoClaimResult | null | "not_ready"> {
+  return withTransaction(async (client) => {
+    const access = await client.query(
+      `SELECT b.id
+         FROM battle_cases b
+        WHERE b.id=$1
+          AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3)
+            OR EXISTS (SELECT 1 FROM battle_collaborators c
+                        WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3
+                          AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) FOR UPDATE`,
+      [battleId, ...owner(subject)],
+    );
+    if (!access.rowCount) return null;
+
+    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-module:${battleId}:reality-echoes`]);
+    const current = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
+      `SELECT version,state_json,consent_json,updated_at
+         FROM battle_module_states
+        WHERE battle_id=$1 AND module_id='reality-echoes'
+        ORDER BY version DESC LIMIT 1`,
+      [battleId],
+    );
+    const row = current.rows[0];
+    if (!row) return "not_ready";
+    const state = parse(row.state_json);
+    const items = Array.isArray(state.items) ? state.items.filter((item) => item && typeof item === "object") : [];
+    const index = items.findIndex((item) => parse(item).id === echoId);
+    if (index < 0) return "not_ready";
+    const echo = parse(items[index]);
+    if (echo.finalRewardUnlocked === true || echo.rewardClaimStatus === "pending_platform") {
+      return { version:row.version, state, consent:parse(row.consent_json), updatedAt:row.updated_at.toISOString(), reused:true };
+    }
+    const dustEvents = Array.isArray(echo.causalDustEvents) ? echo.causalDustEvents : [];
+    const allResolved = dustEvents.every((event) => parse(event).status === "RESOLVED");
+    if (echo.equilibriumStatus !== "EQUILIBRIUM_REACHED" || !allResolved) return "not_ready";
+
+    items[index] = {
+      ...echo,
+      rewardClaimStatus: "pending_platform",
+      rewardClaimRequestedAt: new Date().toISOString(),
+      rewardClaimRequestedBy: `${subject.subjectType}:${subject.subjectId}`,
+    };
+    const nextState = { ...state, items };
+    const next = (await client.query<{ version:number }>(
+      `SELECT COALESCE(MAX(version),0)+1 AS version
+         FROM battle_module_states
+        WHERE battle_id=$1 AND module_id='reality-echoes'`,
+      [battleId],
+    )).rows[0].version;
+    const saved = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
+      `INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json)
+       VALUES($1,$2,'reality-echoes',$3,$4::jsonb,$5::jsonb)
+       RETURNING version,state_json,consent_json,updated_at`,
+      [randomUUID(), battleId, next, json(nextState), json(row.consent_json)],
+    );
+    await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
+    const result = saved.rows[0];
+    return { version:result.version, state:parse(result.state_json), consent:parse(result.consent_json), updatedAt:result.updated_at.toISOString(), reused:false };
+  });
+}
+
 /**
  * Apply one user intent to the decision board while holding the battle/module
  * version lock. The board is intentionally still stored as a versioned JSON
