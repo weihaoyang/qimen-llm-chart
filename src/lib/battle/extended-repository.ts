@@ -9,6 +9,7 @@ type Json = Record<string, unknown>;
 export class BattleIntegrityError extends Error { constructor(message: string) { super(message); this.name = "BattleIntegrityError"; } }
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
+const writableBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))`;
 const record = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const playbookSource = (visibility: PlaybookEntry["visibility"], source: Json): Json => visibility === "anonymous_pool"
   ? { layer: "anonymous_pool", provenance: "user_confirmed" }
@@ -121,7 +122,11 @@ export const listReviews = async (subject: AccountSubject, battleId: string) => 
 };
 
 export const createReview = async (subject: AccountSubject, battleId: string, input: Omit<BattleReview,"id"|"battleId"|"reviewedAt">, idempotencyKey?: string | null) => withTransaction(async (client) => {
-  const check = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...owner(subject)]);
+  // Reviews are battle-scoped evidence, so contributor/advisor collaborators
+  // who can execute the battle may submit them too. Keep the same writable
+  // predicate used by moves, facts and module snapshots; owner-only strategy
+  // profile changes remain separate.
+  const check = await client.query(`SELECT id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...owner(subject)]);
   if (!check.rowCount) return null;
   if (idempotencyKey) {
     await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-review:${battleId}:${idempotencyKey}`]);
