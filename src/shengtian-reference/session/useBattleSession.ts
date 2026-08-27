@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sessionApi, type BattleInvitation, type CatalogScenario, type SessionBattle } from "./api";
 
 export function useBattleSession() {
@@ -10,14 +10,22 @@ export function useBattleSession() {
   const [invitations, setInvitations] = useState<BattleInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Refreshes can overlap (initial load, clone, invitation acceptance and
+  // window-focus recovery). Keep only the newest response; otherwise a slow
+  // catalog/battle request can overwrite the battle selected by a later one.
+  const refreshSequence = useRef(0);
 
   const refresh = useCallback(async () => {
+    const sequence = ++refreshSequence.current;
     setLoading(true);
+    setError(null);
     try {
       const catalogResult = await sessionApi.catalog();
+      if (sequence !== refreshSequence.current) return;
       setCatalog(catalogResult.scenarios ?? []);
       try {
         const [battleResult, invitationResult] = await Promise.all([sessionApi.battles(), sessionApi.invitations()]);
+        if (sequence !== refreshSequence.current) return;
         const nextBattles = battleResult.battles ?? [];
         setInvitations(invitationResult.invitations ?? []);
         setBattles(nextBattles);
@@ -25,11 +33,15 @@ export function useBattleSession() {
         const selected = nextBattles.find((item) => item.id === queryBattle) ?? nextBattles[0] ?? null;
         setActiveBattle(selected);
       } catch (battleError) {
+        if (sequence !== refreshSequence.current) return;
         setError(battleError instanceof Error ? battleError.message : "登录后可保存自己的战局。");
       }
     } catch (catalogError) {
+      if (sequence !== refreshSequence.current) return;
       setError(catalogError instanceof Error ? catalogError.message : "官方案例暂时不可用。");
-    } finally { setLoading(false); }
+    } finally {
+      if (sequence === refreshSequence.current) setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
