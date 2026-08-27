@@ -137,6 +137,26 @@ export const replaceInventory = async (subject: AccountSubject, battleId: string
   return items;
 });
 
+/** Append generated or user-provided inventory without deleting existing cards.
+ * A job id in evidence_json is treated as an idempotency key for AI retries. */
+export const appendInventory = async (subject: AccountSubject, battleId: string, input: Array<Omit<InventoryItem, "id"|"battleId">>) => withTransaction(async (client) => {
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
+  if (!owner.rowCount) return null;
+  const items: InventoryItem[] = [];
+  for (const item of input) {
+    const jobId = item.evidence && typeof item.evidence === 'object' && typeof (item.evidence as Record<string, unknown>).jobId === 'string' ? (item.evidence as Record<string, unknown>).jobId : null;
+    if (jobId) {
+      const existing = await client.query<InventoryRow>(`SELECT id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json FROM battle_inventory_items WHERE battle_id=$1 AND evidence_json->>'jobId'=$2 LIMIT 1`, [battleId, jobId]);
+      if (existing.rows[0]) { items.push(mapInventory(existing.rows[0])); continue; }
+    }
+    const id = randomUUID();
+    const row = await client.query<InventoryRow>(`INSERT INTO battle_inventory_items(id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb) RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`, [id,battleId,item.category,item.label,item.description,item.quantity,item.unit,item.availability,item.expiresAt,JSON.stringify(item.cost),JSON.stringify(item.evidence)]);
+    items.push(mapInventory(row.rows[0]));
+  }
+  await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
+  return items;
+});
+
 export const saveGravityLine = async (subject: AccountSubject, battleId: string, gravity: GravityLine) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
