@@ -1256,6 +1256,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       <WarRoomsModal
         isOpen={isWarRoomsModalOpen}
         onClose={() => setIsWarRoomsModalOpen(false)}
+        readOnly={!canWriteBattle}
         currentBattlefield={battlefield}
         battlefieldList={battlefieldList}
         selectedBattlefieldId={selectedBattlefieldId}

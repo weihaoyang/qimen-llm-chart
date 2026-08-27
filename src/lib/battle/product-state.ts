@@ -4,7 +4,8 @@ import { query, withTransaction } from "@/lib/db/pool";
 import type { AccountSubject } from "@/lib/agent/account-subject";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
-const writableCollaborator = `EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND c.status='active' AND c.role IN ('contributor','advisor'))`;
+const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
+const writableCollaborator = `EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))`;
 const json = (value: unknown) => JSON.stringify(value ?? {});
 const parse = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
 
@@ -52,9 +53,9 @@ export async function getModuleState(subject: AccountSubject, battleId: string, 
   const result = await query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date; access_role:string }>(
     `SELECT s.version,s.state_json,s.consent_json,s.updated_at,
       CASE WHEN b.platform_subject_type=$3 AND b.platform_subject_id=$4 THEN 'owner'
-           ELSE COALESCE((SELECT c.role FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active' LIMIT 1),'viewer') END AS access_role
+           ELSE COALESCE((SELECT c.role FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND ${activeCollaborator} LIMIT 1),'viewer') END AS access_role
       FROM battle_module_states s JOIN battle_cases b ON b.id=s.battle_id
-      WHERE s.battle_id=$1 AND s.module_id=$2 AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active'))
+      WHERE s.battle_id=$1 AND s.module_id=$2 AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND ${activeCollaborator}))
       ORDER BY s.version DESC LIMIT 1`,
     [battleId, moduleId, ...owner(subject)],
   );
@@ -66,7 +67,7 @@ export async function getModuleState(subject: AccountSubject, battleId: string, 
 
 export async function saveModuleState(subject: AccountSubject, battleId: string, moduleId: string, state: Record<string, unknown>, consent: Record<string, unknown> = {}) {
   return withTransaction(async (client) => {
-    const access = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND c.status='active' AND c.role IN ('contributor','advisor'))) FOR UPDATE`, [battleId, ...owner(subject)]);
+    const access = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) FOR UPDATE`, [battleId, ...owner(subject)]);
     if (!access.rowCount) return null;
     // Serialize version allocation for this battle/module pair. A plain
     // MAX(version)+1 is racy across two tabs or collaborators and can produce
@@ -101,22 +102,22 @@ export async function beginUsageOperation(subject: AccountSubject, battleId: str
 }
 
 export async function setUsageOperationReservation(subject: AccountSubject,battleId:string,operationId:string,reservationId:string) {
-  const result = await query(`UPDATE battle_usage_operations u SET reservation_id=$4 FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status='pending' AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))`,[operationId,battleId,subject.subjectType,reservationId,subject.subjectId]);
+  const result = await query(`UPDATE battle_usage_operations u SET reservation_id=$4 FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status='pending' AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND ${activeCollaborator} AND c.role IN ('contributor','advisor')))`,[operationId,battleId,subject.subjectType,reservationId,subject.subjectId]);
   return Boolean(result.rowCount);
 }
 
 export async function markUsageOperationCharged(subject: AccountSubject, battleId: string, operationId: string, usage: unknown) {
-  const result = await query(`UPDATE battle_usage_operations u SET status='charged',usage_json=$4::jsonb FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status='pending' AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))`,[operationId,battleId,subject.subjectType,JSON.stringify(usage ?? {}),subject.subjectId]);
+  const result = await query(`UPDATE battle_usage_operations u SET status='charged',usage_json=$4::jsonb FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status='pending' AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND ${activeCollaborator} AND c.role IN ('contributor','advisor')))`,[operationId,battleId,subject.subjectType,JSON.stringify(usage ?? {}),subject.subjectId]);
   return Boolean(result.rowCount);
 }
 
 export async function finishUsageOperation(subject: AccountSubject, battleId: string, operationId: string, usage: unknown) {
-  const result = await query(`UPDATE battle_usage_operations u SET status='succeeded',usage_json=$4::jsonb,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status IN ('pending','charged') AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, JSON.stringify(usage ?? {}), subject.subjectId]);
+  const result = await query(`UPDATE battle_usage_operations u SET status='succeeded',usage_json=$4::jsonb,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND u.status IN ('pending','charged') AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND ${activeCollaborator} AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, JSON.stringify(usage ?? {}), subject.subjectId]);
   return Boolean(result.rowCount);
 }
 
 export async function failUsageOperation(subject: AccountSubject, battleId: string, operationId: string, message: string) {
-  const result = await query(`UPDATE battle_usage_operations u SET status='failed',reservation_id=NULL,error_message=$4,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, message, subject.subjectId]);
+  const result = await query(`UPDATE battle_usage_operations u SET status='failed',reservation_id=NULL,error_message=$4,completed_at=now() FROM battle_cases b WHERE u.id=$1 AND u.battle_id=$2 AND b.id=u.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$5 AND ${activeCollaborator} AND c.role IN ('contributor','advisor')))` , [operationId, battleId, subject.subjectType, message, subject.subjectId]);
   return Boolean(result.rowCount);
 }
 
@@ -153,41 +154,41 @@ export async function getAiJob(subject: AccountSubject, battleId: string, jobId:
        FROM battle_cases b
       WHERE j.id=$1 AND j.battle_id=$2 AND b.id=j.battle_id
         AND j.status IN ('queued','running') AND COALESCE(j.started_at,j.created_at) < now() - interval '10 minutes'
-        AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active'))`,
+    AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND ${activeCollaborator}))`,
     [jobId, battleId, ...owner(subject)],
   );
-  const result = await query<{ id:string; kind:string; status:string; input_snapshot_hash:string; prompt_version:string; model_version:string|null; result_json:unknown; error_code:string|null; error_message:string|null; created_at:Date; completed_at:Date|null }>(`SELECT j.id,j.kind,j.status,j.input_snapshot_hash,j.prompt_version,j.model_version,j.result_json,j.error_code,j.error_message,j.created_at,j.completed_at FROM battle_ai_jobs j JOIN battle_cases b ON b.id=j.battle_id WHERE j.id=$1 AND j.battle_id=$2 AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active'))`, [jobId, battleId, ...owner(subject)]);
+  const result = await query<{ id:string; kind:string; status:string; input_snapshot_hash:string; prompt_version:string; model_version:string|null; result_json:unknown; error_code:string|null; error_message:string|null; created_at:Date; completed_at:Date|null }>(`SELECT j.id,j.kind,j.status,j.input_snapshot_hash,j.prompt_version,j.model_version,j.result_json,j.error_code,j.error_message,j.created_at,j.completed_at FROM battle_ai_jobs j JOIN battle_cases b ON b.id=j.battle_id WHERE j.id=$1 AND j.battle_id=$2 AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND ${activeCollaborator}))`, [jobId, battleId, ...owner(subject)]);
   const row = result.rows[0];
   return row ? { jobId: row.id, battleId, kind: row.kind, status: row.status, inputSnapshotHash: row.input_snapshot_hash, promptVersion: row.prompt_version, modelVersion: row.model_version, result: row.result_json, errorCode: row.error_code, errorMessage: row.error_message, createdAt: row.created_at.toISOString(), completedAt: row.completed_at?.toISOString() ?? null } : null;
 }
 
 export async function startAiJob(subject: AccountSubject, battleId: string, jobId: string, runToken: string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='running',started_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$4 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='running',started_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$4 AND c.subject_id=$5 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
 export async function claimAiJobCommit(subject: AccountSubject, battleId: string, jobId: string, runToken: string, resultValue: unknown, modelVersion: string | null) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='committing',result_json=$4::jsonb,model_version=$5 FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status='running' AND b.id=j.battle_id AND ((b.platform_subject_type=$6 AND b.platform_subject_id=$7) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$6 AND c.subject_id=$7 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,json(resultValue),modelVersion,...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='committing',result_json=$4::jsonb,model_version=$5 FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status='running' AND b.id=j.battle_id AND ((b.platform_subject_type=$6 AND b.platform_subject_id=$7) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$6 AND c.subject_id=$7 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,json(resultValue),modelVersion,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
 export async function setAiJobReservation(subject: AccountSubject,battleId:string,jobId:string,runToken:string,reservationId:string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET reservation_id=$4 FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('running','committing') AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`,[jobId,battleId,runToken,reservationId,...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET reservation_id=$4 FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('running','committing') AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) RETURNING j.id`,[jobId,battleId,runToken,reservationId,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
 export async function markAiJobCharged(subject: AccountSubject,battleId:string,jobId:string,runToken:string,usage:unknown) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='charged',usage_json=$4::jsonb FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status='committing' AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`,[jobId,battleId,runToken,json(usage),...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='charged',usage_json=$4::jsonb FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status='committing' AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) RETURNING j.id`,[jobId,battleId,runToken,json(usage),...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
 export async function finishAiJob(subject: AccountSubject, battleId: string, jobId: string, runToken: string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='succeeded',completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status='charged' AND b.id=j.battle_id AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$4 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='succeeded',completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status='charged' AND b.id=j.battle_id AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$4 AND c.subject_id=$5 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
 export async function failAiJob(subject: AccountSubject, battleId: string, jobId: string, runToken: string, errorCode: string, message: string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='failed',reservation_id=NULL,error_code=$4,error_message=$5,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$6 AND b.platform_subject_id=$7) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$6 AND c.subject_id=$7 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,errorCode,message,...owner(subject)]);
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='failed',reservation_id=NULL,error_code=$4,error_message=$5,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$6 AND b.platform_subject_id=$7) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$6 AND c.subject_id=$7 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,errorCode,message,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
@@ -227,7 +228,7 @@ export async function saveMemory(subject: AccountSubject, input: { id?:string; b
         `SELECT b.id FROM battle_cases b
          WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3)
            OR EXISTS (SELECT 1 FROM battle_collaborators c
-                      WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND c.status='active'))
+                      WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator}))
          LIMIT 1`,
         [input.battleId, ...owner(subject)],
       );

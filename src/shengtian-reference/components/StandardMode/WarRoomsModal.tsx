@@ -36,6 +36,7 @@ export interface WarRoomItem {
 interface WarRoomsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  readOnly?: boolean;
   currentBattlefield: BattlefieldState;
   battlefieldList: WarRoomItem[];
   selectedBattlefieldId: string;
@@ -56,6 +57,7 @@ interface WarRoomsModalProps {
 export const WarRoomsModal: React.FC<WarRoomsModalProps> = ({
   isOpen,
   onClose,
+  readOnly = false,
   currentBattlefield,
   battlefieldList,
   selectedBattlefieldId,
@@ -254,8 +256,8 @@ export const WarRoomsModal: React.FC<WarRoomsModalProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button onClick={(event) => { event.stopPropagation(); void onArchiveBattlefield(item); }} className="rounded-lg border border-amber-700/60 px-2 py-1 text-[10px] text-amber-300 hover:bg-amber-950/50">{item.status === 'ARCHIVED' ? '取消归档' : '归档'}</button>
-                        <button onClick={(event) => { event.stopPropagation(); void onDeleteBattlefield(item); }} className="rounded-lg border border-red-700/60 px-2 py-1 text-[10px] text-red-300 hover:bg-red-950/50">删除</button>
+                        <button disabled={readOnly} onClick={(event) => { event.stopPropagation(); void onArchiveBattlefield(item); }} className="rounded-lg border border-amber-700/60 px-2 py-1 text-[10px] text-amber-300 hover:bg-amber-950/50 disabled:cursor-not-allowed disabled:opacity-40">{item.status === 'ARCHIVED' ? '取消归档' : '归档'}</button>
+                        <button disabled={readOnly} onClick={(event) => { event.stopPropagation(); void onDeleteBattlefield(item); }} className="rounded-lg border border-red-700/60 px-2 py-1 text-[10px] text-red-300 hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-40">删除</button>
                         <span className="flex items-center gap-1 text-blue-400 font-bold text-[11px] group-hover:translate-x-0.5 transition-transform"><span>载入推演</span><ArrowRight className="w-3.5 h-3.5" /></span>
                       </div>
                     </div>

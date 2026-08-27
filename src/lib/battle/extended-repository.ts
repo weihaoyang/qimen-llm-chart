@@ -8,6 +8,7 @@ import type { BattleAdvice, BattleAttachment, BattleReview, Collaborator, Collab
 type Json = Record<string, unknown>;
 export class BattleIntegrityError extends Error { constructor(message: string) { super(message); this.name = "BattleIntegrityError"; } }
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
+const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
 const record = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const playbookSource = (visibility: PlaybookEntry["visibility"], source: Json): Json => visibility === "anonymous_pool"
   ? { layer: "anonymous_pool", provenance: "user_confirmed" }
@@ -41,7 +42,7 @@ export const getBattleAccess = async (subject: AccountSubject, battleId: string)
     const own = await getBattle(subject, battleId);
     return own ? { battle:own, role:"owner" as const } : null;
   }
-  const result = await query<{role:CollaboratorRole}>(`SELECT role FROM battle_collaborators WHERE battle_id=$1 AND subject_type=$2 AND subject_id=$3 AND status='active'`, [battleId,...owner(subject)]);
+  const result = await query<{role:CollaboratorRole}>(`SELECT role FROM battle_collaborators c WHERE battle_id=$1 AND subject_type=$2 AND subject_id=$3 AND ${activeCollaborator}`, [battleId,...owner(subject)]);
   if (!result.rows[0]) return null;
   const battle = await getBattle(subject, battleId);
   return battle ? { battle, role:result.rows[0].role } : null;
@@ -149,7 +150,7 @@ export const getArchonProgress = async (subject: AccountSubject) => {
     `SELECT
        (SELECT COUNT(DISTINCT r.battle_id)::text FROM battle_reviews r JOIN battle_cases b ON b.id=r.battle_id WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2) AS reviewed_battles,
        (SELECT COUNT(DISTINCT c.battle_id)::text FROM battle_commitments c JOIN battle_cases b ON b.id=c.battle_id WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2) AS committed_battles,
-       (SELECT COUNT(DISTINCT c.battle_id)::text FROM battle_collaborators c WHERE c.subject_type=$1 AND c.subject_id=$2 AND c.status='active') AS collaboration_battles,
+       (SELECT COUNT(DISTINCT c.battle_id)::text FROM battle_collaborators c WHERE c.subject_type=$1 AND c.subject_id=$2 AND ${activeCollaborator}) AS collaboration_battles,
        (SELECT COALESCE(SUM(jsonb_array_length(CASE WHEN jsonb_typeof(s.state_json->'unlockedIds')='array' THEN s.state_json->'unlockedIds' ELSE '[]'::jsonb END)),0)::text
           FROM battle_module_states s JOIN battle_cases b ON b.id=s.battle_id
          WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2 AND s.module_id='deep-archives'
@@ -190,7 +191,7 @@ export const listCollaborators = async (subject:AccountSubject,battleId:string) 
   // Active collaborators need the roster to render their shared workspace;
   // mutation operations remain owner-only below.
   if (!await accessible(subject, battleId)) return null;
-  const result = await query<CollaboratorRow>(`SELECT ${collaboratorSelect} FROM battle_collaborators WHERE battle_id=$1 ORDER BY created_at`,[battleId]);
+  const result = await query<CollaboratorRow>(`SELECT ${collaboratorSelect} FROM battle_collaborators WHERE battle_id=$1 AND (expires_at IS NULL OR expires_at>now()) ORDER BY created_at`,[battleId]);
   return result.rows.map(mapCollaborator);
 };
 export const upsertCollaborator = async (subject:AccountSubject,battleId:string,input:{subjectType:string;subjectId:string;role:CollaboratorRole;permissions:Json}) => withTransaction(async(client)=>{const check=await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`,[battleId,...owner(subject)]);if(!check.rowCount)return null;const row=await client.query<CollaboratorRow>(`INSERT INTO battle_collaborators(id,battle_id,subject_type,subject_id,role,status,permissions_json,invited_by_type,invited_by_id,expires_at) VALUES($1,$2,$3,$4,$5,'invited',$6::jsonb,$7,$8,now()+interval '7 days') ON CONFLICT(battle_id,subject_type,subject_id) DO UPDATE SET role=EXCLUDED.role,status='invited',permissions_json=EXCLUDED.permissions_json,expires_at=now()+interval '7 days',updated_at=now() RETURNING ${collaboratorSelect}`,[randomUUID(),battleId,input.subjectType,input.subjectId,input.role,JSON.stringify(input.permissions),subject.subjectType,subject.subjectId]);return mapCollaborator(row.rows[0]);});
@@ -239,7 +240,7 @@ export const createAdvice = async (subject:AccountSubject,battleId:string,input:
   if (!access || !["owner","advisor","contributor"].includes(access.role)) return null;
   return withTransaction(async (client) => {
     const ownerRow = await client.query(`SELECT 1 FROM battle_cases WHERE id=$1 FOR UPDATE`, [battleId]);
-    const collaborator = await client.query(`SELECT 1 FROM battle_collaborators WHERE battle_id=$1 AND subject_type=$2 AND subject_id=$3 AND status='active'`, [battleId, subject.subjectType, subject.subjectId]);
+    const collaborator = await client.query(`SELECT 1 FROM battle_collaborators c WHERE battle_id=$1 AND subject_type=$2 AND subject_id=$3 AND ${activeCollaborator}`, [battleId, subject.subjectType, subject.subjectId]);
     const ownerAccess = await client.query(`SELECT 1 FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`, [battleId, subject.subjectType, subject.subjectId]);
     if (!ownerRow.rowCount || (!ownerAccess.rowCount && !collaborator.rowCount) || !await targetExists(client,battleId,input.targetType,input.targetId)) return null;
     // AI jobs may be retried after a successful platform charge. Reuse the

@@ -15,8 +15,9 @@ type ResourceRow = { snapshot_json:Json };
 type CommitmentRow = { id:string; battle_id:string; move_id:string; version:number; snapshot_json:Json; committed_at:Date; ended_at:Date|null; status:"active"|"verified"|"stopped"|"superseded" };
 
 const ownership = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
-const writableBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active' AND bc.role IN ('contributor','advisor'))`;
-const writableCasePredicate34 = (alias: string) => `(${alias}.platform_subject_type=$3 AND ${alias}.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=${alias}.id AND bc.subject_type=$3 AND bc.subject_id=$4 AND bc.status='active' AND bc.role IN ('contributor','advisor'))`;
+const activeCollaborator = "bc.status='active' AND (bc.expires_at IS NULL OR bc.expires_at>now())";
+const writableBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND ${activeCollaborator} AND bc.role IN ('contributor','advisor'))`;
+const writableCasePredicate34 = (alias: string) => `(${alias}.platform_subject_type=$3 AND ${alias}.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=${alias}.id AND bc.subject_type=$3 AND bc.subject_id=$4 AND ${activeCollaborator} AND bc.role IN ('contributor','advisor'))`;
 const asRecord = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const asStrings = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const iso = (value: Date|null|undefined) => value?.toISOString() ?? null;
@@ -31,12 +32,12 @@ const mapMove = (row: MoveRow): Move => ({ id:row.id, battleId:row.battle_id, ju
 export const isBattleId = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 export const listBattles = async (subject: AccountSubject) => {
-  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$1 AND c.platform_subject_id=$2 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND bc.status='active' LIMIT 1) END AS access_role FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND bc.status='active')) AND c.status <> 'archived' ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
+  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$1 AND c.platform_subject_id=$2 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator} LIMIT 1) END AS access_role FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator})) AND c.status <> 'archived' ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
   return result.rows.map(mapBattle);
 };
 
 export const getBattle = async (subject: AccountSubject, id: string) => {
-  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$2 AND c.platform_subject_id=$3 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active' LIMIT 1) END AS access_role FROM battle_cases c WHERE c.id=$1 AND ((c.platform_subject_type=$2 AND c.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND bc.status='active'))`, [id, ...ownership(subject)]);
+  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$2 AND c.platform_subject_id=$3 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND ${activeCollaborator} LIMIT 1) END AS access_role FROM battle_cases c WHERE c.id=$1 AND ((c.platform_subject_type=$2 AND c.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND ${activeCollaborator}))`, [id, ...ownership(subject)]);
   return result.rows[0] ? mapBattle(result.rows[0]) : null;
 };
 
@@ -51,7 +52,7 @@ export const createBattle = async (subject: AccountSubject, input: Pick<Battle, 
 export const updateBattle = async (subject: AccountSubject, id: string, input: Partial<Pick<Battle, "title"|"objective"|"minimumOutcome"|"idealOutcome"|"opponentSummary"|"hardDeadline"|"status">>) => {
   const current = await getBattle(subject, id);
   if (!current) return null;
-  const row = await query<CaseRow>(`UPDATE battle_cases SET title=$4,objective=$5,minimum_outcome=$6,ideal_outcome=$7,opponent_summary=$8,status=$9,hard_deadline=$10,updated_at=now() WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 RETURNING id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,status,hard_deadline,created_at,updated_at,scenario_id,scenario_version,source_type`, [id, ...ownership(subject), input.title ?? current.title, input.objective ?? current.objective, input.minimumOutcome ?? current.minimumOutcome, input.idealOutcome ?? current.idealOutcome, input.opponentSummary ?? current.opponentSummary, input.status ?? current.status, input.hardDeadline === undefined ? current.hardDeadline : input.hardDeadline]);
+  const row = await query<CaseRow>(`UPDATE battle_cases b SET title=$4,objective=$5,minimum_outcome=$6,ideal_outcome=$7,opponent_summary=$8,status=$9,hard_deadline=$10,updated_at=now() WHERE b.id=$1 AND (${writableBattlePredicate}) RETURNING b.id,b.title,b.objective,b.minimum_outcome,b.ideal_outcome,b.opponent_summary,b.status,b.hard_deadline,b.created_at,b.updated_at,b.scenario_id,b.scenario_version,b.source_type`, [id, ...ownership(subject), input.title ?? current.title, input.objective ?? current.objective, input.minimumOutcome ?? current.minimumOutcome, input.idealOutcome ?? current.idealOutcome, input.opponentSummary ?? current.opponentSummary, input.status ?? current.status, input.hardDeadline === undefined ? current.hardDeadline : input.hardDeadline]);
   return row.rows[0] ? mapBattle(row.rows[0]) : null;
 };
 
@@ -243,7 +244,7 @@ export const updateDraftMoveSource = async (subject: AccountSubject, battleId: s
 });
 
 export const commitMove = async (subject: AccountSubject, battleId: string, moveId: string, changeReason?: string) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...ownership(subject)]);
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const move = await client.query<MoveRow>(`SELECT id,battle_id,junction_id,version,kind,title,key_variable,rationale,action_json,cost_json,upside_json,failure_cost_json,validation_json,stop_json,assumptions_json,source_json,state FROM battle_moves WHERE id=$1 AND battle_id=$2 AND state NOT IN ('stopped','rejected','verified') FOR UPDATE`, [moveId,battleId]);
   if (!move.rowCount) return { invalidMove: true as const };
@@ -267,7 +268,7 @@ export const getActiveCommitment = async (subject: AccountSubject, battleId: str
 };
 
 export const saveExecutionPlan = async (subject: AccountSubject, battleId: string, moveId: string, actions: Array<{ title:string; description:string; owner:string; dueAt:string|null; successSignal:string; failureSignal:string }>, breakers: Array<{ kind:string; label:string; threshold:Json; actionOnTrigger:string; enabled:boolean }>) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT m.id FROM battle_moves m JOIN battle_cases c ON c.id=m.battle_id JOIN battle_commitments cm ON cm.move_id=m.id AND cm.battle_id=m.battle_id AND cm.status='active' WHERE m.id=$1 AND m.battle_id=$2 AND c.platform_subject_type=$3 AND c.platform_subject_id=$4 FOR UPDATE`, [moveId,battleId,...ownership(subject)]);
+  const owner = await client.query(`SELECT m.id FROM battle_moves m JOIN battle_cases b ON b.id=m.battle_id JOIN battle_commitments cm ON cm.move_id=m.id AND cm.battle_id=m.battle_id AND cm.status='active' WHERE m.id=$1 AND m.battle_id=$2 AND (${writableCasePredicate34('b')}) FOR UPDATE`, [moveId,battleId,...ownership(subject)]);
   if (!owner.rowCount) return null;
   await client.query(`DELETE FROM battle_move_actions WHERE move_id=$1`, [moveId]);
   await client.query(`DELETE FROM battle_breakers WHERE move_id=$1`, [moveId]);
@@ -300,16 +301,16 @@ export const getExecutionPlan = async (subject: AccountSubject, battleId: string
 };
 
 export const updateExecutionAction = async (subject: AccountSubject, battleId: string, moveId: string, actionId: string, status: string, actualCost: Json = {}) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT a.id FROM battle_move_actions a JOIN battle_moves m ON m.id=a.move_id JOIN battle_cases c ON c.id=m.battle_id WHERE a.id=$1 AND m.id=$2 AND c.id=$3 AND c.platform_subject_type=$4 AND c.platform_subject_id=$5 FOR UPDATE`, [actionId,moveId,battleId,...ownership(subject)]);
+  const owner = await client.query(`SELECT a.id FROM battle_move_actions a JOIN battle_moves m ON m.id=a.move_id JOIN battle_cases b ON b.id=m.battle_id WHERE a.id=$1 AND m.id=$2 AND b.id=$3 AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$4 AND bc.subject_id=$5 AND ${activeCollaborator} AND bc.role IN ('contributor','advisor'))) FOR UPDATE`, [actionId,moveId,battleId,...ownership(subject)]);
   if (!owner.rowCount) return null;
   const completed = status === "done" ? "now()" : "NULL";
   const row = await client.query<{id:string;sequence_no:number;title:string;description:string;owner:string;due_at:Date|null;status:string;success_signal:string;failure_signal:string;actual_cost_json:Json;completed_at:Date|null}>(`UPDATE battle_move_actions SET status=$3,actual_cost_json=$4::jsonb,completed_at=${completed} WHERE id=$1 AND move_id=$2 RETURNING id,sequence_no,title,description,owner,due_at,status,success_signal,failure_signal,actual_cost_json,completed_at`, [actionId,moveId,status,JSON.stringify(actualCost)]);
-  await client.query(`UPDATE battle_cases SET updated_at=now(),status=CASE WHEN $4='done' THEN 'monitoring' ELSE status END WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`, [battleId,...ownership(subject),status]);
+  await client.query(`UPDATE battle_cases SET updated_at=now(),status=CASE WHEN $2='done' THEN 'monitoring' ELSE status END WHERE id=$1`, [battleId,status]);
   const item=row.rows[0]; return item ? { id:item.id, sequenceNo:item.sequence_no, title:item.title, description:item.description, owner:item.owner, dueAt:iso(item.due_at), status:item.status, successSignal:item.success_signal, failureSignal:item.failure_signal, actualCost:asRecord(item.actual_cost_json), completedAt:iso(item.completed_at) } : null;
 });
 
 export const triggerBreaker = async (subject: AccountSubject, battleId: string, moveId: string, breakerId: string) => withTransaction(async (client) => {
-  const owner = await client.query(`SELECT b.id FROM battle_breakers b JOIN battle_moves m ON m.id=b.move_id JOIN battle_cases c ON c.id=m.battle_id WHERE b.id=$1 AND m.id=$2 AND c.id=$3 AND c.platform_subject_type=$4 AND c.platform_subject_id=$5 FOR UPDATE`, [breakerId,moveId,battleId,...ownership(subject)]);
+  const owner = await client.query(`SELECT br.id FROM battle_breakers br JOIN battle_moves m ON m.id=br.move_id JOIN battle_cases b ON b.id=m.battle_id WHERE br.id=$1 AND m.id=$2 AND b.id=$3 AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$4 AND bc.subject_id=$5 AND ${activeCollaborator} AND bc.role IN ('contributor','advisor'))) FOR UPDATE`, [breakerId,moveId,battleId,...ownership(subject)]);
   if (!owner.rowCount) return null;
   const breaker = await client.query<{id:string;kind:string;label:string;threshold_json:Json;action_on_trigger:string;enabled:boolean;triggered_at:Date|null}>(`UPDATE battle_breakers SET triggered_at=COALESCE(triggered_at,now()) WHERE id=$1 RETURNING id,kind,label,threshold_json,action_on_trigger,enabled,triggered_at`, [breakerId]);
   await client.query(`UPDATE battle_moves SET state='stopped' WHERE id=$1`, [moveId]);
