@@ -2257,6 +2257,20 @@ body .product-chart .agent-panel__guest-recovery-note {
 /* Final desktop shell: keep account controls in their own grid track so they
  * never overlap the product navigation at wide aspect ratios. */
 @media (min-width: 721px) {
+  html body .page-shell.product-chart {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > #qimen-workbench-layout {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > .qmdj-footer { flex: 0 0 auto !important; }
+
   html body .page-shell.product-chart .observatory-hero {
     grid-template-columns: minmax(0, 1fr) auto !important;
     grid-template-rows: auto auto !important;
@@ -2332,6 +2346,34 @@ html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart 
 }
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__guest-recovery-note,
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__error { order: 4 !important; flex: 0 0 auto !important; }
+
+/* Last-resort height contract (must remain after every legacy media rule). */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart {
+    display: flex !important;
+    flex-direction: column !important;
+    block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    min-block-size: 0 !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > #qimen-workbench-layout.analysis-panel-group {
+    flex: 1 1 0% !important;
+    block-size: auto !important;
+    min-block-size: 0 !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > #qimen-workbench-layout.analysis-panel-group > #qimen-chart,
+  html body .page-shell.product-chart > #qimen-workbench-layout.analysis-panel-group > #qimen-agent {
+    min-block-size: 0 !important;
+    block-size: 100% !important;
+  }
+  html body .page-shell.product-chart > #qimen-workbench-layout.analysis-panel-group > #qimen-agent,
+  html body .page-shell.product-chart > #qimen-workbench-layout.analysis-panel-group > #qimen-agent > .sidebar-panel {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+}
 
 /* The chart Agent lives in a fixed-height sidebar on desktop.  Its question
  * editor can be taller than the available viewport, so letting the four
