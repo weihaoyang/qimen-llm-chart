@@ -51,22 +51,45 @@ export const readGuestCheckoutToken = (value: string | null) => {
 };
 
 const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
+const QMDJ_COOKIE_ALIASES: Record<string, string> = {
+  qmdj_platform_access: "ssp_access",
+  qmdj_platform_refresh: "ssp_refresh",
+  qmdj_platform_csrf: "ssp_csrf",
+};
 
 export const readPlatformCookieHeader = (cookieHeader: string | null) => {
   const values = (cookieHeader ?? "")
     .split(";")
     .map((part) => part.trim())
-    .filter((part) => PLATFORM_COOKIE_NAMES.has(part.split("=", 1)[0] ?? ""));
-  return values.length ? values.join("; ") : "";
+    .filter(Boolean);
+  const selected = new Map<string, string>();
+  for (const part of values.filter((value) => PLATFORM_COOKIE_NAMES.has(value.split("=", 1)[0] ?? ""))) {
+    const separator = part.indexOf("=");
+    if (separator < 1) continue;
+    const sourceName = part.slice(0, separator);
+    selected.set(sourceName, part);
+  }
+  for (const part of values) {
+    const separator = part.indexOf("=");
+    if (separator < 1) continue;
+    const targetName = QMDJ_COOKIE_ALIASES[part.slice(0, separator)];
+    if (!targetName || selected.has(targetName)) continue;
+    selected.set(targetName, `${targetName}=${part.slice(separator + 1)}`);
+  }
+  return [...selected.values()].join("; ");
 };
 
 export const readCookieValue = (cookieHeader: string | null, name: string) => {
-  const prefix = `${name}=`;
-  return (cookieHeader ?? "")
+  const names = [name, ...Object.entries(QMDJ_COOKIE_ALIASES).filter(([, target]) => target === name).map(([source]) => source)];
+  const parts = (cookieHeader ?? "")
     .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix))
-    ?.slice(prefix.length) ?? "";
+    .map((part) => part.trim());
+  for (const candidate of names) {
+    const prefix = `${candidate}=`;
+    const found = parts.find((part) => part.startsWith(prefix));
+    if (found) return found.slice(prefix.length);
+  }
+  return "";
 };
 
 type PlatformRequestOptions = {
