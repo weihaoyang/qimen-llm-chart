@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   GitCompare, 
   Flame, 
@@ -44,6 +44,19 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   const [isLocked, setIsLocked] = useState(Boolean(battlefield.lockedAsymmetricStrategyId));
   const [isLocking, setIsLocking] = useState(false);
   const [lockError, setLockError] = useState<string | null>(null);
+  const [activeCommitment, setActiveCommitment] = useState<{ moveId?: string } | null>(null);
+  const [changeReason, setChangeReason] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void sessionApi.commitment(battlefield.id).then(({ commitment }) => {
+      if (!cancelled) setActiveCommitment(commitment ? { moveId: String(commitment.moveId ?? '') } : null);
+    }).catch(() => {
+      // A missing commitment is a valid first-run state. The commit endpoint
+      // remains authoritative if the request raced another browser tab.
+    });
+    return () => { cancelled = true; };
+  }, [battlefield.id]);
 
   const currentPkg = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyKey];
 
@@ -56,6 +69,10 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   const handleLockStrategy = async () => {
     if (readOnly) return;
     if (isLocking || isLocked) return;
+    if (activeCommitment && !changeReason.trim()) {
+      setLockError('当前战局已有活动落子令，请先填写本次换线原因。');
+      return;
+    }
     setIsLocking(true);
     setLockError(null);
     try {
@@ -76,8 +93,9 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
       }]);
       const moveId = (saved.moves[0] as { id?: unknown } | undefined)?.id;
       if (!moveId) throw new Error('策略草案保存成功但未返回策略标识。');
-      await sessionApi.commitMove(battlefield.id, String(moveId));
+      await sessionApi.commitMove(battlefield.id, String(moveId), changeReason.trim() || undefined);
       setIsLocked(true);
+      setActiveCommitment({ moveId: String(moveId) });
       soundManager.playStrategyLocked();
       onUpdateBattlefield(prev => ({ ...prev, lockedAsymmetricStrategyId: selectedStrategyKey }));
     } catch (error) {
@@ -124,6 +142,23 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
           </div>
         </div>
       </div>
+
+      {activeCommitment && !isLocked && !readOnly && (
+        <div className="rounded-xl border border-amber-700/60 bg-amber-950/30 p-4 space-y-2">
+          <label htmlFor="breakthrough-change-reason" className="text-xs font-bold text-amber-200">
+            本次换线原因（已有活动落子令，必填）
+          </label>
+          <textarea
+            id="breakthrough-change-reason"
+            value={changeReason}
+            onChange={(event) => setChangeReason(event.target.value)}
+            maxLength={6000}
+            rows={2}
+            placeholder="说明哪些事实、约束或执行信号发生了变化…"
+            className="w-full rounded-lg border border-amber-800/70 bg-black/50 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+          />
+        </div>
+      )}
 
       {/* 3 Asymmetric Strategy Selector Tabs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
