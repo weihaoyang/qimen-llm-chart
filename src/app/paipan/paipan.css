@@ -2254,6 +2254,85 @@ body .product-chart .agent-panel__guest-recovery-note {
   height: auto !important;
 }
 
+/* Final desktop shell: keep account controls in their own grid track so they
+ * never overlap the product navigation at wide aspect ratios. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    height: auto !important;
+    min-height: 76px !important;
+    padding: 9px 12px !important;
+    align-items: center !important;
+  }
+  html body .page-shell.product-chart .observatory-hero__copy { grid-column: 1 !important; grid-row: 1 !important; min-width: 0 !important; }
+  html body .page-shell.product-chart .observatory-hero .platform-account {
+    position: static !important;
+    transform: none !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    max-width: 390px !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs { grid-column: 1 / -1 !important; grid-row: 2 !important; }
+  html body .page-shell.product-chart .observatory-hero .hero-action { display: none !important; }
+}
+
+/* Chat-first Agent surface: transcript owns the vertical space and the
+ * question editor becomes a compact composer below it, like a chat client. */
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .chart-inspector-head { flex: 0 0 auto !important; }
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--result {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--result > .inspector-scroll {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--question {
+  order: 2 !important;
+  flex: 0 0 auto !important;
+  padding: 8px !important;
+  border-top: 2px solid var(--paipan-ink) !important;
+  background: var(--paipan-paper) !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head { display: none !important; }
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--question .agent-panel__angles,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--question .agent-panel__followups { display: none !important; }
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart .agent-panel__textarea {
+  min-height: 54px !important;
+  max-height: 120px !important;
+  resize: vertical !important;
+  border: 2px solid var(--paipan-ink) !important;
+  background: #fff !important;
+  color: var(--paipan-ink) !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__toolbar {
+  order: 3 !important;
+  flex: 0 0 auto !important;
+  padding: 7px 8px !important;
+  border-top: 0 !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__guest-recovery-note,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__error { order: 4 !important; flex: 0 0 auto !important; }
+
 /* The chart Agent lives in a fixed-height sidebar on desktop.  Its question
  * editor can be taller than the available viewport, so letting the four
  * following tracks collapse makes the entitlement toolbar and guest notice
