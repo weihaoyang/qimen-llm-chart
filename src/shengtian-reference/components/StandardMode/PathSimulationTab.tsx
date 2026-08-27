@@ -89,17 +89,41 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
 
   React.useEffect(() => {
     let cancelled = false;
-    void sessionApi.analysis(battleId).then((result) => {
-      const loaded = result.moves.map((move) => {
+    void sessionApi.analysis(battleId).then(async (result) => {
+      // A freshly created battle may not have a generated analysis yet. Ask
+      // the canonical battle service to derive its first gravity line and
+      // junctions from the persisted facts/constraints before rendering the
+      // sandbox; this keeps the UI from silently presenting an empty model.
+      const resolved = result.junctions.length ? result : await sessionApi.generateAnalysis(battleId, {
+        availableCash: battlefield.financials.availableCash,
+        monthlyBurn: battlefield.financials.monthlyBurn,
+        monthlyIncomeWithoutClient: battlefield.financials.monthlyIncomeWithoutClient,
+      });
+      const gravityNodes: GravityNode[] = resolved.junctions.map((junction, index) => {
+        const urgency = typeof junction.urgency === 'number' ? junction.urgency : 3;
+        const leverage = typeof junction.leverage === 'number' ? junction.leverage : 3;
+        const irreversibility = typeof junction.irreversibility === 'number' ? junction.irreversibility : 3;
+        const score = Math.max(1, Math.min(100, Math.round((urgency + leverage + irreversibility) / 15 * 100)));
+        return {
+          id: String(junction.id),
+          day: index + 1,
+          title: String(junction.title ?? '决策节点'),
+          type: score >= 80 ? 'FATAL' : score >= 60 ? 'WARNING' : index === 0 ? 'NOW' : 'MILESTONE',
+          description: String(junction.description ?? ''),
+          impactScore: score,
+          aiDefaultPrediction: String(junction.defaultConsequence ?? '请先验证该节点的事实与约束。'),
+        };
+      });
+      const loaded = resolved.moves.map((move) => {
         const source = move.source && typeof move.source === 'object' ? move.source as Record<string, unknown> : {};
         return {
         id: String(move.id), name: String(move.title ?? '未命名策略'), type: move.kind === 'strong_attack' ? 'AGGRESSIVE' : move.kind === 'hedge' ? 'HEDGE' : 'PROBING', typeLabel: move.kind === 'strong_attack' ? '强攻手' : move.kind === 'hedge' ? '对冲手' : '试局手', description: String(move.rationale ?? ''), targetTimelineDay: typeof source.targetTimelineDay === 'number' ? source.targetTimelineDay : 14, assignedCardIds: Array.isArray(source.assignedCardIds) ? source.assignedCardIds.filter((value): value is string => typeof value === 'string') : [], costDescription: JSON.stringify(move.cost ?? {}), successSignal: JSON.stringify(move.validation ?? {}), estimatedSurvivalProb: typeof source.estimatedSurvivalProb === 'number' ? source.estimatedSurvivalProb : 50, status: move.state === 'selected' ? 'LOCKED' : move.state === 'executing' ? 'EXECUTING' : 'PROPOSED',
       } as StrategyBranch;
       });
-      if (!cancelled && loaded.length) onUpdateBattlefield((previous) => ({ ...previous, strategies: loaded }));
+      if (!cancelled) onUpdateBattlefield((previous) => ({ ...previous, gravityNodes, ...(loaded.length ? { strategies: loaded } : {}) }));
     }).catch((error) => { if (!cancelled) setPersistenceMessage(error instanceof Error ? error.message : '策略列表读取失败，请重试。'); });
     return () => { cancelled = true; };
-  }, [battleId, onUpdateBattlefield]);
+  }, [battleId, battlefield.financials.availableCash, battlefield.financials.monthlyBurn, battlefield.financials.monthlyIncomeWithoutClient, onUpdateBattlefield]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -148,7 +172,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     }));
 
     void sessionApi.analysis(battleId).then(async ({ junctions }) => {
-      const junctionId = junctions[0]?.id;
+      const junctionId = typeof junctions[0]?.id === 'string' ? junctions[0].id : null;
       if (!junctionId) { setPersistenceMessage('策略已保存在当前草稿；创建因果节点后才能写入服务端。'); return; }
       const saved = await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [], source: { layer: 'path_simulation', assignedCardIds: selectedCardsForNewStrategy, targetTimelineDay: strategyDay, estimatedSurvivalProb: newStrat.estimatedSurvivalProb } }]);
       const persisted = saved.moves[0] as Record<string, unknown> | undefined;
