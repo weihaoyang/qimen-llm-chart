@@ -248,6 +248,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => handleOpenAddStrategy('AGGRESSIVE')}
+            disabled={readOnly}
             className="px-3.5 py-1.5 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-700/60 hover:border-blue-500 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -255,6 +256,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
           </button>
           <button
             onClick={() => handleOpenAddStrategy('PROBING')}
+            disabled={readOnly}
             className="px-3.5 py-1.5 rounded-lg bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-700/60 hover:border-purple-500 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -262,6 +264,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
           </button>
           <button
             onClick={() => handleOpenAddStrategy('HEDGE')}
+            disabled={readOnly}
             className="px-3.5 py-1.5 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 hover:border-amber-500 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -537,7 +540,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
                     <span className="text-slate-400">预估突破存活率:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-black text-emerald-400 text-sm">{strat.estimatedSurvivalProb}%</span>
-                      {activeCommitmentId === strat.id || strat.status === 'LOCKED' ? <span className="text-[10px] text-emerald-300">已锁定</span> : <button onClick={() => void handleCommitStrategy(strat.id)} disabled={commitPending === strat.id} className="rounded bg-blue-700 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50">{commitPending === strat.id ? '锁定中…' : '锁定策略'}</button>}
+                      {activeCommitmentId === strat.id || strat.status === 'LOCKED' ? <span className="text-[10px] text-emerald-300">已锁定</span> : <button onClick={() => void handleCommitStrategy(strat.id)} disabled={readOnly || commitPending === strat.id} className="rounded bg-blue-700 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50">{commitPending === strat.id ? '锁定中…' : '锁定策略'}</button>}
                     </div>
                   </div>
                 </div>

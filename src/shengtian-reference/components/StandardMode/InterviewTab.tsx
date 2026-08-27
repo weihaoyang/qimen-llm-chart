@@ -206,13 +206,13 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
                       {msg.parameterAccepted ? (
                         <span className="text-emerald-300">已确认写入战局</span>
                       ) : (
-                        <button type="button" onClick={() => handleAcceptParameter(msg.id, msg.parameterExtracted!)} className="rounded-md border border-emerald-700/70 bg-emerald-950/60 px-2 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900/70">
+                        <button type="button" disabled={readOnly} onClick={() => void handleAcceptParameter(msg.id, msg.parameterExtracted!)} className="rounded-md border border-emerald-700/70 bg-emerald-950/60 px-2 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900/70 disabled:opacity-40">
                           确认采纳
                         </button>
                       )}
                     </div>
                   )}
-                  {(msg.extractedFacts?.length || msg.extractedConstraints?.length) ? <div className="mt-2.5 pt-2 border-t border-white/[0.1] space-y-2 text-xs font-mono-code"><div className="flex items-center justify-between"><span className="text-cyan-300 font-bold">结构化提取：事实 {msg.extractedFacts?.length ?? 0} 条 · 约束 {msg.extractedConstraints?.length ?? 0} 条</span>{msg.extractedAccepted ? <span className="text-emerald-300">已确认写入战局</span> : <button type="button" onClick={() => void handleAcceptExtracted(msg.id, msg)} className="rounded-md border border-cyan-700/70 bg-cyan-950/60 px-2 py-1 text-[10px] font-bold text-cyan-300 hover:bg-cyan-900/70">审阅并写入</button>}</div><div className="space-y-1 text-[11px] text-slate-400">{msg.extractedFacts?.map((fact, index) => <div key={`fact-${index}`}>事实候选：{fact.content}（置信度 {fact.confidence}%）</div>)}{msg.extractedConstraints?.map((constraint, index) => <div key={`constraint-${index}`}>约束候选：{constraint.label}：{constraint.description}</div>)}</div></div> : null}
+                  {(msg.extractedFacts?.length || msg.extractedConstraints?.length) ? <div className="mt-2.5 pt-2 border-t border-white/[0.1] space-y-2 text-xs font-mono-code"><div className="flex items-center justify-between"><span className="text-cyan-300 font-bold">结构化提取：事实 {msg.extractedFacts?.length ?? 0} 条 · 约束 {msg.extractedConstraints?.length ?? 0} 条</span>{msg.extractedAccepted ? <span className="text-emerald-300">已确认写入战局</span> : <button type="button" disabled={readOnly} onClick={() => void handleAcceptExtracted(msg.id, msg)} className="rounded-md border border-cyan-700/70 bg-cyan-950/60 px-2 py-1 text-[10px] font-bold text-cyan-300 hover:bg-cyan-900/70 disabled:opacity-40">审阅并写入</button>}</div><div className="space-y-1 text-[11px] text-slate-400">{msg.extractedFacts?.map((fact, index) => <div key={`fact-${index}`}>事实候选：{fact.content}（置信度 {fact.confidence}%）</div>)}{msg.extractedConstraints?.map((constraint, index) => <div key={`constraint-${index}`}>约束候选：{constraint.label}：{constraint.description}</div>)}</div></div> : null}
 
                   <div className={`text-[10px] font-mono-code mt-1 text-right ${isAI ? 'text-slate-500' : 'text-blue-200'}`}>
                     {msg.timestamp}
@@ -254,6 +254,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
               <button
                 key={idx}
                 onClick={() => handleSendMessage(prompt)}
+                disabled={readOnly}
                 className="text-xs bg-black/40 hover:bg-blue-950/60 text-slate-300 hover:text-blue-200 border border-white/[0.08] hover:border-blue-500/50 px-2.5 py-1 rounded-lg transition-all text-left cursor-pointer"
               >
                 {prompt}
@@ -266,6 +267,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
         <div className="relative shrink-0">
           <textarea
             value={inputText}
+            disabled={readOnly}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -279,7 +281,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
           />
           <button
             onClick={() => handleSendMessage()}
-            disabled={!inputText.trim() || isTyping}
+            disabled={readOnly || !inputText.trim() || isTyping}
             className="absolute right-2.5 bottom-2.5 p-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white transition-all cursor-pointer shadow-md"
           >
             <Send className="w-4 h-4" />

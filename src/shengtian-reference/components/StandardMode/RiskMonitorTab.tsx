@@ -169,6 +169,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
           {triggeredCount > 0 && (
             <button
               onClick={onLaunchBreakthrough}
+              disabled={readOnly}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white text-xs font-bold flex items-center gap-2.5 shadow-2xl shadow-red-950/80 animate-bounce transition-all shrink-0 border border-red-400 cursor-pointer"
             >
               <Flame className="w-4 h-4 text-yellow-300 animate-spin" />
@@ -227,6 +228,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
                   {/* Mechanical Toggle Button */}
                   <button
                     onClick={() => toggleRiskTrigger(risk.id)}
+                    disabled={readOnly}
                     className={`shrink-0 text-xs px-3 py-1.5 rounded-xl transition-all font-mono-code font-bold border flex items-center gap-1.5 cursor-pointer shadow-md ${
                       isTriggered
                         ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/[0.12]'

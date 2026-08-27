@@ -302,7 +302,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
       <div className="surface-obsidian rounded-2xl p-5 shadow-2xl border border-white/[0.08] hud-corner">
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
           <div><span className="text-xs font-bold text-white">现实底牌盘点</span><p className="mt-1 text-[11px] text-slate-500">AI 只生成待核验候选，保存后仍需你确认事实属性。</p></div>
-          <div className="flex items-center gap-2">{generationError && <span className="text-[11px] text-red-300">{generationError}</span>}<button type="button" onClick={() => void handleGenerateCards()} disabled={isGenerating} className="rounded-xl border border-cyan-600/60 bg-cyan-950/50 px-3 py-2 text-xs font-bold text-cyan-200 disabled:opacity-50">{isGenerating ? '正在生成…' : generationError ? '重试生成' : 'AI 生成底牌候选'}</button></div>
+          <div className="flex items-center gap-2">{generationError && <span className="text-[11px] text-red-300">{generationError}</span>}<button type="button" onClick={() => void handleGenerateCards()} disabled={readOnly || isGenerating} className="rounded-xl border border-cyan-600/60 bg-cyan-950/50 px-3 py-2 text-xs font-bold text-cyan-200 disabled:opacity-50">{isGenerating ? '正在生成…' : generationError ? '重试生成' : 'AI 生成底牌候选'}</button></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           
@@ -366,6 +366,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                 <input
                   type="number"
                   value={cashInput}
+                  disabled={readOnly}
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     setCashInput(val);
@@ -380,6 +381,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                 <input
                   type="number"
                   value={burnInput}
+                  disabled={readOnly}
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     setBurnInput(val);
@@ -394,6 +396,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                 <input
                   type="number"
                   value={otherIncomeInput}
+                  disabled={readOnly}
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     setOtherIncomeInput(val);
@@ -482,6 +485,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
 
                 <button
                   onClick={() => openAddModal(cat.key)}
+                  disabled={readOnly}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 text-xs border border-white/[0.1] hover:border-amber-500/50 transition-all font-medium cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5 text-amber-400" />
@@ -496,6 +500,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                     <p className="text-slate-400 font-medium">当前筛选条件下暂无此分类底牌</p>
                     <button 
                       onClick={() => openAddModal(cat.key)}
+                      disabled={readOnly}
                       className="mt-2.5 text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -639,6 +644,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                                 <span className="text-slate-400 font-mono-code text-[10px]">微调置信:</span>
                                 <button
                                   onClick={(e) => handleAdjustConfidence(asset.id, -5, e)}
+                                  disabled={readOnly}
                                   className="w-6 h-6 rounded bg-black/70 hover:bg-red-950 text-slate-300 hover:text-red-300 border border-white/[0.08] hover:border-red-700 flex items-center justify-center font-mono-code font-bold cursor-pointer"
                                   title="降低5%置信度"
                                 >
@@ -649,6 +655,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                                 </span>
                                 <button
                                   onClick={(e) => handleAdjustConfidence(asset.id, 5, e)}
+                                  disabled={readOnly}
                                   className="w-6 h-6 rounded bg-black/70 hover:bg-emerald-950 text-slate-300 hover:text-emerald-300 border border-white/[0.08] hover:border-emerald-700 flex items-center justify-center font-mono-code font-bold cursor-pointer"
                                   title="增加5%置信度"
                                 >
@@ -661,6 +668,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                                 <span className="text-slate-400 font-mono-code text-[10px]">认知属性:</span>
                                 <select
                                   value={asset.tag}
+                                  disabled={readOnly}
                                   onChange={(e) => handleQuickChangeTag(asset.id, e.target.value as EpistemicTag, e)}
                                   className={`text-[10px] font-semibold rounded-lg px-2.5 py-1 border cursor-pointer ${tagMeta.bgColor} ${tagMeta.borderColor} ${tagMeta.textColor} focus:outline-none`}
                                 >
@@ -677,6 +685,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                               <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={(e) => openEditModal(asset, e)}
+                                  disabled={readOnly}
                                   className="px-2.5 py-1 text-slate-300 hover:text-white rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] flex items-center gap-1 text-[11px] cursor-pointer transition-colors"
                                 >
                                   <Edit3 className="w-3 h-3" />
@@ -684,6 +693,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
                                 </button>
                                 <button
                                   onClick={(e) => handleDeleteCard(asset.id, e)}
+                                  disabled={readOnly}
                                   className="p-1 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-950/60 border border-transparent hover:border-red-800/60 cursor-pointer transition-colors"
                                   title="删除底牌"
                                 >
@@ -713,6 +723,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
         </div>
         <button
           onClick={onNavigateToSimulation}
+          disabled={readOnly}
           className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-xl shadow-blue-950/50 cursor-pointer"
         >
           <span>进入路径推演沙盘</span>
