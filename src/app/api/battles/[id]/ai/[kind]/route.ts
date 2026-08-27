@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { loadBattleInput } from "@/lib/battle/service";
-import { createAiJob, failAiJob, finishAiJob, getAiJob, startAiJob, hashSnapshot, listActiveMemorySummaries } from "@/lib/battle/product-state";
+import { claimAiJobCommit, createAiJob, failAiJob, finishAiJob, getAiJob, startAiJob, hashSnapshot, listActiveMemorySummaries } from "@/lib/battle/product-state";
 import { requestAgentAnalysis } from "@/lib/agent/chat";
 import { isUuid, asText } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
@@ -74,10 +74,9 @@ export async function handleAiPost(request: Request, context: { params: Promise<
       throw new Error(schemaError);
     }
     const structured = parsedStructured as Record<string, unknown>;
-    // Refresh the execution lease after the provider returns and before any
-    // business state is written. If a recovery poll already timed the job out,
-    // abort without applying model output or committing usage.
-    if (!await startAiJob(subject, id, created.jobId, runToken)) throw new Error("AI 任务已超时或被终止，未应用模型结果。");
+    // Atomically claim the commit phase before writing any business state.
+    // A timed-out/retried run has a different token and cannot pass this gate.
+    if (!await claimAiJobCommit(subject, id, created.jobId, runToken)) throw new Error("AI 任务已超时或被终止，未应用模型结果。");
     if (kind === "cards") {
       const cards = asArray(structured.cards ?? structured.assets).map((item, index) => {
         const card = item && typeof item === "object" ? item as Record<string, unknown> : {};

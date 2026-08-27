@@ -231,8 +231,13 @@ export const createAdvice = async (subject:AccountSubject,battleId:string,input:
     const ownerAccess = await client.query(`SELECT 1 FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`, [battleId, subject.subjectType, subject.subjectId]);
     if (!ownerRow.rowCount || (!ownerAccess.rowCount && !collaborator.rowCount) || !await targetExists(client,battleId,input.targetType,input.targetId)) return null;
     const id = randomUUID();
-    const result = await client.query<AdviceRow>(`INSERT INTO battle_advice(id,battle_id,author_subject_type,author_subject_id,target_type,target_id,opinion,rationale,uncertainty,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) RETURNING ${adviceSelect}`,[id,battleId,...owner(subject),input.targetType,input.targetId,input.opinion,input.rationale,input.uncertainty,JSON.stringify({...input.source,layer:"advisor_opinion",author:{subjectType:subject.subjectType,subjectId:subject.subjectId}})]);
-    return mapAdvice(result.rows[0]);
+    const source = {...input.source,layer:"advisor_opinion",author:{subjectType:subject.subjectType,subjectId:subject.subjectId}};
+    const result = await client.query<AdviceRow>(`INSERT INTO battle_advice(id,battle_id,author_subject_type,author_subject_id,target_type,target_id,opinion,rationale,uncertainty,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) ON CONFLICT DO NOTHING RETURNING ${adviceSelect}`,[id,battleId,...owner(subject),input.targetType,input.targetId,input.opinion,input.rationale,input.uncertainty,JSON.stringify(source)]);
+    if (result.rows[0]) return mapAdvice(result.rows[0]);
+    const jobId = typeof input.source.jobId === "string" ? input.source.jobId : null;
+    if (!jobId) return null;
+    const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND source_json->>'jobId'=$2 LIMIT 1`,[battleId,jobId]);
+    return existing.rows[0] ? mapAdvice(existing.rows[0]) : null;
   });
 };
 
