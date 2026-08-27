@@ -9,6 +9,14 @@ const writableCollaborator = `EXISTS (SELECT 1 FROM battle_collaborators c WHERE
 const json = (value: unknown) => JSON.stringify(value ?? {});
 const parse = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
 
+export type DecisionBoardMutation =
+  | { type: "comment"; targetType: "GENERAL" | "CARD" | "STRATEGY"; targetTitle: string; content: string; idempotencyKey?: string }
+  | { type: "upvote"; commentId: string; idempotencyKey?: string }
+  | { type: "ghost_strategy"; strategyName: string; coreThesis: string; suggestedAction: string; estimatedSurvivalProb: number; pros: string; cons: string; idempotencyKey?: string }
+  | { type: "redaction"; enabled: boolean; idempotencyKey?: string };
+
+type DecisionBoardMutationResult = { version: number; state: Record<string, unknown>; consent: Record<string, unknown>; updatedAt: string; role: string };
+
 function redactViewerModule(moduleId: string, state: Record<string, unknown>) {
   const redacted: Record<string, unknown> = { ...state };
   if (moduleId === "ai-symbiote") {
@@ -78,6 +86,100 @@ export async function saveModuleState(subject: AccountSubject, battleId: string,
     await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
     const row = result.rows[0];
     return { version: row.version, state: parse(row.state_json), consent: parse(row.consent_json), updatedAt: row.updated_at.toISOString() };
+  });
+}
+
+/**
+ * Apply one user intent to the decision board while holding the battle/module
+ * version lock. The board is intentionally still stored as a versioned JSON
+ * snapshot; this command boundary is what prevents a collaborator from
+ * pretending to be another author or overwriting a concurrent update.
+ */
+export async function mutateDecisionBoard(subject: AccountSubject, battleId: string, mutation: DecisionBoardMutation): Promise<DecisionBoardMutationResult | null | "forbidden"> {
+  return withTransaction(async (client) => {
+    const access = await client.query<{ role:string }>(
+      `SELECT CASE WHEN b.platform_subject_type=$2 AND b.platform_subject_id=$3 THEN 'owner'
+             ELSE COALESCE((SELECT c.role FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} LIMIT 1),'none') END AS role
+         FROM battle_cases b
+        WHERE b.id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3)
+          OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator}))
+        FOR UPDATE`,
+      [battleId, ...owner(subject)],
+    );
+    const role = access.rows[0]?.role;
+    if (!role) return null;
+    const writable = role === "owner" || role === "contributor" || role === "advisor";
+    if (!writable) return "forbidden";
+    if (mutation.type === "redaction" && role !== "owner") return "forbidden";
+    if (mutation.type === "ghost_strategy" && role !== "owner" && role !== "advisor") return "forbidden";
+
+    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-module:${battleId}:decision-board`]);
+    const current = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
+      `SELECT version,state_json,consent_json,updated_at FROM battle_module_states WHERE battle_id=$1 AND module_id='decision-board' ORDER BY version DESC LIMIT 1`,
+      [battleId],
+    );
+    const state = parse(current.rows[0]?.state_json);
+    const appliedMutationIds = Array.isArray(state.appliedMutationIds) ? state.appliedMutationIds.filter((item): item is string => typeof item === "string") : [];
+    if (mutation.idempotencyKey && appliedMutationIds.includes(mutation.idempotencyKey)) {
+      const existing = current.rows[0];
+      return existing ? { version:existing.version, state, consent:parse(existing.consent_json), updatedAt:existing.updated_at.toISOString(), role } : null;
+    }
+    const comments = Array.isArray(state.comments) ? state.comments.filter((item) => item && typeof item === "object") : [];
+    const ghosts = Array.isArray(state.ghostStrategies) ? state.ghostStrategies.filter((item) => item && typeof item === "object") : [];
+    if (mutation.type === "comment") {
+      comments.unshift({
+        id: randomUUID(),
+        authorName: subject.subjectId,
+        authorSubjectType: subject.subjectType,
+        authorSubjectId: subject.subjectId,
+        authorRole: role === "advisor" ? "STRATEGIST" : role === "contributor" ? "COMMENTATOR" : "STRATEGIST",
+        avatar: subject.subjectId.slice(0, 1).toUpperCase(),
+        targetType: mutation.targetType,
+        targetTitle: mutation.targetTitle,
+        content: mutation.content,
+        timestamp: new Date().toISOString(),
+        upvotes: 0,
+        upvoterSubjectIds: [],
+      });
+    } else if (mutation.type === "upvote") {
+      const comment = comments.find((item) => parse(item).id === mutation.commentId);
+      if (!comment) return null;
+      const value = parse(comment);
+      const upvoters = Array.isArray(value.upvoterSubjectIds) ? value.upvoterSubjectIds.filter((item): item is string => typeof item === "string") : [];
+      if (!upvoters.includes(`${subject.subjectType}:${subject.subjectId}`)) {
+        value.upvoterSubjectIds = [...upvoters, `${subject.subjectType}:${subject.subjectId}`];
+        value.upvotes = (typeof value.upvotes === "number" ? value.upvotes : 0) + 1;
+        const index = comments.indexOf(comment);
+        comments[index] = value;
+      }
+    } else if (mutation.type === "ghost_strategy") {
+      ghosts.unshift({
+        id: randomUUID(),
+        creatorName: subject.subjectId,
+        creatorSubjectType: subject.subjectType,
+        creatorSubjectId: subject.subjectId,
+        creatorRoleTitle: role === "advisor" ? "参谋提交的并行策略" : "拥有者提交的并行策略",
+        strategyName: mutation.strategyName,
+        coreThesis: mutation.coreThesis,
+        estimatedSurvivalProb: mutation.estimatedSurvivalProb,
+        suggestedAction: mutation.suggestedAction,
+        pros: mutation.pros,
+        cons: mutation.cons,
+      });
+    } else {
+      state.isRedacted = mutation.enabled;
+    }
+    if (mutation.idempotencyKey) state.appliedMutationIds = [...appliedMutationIds, mutation.idempotencyKey].slice(-100);
+    state.comments = comments;
+    state.ghostStrategies = ghosts;
+    const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id='decision-board'`, [battleId])).rows[0].version;
+    const saved = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
+      `INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,'decision-board',$3,$4::jsonb,$5::jsonb) RETURNING version,state_json,consent_json,updated_at`,
+      [randomUUID(), battleId, next, json(state), json(current.rows[0]?.consent_json)],
+    );
+    await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
+    const row = saved.rows[0];
+    return { version:row.version, state:parse(row.state_json), consent:parse(row.consent_json), updatedAt:row.updated_at.toISOString(), role };
   });
 }
 

@@ -49,6 +49,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   const strategist = board.members.find((member) => member.role === 'STRATEGIST');
   const hydratedRef = useRef(false);
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
+  const [mutationBusy, setMutationBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const isRedacted = board.isRedacted;
   const memberCount = (role: BoardRole) => board.members.filter((member) => member.role === role).length;
@@ -100,15 +101,32 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);
 
-  useEffect(() => {
-    if (!battleId || readOnly || !hydratedRef.current) return;
-    const timer = window.setTimeout(() => {
-      void sessionApi.saveModule(battleId, 'decision-board', board, { source: 'decision_board' })
-        .then(() => setPersistenceMessage('委员会状态已保存。'))
-        .catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '委员会状态保存失败，请重试。'));
-    }, 350);
-    return () => window.clearTimeout(timer);
-  }, [battleId, board, onUpdateBattlefield, readOnly]);
+  const applyServerState = (payload: { state: { state?: unknown } }) => {
+    const next = payload.state?.state;
+    if (!next || typeof next !== 'object' || Array.isArray(next)) throw new Error('服务端返回的委员会状态无效。');
+    onUpdateBattlefield((previous) => ({
+      ...previous,
+      decisionBoard: { ...previous.decisionBoard, ...(next as Partial<DecisionBoardState>), members: previous.decisionBoard.members },
+    }));
+  };
+
+  const runMutation = async (action: Record<string, unknown>, successMessage: string) => {
+    if (!battleId || readOnly || mutationBusy) return false;
+    setMutationBusy(true);
+    setPersistenceMessage(null);
+    try {
+      const encoded = new TextEncoder().encode(JSON.stringify({ battleId, action }));
+      const digest = await crypto.subtle.digest('SHA-256', encoded);
+      const idempotencyKey = `${action.action}:${Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+      const result = await sessionApi.decisionBoard(battleId, { ...action, idempotencyKey });
+      applyServerState(result);
+      setPersistenceMessage(successMessage);
+      return true;
+    } catch (error) {
+      setPersistenceMessage(error instanceof Error ? error.message : '委员会操作失败，请重试。');
+      return false;
+    } finally { setMutationBusy(false); }
+  };
 
   const handleCopyInviteLink = () => {
     const pendingInvite = board.members.find((member) => member.status === 'PENDING');
@@ -131,57 +149,19 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   const toggleRedaction = () => {
     if (readOnly) return;
     const next = !isRedacted;
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      decisionBoard: {
-        ...prev.decisionBoard,
-        isRedacted: next,
-      }
-    }));
-    soundManager.playBlip(700, 0.04);
+    void runMutation({ action:'redaction', enabled:next }, next ? '已开启委员会脱敏。' : '已关闭委员会脱敏。').then((ok) => { if (ok) soundManager.playBlip(700, 0.04); });
   };
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
     if (!newCommentText.trim()) return;
-
-    const newComment: BoardComment = {
-      id: `cmt-${Date.now()}`,
-      authorName: '你 (指挥官)',
-      authorRole: 'STRATEGIST',
-      avatar: '主',
-      targetType: newCommentTarget,
-      targetTitle: newCommentTargetTitle,
-      content: newCommentText.trim(),
-      timestamp: new Date().toISOString(),
-      upvotes: 1,
-    };
-
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      decisionBoard: {
-        ...prev.decisionBoard,
-        comments: [newComment, ...prev.decisionBoard.comments],
-      }
-    }));
-
-    setNewCommentText('');
-    soundManager.playSuccess();
+    void runMutation({ action:'comment', targetType:newCommentTarget, targetTitle:newCommentTargetTitle, content:newCommentText.trim() }, '评论已发布到委员会。').then((ok) => { if (ok) { setNewCommentText(''); soundManager.playSuccess(); } });
   };
 
   const handleUpvoteComment = (commentId: string) => {
     if (readOnly) return;
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      decisionBoard: {
-        ...prev.decisionBoard,
-        comments: prev.decisionBoard.comments.map(c => 
-          c.id === commentId ? { ...c, upvotes: c.upvotes + 1 } : c
-        ),
-      }
-    }));
-    soundManager.playBlip(800, 0.03);
+    void runMutation({ action:'upvote', commentId }, '已记录你的认同。').then((ok) => { if (ok) soundManager.playBlip(800, 0.03); });
   };
 
   const handleCreateGhostStrategy = (e: React.FormEvent) => {
@@ -189,33 +169,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     if (readOnly) return;
     if (!ghostName.trim() || !ghostThesis.trim()) return;
 
-    const newGhost: GhostStrategyBranch = {
-      id: `ghost-${Date.now()}`,
-      creatorName: '你 (战局拥有者)',
-      creatorRoleTitle: '拥有者提交的并行策略',
-      strategyName: ghostName.trim(),
-      coreThesis: ghostThesis.trim(),
-      estimatedSurvivalProb: ghostProb,
-      suggestedAction: ghostAction.trim() || '待补充执行动作',
-      pros: ghostPros.trim() || '待补充优势',
-      cons: ghostCons.trim() || '待补充代价与风险',
-    };
-
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      decisionBoard: {
-        ...prev.decisionBoard,
-        ghostStrategies: [newGhost, ...prev.decisionBoard.ghostStrategies],
-      }
-    }));
-
-    setIsAddingGhost(false);
-    setGhostName('');
-    setGhostThesis('');
-    setGhostAction('');
-    setGhostPros('');
-    setGhostCons('');
-    soundManager.playSuccess();
+    void runMutation({ action:'ghost_strategy', strategyName:ghostName.trim(), coreThesis:ghostThesis.trim(), estimatedSurvivalProb:ghostProb, suggestedAction:ghostAction.trim() || '待补充执行动作', pros:ghostPros.trim() || '待补充优势', cons:ghostCons.trim() || '待补充代价与风险' }, '幽灵策略线已发布。').then((ok) => { if (ok) { setIsAddingGhost(false); setGhostName(''); setGhostThesis(''); setGhostAction(''); setGhostPros(''); setGhostCons(''); soundManager.playSuccess(); } });
   };
 
   const displayTitle = isRedacted ? `【脱敏战局】${battlefield.title}` : battlefield.title;
