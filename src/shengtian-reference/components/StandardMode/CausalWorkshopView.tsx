@@ -39,6 +39,7 @@ import {
 interface CausalWorkshopViewProps {
   battlefield: BattlefieldState;
   battleId: string;
+  readOnly?: boolean;
   onUpdateBattlefield: React.Dispatch<React.SetStateAction<BattlefieldState>>;
   userProfile?: UserProfile;
   sigil?: DeciderSigil;
@@ -60,6 +61,7 @@ interface CausalWorkshopViewProps {
 export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
   battlefield,
   battleId,
+  readOnly = false,
   onUpdateBattlefield,
   userProfile,
   sigil,
@@ -308,6 +310,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
           {activeStandardTab === 'interview' && (
             <InterviewTab
               battlefield={battlefield}
+              readOnly={readOnly}
               onUpdateBattlefield={onUpdateBattlefield as any}
               onNavigateToCards={() => onSelectStandardTab('cards')}
             />
@@ -316,6 +319,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
           {activeStandardTab === 'cards' && (
             <CardsInventoryTab
               battlefield={battlefield}
+              readOnly={readOnly}
               onUpdateBattlefield={onUpdateBattlefield as any}
               onNavigateToSimulation={() => onSelectStandardTab('simulation')}
             />
@@ -325,6 +329,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
             <PathSimulationTab
               battlefield={battlefield}
               battleId={battleId}
+              readOnly={readOnly}
               onUpdateBattlefield={onUpdateBattlefield as any}
               onTriggerBreakthrough={onLaunchSingularity}
             />
@@ -334,6 +339,7 @@ export const CausalWorkshopView: React.FC<CausalWorkshopViewProps> = ({
             <RiskMonitorTab
               battlefield={battlefield}
               battleId={battleId}
+              readOnly={readOnly}
               onUpdateBattlefield={onUpdateBattlefield as any}
               onLaunchBreakthrough={onLaunchSingularity}
             />

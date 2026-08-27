@@ -33,12 +33,14 @@ import { soundManager } from '../../utils/soundEffects';
 
 interface CardsInventoryTabProps {
   battlefield: BattlefieldState;
+  readOnly?: boolean;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onNavigateToSimulation: () => void;
 }
 
 export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   battlefield,
+  readOnly = false,
   onUpdateBattlefield,
   onNavigateToSimulation,
 }) => {
@@ -66,6 +68,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
 
   // Recalculate Runway
   const handleUpdateFinancials = (cash: number, burn: number, otherIncome: number) => {
+    if (readOnly) return;
     const netBurn = Math.max(1, burn - otherIncome);
     const calculatedDays = Math.round((cash / netBurn) * 30);
     const alertLevel = calculatedDays <= 30 ? 'CRITICAL' : calculatedDays <= 60 ? 'WARNING' : 'SAFE';
@@ -90,6 +93,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   };
 
   const handleGenerateCards = async () => {
+    if (readOnly) return;
     if (!battlefield.id || isGenerating) return;
     setIsGenerating(true);
     setGenerationError(null);
@@ -121,6 +125,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   };
 
   const openAddModal = (cat: AssetCategory) => {
+    if (readOnly) return;
     setActiveCategoryModal(cat);
     setEditingCard(null);
     setFormTitle('');
@@ -134,6 +139,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
 
   const openEditModal = (card: CardAsset, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (readOnly) return;
     setEditingCard(card);
     setActiveCategoryModal(card.category);
     setFormTitle(card.title);
@@ -146,6 +152,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   };
 
   const handleSaveCard = () => {
+    if (readOnly) return;
     if (!formTitle.trim() || !activeCategoryModal) return;
 
     if (editingCard) {
@@ -187,6 +194,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
 
   const handleDeleteCard = (cardId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (readOnly) return;
     onUpdateBattlefield(prev => ({
       ...prev,
       assets: prev.assets.filter(a => a.id !== cardId),
@@ -196,6 +204,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
 
   const handleQuickChangeTag = (cardId: string, newTag: EpistemicTag, e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
+    if (readOnly) return;
     onUpdateBattlefield(prev => ({
       ...prev,
       assets: prev.assets.map(a => a.id === cardId ? { ...a, tag: newTag } : a),
@@ -205,6 +214,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
 
   const handleAdjustConfidence = (cardId: string, delta: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (readOnly) return;
     onUpdateBattlefield(prev => ({
       ...prev,
       assets: prev.assets.map(a => {

@@ -19,6 +19,7 @@ import { sessionApi } from '../../session/api';
 interface RiskMonitorTabProps {
   battlefield: BattlefieldState;
   battleId: string;
+  readOnly?: boolean;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onLaunchBreakthrough: () => void;
 }
@@ -26,6 +27,7 @@ interface RiskMonitorTabProps {
 export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
   battlefield,
   battleId,
+  readOnly = false,
   onUpdateBattlefield,
   onLaunchBreakthrough,
 }) => {
@@ -74,7 +76,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
         }));
         if (!cancelled) {
           onUpdateBattlefield(prev => ({ ...prev, riskBreakers: derived }));
-          await sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: derived });
+          if (!readOnly) await sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: derived });
         }
       } catch (error) {
         if (!cancelled) setActionMessage(error instanceof Error ? error.message : '风险断路器读取失败，请重试。');
@@ -82,8 +84,9 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
     };
     void load();
     return () => { cancelled = true; };
-  }, [battleId, onUpdateBattlefield]);
+  }, [battleId, onUpdateBattlefield, readOnly]);
   const toggleRiskTrigger = async (riskId: string) => {
+    if (readOnly) return;
     const risk = battlefield.riskBreakers.find((item) => item.id === riskId);
     if (!risk) return;
     if (activeMoveId) {

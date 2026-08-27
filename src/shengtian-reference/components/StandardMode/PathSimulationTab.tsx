@@ -33,6 +33,7 @@ import { sessionApi } from '../../session/api';
 interface PathSimulationTabProps {
   battlefield: BattlefieldState;
   battleId: string;
+  readOnly?: boolean;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onTriggerBreakthrough: () => void;
 }
@@ -40,6 +41,7 @@ interface PathSimulationTabProps {
 export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   battlefield,
   battleId,
+  readOnly = false,
   onUpdateBattlefield,
   onTriggerBreakthrough,
 }) => {
@@ -77,13 +79,13 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   }, [battleId, onUpdateBattlefield]);
 
   React.useEffect(() => {
-    if (!moduleHydratedRef.current) return;
+    if (readOnly || !moduleHydratedRef.current) return;
     const timer = window.setTimeout(() => {
       void sessionApi.saveModule(battleId, 'path-simulation', { strategies: battlefield.strategies }, { source: 'path_simulation' })
         .catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '路径草案保存失败，请重试。'));
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [battleId, battlefield.strategies]);
+  }, [battleId, battlefield.strategies, readOnly]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -108,6 +110,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   }, [battleId]);
 
   const handleOpenAddStrategy = (type: StrategyType) => {
+    if (readOnly) return;
     setActiveStrategyTypeModal(type);
     setStrategyName(
       type === 'AGGRESSIVE' ? '核心阵地饱和强攻手' :
@@ -122,6 +125,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   };
 
   const handleSaveStrategy = () => {
+    if (readOnly) return;
     if (!strategyName.trim() || !activeStrategyTypeModal) return;
 
     const newStrat: StrategyBranch = {
@@ -157,6 +161,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   };
 
   const handleCommitStrategy = async (strategyId: string) => {
+    if (readOnly) return;
     if (!/^[0-9a-f-]{36}$/i.test(strategyId)) {
       setPersistenceMessage('该策略仍在本地草稿状态，请先保存成功后再锁定。');
       return;
@@ -173,6 +178,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   };
 
   const handleDeleteStrategy = async (stratId: string) => {
+    if (readOnly) return;
     if (deletePending) return;
     setDeletePending(stratId);
     try {
@@ -186,6 +192,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   };
 
   const toggleAssignCard = (strategyId: string, cardId: string) => {
+    if (readOnly) return;
     const current = battlefield.strategies.find((strategy) => strategy.id === strategyId);
     const nextAssignedCardIds = current
       ? (current.assignedCardIds.includes(cardId) ? current.assignedCardIds.filter((id) => id !== cardId) : [...current.assignedCardIds, cardId])

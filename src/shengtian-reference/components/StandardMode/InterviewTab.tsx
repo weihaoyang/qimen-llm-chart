@@ -19,12 +19,14 @@ import { sessionApi } from '../../session/api';
 
 interface InterviewTabProps {
   battlefield: BattlefieldState;
+  readOnly?: boolean;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onNavigateToCards: () => void;
 }
 
 export const InterviewTab: React.FC<InterviewTabProps> = ({
   battlefield,
+  readOnly = false,
   onUpdateBattlefield,
   onNavigateToCards,
 }) => {
@@ -37,6 +39,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
   }, [battlefield.interviewHistory, isTyping]);
 
   const handleSendMessage = async (customText?: string) => {
+    if (readOnly) return;
     const textToSend = (customText || inputText).trim();
     if (!textToSend || isTyping) return;
 
@@ -93,6 +96,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
   };
 
   const handleAcceptExtracted = async (messageId: string, message: InterviewMessage) => {
+    if (readOnly) return;
     if (message.extractedAccepted || (!message.extractedFacts?.length && !message.extractedConstraints?.length)) return;
     try {
       if (message.extractedFacts?.length) await sessionApi.addFacts(battlefield.id, message.extractedFacts.map((fact) => ({ ...fact, source: 'user', occurredAt: null, verifiedAt: null })));
@@ -109,6 +113,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
   };
 
   const handleAcceptParameter = (messageId: string, parameter: NonNullable<InterviewMessage['parameterExtracted']>) => {
+    if (readOnly) return;
     onUpdateBattlefield((previous) => ({
       ...previous,
       interviewHistory: previous.interviewHistory.map((message) => message.id === messageId ? { ...message, parameterAccepted: true } : message),
@@ -128,6 +133,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {readOnly && <div className="lg:col-span-12 rounded-xl border border-sky-500/30 bg-sky-950/30 px-3 py-2 text-xs text-sky-200">只读协作角色不能发送采访、确认 AI 提取或修改战局参数。</div>}
       
       {/* Left 8 Cols: Structured Interview Dialogue */}
       <div className="lg:col-span-8 surface-obsidian hud-corner rounded-2xl p-5 border border-white/[0.08] shadow-2xl flex flex-col h-[calc(100vh-220px)] min-h-[450px] max-h-[700px] relative">

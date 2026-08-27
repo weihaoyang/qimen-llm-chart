@@ -901,6 +901,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         <CausalWorkshopView
           battlefield={battlefield}
           battleId={session.activeBattle?.id ?? battlefield.id}
+              readOnly={!canWriteBattle}
               onUpdateBattlefield={updateBattlefield}
               userProfile={userProfile}
               sigil={userProfile.sigil}
