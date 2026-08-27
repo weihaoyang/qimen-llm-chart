@@ -111,12 +111,16 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   }, [battleId, board, onUpdateBattlefield, readOnly]);
 
   const handleCopyInviteLink = () => {
-    if (!board.roomId || !board.shareToken) {
-      setPersistenceMessage('当前战局还没有可用的分享令牌，请先通过战局协作邀请创建协作者。');
+    const pendingInvite = board.members.find((member) => member.status === 'PENDING');
+    if (!pendingInvite) {
+      setPersistenceMessage('当前战局没有待接受的协作邀请，请先创建协作者邀请。');
       return;
     }
     if (!battleId) return;
-    const link = `${window.location.origin}/?battle=${encodeURIComponent(battleId)}&token=${encodeURIComponent(board.shareToken)}`;
+    // Invitation ids are the server-issued, expiring capability already
+    // enforced by /api/battles/invitations. Do not manufacture a client-only
+    // share token that the server cannot validate.
+    const link = `${window.location.origin}/?invite=${encodeURIComponent(pendingInvite.id)}`;
     void navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
       soundManager.playSuccess();
@@ -259,12 +263,12 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             {/* Copy Tokenized Link Button */}
             <button
               onClick={handleCopyInviteLink}
-              disabled={!board.roomId || !board.shareToken}
-              title={board.roomId && board.shareToken ? '复制服务端签发的协作邀请链接' : '请先在战局协作者功能中创建并接受邀请'}
+              disabled={!board.members.some((member) => member.status === 'PENDING')}
+              title={board.members.some((member) => member.status === 'PENDING') ? '复制服务端签发的协作邀请链接' : '请先创建待接受的协作者邀请'}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:cursor-not-allowed disabled:opacity-50 text-white text-xs font-bold font-mono-code flex items-center gap-2 shadow-lg shadow-blue-950/60 transition-all cursor-pointer border border-blue-400"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copied ? '协作邀请链接已复制' : board.roomId && board.shareToken ? '复制服务端协作邀请链接' : '请先创建协作者邀请'}</span>
+              <span>{copied ? '协作邀请链接已复制' : board.members.some((member) => member.status === 'PENDING') ? '复制服务端协作邀请链接' : '请先创建协作者邀请'}</span>
             </button>
           </div>
         </div>
@@ -274,7 +278,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
           <div className="flex items-center gap-3">
             <span className="text-slate-300">当前战局状态: <strong className="text-amber-300">{displayTitle}</strong></span>
             <span className="text-slate-500">|</span>
-            <span>邀请状态: <strong className="text-slate-200">{board.roomId && board.shareToken ? `令牌剩余 ${board.expiresInHours} 小时` : '尚未签发分享令牌'}</strong></span>
+            <span>邀请状态: <strong className="text-slate-200">{board.members.some((member) => member.status === 'PENDING') ? '已有待接受邀请（服务端 7 天后过期）' : '尚未签发邀请'}</strong></span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>

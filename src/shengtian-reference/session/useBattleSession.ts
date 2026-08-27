@@ -37,6 +37,36 @@ export function useBattleSession() {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
+  // A collaboration link carries only the expiring invitation capability.
+  // Accept it before selecting a battle; invited users are intentionally not
+  // returned by GET /api/battles until the invitation becomes active.
+  useEffect(() => {
+    if (loading || typeof window === "undefined") return;
+    const inviteId = new URLSearchParams(window.location.search).get("invite");
+    if (!inviteId) return;
+    const invitation = invitations.find((item) => item.id === inviteId);
+    if (!invitation) {
+      setError("协作邀请不存在、已过期或不属于当前账户。");
+      return;
+    }
+    let cancelled = false;
+    void sessionApi.respondInvitation(inviteId, "accept").then(async ({ invitation: accepted }) => {
+      if (cancelled) return;
+      const next = await sessionApi.battle(accepted.battleId);
+      if (cancelled) return;
+      setActiveBattle(next.battle);
+      setBattles((current) => [next.battle, ...current.filter((item) => item.id !== next.battle.id)]);
+      setInvitations((current) => current.filter((item) => item.id !== inviteId));
+      const url = new URL(window.location.href);
+      url.searchParams.delete("invite");
+      url.searchParams.set("battle", next.battle.id);
+      window.history.replaceState({}, "", url);
+    }).catch((inviteError) => {
+      if (!cancelled) setError(inviteError instanceof Error ? inviteError.message : "接受协作邀请失败。");
+    });
+    return () => { cancelled = true; };
+  }, [loading, invitations]);
+
   const selectBattle = useCallback((battle: SessionBattle) => {
     setActiveBattle(battle);
     if (typeof window !== "undefined") {
