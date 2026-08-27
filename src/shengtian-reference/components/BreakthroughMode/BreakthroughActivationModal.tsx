@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ShieldAlert, Flame, AlertTriangle, X, Terminal, Cpu } from 'lucide-react';
 import { soundManager } from '../../utils/soundEffects';
 
 interface BreakthroughActivationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   calculatedDays: number;
   readOnly?: boolean;
 }
@@ -17,12 +17,17 @@ export const BreakthroughActivationModal: React.FC<BreakthroughActivationModalPr
   calculatedDays,
   readOnly = false,
 }) => {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!isOpen) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (readOnly) return;
+    setBusy(true);
+    setError(null);
     soundManager.playBreakthroughActivation();
-    onConfirm();
+    try { await onConfirm(); } catch (cause) { setError(cause instanceof Error ? cause.message : '破局模式启动失败，请重试。'); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -92,14 +97,15 @@ export const BreakthroughActivationModal: React.FC<BreakthroughActivationModalPr
             返回常规顾问
           </button>
           <button
-            onClick={handleConfirm}
-            disabled={readOnly}
+            onClick={() => void handleConfirm()}
+            disabled={readOnly || busy}
             className="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold tracking-wide shadow-lg shadow-red-900/60 flex items-center gap-2 transition-all glow-red"
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>确认进入破局战情室</span>
+            <span>{busy ? '正在授权破局权益…' : '确认进入破局战情室'}</span>
           </button>
         </div>
+        {error && <p className="rounded-lg border border-red-500/50 bg-red-950/50 px-3 py-2 text-xs text-red-200">{error}</p>}
 
       </div>
     </div>

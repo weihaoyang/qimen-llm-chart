@@ -619,7 +619,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     }).catch((error) => setPersistenceError(error instanceof Error ? error.message : '校准记录保存失败，请重试。'));
   };
 
-  const handleLaunchSingularity = () => {
+  const handleLaunchSingularity = async () => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId) {
+      throw new Error('请先选择或创建一个战局，再启动破局模式。');
+    }
+    if (!canWriteBattle) {
+      throw new Error('当前协作角色为只读，无法启动破局模式。');
+    }
+    // Activation is a billable operation. The idempotency key is stable for
+    // this battle so double-clicks/retries recover the same reservation.
+    await sessionApi.consumeUsage(
+      battleId,
+      'breakthrough_activation',
+      `breakthrough-activation:${battleId}`,
+    );
     setIsBreakthroughModalOpen(false);
     setActiveMainView('WAR_ROOM');
     setBattlefield(prev => ({
@@ -673,7 +687,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       targetDeadlineDays: Math.max(1, Math.round(event.expiresInMins / 60)),
     }));
     setActiveMainView('WAR_ROOM');
-    handleLaunchSingularity();
+    void handleLaunchSingularity().catch((error) => setPersistenceError(error instanceof Error ? error.message : '破局模式启动失败，请重试。'));
   };
 
   // --- Handlers for 4 Masterpiece Puzzles ---
