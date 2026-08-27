@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
 import type { AccountSubject } from "@/lib/agent/account-subject";
 import { getScenario, SCENARIO_CATALOG_VERSION, type ScenarioSeed } from "./catalog";
+import { strategyTemplatesForScenario } from "./strategy-templates";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 
@@ -21,7 +22,7 @@ export async function cloneScenario(subject: AccountSubject, scenario: ScenarioS
     const endsAt = new Date(startsAt.getTime() + scenario.hardDeadlineDays * 86_400_000);
     const halfLifeAt = new Date(startsAt.getTime() + Math.max(1, Math.floor(scenario.hardDeadlineDays / 2)) * 86_400_000);
     await client.query(`INSERT INTO battle_junctions(id,battle_id,title,description,window_start,window_end,half_life_at,core_variable,default_consequence,urgency,leverage,irreversibility,status,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'open',$13::jsonb)`, [junctionId, battleId, `首个决策节点：${scenario.title}`, scenario.description, startsAt, endsAt, halfLifeAt, scenario.objective, scenario.minimumOutcome, 5, 4, 4, JSON.stringify({ source: "official_catalog", scenarioId: scenario.id, scenarioVersion: scenario.version })]);
-    await client.query(`INSERT INTO battle_scenario_snapshots(id,battle_id,scenario_id,scenario_version,catalog_version,snapshot_json) VALUES($1,$2,$3,$4,$5,$6::jsonb)`, [randomUUID(), battleId, scenario.id, scenario.version, SCENARIO_CATALOG_VERSION, JSON.stringify(scenario)]);
+    await client.query(`INSERT INTO battle_scenario_snapshots(id,battle_id,scenario_id,scenario_version,catalog_version,snapshot_json) VALUES($1,$2,$3,$4,$5,$6::jsonb)`, [randomUUID(), battleId, scenario.id, scenario.version, SCENARIO_CATALOG_VERSION, JSON.stringify({ ...scenario, strategyTemplates: strategyTemplatesForScenario(scenario) })]);
     return { battleId, scenarioId: scenario.id, scenarioVersion: scenario.version, sourceType: "official_catalog" as const };
   });
 }

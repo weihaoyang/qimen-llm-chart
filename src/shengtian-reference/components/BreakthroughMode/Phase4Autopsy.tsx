@@ -11,10 +11,10 @@ import {
   History,
   Send
 } from 'lucide-react';
-import { BattlefieldState, DecisionDNARecord } from '../../types';
-import { ASYMMETRIC_STRATEGY_PACKAGES } from '../../data/presets';
+import { BattlefieldState, DecisionDNARecord, AsymmetricStrategyPackage } from '../../types';
 import { TacticalAIService } from '../../services/aiService';
 import { soundManager } from '../../utils/soundEffects';
+import { sessionApi } from '../../session/api';
 
 const stableRecordId = (value: string) => {
   let hash = 2166136261;
@@ -39,18 +39,38 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
   readOnly = false,
 }) => {
   const selectedStrategyId = battlefield.lockedAsymmetricStrategyId;
-  const selectedStrategy = selectedStrategyId ? ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyId] : null;
+  const [strategyPackages, setStrategyPackages] = useState<Partial<Record<AsymmetricStrategyPackage['id'], AsymmetricStrategyPackage>>>({});
+  const [strategyLoadError, setStrategyLoadError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void sessionApi.strategyTemplates(battlefield.id).then(({ templates }) => {
+      if (cancelled) return;
+      setStrategyPackages(templates.reduce<Partial<Record<AsymmetricStrategyPackage['id'], AsymmetricStrategyPackage>>>((result, template) => {
+        if (template && (template.id === 'LEVERAGE_STRIKE' || template.id === 'FIELD_SHIFT' || template.id === 'SCORCHED_EARTH')) result[template.id] = template;
+        return result;
+      }, {}));
+    }).catch((error) => {
+      if (!cancelled) setStrategyLoadError(error instanceof Error ? error.message : '策略模板加载失败，请刷新重试。');
+    });
+    return () => { cancelled = true; };
+  }, [battlefield.id]);
+  const selectedStrategy = selectedStrategyId ? strategyPackages[selectedStrategyId] ?? null : null;
 
   const [fatalQuestion, setFatalQuestion] = useState(selectedStrategy ? '正在请求 AI 致命问题…' : '请先在第三阶段锁定正式策略。');
   const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(selectedStrategy ? null : '当前战局没有已锁定策略。');
   useEffect(() => {
     let cancelled = false;
-    if (!selectedStrategy || readOnly) return () => { cancelled = true; };
+    if (!selectedStrategy || readOnly) {
+      return () => { cancelled = true; };
+    }
     void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
       .then((question) => { if (!cancelled) { setFatalQuestion(question); setFatalQuestionError(null); } })
       .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });
     return () => { cancelled = true; };
-  }, [selectedStrategy?.name, battlefield.id, readOnly]);
+  // The battle object contains frequently changing UI state; the fatal
+  // question only depends on its stable id and the selected catalog template.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStrategy?.name, battlefield.id, readOnly, selectedStrategyId, strategyLoadError]);
   
   const [reflectionText, setReflectionText] = useState('');
   const [isSaved, setIsSaved] = useState(false);

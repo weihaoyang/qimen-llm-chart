@@ -17,7 +17,6 @@ import {
   FileCheck
 } from 'lucide-react';
 import { BattlefieldState, AsymmetricStrategyPackage } from '../../types';
-import { ASYMMETRIC_STRATEGY_PACKAGES } from '../../data/presets';
 import { soundManager } from '../../utils/soundEffects';
 import { Compass, Moon } from 'lucide-react';
 import { sessionApi } from '../../session/api';
@@ -31,6 +30,8 @@ interface Phase3SandTableProps {
   readOnly?: boolean;
 }
 
+type StrategyKey = AsymmetricStrategyPackage['id'];
+
 export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   battlefield,
   onUpdateBattlefield,
@@ -39,13 +40,30 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   onOpenValueModal,
   readOnly = false,
 }) => {
-  const [selectedStrategyKey, setSelectedStrategyKey] = useState<'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH'>(battlefield.lockedAsymmetricStrategyId ?? 'FIELD_SHIFT');
+  const [selectedStrategyKey, setSelectedStrategyKey] = useState<StrategyKey>(battlefield.lockedAsymmetricStrategyId ?? 'FIELD_SHIFT');
+  const [strategyPackages, setStrategyPackages] = useState<Partial<Record<StrategyKey, AsymmetricStrategyPackage>>>({});
+  const [strategyLoadError, setStrategyLoadError] = useState<string | null>(null);
   const [activePivotalModal, setActivePivotalModal] = useState<{ day: number; label: string; risk: string } | null>(null);
   const [isLocked, setIsLocked] = useState(Boolean(battlefield.lockedAsymmetricStrategyId));
   const [isLocking, setIsLocking] = useState(false);
   const [lockError, setLockError] = useState<string | null>(null);
   const [activeCommitment, setActiveCommitment] = useState<{ moveId?: string } | null>(null);
   const [changeReason, setChangeReason] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void sessionApi.strategyTemplates(battlefield.id).then(({ templates }) => {
+      if (cancelled) return;
+      const next = templates.reduce<Partial<Record<StrategyKey, AsymmetricStrategyPackage>>>((result, template) => {
+        if (template && (template.id === 'LEVERAGE_STRIKE' || template.id === 'FIELD_SHIFT' || template.id === 'SCORCHED_EARTH')) result[template.id] = template;
+        return result;
+      }, {});
+      setStrategyPackages(next);
+    }).catch((error) => {
+      if (!cancelled) setStrategyLoadError(error instanceof Error ? error.message : '策略模板加载失败，请刷新重试。');
+    });
+    return () => { cancelled = true; };
+  }, [battlefield.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,13 +76,17 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
     return () => { cancelled = true; };
   }, [battlefield.id]);
 
-  const currentPkg = ASYMMETRIC_STRATEGY_PACKAGES[selectedStrategyKey];
+  const currentPkg = strategyPackages[selectedStrategyKey];
 
-  const handleSelectStrategy = (key: 'LEVERAGE_STRIKE' | 'FIELD_SHIFT' | 'SCORCHED_EARTH') => {
+  const handleSelectStrategy = (key: StrategyKey) => {
     if (readOnly) return;
     setSelectedStrategyKey(key);
     soundManager.playBlip(700, 0.03);
   };
+
+  if (!currentPkg) {
+    return <div className="surface-obsidian border border-red-900/60 rounded-2xl p-6 text-sm text-slate-300">{strategyLoadError ?? '正在加载当前战局的官方策略模板…'}</div>;
+  }
 
   const handleLockStrategy = async () => {
     if (readOnly) return;
@@ -162,8 +184,9 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
 
       {/* 3 Asymmetric Strategy Selector Tabs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {(Object.keys(ASYMMETRIC_STRATEGY_PACKAGES) as Array<keyof typeof ASYMMETRIC_STRATEGY_PACKAGES>).map((key, index) => {
-          const pkg = ASYMMETRIC_STRATEGY_PACKAGES[key];
+        {(Object.keys(strategyPackages) as StrategyKey[]).map((key, index) => {
+          const pkg = strategyPackages[key];
+          if (!pkg) return null;
           const isSelected = selectedStrategyKey === key;
           const pkgCode = `DOSSIER-#0${index + 1}`;
 

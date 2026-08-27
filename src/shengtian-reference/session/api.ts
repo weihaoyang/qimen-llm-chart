@@ -62,6 +62,7 @@ export const sessionApi = {
   updateBattle: (id:string, input:Record<string, unknown>) => request<{ battle: SessionBattle }>(`/api/battles/${id}`, { method:"PATCH", body:JSON.stringify(input) }),
   deleteBattle: (id:string) => request<{ deleted:boolean }>(`/api/battles/${id}`, { method:"DELETE", body:JSON.stringify({ confirmation:"DELETE" }) }),
   analysis: (id:string) => request<{ gravity?: Record<string, unknown> | null; junctions: Array<Record<string, unknown>>; moves: Array<Record<string, unknown>> }>(`/api/battles/${id}/analysis`),
+  strategyTemplates: (id:string) => request<{ templates: Array<import('../../lib/scenarios/strategy-templates').ScenarioStrategyTemplate> }>(`/api/battles/${id}/strategy-templates`),
   generateAnalysis: (id:string, resourceSnapshot?: Record<string, number>) => request<{ gravity?: Record<string, unknown> | null; junctions: Array<Record<string, unknown>>; moves: Array<Record<string, unknown>> }>(`/api/battles/${id}/analysis`, { method:"POST", body:JSON.stringify({ resourceSnapshot }) }),
   saveMoves: (id:string, junctionId:string, moves:Array<Record<string, unknown>>) => request<{ moves: unknown[] }>(`/api/battles/${id}/moves`, { method:"POST", body:JSON.stringify({ junctionId, moves }) }),
   deleteMove: (id:string, moveId:string) => request<{ deleted:boolean }>(`/api/battles/${id}/moves?moveId=${encodeURIComponent(moveId)}`, { method:"DELETE" }),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getScenario, SCENARIOS, SCENARIO_CATALOG_VERSION } from "./catalog";
+import { strategyTemplatesForScenario } from "./strategy-templates";
 
 describe("official scenario catalog", () => {
   it("contains versioned read-only seeds instead of user-owned battle state", () => {
@@ -9,7 +10,7 @@ describe("official scenario catalog", () => {
       "saas-competitor-price-war",
       "funding-closing-failure",
     ]);
-    expect(SCENARIOS.every((scenario) => scenario.version > 0 && scenario.modules.length === 4)).toBe(true);
+    expect(SCENARIOS.every((scenario) => scenario.version > 0 && scenario.modules.length === 4 && strategyTemplatesForScenario(scenario).length === 3)).toBe(true);
   });
 
   it("resolves unknown scenarios without exposing mutable state", () => {

@@ -76,3 +76,4 @@ export const SCENARIOS: readonly ScenarioSeed[] = [
 ];
 
 export function getScenario(id: string): ScenarioSeed | undefined { return SCENARIOS.find((scenario) => scenario.id === id); }
+
