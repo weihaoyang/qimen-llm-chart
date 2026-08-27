@@ -690,7 +690,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       targetDeadlineDays: Math.max(1, Math.round(event.expiresInMins / 60)),
     }));
     setActiveMainView('WAR_ROOM');
-    void handleLaunchSingularity().catch((error) => setPersistenceError(error instanceof Error ? error.message : '破局模式启动失败，请重试。'));
+    // World Pulse intervention is its own billable operation. Do not silently
+    // activate the separately charged Breakthrough Mode as a side effect.
+    setActiveStandardTab('risks');
   };
 
   // --- Handlers for 4 Masterpiece Puzzles ---
