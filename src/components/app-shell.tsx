@@ -1316,7 +1316,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     }
   };
 
-  const handleAgentAnalyze = async () => {
+  const handleAgentAnalyze = async (questionOverride?: string) => {
     if (!structuredText || !jsonPayload) {
       return;
     }
@@ -1326,7 +1326,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       ?? (canUseAgentState(currentState)
         ? currentState
         : Object.values(agentState).find((state) => canUseAgentState(state)) ?? currentState);
-    const enteredQuestion = currentState.question.trim();
+    const enteredQuestion = (questionOverride ?? currentState.question).trim();
     const isInterviewStart = !enteredQuestion && currentState.focus === "人生议题访谈" && currentState.conversation.length === 0;
     if (!enteredQuestion && !isInterviewStart) {
       setAgentState((current) => ({

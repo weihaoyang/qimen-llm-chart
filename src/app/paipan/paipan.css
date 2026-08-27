@@ -2347,6 +2347,23 @@ html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart 
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__guest-recovery-note,
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__error { order: 4 !important; flex: 0 0 auto !important; }
 
+html body .product-chart .agent-chat-welcome {
+  display: grid !important;
+  gap: 6px !important;
+  padding: 14px !important;
+  border-bottom: 1px solid var(--paipan-ink) !important;
+  color: var(--paipan-ink) !important;
+  background: #fffaf0 !important;
+}
+html body .product-chart .agent-chat-welcome > strong { font-size: 1.05rem !important; font-weight: 950 !important; }
+html body .product-chart .agent-chat-welcome > span { color: var(--paipan-violet) !important; font-size: .78rem !important; }
+html body .product-chart .agent-chat-welcome__presets { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6px !important; margin-top: 4px !important; }
+html body .product-chart .agent-chat-welcome__presets button { display: grid !important; gap: 3px !important; padding: 8px !important; border: 1px solid var(--paipan-ink) !important; border-radius: 0 !important; background: #f5e6bf !important; color: var(--paipan-ink) !important; text-align: left !important; cursor: pointer !important; }
+html body .product-chart .agent-chat-welcome__presets button:hover { background: var(--paipan-yellow) !important; }
+html body .product-chart .agent-chat-welcome__presets button b { font-size: .76rem !important; }
+html body .product-chart .agent-chat-welcome__presets button span { font-size: .68rem !important; line-height: 1.3 !important; }
+html body .product-chart .agent-report-button { min-height: 36px !important; padding-inline: 10px !important; border: 2px solid var(--paipan-ink) !important; border-radius: 0 !important; background: #f5e6bf !important; color: var(--paipan-ink) !important; font-weight: 900 !important; }
+
 /* Last-resort height contract (must remain after every legacy media rule). */
 @media (min-width: 721px) {
   html body .page-shell.product-chart {
