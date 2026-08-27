@@ -39,7 +39,7 @@ type InspectorPanelProps = {
   literatureContext: string;
   copyState: "idle" | "text" | "json";
   onAgentQuestionChange: (value: string) => void;
-  onAgentAnalyze: () => void;
+  onAgentAnalyze: (question?: string) => void;
   onCopyResult: () => Promise<void>;
   onCopyText: () => Promise<void>;
   onCopyJson: () => Promise<void>;
@@ -138,6 +138,16 @@ export function InspectorPanel({
               <Clipboard data-icon="inline-start" />
               {copyState === "text" ? "已复制文本" : "复制结构化文本"}
             </Button>
+            {isChartSurface ? (
+              <Button
+                className="command-button agent-report-button"
+                type="button"
+                onClick={() => onAgentAnalyze("请基于当前盘面生成一份完整报告：先给出结论摘要，再列出关键盘面依据、时间窗口、风险与验证动作。请用清晰的小标题组织，避免泛泛而谈。")}
+                disabled={agentLoading || !structuredText || !jsonPayload || agentUsageAvailable <= 0}
+              >
+                生成完整报告
+              </Button>
+            ) : null}
           </div>
           <ScrollArea className="inspector-scroll inspector-scroll-plain">
             <StructuredOutput selectedPalace={selectedPalace} structuredText={structuredText} />
@@ -265,7 +275,7 @@ export function InspectorPanel({
             <Button
               className="command-button command-button-primary"
               type="button"
-              onClick={onAgentAnalyze}
+              onClick={() => onAgentAnalyze()}
               disabled={
                 agentLoading ||
                 !structuredText ||
@@ -321,18 +331,33 @@ export function InspectorPanel({
             </div>
             <ScrollArea className="inspector-scroll inspector-scroll-plain">
               {agentStreamConfig ? (
-                <AgentChatThread
-                  chatId={agentStreamConfig.chatId}
-                  initialMessages={agentConversation}
-                  requestBody={agentStreamConfig.requestBody}
-                  requestHeaders={agentStreamConfig.requestHeaders}
-                  submitNonce={agentStreamConfig.submitNonce}
-                  question={agentQuestion}
-                  disabled={agentLoading}
-                  onStart={agentStreamConfig.onStart}
-                  onFinish={agentStreamConfig.onFinish}
-                  onError={agentStreamConfig.onError}
-                />
+                <>
+                  {agentConversation.length === 0 ? (
+                    <div className="agent-chat-welcome">
+                      <strong>先从一个问题开始</strong>
+                      <span>选择预设问题，或在下方输入你真正想核对的事项。</span>
+                      <div className="agent-chat-welcome__presets">
+                        {agentAngles.slice(0, 6).map((angle) => (
+                          <button key={angle.label} type="button" disabled={agentLoading || agentUsageAvailable <= 0} onClick={() => onAgentAnalyze(angle.question)}>
+                            <b>{angle.label}</b><span>{angle.question}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  <AgentChatThread
+                    chatId={agentStreamConfig.chatId}
+                    initialMessages={agentConversation}
+                    requestBody={agentStreamConfig.requestBody}
+                    requestHeaders={agentStreamConfig.requestHeaders}
+                    submitNonce={agentStreamConfig.submitNonce}
+                    question={agentQuestion}
+                    disabled={agentLoading}
+                    onStart={agentStreamConfig.onStart}
+                    onFinish={agentStreamConfig.onFinish}
+                    onError={agentStreamConfig.onError}
+                  />
+                </>
               ) : agentConversation.length > 0 ? (
                 <div className="agent-thread">
                   {agentConversation.map((message, index) => (
