@@ -82,7 +82,8 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     if (kind === "cards") {
       const cards = asArray(structured.cards ?? structured.assets).map((item, index) => {
         const card = item && typeof item === "object" ? item as Record<string, unknown> : {};
-        return { category: card.category === "FINANCIAL" ? "cash" : card.category === "TIME" ? "time" : card.category === "INFO" ? "information" : "asset", label: String(card.title ?? card.label ?? `AI 底牌 ${index + 1}`).slice(0, 160), description: String(card.description ?? card.content ?? "AI 生成底牌，待用户核验。").slice(0, 6000), quantity: typeof card.numericValue === "number" ? card.numericValue : null, unit: typeof card.unit === "string" ? card.unit : null, availability: "available" as const, expiresAt: null, cost: {}, evidence: { source: "ai", jobId: created.jobId } };
+        const category = String(card.category ?? '').toUpperCase();
+        return { category: category === "FINANCIAL" ? "cash" : category === "TIME" ? "time" : category === "INFO" || category === "INFORMATION" ? "information" : "asset", label: String(card.title ?? card.label ?? `AI 底牌 ${index + 1}`).slice(0, 160), description: String(card.description ?? card.content ?? "AI 生成底牌，待用户核验。").slice(0, 6000), quantity: typeof card.numericValue === "number" ? card.numericValue : null, unit: typeof card.unit === "string" ? card.unit : null, availability: "available" as const, expiresAt: null, cost: {}, evidence: { source: "ai", jobId: created.jobId } };
       });
       if (cards.length) await appendInventory(subject, id, cards as Parameters<typeof appendInventory>[2]);
     }
