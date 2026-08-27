@@ -34,6 +34,7 @@ import {
 
 interface ObserverConclavesViewProps {
   battleId: string;
+  readOnly?: boolean;
   conclaves: ObserverConclave[];
   userEquity: number;
   onInjectEquityToConclave: (conclaveId: string, amount: number) => void;
@@ -44,6 +45,7 @@ interface ObserverConclavesViewProps {
 
 export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   battleId,
+  readOnly = false,
   conclaves,
   userEquity,
   onInjectEquityToConclave,
@@ -77,6 +79,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   }, [battleId]);
 
   const handleInvite = async () => {
+    if (readOnly) return;
     const subjectId = inviteSubjectId.trim();
     if (!subjectId) return;
     setCollaborationMessage(null);
@@ -94,6 +97,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   const currentConclave = conclaves.find(c => c.id === effectiveSelectedConclaveId) || conclaves[0];
 
   const handleInject = async () => {
+    if (readOnly) return;
     if (!currentConclave) return;
     if (!battleId && userEquity < equityInput) {
       soundManager.playBlip(400, 0.08);
@@ -109,6 +113,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!newName.trim() || !newDoctrine.trim()) return;
 
     try {
@@ -136,6 +141,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   };
 
   const handleAddSynchronizedAction = (simId: string) => {
+    if (readOnly) return;
     if (!newActionInput.trim() || !currentConclave) return;
     if (battleId) {
       void sessionApi.consumeUsage(battleId, 'conclave_action', `conclave-action:${battleId}:${currentConclave.id}:${simId}:${newActionInput.trim()}`).then(() => onJoinCollectiveSimulation(currentConclave.id, simId, newActionInput)).catch((error) => setCollaborationMessage(error instanceof Error ? error.message : '平台权益校验失败，请重试。'));
@@ -146,6 +152,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
 
   return (
     <div className="space-y-6 font-sans">
+      {readOnly && <div className="rounded-xl border border-sky-500/30 bg-sky-950/30 px-3 py-2 text-xs text-sky-200">只读协作角色：邀请、创建密会、注入权益和联合行动均不可用。</div>}
       
       {/* Top Banner */}
       <div className="surface-obsidian border border-sky-500/30 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
@@ -180,6 +187,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
 
             <button
               onClick={() => setShowCreateModal(true)}
+              disabled={readOnly}
               className="py-2 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white text-xs font-mono-code font-bold flex items-center gap-1.5 shadow-lg shadow-sky-950 cursor-pointer transition-all"
             >
               <Plus className="w-4 h-4" />

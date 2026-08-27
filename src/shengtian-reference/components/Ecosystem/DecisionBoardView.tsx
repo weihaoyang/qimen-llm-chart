@@ -33,6 +33,7 @@ import { sessionApi } from '../../session/api';
 
 interface DecisionBoardViewProps {
   battleId?: string;
+  readOnly?: boolean;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onSelectGhostStrategy?: (ghost: GhostStrategyBranch) => void;
@@ -40,6 +41,7 @@ interface DecisionBoardViewProps {
 
 export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   battleId,
+  readOnly = false,
   battlefield,
   onUpdateBattlefield,
 }) => {
@@ -99,14 +101,14 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   }, [battleId, onUpdateBattlefield]);
 
   useEffect(() => {
-    if (!battleId || !hydratedRef.current) return;
+    if (!battleId || readOnly || !hydratedRef.current) return;
     const timer = window.setTimeout(() => {
       void sessionApi.saveModule(battleId, 'decision-board', board, { source: 'decision_board' })
         .then(() => setPersistenceMessage('委员会状态已保存。'))
         .catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '委员会状态保存失败，请重试。'));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [battleId, board, onUpdateBattlefield]);
+  }, [battleId, board, onUpdateBattlefield, readOnly]);
 
   const handleCopyInviteLink = () => {
     if (!board.roomId || !board.shareToken) {
@@ -122,6 +124,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   };
 
   const toggleRedaction = () => {
+    if (readOnly) return;
     const next = !isRedacted;
     onUpdateBattlefield(prev => ({
       ...prev,
@@ -135,6 +138,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!newCommentText.trim()) return;
 
     const newComment: BoardComment = {
@@ -162,6 +166,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   };
 
   const handleUpvoteComment = (commentId: string) => {
+    if (readOnly) return;
     onUpdateBattlefield(prev => ({
       ...prev,
       decisionBoard: {
@@ -176,6 +181,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
   const handleCreateGhostStrategy = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!ghostName.trim() || !ghostThesis.trim()) return;
 
     const newGhost: GhostStrategyBranch = {
@@ -211,6 +217,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      {readOnly && <div className="rounded-xl border border-sky-500/30 bg-sky-950/30 px-3 py-2 text-xs text-sky-200">只读协作角色：评论、投票、平行策略和脱敏设置不会开放。</div>}
       {persistenceMessage && <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 py-2 text-xs text-blue-200">{persistenceMessage}</div>}
       
       {/* Top Banner: Asynchronous Decision Board Controls */}
@@ -236,6 +243,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             {/* Privacy Redaction Switch */}
             <button
               onClick={toggleRedaction}
+              disabled={readOnly}
               className={`px-3.5 py-2 rounded-xl text-xs font-mono-code font-bold border transition-all flex items-center gap-2 cursor-pointer ${
                 isRedacted
                   ? 'bg-amber-950/70 border-amber-500/60 text-amber-300'
@@ -373,6 +381,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
             
             <button
               onClick={() => setIsAddingGhost(true)}
+              disabled={readOnly}
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-purple-300 bg-purple-950/80 hover:bg-purple-900 border border-purple-700 flex items-center gap-1.5 cursor-pointer transition-all"
             >
               <Plus className="w-3.5 h-3.5" />

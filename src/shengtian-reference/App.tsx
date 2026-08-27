@@ -925,6 +925,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {activeMainView === 'CONCLAVES' && (
           <ObserverConclavesView
             battleId={session.activeBattle?.id ?? battlefield.id}
+            readOnly={!canWriteBattle}
             conclaves={conclaves}
             userEquity={userProfile.equityBalance}
             onInjectEquityToConclave={handleInjectEquityToConclave}
@@ -939,6 +940,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           <div className="space-y-4">
             <DecisionBoardView
               battleId={session.activeBattle?.id}
+              readOnly={!canWriteBattle}
               battlefield={battlefield}
               onUpdateBattlefield={updateBattlefield}
             />
