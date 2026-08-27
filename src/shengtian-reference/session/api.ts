@@ -32,6 +32,7 @@ export type Collaborator = {
   role: "viewer" | "contributor" | "advisor" | "owner";
   status: "invited" | "active" | "revoked";
   permissions: Record<string, unknown>;
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

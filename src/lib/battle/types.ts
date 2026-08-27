@@ -152,7 +152,7 @@ export type StrategyProfile = {
 
 export const COLLABORATOR_ROLES = ["viewer", "contributor", "advisor", "owner"] as const;
 export type CollaboratorRole = (typeof COLLABORATOR_ROLES)[number];
-export type Collaborator = { id:string; battleId:string; subjectType:string; subjectId:string; role:CollaboratorRole; status:"invited"|"active"|"revoked"; permissions:Record<string,unknown>; createdAt:string; updatedAt:string };
+export type Collaborator = { id:string; battleId:string; subjectType:string; subjectId:string; role:CollaboratorRole; status:"invited"|"active"|"revoked"; permissions:Record<string,unknown>; expiresAt:string|null; createdAt:string; updatedAt:string };
 export type ResourceAllocation = { id:string; battleId:string|null; label:string; resourceKind:"cash"|"hours"|"energy"|"credit"; amount:number; unit:string; startsAt:string|null; endsAt:string|null; priority:number; status:"planned"|"committed"|"released"|"cancelled"; source:Record<string,unknown> };
 export type PlaybookEntry = { id:string; battleId:string|null; visibility:"private"|"anonymous_pool"; category:string; pattern:string; adjustment:string; evidenceCount:number; source:Record<string,unknown>; createdAt:string };
 export type CalibrationEvent = { id:string; battleId:string|null; commitmentId:string|null; dimension:"information"|"reasoning"|"resource"|"time"|"risk"|"execution"|"relationship"; expected:number|null; actual:number|null; error:number|null; note:string; createdAt:string };

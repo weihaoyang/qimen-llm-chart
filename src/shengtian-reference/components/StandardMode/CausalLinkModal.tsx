@@ -34,6 +34,7 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
   const [collaborator, setCollaborator] = useState<Collaborator | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
@@ -52,6 +53,15 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : '邀请失败，请稍后重试。');
     } finally { setIsSaving(false); }
+  };
+
+  const copyInviteLink = async () => {
+    if (!collaborator) return;
+    const url = new URL('/', window.location.origin);
+    url.searchParams.set('battle', battleId);
+    url.searchParams.set('invite', collaborator.id);
+    try { await navigator.clipboard.writeText(url.toString()); setCopied(true); window.setTimeout(() => setCopied(false), 2000); }
+    catch { setError('邀请链接复制失败，请手动复制浏览器地址。'); }
   };
 
   return (
@@ -128,7 +138,7 @@ export const CausalLinkModal: React.FC<CausalLinkModalProps> = ({
             <button onClick={() => void handleInvite()} disabled={isSaving || Boolean(collaborator)} className="px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold">{isSaving ? '发送中…' : collaborator ? '已发送' : '发送邀请'}</button>
           </div>
           {error ? <p className="text-xs text-rose-300">{error}</p> : null}
-          {collaborator ? <p className="text-[11px] text-emerald-300">邀请已保存。受邀者以该平台账户登录后，可在其战局协作入口接受邀请；当前版本不伪造 URL 令牌或链接过期语义。</p> : null}
+          {collaborator ? <div className="space-y-2 text-[11px] text-emerald-300"><p>邀请已保存并绑定指定平台账户，{collaborator.expiresAt ? `有效期至 ${new Date(collaborator.expiresAt).toLocaleString()}` : '有效期为 7 天'}。</p><button type="button" onClick={() => void copyInviteLink()} className="rounded-lg border border-emerald-700/60 bg-emerald-950/40 px-3 py-1.5 font-bold">{copied ? '链接已复制' : '复制受控邀请链接'}</button></div> : null}
         </div>
 
         {/* Redaction Switch */}

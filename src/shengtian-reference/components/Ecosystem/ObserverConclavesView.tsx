@@ -84,7 +84,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
     if (!subjectId) return;
     setCollaborationMessage(null);
     try {
-      const result = await sessionApi.inviteCollaborator(battleId, { subjectType: 'account', subjectId, role: inviteRole });
+      const result = await sessionApi.inviteCollaborator(battleId, { subjectType: 'user', subjectId, role: inviteRole });
       setCollaborators((current) => [...current.filter((item) => item.id !== result.collaborator.id), result.collaborator]);
       setInviteSubjectId('');
       setCollaborationMessage('协作邀请已创建，受邀者接受后才会获得访问权限。');

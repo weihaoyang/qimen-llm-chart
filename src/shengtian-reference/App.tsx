@@ -165,17 +165,18 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [activeStandardTab, setActiveStandardTab] = useState<'interview' | 'cards' | 'simulation' | 'risks'>('interview');
 
   useEffect(() => {
-    const battleId = session.activeBattle?.id;
-    if (!battleId || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
     const inviteId = new URLSearchParams(window.location.search).get('invite');
     if (!inviteId || inviteHandledRef.current === inviteId) return;
     inviteHandledRef.current = inviteId;
-    void sessionApi.updateCollaborator(battleId, inviteId, { action: 'accept' }).then(() => {
-      window.history.replaceState({}, '', `/?battle=${encodeURIComponent(battleId)}`);
+    void session.respondInvitation(inviteId, 'accept').then(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('invite');
+      window.history.replaceState({}, '', url);
     }).catch(() => {
       inviteHandledRef.current = null;
     });
-  }, [session.activeBattle?.id]);
+  }, [session.respondInvitation]);
   
   // User Calibration & Sigil State
   const [, setIsCalibrated] = useState(false);
