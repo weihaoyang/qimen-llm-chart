@@ -88,7 +88,7 @@ export async function handleAiPost(request: Request, context: { params: Promise<
       await createAdvice(subject, id, { targetType: "battle", targetId: null, opinion, rationale: JSON.stringify(structured).slice(0, 12000), uncertainty: "AI 输出必须由用户确认后才进入事实或行动。", source: { jobId: created.jobId, kind } });
     }
     if (kind === "review") {
-      await createReview(subject, id, { commitmentId: null, outcome: String(structured.summary), facts: String(structured.facts), whatChanged: String(structured.whatChanged), diagnosis: (structured.diagnosis && typeof structured.diagnosis === "object" && !Array.isArray(structured.diagnosis)) ? structured.diagnosis as Record<string, unknown> : {}, nextAdjustment: String(structured.nextAdjustment) });
+      await createReview(subject, id, { commitmentId: null, outcome: String(structured.summary), facts: String(structured.facts), whatChanged: String(structured.whatChanged), diagnosis: (structured.diagnosis && typeof structured.diagnosis === "object" && !Array.isArray(structured.diagnosis)) ? structured.diagnosis as Record<string, unknown> : {}, nextAdjustment: String(structured.nextAdjustment) }, `ai-job:${created.jobId}`);
     }
     const finished = await finishAiJob(subject,id,created.jobId,structured,result.model);
     if (!finished) throw new Error("AI 任务已超时或不再处于可提交状态，未扣减本次权益。");
