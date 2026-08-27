@@ -7,7 +7,7 @@ import { asRecord, asText, isUuid } from "@/lib/battle/input";
 import { validateBattleModuleState } from "@/lib/battle/module-contract";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
 
-const operations = new Set(["world_pulse_intervention", "deep_archive_unlock", "reality_echo_resolution", "conclave_action", "archon_proposal", "archon_annotation"]);
+const operations = new Set(["world_pulse_intervention", "deep_archive_unlock", "reality_echo_resolution", "conclave_action", "archon_proposal", "archon_annotation", "breakthrough_activation"]);
 const operationModules: Record<string,string> = { world_pulse_intervention:"world-pulse", deep_archive_unlock:"deep-archives", reality_echo_resolution:"reality-echoes", conclave_action:"observer-conclaves", archon_proposal:"archon-tier", archon_annotation:"archon-tier" };
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
