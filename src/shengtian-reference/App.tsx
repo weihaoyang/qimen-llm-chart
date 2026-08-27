@@ -381,7 +381,25 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       if (cancelled || !Array.isArray(payload.inventory)) return;
       const categoryMap: Record<string, CardAsset['category']> = { cash:'FINANCIAL', time:'TIME', information:'INFO', skill:'CHIPS', asset:'CHIPS', relationship:'CHIPS', credential:'CHIPS', channel:'CHIPS', energy:'CHIPS', other:'CHIPS' };
       const assets: CardAsset[] = payload.inventory.map((item, index) => ({ id:String(item.id ?? `inventory-${index}`), category:categoryMap[String(item.category)] ?? 'CHIPS', title:String(item.label ?? '未命名底牌'), description:String(item.description ?? ''), tag:'FACT', confidence:80, numericValue:typeof item.quantity === 'number' ? item.quantity : undefined, unit:typeof item.unit === 'string' ? item.unit : undefined, createdAt:String(item.createdAt ?? new Date().toISOString()) }));
-      setBattlefield((previous) => ({ ...previous, assets }));
+      const cashAsset = payload.inventory.find((item) => item.category === 'cash' && typeof item.quantity === 'number');
+      const availableCash = typeof cashAsset?.quantity === 'number' ? Math.max(0, cashAsset.quantity) : null;
+      setBattlefield((previous) => {
+        if (availableCash === null) return { ...previous, assets };
+        const monthlyBurn = previous.financials.monthlyBurn;
+        const monthlyIncome = previous.financials.monthlyIncomeWithoutClient;
+        const netBurn = Math.max(0, monthlyBurn - monthlyIncome);
+        const calculatedDays = netBurn > 0 ? Math.round((availableCash / netBurn) * 30) : 0;
+        return {
+          ...previous,
+          assets,
+          financials: {
+            ...previous.financials,
+            availableCash,
+            calculatedDays,
+            alertLevel: calculatedDays > 0 && calculatedDays <= 30 ? 'CRITICAL' : calculatedDays > 0 && calculatedDays <= 60 ? 'WARNING' : 'SAFE',
+          },
+        };
+      });
       moduleHydratedRef.current['inventory'] = true;
     }).catch(() => undefined);
     return () => { cancelled = true; };
