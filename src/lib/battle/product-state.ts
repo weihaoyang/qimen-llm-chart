@@ -107,20 +107,22 @@ export async function createAiJob(subject: AccountSubject, battleId: string, kin
     const access = await client.query(`SELECT id FROM battle_cases b WHERE id=$1 AND ((platform_subject_type=$2 AND platform_subject_id=$3) OR ${writableCollaborator}) FOR UPDATE`, [battleId, ...owner(subject)]);
     if (!access.rowCount) return null;
     const snapshotHash = hashSnapshot(input);
-    const existing = await client.query<{ id:string; status:string; created_at:Date; started_at:Date|null }>(`SELECT id,status,created_at,started_at FROM battle_ai_jobs WHERE battle_id=$1 AND kind=$2 AND idempotency_key=$3 FOR UPDATE`, [battleId, kind, idempotencyKey]);
+    const existing = await client.query<{ id:string; status:string; created_at:Date; started_at:Date|null; run_token:string }>(`SELECT id,status,created_at,started_at,run_token FROM battle_ai_jobs WHERE battle_id=$1 AND kind=$2 AND idempotency_key=$3 FOR UPDATE`, [battleId, kind, idempotencyKey]);
     if (existing.rowCount) {
       const row = existing.rows[0];
       const leaseAt = row.started_at ?? row.created_at;
       const stale = (row.status === "queued" || row.status === "running") && Date.now() - leaseAt.getTime() > 10 * 60_000;
       if (row.status === "failed" || row.status === "timed_out" || stale) {
-        await client.query(`UPDATE battle_ai_jobs SET status='queued',input_snapshot_hash=$2,input_json=$3::jsonb,prompt_version=$4,model_version=NULL,result_json=NULL,error_code=NULL,error_message=NULL,created_at=now(),started_at=NULL,completed_at=NULL WHERE id=$1`, [row.id,snapshotHash,json(input),promptVersion]);
-        return { jobId:row.id, status:"queued", reused:false };
+        const runToken = randomUUID();
+        await client.query(`UPDATE battle_ai_jobs SET status='queued',run_token=$2,input_snapshot_hash=$3,input_json=$4::jsonb,prompt_version=$5,model_version=NULL,result_json=NULL,error_code=NULL,error_message=NULL,created_at=now(),started_at=NULL,completed_at=NULL WHERE id=$1`, [row.id,runToken,snapshotHash,json(input),promptVersion]);
+        return { jobId:row.id, status:"queued", runToken, reused:false };
       }
-      return { jobId: row.id, status: row.status, reused: true };
+      return { jobId: row.id, status: row.status, runToken: row.run_token, reused: true };
     }
     const id = randomUUID();
-    await client.query(`INSERT INTO battle_ai_jobs(id,battle_id,kind,idempotency_key,status,input_snapshot_hash,input_json,prompt_version) VALUES($1,$2,$3,$4,'queued',$5,$6::jsonb,$7)`, [id, battleId, kind, idempotencyKey, snapshotHash, json(input), promptVersion]);
-    return { jobId: id, status: "queued", reused: false };
+    const runToken = randomUUID();
+    await client.query(`INSERT INTO battle_ai_jobs(id,battle_id,kind,idempotency_key,status,run_token,input_snapshot_hash,input_json,prompt_version) VALUES($1,$2,$3,$4,'queued',$5,$6,$7::jsonb,$8)`, [id, battleId, kind, idempotencyKey, runToken, snapshotHash, json(input), promptVersion]);
+    return { jobId: id, status: "queued", runToken, reused: false };
   });
 }
 
@@ -138,18 +140,18 @@ export async function getAiJob(subject: AccountSubject, battleId: string, jobId:
   return row ? { jobId: row.id, battleId, kind: row.kind, status: row.status, inputSnapshotHash: row.input_snapshot_hash, promptVersion: row.prompt_version, modelVersion: row.model_version, result: row.result_json, errorCode: row.error_code, errorMessage: row.error_message, createdAt: row.created_at.toISOString(), completedAt: row.completed_at?.toISOString() ?? null } : null;
 }
 
-export async function startAiJob(subject: AccountSubject, battleId: string, jobId: string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='running',started_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$3 AND b.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$3 AND c.subject_id=$4 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,...owner(subject)]);
+export async function startAiJob(subject: AccountSubject, battleId: string, jobId: string, runToken: string) {
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='running',started_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$4 AND b.platform_subject_id=$5) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$4 AND c.subject_id=$5 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
-export async function finishAiJob(subject: AccountSubject, battleId: string, jobId: string, resultValue: unknown, modelVersion: string | null) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='succeeded',result_json=$3::jsonb,model_version=$4,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,json(resultValue),modelVersion,...owner(subject)]);
+export async function finishAiJob(subject: AccountSubject, battleId: string, jobId: string, runToken: string, resultValue: unknown, modelVersion: string | null) {
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='succeeded',result_json=$4::jsonb,model_version=$5,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$6 AND b.platform_subject_id=$7) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$6 AND c.subject_id=$7 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,json(resultValue),modelVersion,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
-export async function failAiJob(subject: AccountSubject, battleId: string, jobId: string, errorCode: string, message: string) {
-  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='failed',error_code=$3,error_message=$4,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$5 AND b.platform_subject_id=$6) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$5 AND c.subject_id=$6 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,errorCode,message,...owner(subject)]);
+export async function failAiJob(subject: AccountSubject, battleId: string, jobId: string, runToken: string, errorCode: string, message: string) {
+  const result = await query<{ id:string }>(`UPDATE battle_ai_jobs j SET status='failed',error_code=$4,error_message=$5,completed_at=now() FROM battle_cases b WHERE j.id=$1 AND j.battle_id=$2 AND j.run_token=$3 AND j.status IN ('queued','running') AND b.id=j.battle_id AND ((b.platform_subject_type=$6 AND b.platform_subject_id=$7) OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$6 AND c.subject_id=$7 AND c.status='active' AND c.role IN ('contributor','advisor'))) RETURNING j.id`, [jobId,battleId,runToken,errorCode,message,...owner(subject)]);
   return Boolean(result.rowCount);
 }
 
