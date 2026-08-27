@@ -71,6 +71,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
   const [newGlowColor, setNewGlowColor] = useState('#38bdf8');
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [inviteSubjectId, setInviteSubjectId] = useState('');
+  const [inviteSubjectType, setInviteSubjectType] = useState<'user' | 'organization' | 'consumer_group'>('user');
   const [inviteRole, setInviteRole] = useState<'viewer' | 'contributor' | 'advisor'>('contributor');
   const [collaborationMessage, setCollaborationMessage] = useState<string | null>(null);
 
@@ -90,7 +91,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
     if (!subjectId) return;
     setCollaborationMessage(null);
     try {
-      const result = await sessionApi.inviteCollaborator(battleId, { subjectType: 'user', subjectId, role: inviteRole });
+      const result = await sessionApi.inviteCollaborator(battleId, { subjectType: inviteSubjectType, subjectId, role: inviteRole });
       setCollaborators((current) => [...current.filter((item) => item.id !== result.collaborator.id), result.collaborator]);
       setInviteSubjectId('');
       setCollaborationMessage('协作邀请已创建，受邀者接受后才会获得访问权限。');
@@ -454,7 +455,8 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
                   <div className="border-t border-white/[0.06] pt-3 space-y-2">
                     <div className="text-[11px] font-mono-code text-sky-300 font-bold">服务端协作席位</div>
                     <div className="flex gap-2">
-                      <input value={inviteSubjectId} onChange={(event) => setInviteSubjectId(event.target.value)} placeholder="受邀账户 subject id" className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-black/50 px-2 py-1.5 text-[11px] text-white" />
+                      <select value={inviteSubjectType} onChange={(event) => setInviteSubjectType(event.target.value as typeof inviteSubjectType)} className="rounded-lg border border-white/[0.1] bg-black/50 px-2 py-1.5 text-[11px] text-white"><option value="user">个人</option><option value="organization">组织</option><option value="consumer_group">消费组</option></select>
+                      <input value={inviteSubjectId} onChange={(event) => setInviteSubjectId(event.target.value)} placeholder="受邀主体 ID" className="min-w-0 flex-1 rounded-lg border border-white/[0.1] bg-black/50 px-2 py-1.5 text-[11px] text-white" />
                       <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value as typeof inviteRole)} className="rounded-lg border border-white/[0.1] bg-black/50 px-2 py-1.5 text-[11px] text-white"><option value="viewer">观察员</option><option value="contributor">贡献者</option><option value="advisor">顾问</option></select>
                       <button onClick={() => void handleInvite()} className="rounded-lg bg-sky-700 px-2.5 py-1.5 text-[11px] font-bold text-white">邀请</button>
                     </div>
