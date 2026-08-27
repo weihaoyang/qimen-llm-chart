@@ -324,9 +324,12 @@ export const CalibrationFlow: React.FC<CalibrationFlowProps> = ({
   const handleFinishOnboarding = () => {
     if (!generatedSigil) return;
     const newProfile: UserProfile = {
-      id: `usr-${Date.now().toString(36)}`,
-      username: '观测者 · 核心执棋官',
-      email: 'commander@aethel.io',
+      // Identity belongs to the platform session. The calibration flow only
+      // produces preferences; it must not mint a synthetic account or expose
+      // a fabricated email address in the user's profile.
+      id: 'current-account',
+      username: '当前执棋官',
+      email: '',
       sigil: generatedSigil,
       aiPersona: assignedPersona,
       isCalibrated: true,
