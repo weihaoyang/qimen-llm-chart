@@ -220,6 +220,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     if (!response.ok) throw new Error(`模块 ${moduleId} 保存失败（${response.status}）。`);
   }, []);
 
+  // Entitlement is owned by the platform. Refresh it after checkout returns,
+  // tab focus, and periodically so module operations never leave a stale
+  // client-side balance visible.
+  useEffect(() => {
+    let cancelled = false;
+    const refreshEntitlement = () => {
+      void sessionApi.entitlement().then(({ usage }) => {
+        if (!cancelled) setUserProfile((previous) => ({ ...previous, equityBalance: Math.max(0, usage.available - usage.reserved) }));
+      }).catch(() => undefined);
+    };
+    const interval = window.setInterval(refreshEntitlement, 30_000);
+    window.addEventListener('focus', refreshEntitlement);
+    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', refreshEntitlement); };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void Promise.allSettled([sessionApi.profile(), sessionApi.entitlement()]).then(([profileResult, entitlementResult]) => {
