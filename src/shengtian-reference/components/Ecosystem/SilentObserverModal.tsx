@@ -96,6 +96,9 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
             <div className="p-6 text-center text-xs font-mono-code text-slate-400 bg-black/40 rounded-xl border border-white/[0.06] space-y-3">
               <p className="text-slate-200 font-bold">外部连接器尚未授权</p>
               <p>日历、邮件和项目看板目前没有可读取的 qmdj 内部同步记录。授权完成并产生同步记录后，异常信号才会显示在这里。</p>
+              <a href="/gods-eye-view" className="inline-flex items-center justify-center rounded-lg border border-cyan-700/60 bg-cyan-950/40 px-3 py-2 text-[11px] font-bold text-cyan-200 hover:bg-cyan-900/60">
+                打开上帝视角观测地图
+              </a>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-left">
                 {(connectors.length ? connectors : [{ provider: 'calendar', status: 'not_connected' }, { provider: 'email', status: 'not_connected' }, { provider: 'project_board', status: 'not_connected' }] as ConnectorItem[]).map((connector) => <span key={connector.provider} className="rounded-lg border border-white/[0.08] bg-slate-950/60 px-3 py-2 flex items-center justify-between gap-2"><span>{providerLabel(connector.provider)} · {connector.status === 'pending_authorization' ? '待授权确认' : connector.status === 'authorized' ? '已授权' : connector.status === 'revoked' ? '已撤销' : '未连接'}</span><button disabled={connectorBusy === connector.provider} onClick={() => void updateConnector(connector.provider, connector.status === 'authorized' || connector.status === 'pending_authorization' ? 'revoke' : 'authorize')} className="text-blue-300 hover:text-blue-200 disabled:opacity-50">{connector.status === 'authorized' || connector.status === 'pending_authorization' ? '撤销' : '登记授权'}</button></span>)}
               </div>
