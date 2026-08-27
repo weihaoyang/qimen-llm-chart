@@ -46,7 +46,7 @@ export function useBattleSession() {
     if (!inviteId) return;
     const invitation = invitations.find((item) => item.id === inviteId);
     if (!invitation) {
-      setError("协作邀请不存在、已过期或不属于当前账户。");
+      window.setTimeout(() => setError("协作邀请不存在、已过期或不属于当前账户。"), 0);
       return;
     }
     let cancelled = false;
