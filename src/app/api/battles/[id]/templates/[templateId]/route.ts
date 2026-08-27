@@ -4,11 +4,13 @@ import { isUuid } from "@/lib/battle/input";
 import { getBattle } from "@/lib/battle/repository";
 import { getModuleState, saveModuleState } from "@/lib/battle/product-state";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate } from "@/lib/platform/server";
+import { OFFICIAL_TEMPLATE_CATALOG } from "@/lib/scenarios/marketplace";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string; templateId: string }> }) {
   try {
     const { id, templateId } = await context.params;
     if (!isUuid(id) || !/^[a-z0-9][a-z0-9-]{1,96}$/.test(templateId)) return NextResponse.json({ error: "战局或模板标识无效。" }, { status: 400 });
+    if (!OFFICIAL_TEMPLATE_CATALOG.some((template) => template.id === templateId)) return NextResponse.json({ error: "模板不在官方目录中。" }, { status: 404 });
     const subject = await requireAccountSubject(request);
     if (!await getBattle(subject, id)) return NextResponse.json({ error: "战局不存在或无权访问。" }, { status: 404 });
     const accessToken = readBearerToken(request.headers.get("authorization"));
