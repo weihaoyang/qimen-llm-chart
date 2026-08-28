@@ -175,6 +175,11 @@ export async function claimRealityEchoReward(subject: AccountSubject, battleId: 
        RETURNING version,state_json,consent_json,updated_at`,
       [randomUUID(), battleId, next, json(nextState), json(row.consent_json)],
     );
+    await client.query(
+      `INSERT INTO battle_module_state_events(id,battle_id,module_id,version,actor_subject_type,actor_subject_id,event_type,state_json,consent_json)
+       VALUES($1,$2,'reality-echoes',$3,$4,$5,'reward_claimed',$6::jsonb,$7::jsonb)`,
+      [randomUUID(), battleId, next, subject.subjectType, subject.subjectId, json(nextState), json(row.consent_json)],
+    );
     await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
     const result = saved.rows[0];
     return { version:result.version, state:parse(result.state_json), consent:parse(result.consent_json), updatedAt:result.updated_at.toISOString(), reused:false };
@@ -268,6 +273,11 @@ export async function mutateDecisionBoard(subject: AccountSubject, battleId: str
     const saved = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
       `INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,'decision-board',$3,$4::jsonb,$5::jsonb) RETURNING version,state_json,consent_json,updated_at`,
       [randomUUID(), battleId, next, json(state), json(current.rows[0]?.consent_json)],
+    );
+    await client.query(
+      `INSERT INTO battle_module_state_events(id,battle_id,module_id,version,actor_subject_type,actor_subject_id,event_type,state_json,consent_json)
+       VALUES($1,$2,'decision-board',$3,$4,$5,'updated',$6::jsonb,$7::jsonb)`,
+      [randomUUID(), battleId, next, subject.subjectType, subject.subjectId, json(state), json(current.rows[0]?.consent_json)],
     );
     await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
     const row = saved.rows[0];
