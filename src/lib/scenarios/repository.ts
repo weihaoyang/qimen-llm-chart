@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
 import type { AccountSubject } from "@/lib/agent/account-subject";
-import { getScenario, SCENARIO_CATALOG_VERSION, type ScenarioSeed } from "./catalog";
+import { SCENARIO_CATALOG_VERSION, type ScenarioSeed } from "./catalog";
+import { getOfficialScenario } from "@/lib/catalog/official-repository";
 import { strategyTemplatesForScenario } from "./strategy-templates";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
@@ -49,4 +50,4 @@ export async function getBattleScenario(subject: AccountSubject, battleId: strin
   return row ? { scenarioId: row.scenario_id, scenarioVersion: row.scenario_version, catalogVersion: row.catalog_version, snapshot: row.snapshot_json } : null;
 }
 
-export function scenarioById(id: string) { return getScenario(id); }
+export async function scenarioById(id: string) { return getOfficialScenario(id); }

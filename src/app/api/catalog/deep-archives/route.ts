@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { DEEP_ARCHIVES_CATALOG, DEEP_ARCHIVES_CATALOG_VERSION } from "@/lib/scenarios/ecosystem";
+import { catalogVersions, listOfficialCatalog, OFFICIAL_CATALOG_TYPES } from "@/lib/catalog/official-repository";
 
 export async function GET() {
-  return NextResponse.json({ catalogVersion: DEEP_ARCHIVES_CATALOG_VERSION, archives: DEEP_ARCHIVES_CATALOG });
+  const archives = await listOfficialCatalog(OFFICIAL_CATALOG_TYPES.deepArchive);
+  return NextResponse.json({ catalogVersion: catalogVersions.deepArchives, archives: archives.map((entry) => entry.payload) });
 }

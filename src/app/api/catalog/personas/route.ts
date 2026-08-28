@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { AI_PERSONA_CONFIGS } from "@/shengtian-reference/data/presets";
+import { catalogVersions, listOfficialCatalog, OFFICIAL_CATALOG_TYPES } from "@/lib/catalog/official-repository";
 
 export async function GET() {
-  return NextResponse.json({ catalogVersion: 1, personas: Object.values(AI_PERSONA_CONFIGS) });
+  const personas = await listOfficialCatalog(OFFICIAL_CATALOG_TYPES.persona);
+  return NextResponse.json({ catalogVersion: catalogVersions.personas, personas: personas.map((entry) => entry.payload) });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { OFFICIAL_TEMPLATE_CATALOG } from "@/lib/scenarios/marketplace";
+import { catalogVersions, listOfficialCatalog, OFFICIAL_CATALOG_TYPES } from "@/lib/catalog/official-repository";
 
 export async function GET() {
-  return NextResponse.json({ catalogVersion: 1, templates: OFFICIAL_TEMPLATE_CATALOG }, { headers: { "Cache-Control": "public, max-age=60" } });
+  const templates = await listOfficialCatalog(OFFICIAL_CATALOG_TYPES.skillTemplate);
+  return NextResponse.json({ catalogVersion: catalogVersions.skillTemplates, templates: templates.map((entry) => entry.payload) }, { headers: { "Cache-Control": "public, max-age=60" } });
 }

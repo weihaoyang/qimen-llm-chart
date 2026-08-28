@@ -14,9 +14,10 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const snapshot = scenario.snapshot && typeof scenario.snapshot === "object" && !Array.isArray(scenario.snapshot)
       ? scenario.snapshot as { strategyTemplates?: unknown }
       : null;
+    const catalogScenario = Array.isArray(snapshot?.strategyTemplates) ? null : await scenarioById(scenario.scenarioId);
     const templates = Array.isArray(snapshot?.strategyTemplates)
       ? snapshot.strategyTemplates as ScenarioStrategyTemplate[]
-      : (() => { const catalogScenario = scenarioById(scenario.scenarioId); return catalogScenario ? strategyTemplatesForScenario(catalogScenario) : []; })();
+      : catalogScenario ? strategyTemplatesForScenario(catalogScenario) : [];
     return NextResponse.json({ battleId, scenarioId: scenario.scenarioId, scenarioVersion: scenario.scenarioVersion, templates });
   } catch (error) {
     return error instanceof AccountSubjectError
