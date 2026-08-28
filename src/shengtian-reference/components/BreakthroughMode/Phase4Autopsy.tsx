@@ -58,24 +58,77 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
 
   const [fatalQuestion, setFatalQuestion] = useState(selectedStrategy ? '正在请求 AI 致命问题…' : '请先在第三阶段锁定正式策略。');
   const [fatalQuestionError, setFatalQuestionError] = useState<string | null>(selectedStrategy ? null : '当前战局没有已锁定策略。');
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
+  const [reflectionText, setReflectionText] = useState('');
+  // The autopsy question and reflection belong to this battle session. Store
+  // them in the existing versioned module snapshot so a refresh can resume.
+  useEffect(() => {
+    let cancelled = false;
+    void sessionApi.module(battlefield.id, 'breakthrough-autopsy').then(({ state }) => {
+      const envelope = state as { state?: unknown } | null;
+      const saved = envelope?.state && typeof envelope.state === 'object' && !Array.isArray(envelope.state)
+        ? envelope.state as Record<string, unknown>
+        : null;
+      if (!cancelled && saved && (!selectedStrategyId || saved.selectedStrategyId === selectedStrategyId)) {
+        if (typeof saved.fatalQuestion === 'string' && saved.fatalQuestion.trim()) setFatalQuestion(saved.fatalQuestion);
+        if (typeof saved.reflectionText === 'string') setReflectionText(saved.reflectionText);
+      }
+      if (!cancelled) setDraftHydrated(true);
+    }).catch(() => { if (!cancelled) setDraftHydrated(true); });
+    return () => { cancelled = true; };
+  // The module is battle/strategy scoped; do not reload it for every field edit.
+  }, [battlefield.id, selectedStrategyId]);
   useEffect(() => {
     let cancelled = false;
     if (!selectedStrategy || readOnly) {
-      return () => { cancelled = true; };
+      const timer = window.setTimeout(() => {
+        if (cancelled) return;
+        setFatalQuestion(selectedStrategy ? '当前为只读模式，无法生成新的致命问题。' : '请先在第三阶段锁定正式策略。');
+        setFatalQuestionError(selectedStrategy && readOnly ? '当前协作角色只读，无法运行 AI。' : '当前战局没有已锁定策略。');
+      }, 0);
+      return () => { cancelled = true; window.clearTimeout(timer); };
     }
+    const statusTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      setFatalQuestion('正在请求 AI 致命问题…');
+      setFatalQuestionError(null);
+    }, 0);
     void TacticalAIService.generateFatalQuestion(selectedStrategy.name, battlefield)
-      .then((question) => { if (!cancelled) { setFatalQuestion(question); setFatalQuestionError(null); } })
+      .then((question) => {
+        if (cancelled) return;
+        setFatalQuestion(question);
+        setFatalQuestionError(null);
+        void sessionApi.saveModule(battlefield.id, 'breakthrough-autopsy', {
+          selectedStrategyId,
+          fatalQuestion: question,
+          reflectionText,
+        }, { source: 'breakthrough_fatal_question' }).catch((error) => {
+          if (!cancelled) setDraftSaveError(error instanceof Error ? error.message : '致命问题保存失败，请重试。');
+        });
+      })
       .catch((error) => { if (!cancelled) setFatalQuestionError(error instanceof Error ? error.message : '致命问题生成失败，请重试。'); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(statusTimer); };
   // The battle object contains frequently changing UI state; the fatal
   // question only depends on its stable id and the selected catalog template.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStrategy?.name, battlefield.id, readOnly, selectedStrategyId, strategyLoadError]);
   
-  const [reflectionText, setReflectionText] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!draftHydrated || readOnly || !selectedStrategyId || !fatalQuestion || fatalQuestion.startsWith('正在请求')) return;
+    const timer = window.setTimeout(() => {
+      void sessionApi.saveModule(battlefield.id, 'breakthrough-autopsy', {
+        selectedStrategyId,
+        fatalQuestion,
+        reflectionText,
+      }, { source: 'breakthrough_autopsy_draft' }).catch((error) => setDraftSaveError(error instanceof Error ? error.message : '复盘草稿保存失败，请重试。'));
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [battlefield.id, draftHydrated, fatalQuestion, reflectionText, readOnly, selectedStrategyId]);
 
   const handleSaveAndExit = async () => {
     if (readOnly) return;
@@ -194,6 +247,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
 
         <blockquote className="font-serif-sc text-base sm:text-lg font-bold text-slate-100 leading-relaxed bg-black/60 p-4.5 rounded-xl border border-amber-800/40">
           {fatalQuestionError ? <span className="text-amber-300">{fatalQuestionError}</span> : <>“{fatalQuestion}”</>}
+          {draftSaveError && <span className="ml-2 text-red-300">{draftSaveError}</span>}
         </blockquote>
 
         {/* User Reflection Textarea */}

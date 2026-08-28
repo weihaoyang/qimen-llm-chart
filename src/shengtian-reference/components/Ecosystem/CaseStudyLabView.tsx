@@ -118,13 +118,26 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
     } finally { setIsSimulating(false); }
   };
 
-  const handleResetSimulation = () => {
-    if (readOnly) return;
-    setHasSimulated(false);
-    setUserSelectedChoiceId(null);
-    setSimulationResult(null);
+  const handleResetSimulation = async () => {
+    if (readOnly || !battleId) return;
     setSimulationError(null);
-    soundManager.playBlip(600, 0.03);
+    try {
+      // Reset is a user action, so persist it synchronously. Relying only on
+      // the autosave debounce allowed a fast refresh to resurrect the old
+      // simulation report.
+      await sessionApi.saveModule(battleId, 'case-study-lab', {
+        selectedCaseId,
+        userSelectedChoiceId: null,
+        hasSimulated: false,
+        simulationResult: null,
+      }, { source: 'case_study_reset' });
+      setHasSimulated(false);
+      setUserSelectedChoiceId(null);
+      setSimulationResult(null);
+      soundManager.playBlip(600, 0.03);
+    } catch (error) {
+      setSimulationError(error instanceof Error ? error.message : '案例重置保存失败，请重试。');
+    }
   };
 
   const selectedChoice = activeCase.choices.find(c => c.id === userSelectedChoiceId);
