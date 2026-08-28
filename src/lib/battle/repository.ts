@@ -32,7 +32,10 @@ const mapMove = (row: MoveRow): Move => ({ id:row.id, battleId:row.battle_id, ju
 export const isBattleId = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 export const listBattles = async (subject: AccountSubject) => {
-  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$1 AND c.platform_subject_id=$2 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator} LIMIT 1) END AS access_role FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator})) AND c.status <> 'archived' ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
+  // Archived battles remain visible so the owner can explicitly restore them
+  // from War Rooms. Hiding them here made the existing “取消归档” action
+  // unreachable and turned a reversible state into an apparent deletion.
+  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$1 AND c.platform_subject_id=$2 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator} LIMIT 1) END AS access_role FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator})) ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
   return result.rows.map(mapBattle);
 };
 
