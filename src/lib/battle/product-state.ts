@@ -81,8 +81,17 @@ export async function saveModuleState(subject: AccountSubject, battleId: string,
     // MAX(version)+1 is racy across two tabs or collaborators and can produce
     // duplicate versions (or force one writer to fail on the unique index).
     await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-module:${battleId}:${moduleId}`]);
+    // Module writes are patch-like at the UI boundary: a modal may submit one
+    // field (for example emotionalTelemetry) while another panel owns the
+    // remaining fields. Merge against the latest snapshot while holding the
+    // same transaction lock so partial saves cannot erase sibling state.
+    const current = await client.query<{ state_json: unknown }>(
+      `SELECT state_json FROM battle_module_states WHERE battle_id=$1 AND module_id=$2 ORDER BY version DESC LIMIT 1`,
+      [battleId, moduleId],
+    );
+    const mergedState = { ...(current.rows[0] ? parse(current.rows[0].state_json) : {}), ...state };
     const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id=$2`, [battleId, moduleId])).rows[0].version;
-    const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(state), json(consent)]);
+    const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(mergedState), json(consent)]);
     await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
     const row = result.rows[0];
     return { version: row.version, state: parse(row.state_json), consent: parse(row.consent_json), updatedAt: row.updated_at.toISOString() };

@@ -19,7 +19,8 @@ import { soundManager } from '../../utils/soundEffects';
 interface Phase2CognitiveWarfareProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
-  onProceedToPhase3: () => void;
+  onProceedToPhase3: () => Promise<void> | void;
+  onPersistBattlefield?: (patch: Partial<BattlefieldState>) => Promise<void>;
   readOnly?: boolean;
 }
 
@@ -27,6 +28,7 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
   battlefield,
   onUpdateBattlefield,
   onProceedToPhase3,
+  onPersistBattlefield,
   readOnly = false,
 }) => {
   const displayFailureProbability = (value: number) => Math.round(value <= 1 ? value * 100 : value);
@@ -56,34 +58,36 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
 
     try {
       const response = await TacticalAIService.generateRedTeamAttack(text, battlefield);
+      const stableId = (() => {
+        let hash = 2166136261;
+        for (let index = 0; index < text.length; index += 1) {
+          hash ^= text.charCodeAt(index);
+          hash = Math.imul(hash, 16777619);
+        }
+        return `red-team-${(hash >>> 0).toString(36)}`;
+      })();
+      const nextLog = {
+        id: stableId,
+        userDraft: text,
+        redTeamCritique: response.critique,
+        biasWarning: response.biasWarning,
+        failureProbability: response.failureProbability,
+        timestamp: new Date().toISOString(),
+      };
+      const alreadySaved = battlefield.redTeamLog.some((item) => item.id === stableId);
+      const biases = response.biasWarning && !battlefield.cognitiveBiasesDetected.includes(response.biasWarning)
+        ? [...battlefield.cognitiveBiasesDetected, response.biasWarning]
+        : battlefield.cognitiveBiasesDetected;
+      const redTeamLog = alreadySaved
+        ? battlefield.redTeamLog.map((item) => item.id === stableId ? nextLog : item)
+        : [...battlefield.redTeamLog, nextLog];
+      // Keep the submitted plan visible and clear it only after both the AI job
+      // and the product-state write succeed. A failed persistence request is
+      // therefore retryable without losing the user's input.
+      await onPersistBattlefield?.({ cognitiveBiasesDetected: biases, redTeamLog });
       setCurrentCritique(response);
-      // Keep the submitted plan visible in the log and only clear the input
-      // after the audited server job succeeds. Failed/timeout jobs therefore
-      // leave the original text available for a one-click retry.
       setUserDraft('');
-
-      // Record to battlefield log
-      onUpdateBattlefield(prev => {
-        const biases = response.biasWarning && !prev.cognitiveBiasesDetected.includes(response.biasWarning)
-          ? [...prev.cognitiveBiasesDetected, response.biasWarning]
-          : prev.cognitiveBiasesDetected;
-
-        return {
-          ...prev,
-          cognitiveBiasesDetected: biases,
-          redTeamLog: [
-            ...prev.redTeamLog,
-            {
-              id: `log-${Date.now()}`,
-              userDraft: text,
-              redTeamCritique: response.critique,
-              biasWarning: response.biasWarning,
-              failureProbability: response.failureProbability,
-              timestamp: new Date().toLocaleTimeString(),
-            },
-          ],
-        };
-      });
+      onUpdateBattlefield(prev => ({ ...prev, cognitiveBiasesDetected: biases, redTeamLog }));
       soundManager.playBlip(950, 0.04);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '红队推演失败，请重试。');
@@ -92,10 +96,10 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
     }
   };
 
-  const handleNext = () => {
-    if (readOnly) return;
+  const handleNext = async () => {
+    if (readOnly || isSimulating) return;
     soundManager.playBlip(900, 0.04);
-    onProceedToPhase3();
+    await onProceedToPhase3();
   };
 
   return (
@@ -285,8 +289,8 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
           {/* Action button */}
           <div className="pt-2">
             <button
-              onClick={handleNext}
-              disabled={readOnly}
+              onClick={() => void handleNext().catch((error) => setErrorMessage(error instanceof Error ? error.message : '阶段切换保存失败，请重试。'))}
+              disabled={readOnly || isSimulating}
               className="w-full py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xl shadow-red-950/60 transition-all cursor-pointer"
             >
               <span>直面现实，进入战略推演沙盘 (三大非对称策略)</span>

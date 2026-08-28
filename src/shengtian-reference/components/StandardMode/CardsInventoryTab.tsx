@@ -52,6 +52,8 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
   const [activeTagFilter, setActiveTagFilter] = useState<'ALL' | 'FACTS' | 'RISKS_HYPO'>('ALL');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [cardSaveError, setCardSaveError] = useState<string | null>(null);
+  const [isSavingCard, setIsSavingCard] = useState(false);
   
   // Card Form State
   const [formTitle, setFormTitle] = useState('');
@@ -106,6 +108,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
         throw new Error(typeof detail?.error === 'string' ? detail.error : `卡牌生成失败（${response.status}）。`);
       }
       const inventoryResponse = await fetch(`/api/battles/${battlefield.id}/inventory`, { credentials:'include' });
+      if (!inventoryResponse.ok) throw new Error(`生成结果读取失败（${inventoryResponse.status}）。`);
       const payload = await inventoryResponse.json() as { inventory?: Array<Record<string, unknown>> };
       if (Array.isArray(payload.inventory)) {
         const categoryMap: Record<string, CardAsset['category']> = { cash:'FINANCIAL', time:'TIME', information:'INFO', skill:'CHIPS', asset:'CHIPS', relationship:'CHIPS', credential:'CHIPS', channel:'CHIPS', other:'CHIPS' };
@@ -151,81 +154,114 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     soundManager.playBlip(600, 0.03);
   };
 
-  const handleSaveCard = () => {
-    if (readOnly) return;
+  const persistAssets = async (assets: CardAsset[]) => {
+    if (!battlefield.id) throw new Error('当前战局无效，无法保存底牌。');
+    const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
+    const response = await fetch(`/api/battles/${battlefield.id}/inventory`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inventory: assets.map((asset) => ({
+        label: asset.title.trim(), description: asset.description, category: categoryMap[asset.category],
+        quantity: asset.numericValue ?? null, unit: asset.unit ?? null, availability: 'available', expiresAt: null,
+        cost: {}, evidence: { tag: asset.tag, confidence: asset.confidence },
+      })) }),
+    });
+    if (!response.ok) {
+      const detail = await response.json().catch(() => null) as { error?: unknown } | null;
+      throw new Error(typeof detail?.error === 'string' ? detail.error : `底牌保存失败（${response.status}）。`);
+    }
+  };
+
+  const handleSaveCard = async () => {
+    if (readOnly || isSavingCard) return;
     if (!formTitle.trim() || !activeCategoryModal) return;
 
-    if (editingCard) {
-      onUpdateBattlefield(prev => ({
-        ...prev,
-        assets: prev.assets.map(a => a.id === editingCard.id ? {
+    const newCard: CardAsset = {
+      id: `card-${Date.now()}`,
+      category: activeCategoryModal,
+      title: formTitle.trim(),
+      description: formDesc,
+      tag: formTag,
+      confidence: formConfidence,
+      numericValue: formNumericValue,
+      unit: formUnit,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    const nextAssets = editingCard
+      ? battlefield.assets.map(a => a.id === editingCard.id ? {
           ...a,
-          title: formTitle,
+          title: formTitle.trim(),
           description: formDesc,
           tag: formTag,
           confidence: formConfidence,
           numericValue: formNumericValue,
           unit: formUnit,
-        } : a),
-      }));
-    } else {
-      const newCard: CardAsset = {
-        id: `card-${Date.now()}`,
-        category: activeCategoryModal,
-        title: formTitle,
-        description: formDesc,
-        tag: formTag,
-        confidence: formConfidence,
-        numericValue: formNumericValue,
-        unit: formUnit,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      onUpdateBattlefield(prev => ({
-        ...prev,
-        assets: [...prev.assets, newCard],
-      }));
-      setExpandedCardIds(prev => ({ ...prev, [newCard.id]: true }));
+        } : a)
+      : [...battlefield.assets, newCard];
+    setCardSaveError(null);
+    setIsSavingCard(true);
+    try {
+      await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      if (!editingCard) setExpandedCardIds(prev => ({ ...prev, [newCard.id]: true }));
+      setActiveCategoryModal(null);
+      setEditingCard(null);
+      soundManager.playBlip(850, 0.05);
+    } catch (error) {
+      setCardSaveError(error instanceof Error ? error.message : '底牌保存失败，请重试。');
+    } finally {
+      setIsSavingCard(false);
     }
-
-    setActiveCategoryModal(null);
-    setEditingCard(null);
-    soundManager.playBlip(850, 0.05);
   };
 
-  const handleDeleteCard = (cardId: string, e: React.MouseEvent) => {
+  const handleDeleteCard = async (cardId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (readOnly) return;
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      assets: prev.assets.filter(a => a.id !== cardId),
-    }));
-    soundManager.playBlip(400, 0.04);
+    if (readOnly || isSavingCard) return;
+    const nextAssets = battlefield.assets.filter(a => a.id !== cardId);
+    setCardSaveError(null);
+    setIsSavingCard(true);
+    try {
+      await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      soundManager.playBlip(400, 0.04);
+    } catch (error) {
+      setCardSaveError(error instanceof Error ? error.message : '底牌删除失败，请重试。');
+    } finally {
+      setIsSavingCard(false);
+    }
   };
 
-  const handleQuickChangeTag = (cardId: string, newTag: EpistemicTag, e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>) => {
+  const handleQuickChangeTag = async (cardId: string, newTag: EpistemicTag, e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
-    if (readOnly) return;
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      assets: prev.assets.map(a => a.id === cardId ? { ...a, tag: newTag } : a),
-    }));
-    soundManager.playBlip(750, 0.03);
+    if (readOnly || isSavingCard) return;
+    const nextAssets = battlefield.assets.map(a => a.id === cardId ? { ...a, tag: newTag } : a);
+    setCardSaveError(null);
+    setIsSavingCard(true);
+    try {
+      await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      soundManager.playBlip(750, 0.03);
+    } catch (error) { setCardSaveError(error instanceof Error ? error.message : '底牌标签保存失败，请重试。'); }
+    finally { setIsSavingCard(false); }
   };
 
-  const handleAdjustConfidence = (cardId: string, delta: number, e: React.MouseEvent) => {
+  const handleAdjustConfidence = async (cardId: string, delta: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (readOnly) return;
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      assets: prev.assets.map(a => {
+    if (readOnly || isSavingCard) return;
+    const nextAssets = battlefield.assets.map(a => {
         if (a.id === cardId) {
           const next = Math.max(5, Math.min(100, a.confidence + delta));
           return { ...a, confidence: next };
         }
         return a;
-      }),
-    }));
-    soundManager.playBlip(delta > 0 ? 800 : 500, 0.02);
+      });
+    setCardSaveError(null);
+    setIsSavingCard(true);
+    try {
+      await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      soundManager.playBlip(delta > 0 ? 800 : 500, 0.02);
+    } catch (error) { setCardSaveError(error instanceof Error ? error.message : '底牌置信度保存失败，请重试。'); }
+    finally { setIsSavingCard(false); }
   };
 
   // Facts vs Assumptions Stats
@@ -302,7 +338,7 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
       <div className="surface-obsidian rounded-2xl p-5 shadow-2xl border border-white/[0.08] hud-corner">
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
           <div><span className="text-xs font-bold text-white">现实底牌盘点</span><p className="mt-1 text-[11px] text-slate-500">AI 只生成待核验候选，保存后仍需你确认事实属性。</p></div>
-          <div className="flex items-center gap-2">{generationError && <span className="text-[11px] text-red-300">{generationError}</span>}<button type="button" onClick={() => void handleGenerateCards()} disabled={readOnly || isGenerating} className="rounded-xl border border-cyan-600/60 bg-cyan-950/50 px-3 py-2 text-xs font-bold text-cyan-200 disabled:opacity-50">{isGenerating ? '正在生成…' : generationError ? '重试生成' : 'AI 生成底牌候选'}</button></div>
+          <div className="flex flex-wrap items-center justify-end gap-2">{generationError && <span role="alert" className="text-[11px] text-red-300">{generationError}</span>}{cardSaveError && <span role="alert" className="text-[11px] text-amber-300">{cardSaveError}</span>}<button type="button" onClick={() => void handleGenerateCards()} disabled={readOnly || isGenerating || isSavingCard} className="rounded-xl border border-cyan-600/60 bg-cyan-950/50 px-3 py-2 text-xs font-bold text-cyan-200 disabled:opacity-50">{isGenerating ? '正在生成…' : generationError ? '重试生成' : 'AI 生成底牌候选'}</button></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           

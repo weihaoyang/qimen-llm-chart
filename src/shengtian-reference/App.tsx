@@ -219,6 +219,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     });
     if (!response.ok) throw new Error(`模块 ${moduleId} 保存失败（${response.status}）。`);
   }, []);
+  const persistBattlefieldPatch = React.useCallback(async (patch: Partial<BattlefieldState>) => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId) throw new Error('当前没有活动战局。');
+    if (!canWriteBattle) throw new Error('当前协作角色为只读，无法保存破局进度。');
+    await saveBattleModule(battleId, 'battlefield-aux', patch, { source: 'user_session', operation: 'breakthrough_progress' });
+  }, [canWriteBattle, saveBattleModule, session.activeBattle?.id]);
 
   // Entitlement is owned by the platform. Refresh it after checkout returns,
   // tab focus, and periodically so module operations never leave a stale
@@ -635,30 +641,22 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   // Calibration completion
-  const handleCompleteCalibration = (profile: UserProfile, sigil: DeciderSigil, answers: AIPersonaType[]) => {
+  const handleCompleteCalibration = async (profile: UserProfile, sigil: DeciderSigil, answers: AIPersonaType[]) => {
+    const dimensions: Array<'information' | 'reasoning' | 'resource' | 'time' | 'risk' | 'execution' | 'relationship'> = ['information', 'reasoning', 'resource'];
+    const { equityBalance: _equityBalance, ...persistedProfile } = profile;
+    void _equityBalance;
+    await sessionApi.saveProfile({ uiProfile: persistedProfile });
+    await Promise.all(dimensions.map((dimension, index) => sessionApi.saveCalibration({
+      battleId: session.activeBattle?.id ?? null,
+      dimension,
+      expected: null,
+      actual: answers[index] ? 1 : 0,
+      note: `首次认知校准：${answers[index] ?? profile.aiPersona}`,
+    })));
     setUserProfile((previous) => ({ ...profile, equityBalance: previous.equityBalance }));
     setIsCalibrated(true);
     setShowCalibrationFlow(false);
-    setBattlefield(prev => ({
-      ...prev,
-      selectedPersona: profile.aiPersona,
-    }));
-    const dimensions: Array<'information' | 'reasoning' | 'resource' | 'time' | 'risk' | 'execution' | 'relationship'> = ['information', 'reasoning', 'resource'];
-    void Promise.all(dimensions.map((dimension, index) => fetch('/api/battles/calibration', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        battleId: session.activeBattle?.id ?? null,
-        dimension,
-        expected: null,
-        actual: answers[index] ? 1 : 0,
-        note: `首次认知校准：${answers[index] ?? profile.aiPersona}`,
-      }),
-    }))).then((responses) => {
-      const failed = responses.find((response) => !response.ok);
-      if (failed) throw new Error(`校准记录保存失败（${failed.status}）。`);
-    }).catch((error) => setPersistenceError(error instanceof Error ? error.message : '校准记录保存失败，请重试。'));
+    setBattlefield(prev => ({ ...prev, selectedPersona: profile.aiPersona }));
   };
 
   const handleLaunchSingularity = async () => {
@@ -689,16 +687,27 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     soundManager.playStrategyLocked();
   };
 
-  const handleExitSingularity = () => {
+  const handleExitSingularity = async () => {
+    await persistBattlefieldPatch({ breakthroughActive: false, breakthroughPhase: 1, forcedWorstCaseActive: false });
     setBattlefield(prev => ({
       ...prev,
       breakthroughActive: false,
       breakthroughPhase: 1,
+      forcedWorstCaseActive: false,
     }));
     soundManager.playBlip(600, 0.04);
   };
 
-  const handleSelectPersona = (persona: AIPersonaType) => {
+  const handleSelectPersona = async (persona: AIPersonaType) => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法切换 AI 人格。');
+    const nextProfile = { ...userProfile, aiPersona: persona };
+    const { equityBalance: _equityBalance, ...persistedProfile } = nextProfile;
+    void _equityBalance;
+    await Promise.all([
+      sessionApi.saveProfile({ uiProfile: persistedProfile }),
+      saveBattleModule(battleId, 'battlefield-aux', { selectedPersona: persona }, { source: 'user_session', operation: 'select_persona' }),
+    ]);
     setBattlefield(prev => ({
       ...prev,
       selectedPersona: persona,
@@ -724,11 +733,17 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     setActiveStandardTab('cards');
   };
 
-  const handleInterveneWorldEvent = (event: WorldPulseEvent) => {
+  const handleInterveneWorldEvent = async (event: WorldPulseEvent) => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法记录世界脉冲介入。');
+    const nextFields = {
+      subtitle: `${battlefield.subtitle} · 已介入世界脉冲：${event.code}`,
+      targetDeadlineDays: Math.max(1, Math.round(event.expiresInMins / 60)),
+    };
+    await saveBattleModule(battleId, 'battlefield-aux', nextFields, { source: 'user_session', operation: 'world_pulse_intervention' });
     setBattlefield(prev => ({
       ...prev,
-      subtitle: `${prev.subtitle} · 已介入世界脉冲：${event.code}`,
-      targetDeadlineDays: Math.max(1, Math.round(event.expiresInMins / 60)),
+      ...nextFields,
     }));
     setActiveMainView('WAR_ROOM');
     // World Pulse intervention is its own billable operation. Do not silently
@@ -922,11 +937,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   };
 
   // 4. Symbiote Handlers
-  const handleUpdateSymbioteName = (newName: string) => {
-    setSymbioteState(prev => ({
-      ...prev,
-      customName: newName,
-    }));
+  const handleUpdateSymbioteName = async (newName: string) => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法保存共生体命名。');
+    const nextState = { ...symbioteState, customName: newName };
+    await saveBattleModule(battleId, 'ai-symbiote', nextState, { source: 'user_session' });
+    setSymbioteState(nextState);
   };
 
   const isRiskTriggered = battlefield.riskBreakers?.some(r => r.isTriggered) ?? false;
@@ -977,6 +993,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
               battleId={session.activeBattle?.id ?? battlefield.id}
               readOnly={!canWriteBattle}
               onUpdateBattlefield={updateBattlefield}
+              onPersistBattlefield={persistBattlefieldPatch}
               onExitSingularityMode={handleExitSingularity}
               onSaveDNARecord={handleSaveDNARecord}
             />
@@ -1248,6 +1265,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsEmotionalModalOpen(false)}
         battlefield={battlefield}
         onUpdateBattlefield={updateBattlefield}
+        onPersistTelemetry={async (nextTelemetry) => {
+          const battleId = session.activeBattle?.id;
+          if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法保存状态记录。');
+          await saveBattleModule(battleId, 'battlefield-aux', { emotionalTelemetry: nextTelemetry }, { source: 'user_session' });
+        }}
         readOnly={!canWriteBattle}
       />
 
@@ -1257,6 +1279,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsValueModalOpen(false)}
         battlefield={battlefield}
         onUpdateBattlefield={updateBattlefield}
+        onPersistValues={async (values) => {
+          const battleId = session.activeBattle?.id;
+          if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法保存价值观基准。');
+          await saveBattleModule(battleId, 'battlefield-aux', { valueCalibrator: { ...battlefield.valueCalibrator, coreValues: values } }, { source: 'user_session', operation: 'value_calibration' });
+        }}
         readOnly={!canWriteBattle}
       />
 
@@ -1266,6 +1293,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onClose={() => setIsMetaphysicsModalOpen(false)}
         battlefield={battlefield}
         onUpdateBattlefield={updateBattlefield}
+        onPersistTiming={async (nextTiming) => {
+          const battleId = session.activeBattle?.id;
+          if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法保存天时记录。');
+          await saveBattleModule(battleId, 'battlefield-aux', { metaphysicsTiming: nextTiming }, { source: 'user_session' });
+        }}
         readOnly={!canWriteBattle}
       />
 

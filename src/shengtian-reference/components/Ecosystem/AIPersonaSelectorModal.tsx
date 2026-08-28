@@ -15,7 +15,7 @@ interface AIPersonaSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedPersona: AIPersonaType;
-  onSelectPersona: (persona: AIPersonaType) => void;
+  onSelectPersona: (persona: AIPersonaType) => Promise<void> | void;
 }
 
 export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
@@ -26,6 +26,8 @@ export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
 }) => {
   const [personas, setPersonas] = React.useState<AIPersonaConfig[]>([]);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [selectingPersona, setSelectingPersona] = React.useState<AIPersonaType | null>(null);
+  const [selectError, setSelectError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!isOpen || personas.length) return;
@@ -81,6 +83,8 @@ export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
           AI 顾问不再是千篇一律的机械应答。你可以随时根据当期战局的性质（极度求生、绝地反击、严谨核算或价值观锚定），切换最契合你的<strong>决策搭档型格</strong>。
         </p>
 
+        {selectError && <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3 py-2 text-xs text-red-200">{selectError}</div>}
+
         {/* 4 Persona Cards Grid */}
         {loadError && <div className="rounded-xl border border-red-700/60 bg-red-950/30 px-3 py-2 text-xs text-red-200">{loadError}</div>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -92,8 +96,14 @@ export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
               <div
                 key={persona.id}
                 onClick={() => {
-                  onSelectPersona(persona.id);
-                  soundManager.playBlip(750, 0.04);
+                  if (selectingPersona) return;
+                  setSelectingPersona(persona.id);
+                  setSelectError(null);
+                  void Promise.resolve(onSelectPersona(persona.id)).then(() => {
+                    soundManager.playBlip(750, 0.04);
+                  }).catch((error) => {
+                    setSelectError(error instanceof Error ? error.message : 'AI 人格保存失败，请重试。');
+                  }).finally(() => setSelectingPersona(null));
                 }}
                 className={`card-tactical rounded-2xl p-4.5 border transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden group ${
                   isSelected
@@ -116,6 +126,7 @@ export const AIPersonaSelectorModal: React.FC<AIPersonaSelectorModalProps> = ({
                         <span>已激活</span>
                       </span>
                     )}
+                    {selectingPersona === persona.id && <span className="text-[10px] text-cyan-300">保存中…</span>}
                   </div>
 
                   <span className="text-[11px] text-amber-300 font-mono-code block mb-1.5">{persona.title}</span>

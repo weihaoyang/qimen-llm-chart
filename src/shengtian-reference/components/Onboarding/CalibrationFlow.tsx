@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 interface CalibrationFlowProps {
-  onCompleteCalibration: (profile: UserProfile, sigil: DeciderSigil, answers: AIPersonaType[]) => void;
+  onCompleteCalibration: (profile: UserProfile, sigil: DeciderSigil, answers: AIPersonaType[]) => Promise<void> | void;
   onCancel?: () => void;
 }
 
@@ -321,7 +321,10 @@ export const CalibrationFlow: React.FC<CalibrationFlowProps> = ({
     };
   }, [stage, generatedSigil]);
 
-  const handleFinishOnboarding = () => {
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+
+  const handleFinishOnboarding = async () => {
     if (!generatedSigil) return;
     const newProfile: UserProfile = {
       // Identity belongs to the platform session. The calibration flow only
@@ -342,8 +345,16 @@ export const CalibrationFlow: React.FC<CalibrationFlowProps> = ({
       achievements: [],
     };
 
-    soundManager.playSuccess();
-    onCompleteCalibration(newProfile, generatedSigil, CALIBRATION_QUESTIONS.map((_, index) => selectedAnswers[index]).filter((value): value is AIPersonaType => Boolean(value)));
+    setIsFinishing(true);
+    setFinishError(null);
+    try {
+      await onCompleteCalibration(newProfile, generatedSigil, CALIBRATION_QUESTIONS.map((_, index) => selectedAnswers[index]).filter((value): value is AIPersonaType => Boolean(value)));
+      soundManager.playSuccess();
+    } catch (error) {
+      setFinishError(error instanceof Error ? error.message : '校准保存失败，请重试。');
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -696,12 +707,14 @@ export const CalibrationFlow: React.FC<CalibrationFlowProps> = ({
                 </div>
 
                 <div className="pt-2">
+                  {finishError && <div className="mb-3 rounded-xl border border-red-700/60 bg-red-950/30 px-3 py-2 text-xs text-red-200">{finishError}</div>}
                   <button
                     onClick={handleFinishOnboarding}
-                    className="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-mono-code font-bold text-xs flex items-center justify-center gap-2 shadow-xl shadow-blue-950/60 transition-all cursor-pointer"
+                    disabled={isFinishing}
+                    className="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-mono-code font-bold text-xs flex items-center justify-center gap-2 shadow-xl shadow-blue-950/60 transition-all cursor-pointer disabled:cursor-wait disabled:opacity-60"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>接受烙印，开启因果推演工坊</span>
+                    <span>{isFinishing ? '正在保存校准…' : '接受烙印，开启因果推演工坊'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

@@ -33,7 +33,7 @@ interface AISymbioteModalProps {
   isOpen: boolean;
   onClose: () => void;
   symbiote: AISymbioteState;
-  onUpdateSymbioteName: (newName: string) => void;
+  onUpdateSymbioteName: (newName: string) => Promise<void> | void;
   readOnly?: boolean;
 }
 
@@ -50,6 +50,8 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   const [memories, setMemories] = useState<SymbioteLongTermMemory[]>(symbiote.longTermMemories);
   const [memoryStatuses, setMemoryStatuses] = useState<Record<string, string>>({});
   const [memoryError, setMemoryError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [isSavingName, setIsSavingName] = useState(false);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -84,12 +86,20 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSaveName = () => {
-    if (readOnly) return;
+  const handleSaveName = async () => {
+    if (readOnly || isSavingName) return;
     if (!nameInput.trim()) return;
-    onUpdateSymbioteName(nameInput.trim());
-    setIsEditingName(false);
-    soundManager.playSuccess();
+    setNameError(null);
+    setIsSavingName(true);
+    try {
+      await onUpdateSymbioteName(nameInput.trim());
+      setIsEditingName(false);
+      soundManager.playSuccess();
+    } catch (error) {
+      setNameError(error instanceof Error ? error.message : '共生体命名保存失败，请重试。');
+    } finally {
+      setIsSavingName(false);
+    }
   };
 
   const stageDescriptions: Record<string, string> = {
@@ -165,11 +175,11 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                     placeholder="输入共生体专属昵称..."
                   />
                   <button
-                    onClick={handleSaveName}
-                    disabled={readOnly}
+                    onClick={() => void handleSaveName()}
+                    disabled={readOnly || isSavingName}
                     className="p-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-black font-bold cursor-pointer"
                   >
-                    <Check className="w-4 h-4" />
+                    {isSavingName ? <span className="text-xs">…</span> : <Check className="w-4 h-4" />}
                   </button>
                 </div>
               ) : (
@@ -182,6 +192,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                   </span>
                 </div>
               )}
+              {nameError && <p className="text-xs text-red-300" role="alert">{nameError}</p>}
 
               <p className="text-xs text-slate-300 leading-relaxed p-3 rounded-2xl bg-black/40 border border-white/[0.04] font-serif-sc">
                 {stageDescriptions[symbiote.evolutionStage] || stageDescriptions.SYMBIOTIC}

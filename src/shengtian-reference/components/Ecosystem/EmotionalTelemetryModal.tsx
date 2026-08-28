@@ -19,6 +19,7 @@ interface EmotionalTelemetryModalProps {
   onClose: () => void;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
+  onPersistTelemetry?: (telemetry: EmotionalTelemetry) => Promise<void>;
   readOnly?: boolean;
 }
 
@@ -27,6 +28,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
   onClose,
   battlefield,
   onUpdateBattlefield,
+  onPersistTelemetry,
   readOnly = false,
 }) => {
   const telemetry = battlefield.emotionalTelemetry;
@@ -35,12 +37,14 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
   const [confidence, setConfidence] = useState(telemetry.confidence);
   const [note, setNote] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (readOnly) return;
+    if (readOnly || isSaving) return;
 
     const today = new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
     const newLog = {
@@ -58,25 +62,35 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
       aiInsight = '⚠️ 提示：精力水平偏低 (<40%)。认知带宽严重受限，请避免在今晚进行不可逆的重大合同条款决策。';
     }
 
-    onUpdateBattlefield(prev => ({
+    const nextTelemetry: EmotionalTelemetry = {
+      ...telemetry,
+      energy,
+      stress,
+      confidence,
+      recentLoggedDate: today,
+      historyLogs: [...telemetry.historyLogs, newLog],
+      aiStressInsight: aiInsight,
+    };
+    setSaveError(null);
+    setIsSaving(true);
+    try {
+      if (onPersistTelemetry) await onPersistTelemetry(nextTelemetry);
+      onUpdateBattlefield(prev => ({
       ...prev,
-      emotionalTelemetry: {
-        ...prev.emotionalTelemetry,
-        energy,
-        stress,
-        confidence,
-        recentLoggedDate: today,
-        historyLogs: [...prev.emotionalTelemetry.historyLogs, newLog],
-        aiStressInsight: aiInsight,
-      }
-    }));
+      emotionalTelemetry: nextTelemetry,
+      }));
 
-    setIsSaved(true);
-    soundManager.playSuccess();
-    setTimeout(() => {
-      setIsSaved(false);
-      onClose();
-    }, 1200);
+      setIsSaved(true);
+      soundManager.playSuccess();
+      window.setTimeout(() => {
+        setIsSaved(false);
+        onClose();
+      }, 1200);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '状态保存失败，请重试。');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -190,6 +204,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
             <strong className="text-amber-300 block mb-1">⚠️ 认知行为关联分析：</strong>
             {telemetry.aiStressInsight}
           </div>
+          {saveError && <p className="text-xs text-red-300" role="alert">{saveError}</p>}
 
           {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
@@ -205,7 +220,7 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
               className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold font-mono-code flex items-center gap-1.5 shadow-lg shadow-red-950/60 cursor-pointer"
             >
               {isSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-              <span>{isSaved ? '状态已同步' : '记录并校准状态'}</span>
+              <span>{isSaving ? '正在同步…' : isSaved ? '状态已同步' : '记录并校准状态'}</span>
             </button>
           </div>
 

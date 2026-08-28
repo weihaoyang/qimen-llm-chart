@@ -28,7 +28,7 @@ const stableRecordId = (value: string) => {
 interface Phase4AutopsyProps {
   battlefield: BattlefieldState;
   onSaveDNARecord: (record: DecisionDNARecord) => Promise<void> | void;
-  onReturnToStandardMode: () => void;
+  onReturnToStandardMode: () => Promise<void> | void;
   readOnly?: boolean;
 }
 
@@ -106,7 +106,7 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
         extractedDNA,
       });
       setIsSaved(true);
-      setTimeout(() => onReturnToStandardMode(), 1200);
+      setTimeout(() => { void onReturnToStandardMode(); }, 1200);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '复盘保存失败，请重试。');
     } finally {

@@ -24,7 +24,8 @@ import { sessionApi } from '../../session/api';
 interface Phase3SandTableProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
-  onProceedToPhase4: () => void;
+  onProceedToPhase4: () => Promise<void> | void;
+  onPersistBattlefield?: (patch: Partial<BattlefieldState>) => Promise<void>;
   onOpenMetaphysicsModal?: () => void;
   onOpenValueModal?: () => void;
   readOnly?: boolean;
@@ -36,6 +37,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
   battlefield,
   onUpdateBattlefield,
   onProceedToPhase4,
+  onPersistBattlefield,
   onOpenMetaphysicsModal,
   onOpenValueModal,
   readOnly = false,
@@ -116,6 +118,10 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
       const moveId = (saved.moves[0] as { id?: unknown } | undefined)?.id;
       if (!moveId) throw new Error('策略草案保存成功但未返回策略标识。');
       await sessionApi.commitMove(battlefield.id, String(moveId), changeReason.trim() || undefined);
+      // The move/commitment API is authoritative for execution. Keep the
+      // battle-scoped UI snapshot in sync as a separate, retryable write so a
+      // refresh cannot reopen the strategy as unlocked.
+      await onPersistBattlefield?.({ lockedAsymmetricStrategyId: selectedStrategyKey });
       setIsLocked(true);
       setActiveCommitment({ moveId: String(moveId) });
       soundManager.playStrategyLocked();
@@ -127,10 +133,10 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (readOnly) return;
     soundManager.playBlip(900, 0.04);
-    onProceedToPhase4();
+    await onProceedToPhase4();
   };
 
   return (
@@ -467,7 +473,7 @@ export const Phase3SandTable: React.FC<Phase3SandTableProps> = ({
             </button>
           ) : (
             <button
-              onClick={handleNext}
+              onClick={() => void handleNext().catch((error) => setLockError(error instanceof Error ? error.message : '阶段切换保存失败，请重试。'))}
               disabled={readOnly}
               className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono-code text-xs flex items-center gap-2 shadow-xl shadow-emerald-950/60 transition-all cursor-pointer"
             >

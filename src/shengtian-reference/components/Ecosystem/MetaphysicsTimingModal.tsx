@@ -19,6 +19,7 @@ interface MetaphysicsTimingModalProps {
   onClose: () => void;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
+  onPersistTiming?: (timing: MetaphysicsTimingState) => Promise<void>;
   onLockExecution?: () => void;
   readOnly?: boolean;
 }
@@ -45,11 +46,14 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   onClose,
   battlefield,
   onUpdateBattlefield,
+  onPersistTiming,
   onLockExecution,
   readOnly = false,
 }) => {
   const timing = battlefield.metaphysicsTiming;
   const [isRevealed, setIsRevealed] = useState(timing.isViewed);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -61,16 +65,21 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleReveal = () => {
-    if (readOnly) return;
-    setIsRevealed(true);
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      metaphysicsTiming: {
-        ...deriveTiming(prev.id),
-      }
-    }));
-    soundManager.playSuccess();
+  const handleReveal = async () => {
+    if (readOnly || isSaving) return;
+    const nextTiming = deriveTiming(battlefield.id);
+    setSaveError(null);
+    setIsSaving(true);
+    try {
+      if (onPersistTiming) await onPersistTiming(nextTiming);
+      onUpdateBattlefield(prev => ({ ...prev, metaphysicsTiming: nextTiming }));
+      setIsRevealed(true);
+      soundManager.playSuccess();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '天时记录保存失败，请重试。');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleConfirmAndLock = () => {
@@ -134,8 +143,9 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
               className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black text-xs font-bold font-mono-code flex items-center gap-2 shadow-2xl shadow-amber-950/80 cursor-pointer transition-all"
             >
               <Eye className="w-4 h-4" />
-              <span>开启天时映照仪式 (Observe Timing)</span>
+              <span>{isSaving ? '正在保存天时记录…' : '开启天时映照仪式 (Observe Timing)'}</span>
             </button>}
+            {saveError && <p className="text-xs text-red-300" role="alert">{saveError}</p>}
           </div>
         ) : (
           /* Cosmic Qi Men Chart Plate */
@@ -186,6 +196,7 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
                 <span>明心见性 · 锁定最终执行战令</span>
               </button>
             </div>
+            {saveError && <p className="text-xs text-red-300" role="alert">{saveError}</p>}
 
           </div>
         )}

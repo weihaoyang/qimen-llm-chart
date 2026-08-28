@@ -16,7 +16,8 @@ import { soundManager } from '../../utils/soundEffects';
 interface Phase1ReassessmentProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
-  onProceedToPhase2: () => void;
+  onProceedToPhase2: () => Promise<void> | void;
+  onPersistBattlefield?: (patch: Partial<BattlefieldState>) => Promise<void>;
   readOnly?: boolean;
 }
 
@@ -24,24 +25,45 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
   battlefield,
   onUpdateBattlefield,
   onProceedToPhase2,
+  onPersistBattlefield,
   readOnly = false,
 }) => {
   const [confirmedTruths, setConfirmedTruths] = useState<Record<string, boolean>>(() =>
     battlefield.breakthroughConfirmedTruths ?? Object.fromEntries(battlefield.assets.map((asset) => [asset.id, asset.tag === 'FACT'])),
   );
+  const [pendingAssetId, setPendingAssetId] = useState<string | null>(null);
+  const [isProceeding, setIsProceeding] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleToggleConfirm = (assetId: string) => {
-    if (readOnly) return;
+  const handleToggleConfirm = async (assetId: string) => {
+    if (readOnly || pendingAssetId || isProceeding) return;
     const next = { ...confirmedTruths, [assetId]: !confirmedTruths[assetId] };
-    setConfirmedTruths(next);
-    onUpdateBattlefield((previous) => ({ ...previous, breakthroughConfirmedTruths: next }));
-    soundManager.playBlip(750, 0.02);
+    setPendingAssetId(assetId);
+    setSaveError(null);
+    try {
+      await onPersistBattlefield?.({ breakthroughConfirmedTruths: next });
+      setConfirmedTruths(next);
+      onUpdateBattlefield((previous) => ({ ...previous, breakthroughConfirmedTruths: next }));
+      soundManager.playBlip(750, 0.02);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '约束确认保存失败，请重试。');
+    } finally {
+      setPendingAssetId(null);
+    }
   };
 
-  const handleNext = () => {
-    if (readOnly) return;
-    soundManager.playBlip(900, 0.04);
-    onProceedToPhase2();
+  const handleNext = async () => {
+    if (readOnly || pendingAssetId || isProceeding) return;
+    setIsProceeding(true);
+    setSaveError(null);
+    try {
+      await onProceedToPhase2();
+      soundManager.playBlip(900, 0.04);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '阶段切换保存失败，请重试。');
+    } finally {
+      setIsProceeding(false);
+    }
   };
 
   return (
@@ -152,15 +174,15 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
                     </div>
 
                     <button
-                      onClick={() => handleToggleConfirm(asset.id)}
-                      disabled={readOnly}
+                      onClick={() => void handleToggleConfirm(asset.id)}
+                      disabled={readOnly || pendingAssetId !== null || isProceeding}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-colors cursor-pointer ${
                         confirmedTruths[asset.id] ?? isFact
                           ? 'bg-slate-800 text-slate-300 border-slate-700'
                           : 'bg-amber-950 text-amber-300 border-amber-700'
                       }`}
                     >
-                      {(confirmedTruths[asset.id] ?? isFact) ? '已确认此残酷约束' : '标记复核'}
+                        {pendingAssetId === asset.id ? '正在保存…' : (confirmedTruths[asset.id] ?? isFact) ? '已确认此残酷约束' : '标记复核'}
                     </button>
                   </div>
                 </div>
@@ -182,12 +204,13 @@ export const Phase1Reassessment: React.FC<Phase1ReassessmentProps> = ({
         <div className="text-xs text-slate-400">
           已完成战局净化。已剔除所有侥幸泡沫，保留最硬核的约束边界。
         </div>
+        {saveError && <div role="alert" className="text-xs text-amber-300 max-w-sm">{saveError}</div>}
         <button
-          onClick={handleNext}
-          disabled={readOnly}
+          onClick={() => void handleNext()}
+          disabled={readOnly || pendingAssetId !== null || isProceeding}
           className="py-2.5 px-6 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-2 shadow-xl shadow-red-950/60 transition-all cursor-pointer"
         >
-          <span>进入第二阶段：认知对抗 (AI红队首席指挥官)</span>
+          <span>{isProceeding ? '正在保存并进入第二阶段…' : '进入第二阶段：认知对抗 (AI红队首席指挥官)'}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

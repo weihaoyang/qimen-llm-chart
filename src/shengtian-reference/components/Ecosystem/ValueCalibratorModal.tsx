@@ -18,6 +18,7 @@ interface ValueCalibratorModalProps {
   onClose: () => void;
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
+  onPersistValues?: (values: CoreValueItem[]) => Promise<void> | void;
   readOnly?: boolean;
 }
 
@@ -26,11 +27,14 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
   onClose,
   battlefield,
   onUpdateBattlefield,
+  onPersistValues,
   readOnly = false,
 }) => {
   const calibrator = battlefield.valueCalibrator;
   const [values, setValues] = useState<CoreValueItem[]>(calibrator.coreValues);
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [newValueKeyword, setNewValueKeyword] = useState('');
   const [newValueDescription, setNewValueDescription] = useState('');
 
@@ -77,21 +81,30 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
     soundManager.playBlip(650, 0.03);
   };
 
-  const handleSave = () => {
-    if (readOnly) return;
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      valueCalibrator: {
-        ...prev.valueCalibrator,
-        coreValues: values,
-      }
-    }));
-    setIsSaved(true);
-    soundManager.playSuccess();
-    setTimeout(() => {
-      setIsSaved(false);
-      onClose();
-    }, 1000);
+  const handleSave = async () => {
+    if (readOnly || isSaving) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await onPersistValues?.(values);
+      onUpdateBattlefield(prev => ({
+        ...prev,
+        valueCalibrator: {
+          ...prev.valueCalibrator,
+          coreValues: values,
+        }
+      }));
+      setIsSaved(true);
+      soundManager.playSuccess();
+      setTimeout(() => {
+        setIsSaved(false);
+        onClose();
+      }, 1000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '价值观基准保存失败，请重试。');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddValue = () => {
@@ -201,6 +214,7 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
         </div>
 
         {/* Footer */}
+        {saveError && <div className="rounded-lg border border-red-700/60 bg-red-950/30 px-3 py-2 text-xs text-red-200">{saveError}</div>}
         <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
           {!readOnly && <button
             onClick={onClose}
@@ -210,10 +224,11 @@ export const ValueCalibratorModal: React.FC<ValueCalibratorModalProps> = ({
           </button>}
           <button
             onClick={handleSave}
+            disabled={readOnly || isSaving}
             className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold font-mono-code flex items-center gap-1.5 shadow-lg shadow-purple-950/60 cursor-pointer"
           >
             {isSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-            <span>{isSaved ? '已完成校准' : '保存价值观基准'}</span>
+            <span>{isSaving ? '保存中…' : isSaved ? '已完成校准' : '保存价值观基准'}</span>
           </button>
         </div>
 

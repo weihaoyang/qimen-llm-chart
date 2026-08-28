@@ -22,7 +22,7 @@ interface WorldPulseViewProps {
   readOnly?: boolean;
   userEquity: number;
   onSpendEquity: (amount: number, title: string) => boolean;
-  onInterveneEvent: (event: WorldPulseEvent) => void;
+  onInterveneEvent: (event: WorldPulseEvent) => Promise<void> | void;
 }
 
 // Extended Event Interface for richer UI
@@ -87,11 +87,16 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
 
   const handleIntervene = async (event: EnhancedPulseEvent) => {
     if (readOnly) return;
-    if (intervenedEvents.includes(event.id)) {
-      onInterveneEvent(event);
+    const alreadyIntervened = intervenedEvents.includes(event.id);
+    setUsageError(null);
+    if (alreadyIntervened) {
+      try {
+        await onInterveneEvent(event);
+      } catch (error) {
+        setUsageError(error instanceof Error ? error.message : '世界脉冲介入保存失败，请重试。');
+      }
       return;
     }
-    setUsageError(null);
     let success = true;
     const nextEvents = Array.from(new Set([...intervenedEvents, event.id]));
     if (battleId) {
@@ -99,15 +104,19 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
       catch (error) { setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。'); success = false; }
     } else success = onSpendEquity(event.equityCostToIntervene, `介入奇点事件：${event.title}`);
     if (success) {
-      setIntervenedEvents(nextEvents);
-      soundManager.playStrategyLocked();
-      confetti({
-        particleCount: 120,
-        spread: 100,
-        origin: { y: 0.5 },
-        colors: ['#00E5FF', '#FF3366', '#FFFFFF'],
-      });
-      onInterveneEvent(event);
+      try {
+        await onInterveneEvent(event);
+        setIntervenedEvents(nextEvents);
+        soundManager.playStrategyLocked();
+        confetti({
+          particleCount: 120,
+          spread: 100,
+          origin: { y: 0.5 },
+          colors: ['#00E5FF', '#FF3366', '#FFFFFF'],
+        });
+      } catch (error) {
+        setUsageError(error instanceof Error ? error.message : '世界脉冲介入保存失败，请重试。');
+      }
     }
   };
 
