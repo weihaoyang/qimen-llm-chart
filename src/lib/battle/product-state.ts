@@ -95,6 +95,11 @@ export async function saveModuleState(subject: AccountSubject, battleId: string,
     const mergedState = { ...(current.rows[0] ? parse(current.rows[0].state_json) : {}), ...state };
     const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id=$2`, [battleId, moduleId])).rows[0].version;
     const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(mergedState), json(consent)]);
+    await client.query(
+      `INSERT INTO battle_module_state_events(id,battle_id,module_id,version,actor_subject_type,actor_subject_id,event_type,state_json,consent_json)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`,
+      [randomUUID(), battleId, moduleId, next, subject.subjectType, subject.subjectId, next === 1 ? "created" : "updated", json(mergedState), json(consent)],
+    );
     await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
     const row = result.rows[0];
     return { version: row.version, state: parse(row.state_json), consent: parse(row.consent_json), updatedAt: row.updated_at.toISOString() };
