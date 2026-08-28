@@ -185,6 +185,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [, setIsCalibrated] = useState(false);
   const [profileHydrated, setProfileHydrated] = useState(false);
   const [showCalibrationFlow, setShowCalibrationFlow] = useState(false);
+  const [profileDecisionDna, setProfileDecisionDna] = useState<DecisionDNARecord[]>([]);
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     const defaultSigil = generateDeciderSigil({
@@ -247,7 +248,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     let cancelled = false;
     void Promise.allSettled([sessionApi.profile(), sessionApi.entitlement()]).then(([profileResult, entitlementResult]) => {
       if (profileResult.status === 'rejected') throw profileResult.reason;
-      const { profile, archonProgress } = profileResult.value;
+      const { profile, decisionDna, archonProgress } = profileResult.value;
+      if (Array.isArray(decisionDna)) {
+        setProfileDecisionDna(decisionDna.filter((item): item is DecisionDNARecord => typeof item.id === 'string' && typeof item.timestamp === 'string'));
+      }
       setVerifiedArchonProgress(archonProgress);
       if (entitlementResult.status === 'fulfilled') {
         const { usage } = entitlementResult.value;
@@ -572,11 +576,21 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     void fetch(`/api/battles/${battleId}/modules/decision-dna`, { credentials: 'include' }).then(async (response) => {
       if (!response.ok) return;
       const payload = await response.json() as { state?: { state?: { records?: DecisionDNARecord[] } } | null };
+      // Keep this state battle-scoped: the autosave below must never copy
+      // another battle's reflections into the active battle. The account-wide
+      // profile records are merged only for rendering (see displayDnaRecords).
       if (!cancelled && Array.isArray(payload.state?.state?.records)) setDnaRecords(payload.state.state.records);
       moduleHydratedRef.current['decision-dna'] = true;
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [session.activeBattle?.id]);
+
+  const displayDnaRecords = React.useMemo(() => {
+    const byId = new Map<string, DecisionDNARecord>();
+    for (const record of profileDecisionDna) if (record?.id) byId.set(record.id, record);
+    for (const record of dnaRecords) if (record?.id) byId.set(record.id, record);
+    return [...byId.values()].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  }, [dnaRecords, profileDecisionDna]);
 
   useEffect(() => {
     const battleId = session.activeBattle?.id;
@@ -1102,7 +1116,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {activeMainView === 'COGNITIVE_DNA' && (
           <div className="space-y-4">
             <CognitiveDNASandbox
-              dnaRecords={dnaRecords}
+              dnaRecords={displayDnaRecords}
               battleId={session.activeBattle?.id}
               readOnly={!canWriteBattle}
             />
@@ -1274,7 +1288,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       <DecisionDNAModal
         isOpen={isDNAModalOpen}
         onClose={() => setIsDNAModalOpen(false)}
-        dnaRecords={dnaRecords}
+        dnaRecords={displayDnaRecords}
       />
 
       {/* Export Tactical Brief Modal */}

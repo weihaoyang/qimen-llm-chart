@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { asRecord } from "@/lib/battle/input";
-import { detectAllocationConflicts, getArchonProgress, getStrategyProfile, listCalibration, listPlaybook, saveStrategyProfile } from "@/lib/battle/extended-repository";
+import { detectAllocationConflicts, getArchonProgress, getStrategyProfile, listCalibration, listDecisionDna, listPlaybook, saveStrategyProfile } from "@/lib/battle/extended-repository";
 
 export async function GET(request: Request) {
   try {
     const subject = await requireAccountSubject(request);
-    const [profile, calibration, conflicts, playbook, archonProgress] = await Promise.all([
+    const [profile, calibration, conflicts, playbook, archonProgress, decisionDna] = await Promise.all([
       getStrategyProfile(subject),
       listCalibration(subject),
       detectAllocationConflicts(subject),
       listPlaybook(subject),
       getArchonProgress(subject),
+      listDecisionDna(subject),
     ]);
     const byDimension = Object.groupBy(calibration, (item) => item.dimension);
     const calibrationSummary = Object.fromEntries(Object.entries(byDimension).map(([key, items]) => [key, { count:items.length, meanAbsoluteError:items.length ? items.reduce((sum,item) => sum + Math.abs(item.error ?? 0), 0) / items.length : null }]));
-    return NextResponse.json({ profile, calibrationSummary, allocationConflicts:conflicts, privatePlaybook:playbook, archonProgress });
+    return NextResponse.json({ profile, calibrationSummary, allocationConflicts:conflicts, privatePlaybook:playbook, archonProgress, decisionDna });
   } catch (error) {
     return error instanceof AccountSubjectError ? NextResponse.json({ error:error.message }, { status:error.status }) : NextResponse.json({ error:"读取战略档案失败。" }, { status:500 });
   }
