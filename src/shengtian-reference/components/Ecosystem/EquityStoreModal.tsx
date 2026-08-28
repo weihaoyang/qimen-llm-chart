@@ -71,11 +71,11 @@ export const EquityStoreModal: React.FC<EquityStoreModalProps> = ({
       const config = requirePlatformClientConfig();
       const channel = channels.find((item) => item.ready)?.channel;
       if (!channel) throw new Error('当前没有可用支付方式。');
-      const returnUrl = `${window.location.origin}/billing/result?product_code=${encodeURIComponent(config.productCode)}`;
+      const returnUrl = (orderId: string) => `${window.location.origin}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(config.productCode)}`;
       const session = loadPlatformSession();
       const checkout = session?.access_token
         ? await createAccountCheckout(session.access_token, plan.plan_code, channel, returnUrl, { csrfToken: session.csrf_token })
-        : await (async () => { const guest = await createGuestCheckout(plan.plan_code, channel); const payment = await createGuestPaymentAttempt(guest, channel, returnUrl); return { providerCheckoutUrl: payment.provider_checkout_url }; })();
+        : await (async () => { const guest = await createGuestCheckout(plan.plan_code, channel); const payment = await createGuestPaymentAttempt(guest, channel, returnUrl(guest.order.order_id)); return { providerCheckoutUrl: payment.provider_checkout_url }; })();
       if (!checkout.providerCheckoutUrl) throw new Error('平台没有返回收银台地址。');
       window.location.assign(checkout.providerCheckoutUrl);
     } catch (error) {
