@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { AIPersonaType, DeciderSigil, UserProfile } from '../types';
 import { soundManager } from '../utils/soundEffects';
+import { PlatformAccountBar } from './PlatformAccountBar';
 
 interface HeaderProps {
   activeMainView: 'WAR_ROOM' | 'CONCLAVES' | 'DECISION_BOARD' | 'CASE_LAB' | 'COGNITIVE_DNA' | 'MARKETPLACE' | 'WORLD_PULSE';
@@ -232,6 +233,8 @@ export const Header: React.FC<HeaderProps> = ({
             <User className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden md:inline">{sigil ? sigil.name.replace(/【|】/g, '') : '执棋官'}</span>
           </button>
+
+          <PlatformAccountBar compact />
 
           {/* Sensory Hub */}
           <button
