@@ -66,7 +66,6 @@ import {
   SilentObserverAlert,
   UserProfile,
   DeciderSigil,
-  WorldPulseEvent,
   RealityEcho,
   CausalDustOption,
   ObserverConclave,
@@ -777,24 +776,6 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     setActiveStandardTab('cards');
   };
 
-  const handleInterveneWorldEvent = async (event: WorldPulseEvent) => {
-    const battleId = session.activeBattle?.id;
-    if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法记录世界脉冲介入。');
-    const nextFields = {
-      subtitle: `${battlefield.subtitle} · 已介入世界脉冲：${event.code}`,
-      targetDeadlineDays: Math.max(1, Math.round(event.expiresInMins / 60)),
-    };
-    await saveBattleModule(battleId, 'battlefield-aux', nextFields, { source: 'user_session', operation: 'world_pulse_intervention' });
-    setBattlefield(prev => ({
-      ...prev,
-      ...nextFields,
-    }));
-    setActiveMainView('WAR_ROOM');
-    // World Pulse intervention is its own billable operation. Do not silently
-    // activate the separately charged Breakthrough Mode as a side effect.
-    setActiveStandardTab('risks');
-  };
-
   // --- Handlers for 4 Masterpiece Puzzles ---
   
   // 1. Reality Echoes Handlers
@@ -1099,13 +1080,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
         {/* VIEW 4: World's Pulse (Global 3D Earth Event Radar) */}
         {activeMainView === 'WORLD_PULSE' && (
-          <WorldPulseView
-            battleId={session.activeBattle?.id}
-            readOnly={!canWriteBattle}
-            userEquity={userProfile.equityBalance}
-            onSpendEquity={handleSpendEquity}
-            onInterveneEvent={handleInterveneWorldEvent}
-          />
+          <WorldPulseView />
         )}
 
         {/* VIEW 5: Anonymous Case Study Lab */}
