@@ -71,3 +71,11 @@ Record only decisions that affect boundaries, data contracts, dependencies, depl
 - 决策：匿名模式库读取时隐藏 `battleId`，写入 source 只保留匿名 provenance，避免把账户/战局标识带到共享结果。
 - 决策：复盘 `diagnosis` 中带 expected/actual 的维度自动写入 calibration，形成“执行→结果→校准”闭环。
 - Evidence: `src/lib/battle/repository.ts`, `src/lib/battle/extended-repository.ts`, `src/app/api/battles/[id]/commitments/route.ts`, `src/app/api/battles/[id]/reviews/route.ts`。
+
+## 2026-08-29 · 官方目录由数据库承载，用户状态与目录版本隔离
+
+- 决策：新增 `official_catalog_entries`，统一承载官方案例、AI 人格、世界脉搏、历史档案和技能模板的已发布版本；服务端以幂等种子写入，已发布版本不可被应用启动静默改写。
+- 决策：用户仍通过 clone 生成自己的 `battle_cases` 和 `battle_scenario_snapshots`；目录记录只读，用户进度不写回目录。
+- 原因：前端可见内容不能继续只依赖 TypeScript 常量，否则多实例、迁移和内容版本无法审计，且无法证明 clone 时使用的官方版本。
+- 代价：首次目录请求需要数据库 readiness；发布新官方内容必须新增版本并显式切换 published 状态。
+- Evidence: `database/migrations/019_official_catalog_entries.sql`, `src/lib/catalog/official-repository.ts`, 2026-08-29 catalog HTTP smoke。
