@@ -101,6 +101,15 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
     setIsSimulating(true);
     try {
       const result = await TacticalAIService.generateCaseStudyReview(battleId, activeCase, userSelectedChoiceId);
+      // Persist the completed simulation before exposing it as finished in the
+      // UI. A failed module write must not leave a result that disappears on
+      // refresh or gets mistaken for a durable case record.
+      await sessionApi.saveModule(battleId, 'case-study-lab', {
+        selectedCaseId,
+        userSelectedChoiceId,
+        hasSimulated: true,
+        simulationResult: result,
+      }, { source: 'case_study_review' });
       setSimulationResult(result);
       setHasSimulated(true);
       soundManager.playSuccess();
