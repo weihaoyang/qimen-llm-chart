@@ -11,6 +11,10 @@ import {
   loadPendingPaidAnalysis,
   saveCompletedPaidAnalysis,
 } from "@/lib/platform/pending-analysis";
+import {
+  clearStorefrontCheckout,
+  loadStorefrontCheckout,
+} from "@/lib/platform/storefront-recovery";
 
 const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
@@ -21,14 +25,91 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
   const [retryable, setRetryable] = useState(false);
 
   const finish = useCallback(async () => {
-    const pending = loadPendingPaidAnalysis();
     const configuredProductCode = (() => {
       try { return requirePlatformClientConfig().productCode; } catch { return ""; }
     })();
     const resolvedProductCode = productCode || configuredProductCode;
-    if (!pending || !orderId || pending.orderId !== orderId || (pending.productCode && pending.productCode !== resolvedProductCode) || (configuredProductCode && resolvedProductCode !== configuredProductCode)) {
+    const pending = loadPendingPaidAnalysis();
+    const pendingAnalysis = pending && orderId && pending.orderId === orderId &&
+      (!pending.productCode || pending.productCode === resolvedProductCode);
+    const storefront = loadStorefrontCheckout();
+    const pendingStorefront = storefront && orderId && storefront.orderId === orderId && storefront.productCode === resolvedProductCode;
+    if ((!pendingAnalysis && !pendingStorefront) || !orderId || (configuredProductCode && resolvedProductCode !== configuredProductCode)) {
       setStage("failed");
-      setMessage("这笔订单与当前产品不匹配，未执行分析；请回到工作台恢复订单。");
+      setMessage("这笔订单与当前产品不匹配，未执行操作；请回到工作台重试。");
+      return;
+    }
+
+    // A storefront purchase grants platform access only. It must never be
+    // routed through the paid-analysis recovery path.
+    if (pendingStorefront && !pendingAnalysis) {
+      setRetryable(false);
+      setStage("loading");
+      setMessage("正在向平台确认商店订单，不以支付回跳页面作为依据");
+      try {
+        let accountAccessToken = "";
+        let accountCsrfToken = "";
+        if (storefront.checkoutMode === "account") {
+          const storedSession = loadPlatformSession();
+          if (!storedSession) throw new Error("登录状态已失效，请重新登录后恢复订单。");
+          const access = await restorePlatformAccessState(storedSession);
+          accountAccessToken = access.session.access_token;
+          accountCsrfToken = access.session.csrf_token;
+        } else if (!storefront.checkoutToken) {
+          throw new Error("游客支付凭证已失效，请重新发起购买。");
+        }
+
+        let paid = false;
+        let lastStatus = "";
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          const result = storefront.checkoutMode === "account"
+            ? await getAccountPaymentResult(accountAccessToken, orderId, resolvedProductCode, { csrfToken: accountCsrfToken })
+            : await getGuestPaymentResult(orderId, storefront.checkoutToken);
+          const normalizedResult = result as {
+            order?: { status?: string };
+            status?: string;
+            payment_status?: string;
+            entitlement_active?: boolean;
+          };
+          lastStatus = normalizedResult.order?.status ?? normalizedResult.status ?? normalizedResult.payment_status ?? "";
+          setOrderStatus(lastStatus);
+          setMessage(lastStatus ? `平台订单状态：${lastStatus} · 等待权益确认` : "正在等待平台确认权益");
+          if (normalizedResult.entitlement_active) {
+            paid = true;
+            break;
+          }
+          if (["failed", "cancelled", "refunded", "expired"].includes(lastStatus)) break;
+          await wait(1500);
+        }
+        if (!paid) {
+          setStage("waiting");
+          setMessage(lastStatus && ["failed", "cancelled", "refunded", "expired"].includes(lastStatus)
+            ? `订单未完成：${lastStatus}`
+            : "平台还没有确认权益，支付可能仍在处理中");
+          setRetryable(true);
+          return;
+        }
+
+        if (storefront.checkoutMode === "account") {
+          const gate = await getAccountGate(accountAccessToken, resolvedProductCode, undefined, { csrfToken: accountCsrfToken });
+          if (!gate.allowed) throw new Error(gate.message || "支付已确认，但权益还在激活，请稍后重试。");
+        }
+        clearStorefrontCheckout();
+        setStage("paid");
+        setMessage("权益已由平台确认，正在返回胜天半子");
+        window.setTimeout(() => window.location.replace("/"), 400);
+      } catch (error) {
+        setStage("failed");
+        setMessage(error instanceof Error ? error.message : "订单恢复失败，请重试。");
+        setRetryable(true);
+      }
+      return;
+    }
+
+    // The remaining branch is the original paid-analysis recovery flow.
+    if (!pending) {
+      setStage("failed");
+      setMessage("未找到待恢复的分析订单，请回到工作台重试。");
       return;
     }
 

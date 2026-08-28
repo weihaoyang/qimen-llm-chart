@@ -9,6 +9,7 @@ import { soundManager } from '../../utils/soundEffects';
 import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, listPlatformPlans } from '../../../lib/platform/browser';
 import { loadPlatformSession } from '../../../lib/platform/session';
 import { requirePlatformClientConfig } from '../../../lib/platform/config';
+import { saveStorefrontCheckout } from '../../../lib/platform/storefront-recovery';
 import { 
   X, 
   CheckCircle2, 
@@ -73,11 +74,32 @@ export const EquityStoreModal: React.FC<EquityStoreModalProps> = ({
       if (!channel) throw new Error('当前没有可用支付方式。');
       const returnUrl = (orderId: string) => `${window.location.origin}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(config.productCode)}`;
       const session = loadPlatformSession();
-      const checkout = session?.access_token
-        ? await createAccountCheckout(session.access_token, plan.plan_code, channel, returnUrl, { csrfToken: session.csrf_token })
-        : await (async () => { const guest = await createGuestCheckout(plan.plan_code, channel); const payment = await createGuestPaymentAttempt(guest, channel, returnUrl(guest.order.order_id)); return { providerCheckoutUrl: payment.provider_checkout_url }; })();
-      if (!checkout.providerCheckoutUrl) throw new Error('平台没有返回收银台地址。');
-      window.location.assign(checkout.providerCheckoutUrl);
+      let checkoutMode: 'account' | 'guest';
+      let orderId: string;
+      let checkoutToken = '';
+      let providerCheckoutUrl: string;
+      if (session?.access_token) {
+        const checkout = await createAccountCheckout(session.access_token, plan.plan_code, channel, returnUrl, { csrfToken: session.csrf_token });
+        checkoutMode = 'account';
+        orderId = checkout.orderId;
+        providerCheckoutUrl = checkout.providerCheckoutUrl;
+      } else {
+        const guest = await createGuestCheckout(plan.plan_code, channel);
+        const payment = await createGuestPaymentAttempt(guest, channel, returnUrl(guest.order.order_id));
+        checkoutMode = 'guest';
+        orderId = guest.order.order_id;
+        checkoutToken = guest.checkout_token;
+        providerCheckoutUrl = payment.provider_checkout_url;
+      }
+      if (!providerCheckoutUrl) throw new Error('平台没有返回收银台地址。');
+      saveStorefrontCheckout({
+        orderId,
+        productCode: config.productCode,
+        checkoutMode,
+        checkoutToken,
+        planCode: plan.plan_code,
+      });
+      window.location.assign(providerCheckoutUrl);
     } catch (error) {
       setIsProcessing(false); setSuccessToast(error instanceof Error ? error.message : '支付初始化失败，请重试。');
     }
