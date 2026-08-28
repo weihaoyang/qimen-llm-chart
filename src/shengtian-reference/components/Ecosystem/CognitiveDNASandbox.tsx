@@ -90,9 +90,10 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
         retainedValuation: String(value.retainedValuation ?? '服务端未评估'),
         aiComparativeHindsight: String(value.nextAdjustment ?? '请结合实际执行结果继续核验。'),
       };
-      setCounterfactuals((previous) => [item, ...previous.filter((entry) => entry.id !== item.id)].slice(0, 20));
+      const nextCounterfactuals = [item, ...counterfactuals.filter((entry) => entry.id !== item.id)].slice(0, 20);
+      setCounterfactuals(nextCounterfactuals);
       setSelectedCfId(item.id);
-      await sessionApi.saveModule(battleId, 'counterfactual', { results: [item, ...counterfactuals.filter((entry) => entry.id !== item.id)].slice(0, 20) }, { source: 'counterfactual_review' });
+      await sessionApi.saveModule(battleId, 'counterfactual', { results: nextCounterfactuals }, { source: 'counterfactual_review' });
     } catch (error) {
       setCounterfactualError(error instanceof Error ? error.message : '反事实推演失败，请重试。');
     } finally { setCounterfactualLoading(false); }
