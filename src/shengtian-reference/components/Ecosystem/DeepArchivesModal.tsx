@@ -85,15 +85,17 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
     if (readOnly) return;
     if (isRestoring || archive.isUnlocked) return;
     setUsageError(null);
+    if (!battleId) {
+      setUsageError('请先复制官方案例或创建战局，历史档案解锁必须绑定到已保存战局。');
+      return;
+    }
     const nextArchives = archives.map(a => (a.id === archive.id ? { ...a, isUnlocked: true } : a));
-    if (battleId) {
-      try {
-        await sessionApi.consumeUsageAndSaveModule(battleId, 'deep_archive_unlock', `deep-archive:${battleId}:${archive.id}`, 'deep-archives', { unlockedIds:nextArchives.filter((item) => item.isUnlocked).map((item) => item.id) });
-      } catch (error) {
-        setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
-        return;
-      }
-    } else if (!onSpendEquity(archive.unlockCostEquity, `解锁深网历史档案：${archive.historicEventTitle}`)) return;
+    try {
+      await sessionApi.consumeUsageAndSaveModule(battleId, 'deep_archive_unlock', `deep-archive:${battleId}:${archive.id}`, 'deep-archives', { unlockedIds:nextArchives.filter((item) => item.isUnlocked).map((item) => item.id) });
+    } catch (error) {
+      setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
+      return;
+    }
 
     soundManager.playBlip(600, 0.1);
     setIsRestoring(true);

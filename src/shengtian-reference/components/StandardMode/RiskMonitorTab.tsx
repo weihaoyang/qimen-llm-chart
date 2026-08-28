@@ -33,6 +33,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
 }) => {
   const [activeMoveId, setActiveMoveId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [busyRiskId, setBusyRiskId] = React.useState<string | null>(null);
   React.useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -87,6 +88,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
   }, [battleId, onUpdateBattlefield, readOnly]);
   const toggleRiskTrigger = async (riskId: string) => {
     if (readOnly) return;
+    if (busyRiskId) return;
     const risk = battlefield.riskBreakers.find((item) => item.id === riskId);
     if (!risk) return;
     if (activeMoveId) {
@@ -94,37 +96,29 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
         setActionMessage('正式执行台断路器触发后不可在浏览器复位；如需换线，请结束当前落子令并记录原因。');
         return;
       }
+      setActionMessage(null);
+      setBusyRiskId(riskId);
       try {
         await sessionApi.triggerBreaker(battleId, activeMoveId, riskId);
         onUpdateBattlefield(prev => ({ ...prev, riskBreakers: prev.riskBreakers.map(item => item.id === riskId ? { ...item, isTriggered: true, triggeredAt: new Date().toISOString() } : item) }));
         setActionMessage('正式执行断路器已触发，当前落子令已进入停止流程。');
       } catch (error) { setActionMessage(error instanceof Error ? error.message : '触发正式断路器失败，请重试。'); }
+      finally { setBusyRiskId(null); }
       return;
     }
-    onUpdateBattlefield(prev => {
-      const updated = prev.riskBreakers.map(r => {
-        if (r.id === riskId) {
-          const nextState = !r.isTriggered;
-          if (nextState) {
-            soundManager.playWarning();
-          } else {
-            soundManager.playBlip(600, 0.03);
-          }
-          return {
-            ...r,
-            isTriggered: nextState,
-            triggeredAt: nextState ? new Date().toLocaleDateString() : undefined,
-          };
-        }
-        return r;
-      });
-      return {
-        ...prev,
-        riskBreakers: updated,
-      };
-    });
-    const next = battlefield.riskBreakers.map(r => r.id === riskId ? { ...r, isTriggered: !r.isTriggered, triggeredAt: !r.isTriggered ? new Date().toISOString() : undefined } : r);
-    void sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: next }).catch((error) => setActionMessage(error instanceof Error ? error.message : '风险断路器保存失败，请重试。'));
+    setActionMessage(null);
+    setBusyRiskId(riskId);
+    const nextState = !risk.isTriggered;
+    const next = battlefield.riskBreakers.map(r => r.id === riskId ? { ...r, isTriggered: nextState, triggeredAt: nextState ? new Date().toISOString() : undefined } : r);
+    try {
+      // Persist first so a failed request leaves the displayed breaker
+      // unchanged and the operator can retry the same action safely.
+      await sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: next });
+      onUpdateBattlefield(() => ({ ...battlefield, riskBreakers: next }));
+      if (nextState) soundManager.playWarning(); else soundManager.playBlip(600, 0.03);
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '风险断路器保存失败，请重试。');
+    } finally { setBusyRiskId(null); }
   };
 
   const triggeredCount = battlefield.riskBreakers.filter(r => r.isTriggered).length;
@@ -226,9 +220,9 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
                   </h4>
 
                   {/* Mechanical Toggle Button */}
-                  <button
-                    onClick={() => toggleRiskTrigger(risk.id)}
-                    disabled={readOnly}
+                    <button
+                      onClick={() => toggleRiskTrigger(risk.id)}
+                      disabled={readOnly || busyRiskId !== null}
                     className={`shrink-0 text-xs px-3 py-1.5 rounded-xl transition-all font-mono-code font-bold border flex items-center gap-1.5 cursor-pointer shadow-md ${
                       isTriggered
                         ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/[0.12]'
@@ -236,7 +230,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
                     }`}
                   >
                     <Power className="w-3.5 h-3.5" />
-                    <span>{isTriggered ? '复位断路' : '击穿断路'}</span>
+                    <span>{busyRiskId === risk.id ? '保存中…' : isTriggered ? '复位断路' : '击穿断路'}</span>
                   </button>
                 </div>
 

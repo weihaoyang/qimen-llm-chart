@@ -60,8 +60,8 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
   const handleExecuteResolution = async (dust: CausalDustEvent, option: CausalDustOption) => {
     if (readOnly) return;
     if (!currentEcho || dust.status !== 'PENDING') return;
-    if (!battleId && userEquity < option.costEquity) {
-      soundManager.playBlip(400, 0.08);
+    if (!battleId) {
+      setUsageError('请先复制官方案例或创建战局，现实回响处理必须绑定到已保存战局。');
       return;
     }
 
@@ -73,14 +73,12 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
       const equilibriumProgress = Math.min(100,echo.equilibriumProgress+35);
       return { ...echo,causalDustEvents,equilibriumProgress,equilibriumStatus:equilibriumProgress>=100 ? 'EQUILIBRIUM_REACHED' as const : echo.equilibriumStatus };
     });
-    if (battleId) {
-      try {
-        await sessionApi.consumeUsageAndSaveModule(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${dust.id}:${option.id}`, 'reality-echoes', { items:nextEchoes });
-      } catch (error) {
-        setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
-        setResolvingOptionId(null);
-        return;
-      }
+    try {
+      await sessionApi.consumeUsageAndSaveModule(battleId, 'reality_echo_resolution', `reality-echo:${battleId}:${currentEcho.id}:${dust.id}:${option.id}`, 'reality-echoes', { items:nextEchoes });
+    } catch (error) {
+      setUsageError(error instanceof Error ? error.message : '平台权益校验失败，请重试。');
+      setResolvingOptionId(null);
+      return;
     }
     window.setTimeout(() => {
       onResolveDustEvent(currentEcho.id, dust.id, option);
