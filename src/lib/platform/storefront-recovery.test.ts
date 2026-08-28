@@ -40,4 +40,10 @@ describe("storefront checkout recovery", () => {
     clearStorefrontCheckout();
     expect(loadStorefrontCheckout()).toBeNull();
   });
+
+  it("selects the matching order when an older checkout is still present", () => {
+    saveStorefrontCheckout({ ...base, checkoutMode: "guest", checkoutToken: "old-token", orderId: "old-order" });
+    saveStorefrontCheckout({ ...base, orderId: "new-order" });
+    expect(loadStorefrontCheckout({ orderId: "new-order", productCode: base.productCode })?.orderId).toBe("new-order");
+  });
 });

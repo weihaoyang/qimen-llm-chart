@@ -32,7 +32,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
     const pending = loadPendingPaidAnalysis();
     const pendingAnalysis = pending && orderId && pending.orderId === orderId &&
       (!pending.productCode || pending.productCode === resolvedProductCode);
-    const storefront = loadStorefrontCheckout();
+    const storefront = loadStorefrontCheckout({ orderId, productCode: resolvedProductCode });
     const pendingStorefront = storefront && orderId && storefront.orderId === orderId && storefront.productCode === resolvedProductCode;
     if ((!pendingAnalysis && !pendingStorefront) || !orderId || (configuredProductCode && resolvedProductCode !== configuredProductCode)) {
       setStage("failed");

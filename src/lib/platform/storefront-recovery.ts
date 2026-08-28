@@ -49,7 +49,13 @@ const read = (mode: StorefrontCheckoutRecovery["checkoutMode"]) => {
 export const saveStorefrontCheckout = (value: Omit<StorefrontCheckoutRecovery, "createdAt"> & { createdAt?: number }) =>
   write({ ...value, createdAt: value.createdAt ?? Date.now() });
 
-export const loadStorefrontCheckout = () => read("guest") ?? read("account");
+export const loadStorefrontCheckout = (match?: { orderId?: string; productCode?: string }) => {
+  const candidates = [read("guest"), read("account")].filter((value): value is StorefrontCheckoutRecovery => Boolean(value));
+  return candidates.find((value) =>
+    (!match?.orderId || value.orderId === match.orderId) &&
+    (!match?.productCode || value.productCode === match.productCode),
+  ) ?? null;
+};
 
 export const clearStorefrontCheckout = () => {
   try { window.sessionStorage.removeItem(STOREFRONT_KEY); } catch { /* best effort */ }
