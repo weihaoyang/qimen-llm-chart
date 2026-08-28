@@ -37,22 +37,32 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
   const [connectors, setConnectors] = useState<ConnectorItem[]>([]);
   const [connectorBusy, setConnectorBusy] = useState<string | null>(null);
 
-  useEffect(() => { if (!isOpen) return; void sessionApi.connectors().then((value) => setConnectors(value.connectors)).catch((error) => setLoadError(error instanceof Error ? error.message : '读取连接状态失败。')); }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoadError(null);
+    void Promise.all([sessionApi.connectors(), sessionApi.connectorAlerts()]).then(([connectorValue, alertValue]) => {
+      setConnectors(connectorValue.connectors);
+      setAlerts(alertValue.alerts as SilentObserverAlert[]);
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : '读取观察者状态失败。'));
+  }, [isOpen]);
   const providerLabel = (provider: string) => provider === 'calendar' ? '日历' : provider === 'email' ? '邮件' : '项目看板';
   const updateConnector = async (provider: 'calendar'|'email'|'project_board', action: 'authorize'|'revoke') => { setConnectorBusy(provider); setLoadError(null); try { await sessionApi.updateConnector(provider, action); const value = await sessionApi.connectors(); setConnectors(value.connectors); } catch (error) { setLoadError(error instanceof Error ? error.message : '更新连接状态失败。'); } finally { setConnectorBusy(null); } };
 
   if (!isOpen) return null;
 
-  const handleDismiss = (id: string) => {
-    setAlerts(prev => prev.filter(a => a.id !== id));
-    soundManager.playBlip(600, 0.03);
+  const handleDismiss = async (id: string) => {
+    try {
+      await sessionApi.dismissConnectorAlert(id);
+      setAlerts(prev => prev.filter(a => a.id !== id));
+      soundManager.playBlip(600, 0.03);
+    } catch (error) { setLoadError(error instanceof Error ? error.message : '忽略信号失败，请重试。'); }
   };
 
   const handleLoadDraft = async (draft: SilentObserverAlert['suggestedBattlefieldDraft'], alertId: string) => {
     setLoadError(null);
     try {
       await onImportDraftAsBattlefield(draft);
-      handleDismiss(alertId);
+      await handleDismiss(alertId);
       onClose();
       soundManager.playSuccess();
     } catch (error) { setLoadError(error instanceof Error ? error.message : '创建战局失败，请重试。'); }

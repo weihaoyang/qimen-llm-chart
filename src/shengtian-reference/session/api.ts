@@ -52,6 +52,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const sessionApi = {
+  connectorAlerts: () => request<{ alerts: Array<import('../../lib/platform/connectors').ConnectorAlert> }>("/api/connectors/alerts"),
+  dismissConnectorAlert: (id:string) => request<{ dismissed:boolean }>(`/api/connectors/alerts?id=${encodeURIComponent(id)}`, { method:"DELETE" }),
   connectors: () => request<{ connectors: Array<{ id: string|null; provider: "calendar"|"email"|"project_board"; status: "not_connected"|"pending_authorization"|"authorized"|"revoked"; scopes: string[]; lastSyncAt: string|null }> }>("/api/connectors"),
   updateConnector: (provider: "calendar"|"email"|"project_board", action: "authorize"|"revoke", scopes: string[] = []) => request<{ connector: unknown }>("/api/connectors", { method: "POST", body: JSON.stringify({ provider, action, scopes }) }),
   catalog: () => request<{ scenarios: CatalogScenario[] }>("/api/scenarios"),
