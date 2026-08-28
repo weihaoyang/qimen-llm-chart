@@ -629,12 +629,16 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       setDnaRecords((current) => [record, ...current.filter((item) => item.id !== record.id)]);
     }
     // Gain bond EXP with Symbiote only after the server-side memory is saved.
-    setSymbioteState(prev => ({
-      ...prev,
-      bondExp: Math.min(prev.maxBondExp, prev.bondExp + 50),
-      totalBattlesFoughtTogether: prev.totalBattlesFoughtTogether + 1,
-      victoriesTogether: record.survivalOutcome === 'SURVIVED' ? prev.victoriesTogether + 1 : prev.victoriesTogether,
-    }));
+    // Persist the derived snapshot before revealing it in React so an
+    // immediate refresh cannot discard the completed review's progression.
+    const nextSymbioteState = {
+      ...symbioteState,
+      bondExp: Math.min(symbioteState.maxBondExp, symbioteState.bondExp + 50),
+      totalBattlesFoughtTogether: symbioteState.totalBattlesFoughtTogether + 1,
+      victoriesTogether: record.survivalOutcome === 'SURVIVED' ? symbioteState.victoriesTogether + 1 : symbioteState.victoriesTogether,
+    };
+    if (battleId) await saveBattleModule(battleId, 'ai-symbiote', nextSymbioteState, { source: 'decision_dna_review' });
+    setSymbioteState(nextSymbioteState);
   };
 
   // Equity manipulation
