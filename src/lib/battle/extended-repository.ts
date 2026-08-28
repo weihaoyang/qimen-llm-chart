@@ -284,7 +284,7 @@ export const listAdvice = async (subject:AccountSubject,battleId:string) => {
   return result.rows.map(mapAdvice);
 };
 
-export const createAdvice = async (subject:AccountSubject,battleId:string,input:Pick<BattleAdvice,"targetType"|"targetId"|"opinion"|"rationale"|"uncertainty"|"source">) => {
+export const createAdvice = async (subject:AccountSubject,battleId:string,input:Pick<BattleAdvice,"targetType"|"targetId"|"opinion"|"rationale"|"uncertainty"|"source"> & { idempotencyKey?: string }) => {
   const access = await getBattleAccess(subject,battleId);
   if (!access || !["owner","advisor","contributor"].includes(access.role)) return null;
   return withTransaction(async (client) => {
@@ -292,6 +292,11 @@ export const createAdvice = async (subject:AccountSubject,battleId:string,input:
     const collaborator = await client.query(`SELECT 1 FROM battle_collaborators c WHERE battle_id=$1 AND subject_type=$2 AND subject_id=$3 AND ${activeCollaborator}`, [battleId, subject.subjectType, subject.subjectId]);
     const ownerAccess = await client.query(`SELECT 1 FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`, [battleId, subject.subjectType, subject.subjectId]);
     if (!ownerRow.rowCount || (!ownerAccess.rowCount && !collaborator.rowCount) || !await targetExists(client,battleId,input.targetType,input.targetId)) return null;
+    const idempotencyKey = input.idempotencyKey?.trim() || null;
+    if (idempotencyKey) {
+      const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND author_subject_type=$2 AND author_subject_id=$3 AND idempotency_key=$4 LIMIT 1`, [battleId, subject.subjectType, subject.subjectId, idempotencyKey]);
+      if (existing.rows[0]) return mapAdvice(existing.rows[0]);
+    }
     // AI jobs may be retried after a successful platform charge. Reuse the
     // previously persisted advice by job id so recovery never duplicates it.
     const sourceJobId = typeof input.source.jobId === "string" ? input.source.jobId : null;
@@ -301,12 +306,17 @@ export const createAdvice = async (subject:AccountSubject,battleId:string,input:
     }
     const id = randomUUID();
     const source = {...input.source,layer:"advisor_opinion",author:{subjectType:subject.subjectType,subjectId:subject.subjectId}};
-    const result = await client.query<AdviceRow>(`INSERT INTO battle_advice(id,battle_id,author_subject_type,author_subject_id,target_type,target_id,opinion,rationale,uncertainty,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) ON CONFLICT DO NOTHING RETURNING ${adviceSelect}`,[id,battleId,...owner(subject),input.targetType,input.targetId,input.opinion,input.rationale,input.uncertainty,JSON.stringify(source)]);
+    const result = await client.query<AdviceRow>(`INSERT INTO battle_advice(id,battle_id,author_subject_type,author_subject_id,target_type,target_id,opinion,rationale,uncertainty,source_json,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11) ON CONFLICT DO NOTHING RETURNING ${adviceSelect}`,[id,battleId,...owner(subject),input.targetType,input.targetId,input.opinion,input.rationale,input.uncertainty,JSON.stringify(source),idempotencyKey]);
     if (result.rows[0]) return mapAdvice(result.rows[0]);
     const jobId = typeof input.source.jobId === "string" ? input.source.jobId : null;
     if (!jobId) return null;
     const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND source_json->>'jobId'=$2 LIMIT 1`,[battleId,jobId]);
-    return existing.rows[0] ? mapAdvice(existing.rows[0]) : null;
+    if (existing.rows[0]) return mapAdvice(existing.rows[0]);
+    if (idempotencyKey) {
+      const retried = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND author_subject_type=$2 AND author_subject_id=$3 AND idempotency_key=$4 LIMIT 1`, [battleId, subject.subjectType, subject.subjectId, idempotencyKey]);
+      return retried.rows[0] ? mapAdvice(retried.rows[0]) : null;
+    }
+    return null;
   });
 };
 

@@ -121,6 +121,7 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
         opinion: adviceOpinion.trim(),
         rationale: adviceRationale.trim(),
         uncertainty: adviceUncertainty.trim(),
+        idempotencyKey: `advisor:${battleId}:${await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${adviceOpinion.trim()}|${adviceRationale.trim()}|${adviceUncertainty.trim()}`)).then((digest) => Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, '0')).join(''))}`,
       });
       setAdvice((current) => [result.advice, ...current]);
       setAdviceOpinion('');

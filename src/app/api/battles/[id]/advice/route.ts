@@ -18,9 +18,9 @@ export async function POST(request:Request, context:Context) {
   try {
     const id=(await context.params).id; if(!isUuid(id)) return NextResponse.json({error:"战局标识无效。"},{status:400});
     const body=await request.json().catch(()=>null) as Record<string,unknown>|null;
-    const targetType=body?.targetType; const opinion=asText(body?.opinion,12000); const rationale=asText(body?.rationale,12000,false); const uncertainty=asText(body?.uncertainty,6000,false);
+    const targetType=body?.targetType; const opinion=asText(body?.opinion,12000); const rationale=asText(body?.rationale,12000,false); const uncertainty=asText(body?.uncertainty,6000,false); const idempotencyKey=asText(body?.idempotencyKey ?? request.headers.get("Idempotency-Key"),160,false);
     if(typeof targetType!=="string"||!targetTypes.includes(targetType as never)||!opinion||rationale===null||uncertainty===null||((body?.targetId!==undefined&&body?.targetId!==null)&&!isUuid(body.targetId))||(targetType!=="battle"&&!isUuid(body?.targetId))) return NextResponse.json({error:"顾问意见字段无效。"},{status:400});
-    const value=await createAdvice(await requireAccountSubject(request),id,{targetType:targetType as never,targetId:(body?.targetId as string|null|undefined)??null,opinion,rationale,uncertainty,source:asRecord(body?.source)??{}});
+    const value=await createAdvice(await requireAccountSubject(request),id,{targetType:targetType as never,targetId:(body?.targetId as string|null|undefined)??null,opinion,rationale,uncertainty,idempotencyKey:idempotencyKey || undefined,source:asRecord(body?.source)??{}});
     return value===null?NextResponse.json({error:"当前账户没有该战局的意见权限。"},{status:403}):NextResponse.json({advice:value},{status:201});
   } catch(error){ return fail(error,"写入顾问意见失败。"); }
 }
