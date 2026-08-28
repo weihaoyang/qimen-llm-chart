@@ -167,7 +167,13 @@ export const confirmInterviewExtraction = async (
     }
     const nextKeys = [...appliedKeys, confirmationKey].slice(-200);
     const nextVersion = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id='interview-confirmations'`, [battleId])).rows[0].version;
-    await client.query(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,'interview-confirmations',$3,$4::jsonb,'{}'::jsonb)`, [randomUUID(), battleId, nextVersion, JSON.stringify({ keys: nextKeys })]);
+    const nextState = { keys: nextKeys };
+    await client.query(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,'interview-confirmations',$3,$4::jsonb,'{}'::jsonb)`, [randomUUID(), battleId, nextVersion, JSON.stringify(nextState)]);
+    await client.query(
+      `INSERT INTO battle_module_state_events(id,battle_id,module_id,version,actor_subject_type,actor_subject_id,event_type,state_json,consent_json,idempotency_key)
+       VALUES($1,$2,'interview-confirmations',$3,$4,$5,'updated',$6::jsonb,'{}'::jsonb,$7)`,
+      [randomUUID(), battleId, nextVersion, subject.subjectType, subject.subjectId, JSON.stringify(nextState), confirmationKey],
+    );
     await client.query(`UPDATE battle_cases SET updated_at=now(),status=CASE WHEN status='intake' THEN 'active' ELSE status END WHERE id=$1`, [battleId]);
   }
 
