@@ -316,6 +316,71 @@ export const commitMove = async (subject: AccountSubject, battleId: string, move
   const id = randomUUID();
   await client.query(`INSERT INTO battle_commitments(id,battle_id,move_id,version,snapshot_json) VALUES($1,$2,$3,$4,$5::jsonb)`, [id,battleId,moveId,version,JSON.stringify({ ...selected, commitmentChangeReason: changeReason?.trim() || null })]);
   await client.query(`UPDATE battle_moves SET state='selected' WHERE id=$1`, [moveId]);
+  // A committed move starts one explicit, battle-scoped reality echo. The
+  // echo is deterministic from the committed strategy; users resolve it in
+  // the UI and the resulting snapshot remains durable across refreshes.
+  await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-module:${battleId}:reality-echoes`]);
+  const echoState = await client.query<{ state_json: unknown }>(
+    `SELECT state_json FROM battle_module_states
+      WHERE battle_id=$1 AND module_id='reality-echoes'
+      ORDER BY version DESC LIMIT 1`,
+    [battleId],
+  );
+  const currentEchoState = asRecord(echoState.rows[0]?.state_json);
+  const echoes = Array.isArray(currentEchoState.items)
+    ? currentEchoState.items.filter((item): item is Json => Boolean(item && typeof item === "object" && !Array.isArray(item)))
+    : [];
+  if (!echoes.some((echo) => echo.commitmentId === id)) {
+    const createdAt = new Date();
+    const echoId = randomUUID();
+    const dustId = randomUUID();
+    const strategyTitle = selected.title.slice(0, 200);
+    const echo = {
+      id: echoId,
+      commitmentId: id,
+      battlefieldId: battleId,
+      battlefieldTitle: String((await client.query<{ title:string }>(`SELECT title FROM battle_cases WHERE id=$1`, [battleId])).rows[0]?.title ?? "现实决策战局"),
+      singularityStrategyName: strategyTitle,
+      createdAt: createdAt.toISOString(),
+      echoPeriodDays: 14,
+      remainingDays: 14,
+      equilibriumStatus: "UNSTABLE_ECHO",
+      equilibriumProgress: 0,
+      causalDustEvents: [{
+        id: dustId,
+        title: "执行后的关键假设待验证",
+        sourceSingularity: strategyTitle,
+        description: `策略「${strategyTitle}」已进入执行。请在回响期内验证成功信号与停止条件，避免把推演结果误当作现实结果。`,
+        collateralType: "REPUTATION_FALLOUT",
+        collateralTypeName: "关系与信誉余震",
+        severity: "MEDIUM",
+        options: [
+          { id: randomUUID(), action: "先做小范围验证", outcomeProb: 70, costEquity: 0, rewardDesc: "降低错误扩散范围", actionExplanation: "用最小可逆动作验证策略的关键假设。" },
+          { id: randomUUID(), action: "收缩暴露面并保留退出口", outcomeProb: 55, costEquity: 0, rewardDesc: "保留换线空间", actionExplanation: "降低承诺强度，直到成功信号被现实确认。" },
+        ],
+        status: "PENDING",
+      }],
+      finalRewardUnlocked: false,
+      rewardClaimStatus: "unrequested",
+      finalRewardEquity: 0,
+      postDeductionNarrative: "这不是预测结论，而是对已提交行动的现实反馈记录。先观察信号，再决定是否继续加码。",
+    };
+    const nextState = { ...currentEchoState, items: [...echoes, echo] };
+    const nextVersion = (await client.query<{ version:number }>(
+      `SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id='reality-echoes'`,
+      [battleId],
+    )).rows[0].version;
+    await client.query(
+      `INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json)
+       VALUES($1,$2,'reality-echoes',$3,$4::jsonb,$5::jsonb)`,
+      [randomUUID(), battleId, nextVersion, JSON.stringify(nextState), JSON.stringify({ source: "commitment", commitmentId: id })],
+    );
+    await client.query(
+      `INSERT INTO battle_module_state_events(id,battle_id,module_id,version,actor_subject_type,actor_subject_id,event_type,state_json,consent_json)
+       VALUES($1,$2,'reality-echoes',$3,$4,$5,'created',$6::jsonb,$7::jsonb)`,
+      [randomUUID(), battleId, nextVersion, subject.subjectType, subject.subjectId, JSON.stringify(nextState), JSON.stringify({ source: "commitment", commitmentId: id })],
+    );
+  }
   await client.query(`UPDATE battle_cases SET status='committed',updated_at=now() WHERE id=$1`, [battleId]);
   return { id, battleId, moveId, version, snapshot: selected, status: 'active' as const };
 });
