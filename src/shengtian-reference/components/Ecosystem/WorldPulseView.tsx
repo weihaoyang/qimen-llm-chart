@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { WorldPulseEvent } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
@@ -6,7 +6,6 @@ import type { CatalogPulseEvent } from '../../../lib/scenarios/ecosystem';
 import confetti from 'canvas-confetti';
 import { 
   Globe, 
-  Flame, 
   Radio, 
   Users, 
   Clock, 
@@ -15,8 +14,7 @@ import {
   Lock,
   Cpu,
   ShieldAlert,
-  Zap,
-  Target
+  Zap
 } from 'lucide-react';
 
 interface WorldPulseViewProps {
@@ -37,13 +35,10 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
   onSpendEquity,
   onInterveneEvent,
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const [events, setEvents] = useState<EnhancedPulseEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EnhancedPulseEvent | null>(null);
   const [tickerNews, setTickerNews] = useState<string[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
-  const [rotAngle, setRotAngle] = useState(0);
   const [isObservingOnly, setIsObservingOnly] = useState(false);
   const [observationSummary, setObservationSummary] = useState<string | null>(null);
   const [tickerOffset, setTickerOffset] = useState(0);
@@ -89,219 +84,6 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
     animId = requestAnimationFrame(animateTicker);
     return () => cancelAnimationFrame(animId);
   }, []);
-
-  // 3D Earth Globe Projection with Advanced Cyberpunk Visuals
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    // Responsive Canvas Setup
-    const updateCanvasSize = () => {
-      const rect = container.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.scale(dpr, dpr);
-    };
-
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    let angle = 0;
-
-    const render = () => {
-      angle += 0.003;
-      setRotAngle(angle);
-      
-      const width = canvas.width / (window.devicePixelRatio || 1);
-      const height = canvas.height / (window.devicePixelRatio || 1);
-      
-      ctx.clearRect(0, 0, width, height);
-
-      const cx = width / 2;
-      const cy = height / 2;
-      const radius = Math.min(width, height) * 0.35;
-
-      // 1. Holographic Grid Background
-      ctx.strokeStyle = 'rgba(58, 125, 255, 0.03)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < width; i += 30) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
-      }
-      for (let i = 0; i < height; i += 30) {
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
-      }
-
-      // 2. Globe Atmospheric Glow
-      const glow = ctx.createRadialGradient(cx, cy, radius * 0.8, cx, cy, radius * 1.5);
-      glow.addColorStop(0, 'rgba(58, 125, 255, 0.2)');
-      glow.addColorStop(0.5, 'rgba(58, 125, 255, 0.05)');
-      glow.addColorStop(1, 'transparent');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius * 1.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 3. Earth Core
-      const sphereGrad = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius);
-      sphereGrad.addColorStop(0, '#0f1d38');
-      sphereGrad.addColorStop(0.7, '#060a12');
-      sphereGrad.addColorStop(1, '#020305');
-      ctx.fillStyle = sphereGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Core Border
-      ctx.strokeStyle = 'rgba(58, 125, 255, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // 4. Lat/Lng Wireframe
-      ctx.strokeStyle = 'rgba(100, 150, 255, 0.15)';
-      ctx.lineWidth = 0.5;
-
-      for (let lat = -60; lat <= 60; lat += 20) {
-        const radLat = (lat * Math.PI) / 180;
-        const y = cy - Math.sin(radLat) * radius;
-        const rx = Math.cos(radLat) * radius;
-        ctx.beginPath();
-        ctx.ellipse(cx, y, rx, rx * 0.3, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      for (let lng = 0; lng < 360; lng += 30) {
-        const currentLng = ((lng * Math.PI) / 180 + angle) % (Math.PI * 2);
-        const xOffset = Math.sin(currentLng) * radius;
-        const isVisible = Math.cos(currentLng) > 0;
-
-        if (isVisible) {
-          ctx.beginPath();
-          ctx.ellipse(cx + xOffset * 0.5, cy, Math.abs(xOffset * 0.5), radius, 0, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      }
-
-      // 5. Radar Sweep
-      const radarAngle = (Date.now() / 1500) % (Math.PI * 2);
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(radarAngle);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, radius * 1.1, 0, 0.2);
-      ctx.closePath();
-      const sweepGrad = ctx.createLinearGradient(0, 0, radius * 1.1, 0);
-      sweepGrad.addColorStop(0, 'rgba(100, 255, 150, 0.4)');
-      sweepGrad.addColorStop(1, 'rgba(100, 255, 150, 0)');
-      ctx.fillStyle = sweepGrad;
-      ctx.fill();
-      // Leading edge
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(radius * 1.1, 0);
-      ctx.strokeStyle = 'rgba(100, 255, 150, 0.8)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
-
-      // 6. Draw Events and Connections
-      const activePoints: {x: number, y: number}[] = [];
-
-      events.forEach((evt) => {
-        const radLat = (evt.lat * Math.PI) / 180;
-        const radLng = (evt.lng * Math.PI) / 180 + angle;
-        const isVisible = Math.cos(radLng) > 0;
-
-        if (isVisible) {
-          const px = cx + Math.cos(radLat) * Math.sin(radLng) * radius;
-          const py = cy - Math.sin(radLat) * radius;
-          activePoints.push({x: px, y: py});
-
-          const isSelected = selectedEvent?.id === evt.id;
-          const tPulse = (Date.now() / (isSelected ? 300 : 800)) % 2;
-          const baseColor = evt.severity === 'GLOBAL_CRITICAL' ? '#FF3366' : '#00E5FF';
-
-          // Outer Ripple
-          ctx.strokeStyle = baseColor;
-          ctx.globalAlpha = 1 - tPulse / 2;
-          ctx.lineWidth = isSelected ? 2 : 1;
-          ctx.beginPath();
-          ctx.arc(px, py, 4 + tPulse * (isSelected ? 15 : 10), 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-
-          // Core Node
-          ctx.fillStyle = baseColor;
-          ctx.shadowColor = baseColor;
-          ctx.shadowBlur = 10;
-          ctx.beginPath();
-          ctx.arc(px, py, isSelected ? 5 : 3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          // Target Reticle for Selected
-          if (isSelected) {
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            const r = 12;
-            ctx.moveTo(px - r, py - r); ctx.lineTo(px - r + 5, py - r);
-            ctx.moveTo(px - r, py - r); ctx.lineTo(px - r, py - r + 5);
-            ctx.moveTo(px + r, py - r); ctx.lineTo(px + r - 5, py - r);
-            ctx.moveTo(px + r, py - r); ctx.lineTo(px + r, py - r + 5);
-            ctx.moveTo(px - r, py + r); ctx.lineTo(px - r + 5, py + r);
-            ctx.moveTo(px - r, py + r); ctx.lineTo(px - r, py + r - 5);
-            ctx.moveTo(px + r, py + r); ctx.lineTo(px + r - 5, py + r);
-            ctx.moveTo(px + r, py + r); ctx.lineTo(px + r, py + r - 5);
-            ctx.stroke();
-          }
-
-          // Label
-          ctx.font = 'bold 10px "JetBrains Mono", monospace';
-          ctx.fillStyle = isSelected ? '#FFFFFF' : baseColor;
-          ctx.fillText(evt.code, px + 12, py + 4);
-        }
-      });
-
-      // 7. Data Link Arcs between visible points
-      if (activePoints.length > 1) {
-        ctx.strokeStyle = 'rgba(58, 125, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 4]);
-        ctx.beginPath();
-        for (let i = 0; i < activePoints.length; i++) {
-          for (let j = i + 1; j < activePoints.length; j++) {
-            const p1 = activePoints[i];
-            const p2 = activePoints[j];
-            // Draw curved arc
-            const midX = (p1.x + p2.x) / 2;
-            const midY = (p1.y + p2.y) / 2 - 40; // Control point above
-            ctx.moveTo(p1.x, p1.y);
-            ctx.quadraticCurveTo(midX, midY, p2.x, p2.y);
-          }
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      animId = requestAnimationFrame(render);
-    };
-
-    render();
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', updateCanvasSize);
-    };
-  }, [events, selectedEvent]);
 
   const handleIntervene = async (event: EnhancedPulseEvent) => {
     if (readOnly) return;
@@ -378,27 +160,18 @@ export const WorldPulseView: React.FC<WorldPulseViewProps> = ({
       {/* 2. Main Radar Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-0">
         
-        {/* Left: 3D Globe Radar View (7 cols) */}
-        <div 
-          ref={containerRef} 
-          className="lg:col-span-7 relative bg-[#020408] rounded-2xl border border-white/[0.08] shadow-inner overflow-hidden flex items-center justify-center group"
-        >
-          {/* Cyberpunk Decorative Overlays */}
-          <div className="absolute top-4 left-4 flex flex-col gap-1 text-[9px] font-mono-code text-cyan-500/70 select-none">
-            <span>SYS.OP.MODE: NOMINAL</span>
-            <span>SAT.LINK: ESTABLISHED</span>
-            <span>GEO.SYNC: ACTIVE</span>
+        {/* Left: the complete open-source God's Eye View application */}
+        <div className="lg:col-span-7 relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#020408] shadow-inner">
+          <iframe
+            title="God&apos;s Eye View 世界观测地图"
+            src="/gods-eye-view/index.html"
+            loading="eager"
+            allow="fullscreen; microphone"
+            className="absolute inset-0 h-full w-full border-0"
+          />
+          <div className="pointer-events-none absolute left-3 top-3 z-10 rounded bg-black/70 px-2 py-1 text-[9px] font-mono-code text-cyan-300/80">
+            GOD&apos;S EYE VIEW · 官方开源观测组件
           </div>
-          
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 text-[10px] font-mono-code text-slate-500 select-none">
-            <Target className="w-3 h-3" />
-            <span>RADAR SWEEP ENABLED</span>
-          </div>
-
-          <canvas ref={canvasRef} className="absolute inset-0 z-10" />
-          
-          {/* Scanline overlay */}
-          <div className="absolute inset-0 z-20 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMikiLz48L3N2Zz4=')] opacity-50"></div>
         </div>
 
         {/* Right: Tactical Event Dossier (5 cols) */}
