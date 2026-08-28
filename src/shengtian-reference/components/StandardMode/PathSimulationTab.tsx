@@ -58,6 +58,7 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   const [activeCommitmentId, setActiveCommitmentId] = useState<string | null>(null);
   const [commitPending, setCommitPending] = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState<string | null>(null);
+  const [savePending, setSavePending] = useState(false);
   const moduleHydratedRef = useRef(false);
 
   React.useEffect(() => {
@@ -148,12 +149,14 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     soundManager.playBlip(650, 0.03);
   };
 
-  const handleSaveStrategy = () => {
+  const handleSaveStrategy = async () => {
     if (readOnly) return;
-    if (!strategyName.trim() || !activeStrategyTypeModal) return;
+    if (!strategyName.trim() || !activeStrategyTypeModal || savePending) return;
+    setSavePending(true);
+    setPersistenceMessage(null);
 
     const newStrat: StrategyBranch = {
-      id: `strat-${Date.now()}`,
+      id: '',
       name: strategyName,
       type: activeStrategyTypeModal,
       typeLabel: activeStrategyTypeModal === 'AGGRESSIVE' ? '强攻手' : activeStrategyTypeModal === 'PROBING' ? '试局手' : '对冲手',
@@ -166,22 +169,27 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
       status: 'PROPOSED',
     };
 
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      strategies: [...prev.strategies, newStrat],
-    }));
-
-    void sessionApi.analysis(battleId).then(async ({ junctions }) => {
+    try {
+      let { junctions } = await sessionApi.analysis(battleId);
+      if (!junctions.length) ({ junctions } = await sessionApi.generateAnalysis(battleId, {
+        availableCash: battlefield.financials.availableCash,
+        monthlyBurn: battlefield.financials.monthlyBurn,
+        monthlyIncomeWithoutClient: battlefield.financials.monthlyIncomeWithoutClient,
+      }));
       const junctionId = typeof junctions[0]?.id === 'string' ? junctions[0].id : null;
-      if (!junctionId) { setPersistenceMessage('策略已保存在当前草稿；创建因果节点后才能写入服务端。'); return; }
-      const saved = await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName, rationale: strategyDesc, cost: { description: strategyCost }, validation: { signal: strategySignal }, actions: [], source: { layer: 'path_simulation', assignedCardIds: selectedCardsForNewStrategy, targetTimelineDay: strategyDay, estimatedSurvivalProb: newStrat.estimatedSurvivalProb } }]);
+      if (!junctionId) throw new Error('当前战局还没有可用因果节点，请先完成采访。');
+      const saved = await sessionApi.saveMoves(battleId, junctionId, [{ kind: activeStrategyTypeModal === 'AGGRESSIVE' ? 'strong_attack' : activeStrategyTypeModal === 'HEDGE' ? 'hedge' : 'probe', title: strategyName.trim(), rationale: strategyDesc.trim(), cost: { description: strategyCost.trim() }, validation: { signal: strategySignal.trim() }, actions: [], source: { layer: 'path_simulation', assignedCardIds: selectedCardsForNewStrategy, targetTimelineDay: strategyDay, estimatedSurvivalProb: newStrat.estimatedSurvivalProb } }]);
       const persisted = saved.moves[0] as Record<string, unknown> | undefined;
-      if (persisted?.id) onUpdateBattlefield(previous => ({ ...previous, strategies: previous.strategies.map(item => item.id === newStrat.id ? { ...item, id: String(persisted.id) } : item) }));
+      if (!persisted?.id) throw new Error('策略保存成功但未返回策略标识。');
+      onUpdateBattlefield(previous => ({ ...previous, strategies: [...previous.strategies, { ...newStrat, id: String(persisted.id) }] }));
       setPersistenceMessage('策略草案已写入战局。');
-    }).catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '策略保存失败，请重试。'));
-
-    setActiveStrategyTypeModal(null);
-    soundManager.playBlip(850, 0.04);
+      setActiveStrategyTypeModal(null);
+      soundManager.playBlip(850, 0.04);
+    } catch (error) {
+      setPersistenceMessage(error instanceof Error ? error.message : '策略保存失败，请重试。');
+    } finally {
+      setSavePending(false);
+    }
   };
 
   const handleCommitStrategy = async (strategyId: string) => {
@@ -715,10 +723,11 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
                 取消
               </button>
               <button
-                onClick={handleSaveStrategy}
-                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md"
+                onClick={() => void handleSaveStrategy()}
+                disabled={savePending}
+                className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold shadow-md"
               >
-                布设策略
+                {savePending ? '保存中…' : '布设策略'}
               </button>
             </div>
 
