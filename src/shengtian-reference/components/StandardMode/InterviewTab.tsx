@@ -99,12 +99,12 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
     if (readOnly) return;
     if (message.extractedAccepted || (!message.extractedFacts?.length && !message.extractedConstraints?.length)) return;
     try {
-      if (message.extractedFacts?.length) await sessionApi.addFacts(battlefield.id, message.extractedFacts.map((fact) => ({ ...fact, source: 'user', occurredAt: null, verifiedAt: null })));
-      if (message.extractedConstraints?.length) {
-        const current = await sessionApi.constraints(battlefield.id);
-        const allowedKinds = new Set(['cash','time','energy','legal','contract','health','relationship','reputation','privacy','other']);
-        await sessionApi.replaceConstraints(battlefield.id, [...current.constraints, ...message.extractedConstraints.map((constraint) => ({ ...constraint, kind: allowedKinds.has(constraint.kind) ? constraint.kind : 'other', source: { type: 'interview_confirmation', messageId } }))]);
-      }
+      const allowedKinds = new Set(['cash','time','energy','legal','contract','health','relationship','reputation','privacy','other']);
+      await sessionApi.confirmInterview(battlefield.id, {
+        confirmationKey: messageId,
+        facts: (message.extractedFacts ?? []).map((fact) => ({ ...fact, source: 'user', occurredAt: null, verifiedAt: null })),
+        constraints: (message.extractedConstraints ?? []).map((constraint) => ({ ...constraint, kind: allowedKinds.has(constraint.kind) ? constraint.kind : 'other', source: { type: 'interview_confirmation', messageId } })),
+      });
       onUpdateBattlefield((previous) => ({ ...previous, interviewHistory: previous.interviewHistory.map((item) => item.id === messageId ? { ...item, extractedAccepted: true } : item) }));
       soundManager.playSuccess();
     } catch (error) {

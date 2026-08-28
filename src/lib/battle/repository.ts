@@ -118,6 +118,60 @@ export const replaceBattleConstraints = async (subject: AccountSubject, battleId
   return constraints;
 });
 
+/**
+ * Confirm the structured interview extraction as one user action.
+ *
+ * Facts and constraints are deliberately committed in the same transaction:
+ * a browser retry must never leave the interview half-confirmed. The
+ * confirmation key is stored in the battle's versioned confirmation ledger
+ * and makes the operation idempotent across refreshes and double clicks.
+ */
+export const confirmInterviewExtraction = async (
+  subject: AccountSubject,
+  battleId: string,
+  confirmationKey: string,
+  factsInput: Array<Pick<BattleFact, "kind"|"content"|"source"|"confidence"|"occurredAt"|"verifiedAt">>,
+  constraintsInput: Array<Omit<BattleConstraint, "id"|"battleId">>,
+) => withTransaction(async (client) => {
+  const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
+  if (!owner.rowCount) return null;
+
+  const marker = await client.query<{ state_json:unknown }>(
+    `SELECT state_json FROM battle_module_states WHERE battle_id=$1 AND module_id='interview-confirmations' ORDER BY version DESC LIMIT 1`,
+    [battleId],
+  );
+  const markerState = marker.rows[0] ? asRecord(marker.rows[0].state_json) : {};
+  const appliedKeys = asStrings(markerState.keys);
+  const reused = appliedKeys.includes(confirmationKey);
+  if (!reused) {
+    for (const item of factsInput) {
+      const id = randomUUID();
+      await client.query<FactRow>(
+        `INSERT INTO battle_facts(id,battle_id,kind,content,source,confidence,occurred_at,verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [id,battleId,item.kind,item.content,item.source,item.confidence,item.occurredAt,item.verifiedAt],
+      );
+    }
+    // Confirmed interview constraints are appended. Existing constraints may
+    // come from the official scenario or another interview and must survive.
+    for (const item of constraintsInput) {
+      await client.query(
+        `INSERT INTO battle_constraints(id,battle_id,kind,label,description,hard,severity,threshold_json,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`,
+        [randomUUID(),battleId,item.kind,item.label,item.description,item.hard,item.severity,JSON.stringify(item.threshold),JSON.stringify({ ...item.source, interviewConfirmationKey: confirmationKey })],
+      );
+    }
+    const nextKeys = [...appliedKeys, confirmationKey].slice(-200);
+    const nextVersion = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id='interview-confirmations'`, [battleId])).rows[0].version;
+    await client.query(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,'interview-confirmations',$3,$4::jsonb,'{}'::jsonb)`, [randomUUID(), battleId, nextVersion, JSON.stringify({ keys: nextKeys })]);
+    await client.query(`UPDATE battle_cases SET updated_at=now(),status=CASE WHEN status='intake' THEN 'active' ELSE status END WHERE id=$1`, [battleId]);
+  }
+
+  const [facts, constraints] = await Promise.all([
+    client.query<FactRow>(`SELECT id,battle_id,kind,content,source,confidence,occurred_at,verified_at,created_at FROM battle_facts WHERE battle_id=$1 ORDER BY created_at`, [battleId]),
+    client.query<ConstraintRow>(`SELECT id,battle_id,kind,label,description,hard,severity,threshold_json,source_json FROM battle_constraints WHERE battle_id=$1 ORDER BY severity DESC,created_at`, [battleId]),
+  ]);
+  return { facts: facts.rows.map(mapFact), constraints: constraints.rows.map(mapConstraint), reused };
+});
+
 export const listInventory = async (subject: AccountSubject, battleId: string) => {
   if (!await requireAccessibleBattle(subject, battleId)) return null;
   const result = await query<InventoryRow>(`SELECT id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json FROM battle_inventory_items WHERE battle_id=$1 ORDER BY created_at`, [battleId]);
