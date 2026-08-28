@@ -24,7 +24,7 @@ export async function setConnectorStatus(subject: AccountSubject, provider: Conn
 export type ConnectorAlert = {
   id: string;
   provider: ConnectorProvider;
-  idempotencyKey: string;
+  source: "CALENDAR" | "TRELLO" | "EMAIL" | "CODE_REPO";
   sourceTitle: string;
   detectedAnomaly: string;
   severity: "CRITICAL" | "WARNING" | "INFO";
@@ -48,6 +48,7 @@ const mapAlert = (row: {
   return {
     id: row.id,
     provider: row.provider as ConnectorProvider,
+    source: row.provider === "calendar" ? "CALENDAR" : row.provider === "email" ? "EMAIL" : "TRELLO",
     sourceTitle: row.source_title,
     detectedAnomaly: row.detected_anomaly,
     severity: row.severity as ConnectorAlert["severity"],
@@ -63,7 +64,7 @@ const mapAlert = (row: {
 };
 
 export async function listConnectorAlerts(subject: AccountSubject) {
-  const result = await query(`SELECT id,provider,source_title,detected_anomaly,severity,observed_at,suggested_battlefield_draft,dismissed_at
+  const result = await query<{ id:string; provider:string; source_title:string; detected_anomaly:string; severity:string; observed_at:Date|string; suggested_battlefield_draft:unknown; dismissed_at:Date|string|null }>(`SELECT id,provider,source_title,detected_anomaly,severity,observed_at,suggested_battlefield_draft,dismissed_at
     FROM account_connector_sync_records
     WHERE platform_subject_type=$1 AND platform_subject_id=$2 AND dismissed_at IS NULL
     ORDER BY observed_at DESC LIMIT 100`, owner(subject));
@@ -79,6 +80,7 @@ export async function dismissConnectorAlert(subject: AccountSubject, id: string)
 export async function recordConnectorSync(input: {
   subject: AccountSubject;
   provider: ConnectorProvider;
+  idempotencyKey: string;
   connectorId?: string | null;
   sourceTitle: string;
   detectedAnomaly: string;

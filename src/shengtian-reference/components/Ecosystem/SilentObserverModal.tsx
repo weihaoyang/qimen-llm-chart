@@ -1,19 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Radio, 
-  Calendar, 
-  LayoutDashboard,
-  Mail, 
-  AlertOctagon, 
   ArrowRight, 
   Sparkles, 
-  Check, 
-  X,
-  Clock,
-  ShieldAlert,
-  Layers
 } from 'lucide-react';
-import { SilentObserverAlert, BattlefieldState } from '../../types';
+import { SilentObserverAlert } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
 
@@ -39,10 +30,9 @@ export const SilentObserverModal: React.FC<SilentObserverModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    setLoadError(null);
     void Promise.all([sessionApi.connectors(), sessionApi.connectorAlerts()]).then(([connectorValue, alertValue]) => {
       setConnectors(connectorValue.connectors);
-      setAlerts(alertValue.alerts as SilentObserverAlert[]);
+      setAlerts(alertValue.alerts);
     }).catch((error) => setLoadError(error instanceof Error ? error.message : '读取观察者状态失败。'));
   }, [isOpen]);
   const providerLabel = (provider: string) => provider === 'calendar' ? '日历' : provider === 'email' ? '邮件' : '项目看板';
