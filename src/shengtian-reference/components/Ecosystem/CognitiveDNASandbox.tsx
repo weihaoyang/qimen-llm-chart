@@ -91,9 +91,12 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
         aiComparativeHindsight: String(value.nextAdjustment ?? '请结合实际执行结果继续核验。'),
       };
       const nextCounterfactuals = [item, ...counterfactuals.filter((entry) => entry.id !== item.id)].slice(0, 20);
+      await sessionApi.saveModule(battleId, 'counterfactual', { results: nextCounterfactuals }, { source: 'counterfactual_review' });
+      // The server snapshot is the source of truth. Only reveal the generated
+      // result after persistence succeeds; a failed save must not leave a
+      // phantom result in the UI that disappears on refresh.
       setCounterfactuals(nextCounterfactuals);
       setSelectedCfId(item.id);
-      await sessionApi.saveModule(battleId, 'counterfactual', { results: nextCounterfactuals }, { source: 'counterfactual_review' });
     } catch (error) {
       setCounterfactualError(error instanceof Error ? error.message : '反事实推演失败，请重试。');
     } finally { setCounterfactualLoading(false); }
