@@ -5,7 +5,10 @@ import type { AccountSubject } from "@/lib/agent/account-subject";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
-const writableCollaborator = `EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} AND c.role IN ('contributor','advisor'))`;
+// Advisors can read a battle and submit advice, but cannot mutate canonical
+// module state or consume paid battle operations. Owners and contributors are
+// the only collaborators allowed to perform those writes.
+const writableCollaborator = `EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} AND c.role='contributor')`;
 const json = (value: unknown) => JSON.stringify(value ?? {});
 const parse = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
 

@@ -149,7 +149,10 @@ export default function App() {
 }
 
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
-  const canWriteBattle = session.activeBattle?.accessRole !== 'viewer';
+  // Only owners and contributors can mutate canonical battle state. Advisors
+  // retain read access plus the dedicated advice surface; the server enforces
+  // the same boundary even if a stale client renders an enabled control.
+  const canWriteBattle = session.activeBattle?.accessRole === 'owner' || session.activeBattle?.accessRole === 'contributor';
   const respondInvitation = session.respondInvitation;
   const moduleHydratedRef = React.useRef<Record<string, boolean>>({});
   const inviteHandledRef = React.useRef<string | null>(null);
@@ -980,7 +983,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     } tactical-grid`}>
       {persistenceError && <div className="fixed top-3 right-3 z-[100] max-w-sm rounded-xl border border-red-500/50 bg-red-950/90 px-4 py-3 text-xs text-red-100 shadow-xl">{persistenceError}<button className="ml-3 text-red-300 underline" onClick={() => setPersistenceError(null)}>关闭</button></div>}
       {session.invitations.length > 0 && <div className="border-b border-amber-700/50 bg-amber-950/70 px-4 py-2 text-xs text-amber-100"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2"><span>待处理协作邀请：</span>{session.invitations.map((invitation) => <span key={invitation.id} className="inline-flex items-center gap-2 rounded-lg border border-amber-700/50 bg-black/30 px-2 py-1"><strong>{invitation.battleTitle}</strong><span>{invitation.role}</span><button className="text-emerald-300 underline" onClick={() => void session.respondInvitation(invitation.id, 'accept').catch((error) => setPersistenceError(error instanceof Error ? error.message : '接受邀请失败。'))}>接受</button><button className="text-slate-300 underline" onClick={() => void session.respondInvitation(invitation.id, 'decline').catch((error) => setPersistenceError(error instanceof Error ? error.message : '拒绝邀请失败。'))}>拒绝</button></span>)}</div></div>}
-      {!canWriteBattle && <div className="border-b border-sky-700/50 bg-sky-950/70 px-4 py-2 text-center text-xs font-mono-code text-sky-200">观察者只读模式 · 你可以查看战局和协作内容，但采访确认、AI 推演、策略锁定及状态保存需要 contributor、advisor 或 owner 权限。</div>}
+      {!canWriteBattle && <div className="border-b border-sky-700/50 bg-sky-950/70 px-4 py-2 text-center text-xs font-mono-code text-sky-200">协作只读模式 · owner / contributor 才能修改战局、运行 AI 和保存模块；advisor 可查看战局并通过顾问意见参与。</div>}
       
       {/* Top Standard Clean Header */}
       <Header
