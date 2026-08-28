@@ -114,7 +114,7 @@ export const RiskMonitorTab: React.FC<RiskMonitorTabProps> = ({
       // Persist first so a failed request leaves the displayed breaker
       // unchanged and the operator can retry the same action safely.
       await sessionApi.saveModule(battleId, 'risk-monitor', { riskBreakers: next });
-      onUpdateBattlefield(() => ({ ...battlefield, riskBreakers: next }));
+      onUpdateBattlefield((previous) => ({ ...previous, riskBreakers: next }));
       if (nextState) soundManager.playWarning(); else soundManager.playBlip(600, 0.03);
     } catch (error) {
       setActionMessage(error instanceof Error ? error.message : '风险断路器保存失败，请重试。');

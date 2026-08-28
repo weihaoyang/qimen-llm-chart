@@ -51,13 +51,16 @@ export const Phase2CognitiveWarfare: React.FC<Phase2CognitiveWarfareProps> = ({
     if (!text || isSimulating) return;
 
     soundManager.playWarning();
-    setUserDraft('');
     setIsSimulating(true);
     setErrorMessage(null);
 
     try {
       const response = await TacticalAIService.generateRedTeamAttack(text, battlefield);
       setCurrentCritique(response);
+      // Keep the submitted plan visible in the log and only clear the input
+      // after the audited server job succeeds. Failed/timeout jobs therefore
+      // leave the original text available for a one-click retry.
+      setUserDraft('');
 
       // Record to battlefield log
       onUpdateBattlefield(prev => {
