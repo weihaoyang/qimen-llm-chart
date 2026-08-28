@@ -20,7 +20,7 @@ interface MetaphysicsTimingModalProps {
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onPersistTiming?: (timing: MetaphysicsTimingState) => Promise<void>;
-  onLockExecution?: () => void;
+  onLockExecution?: () => void | Promise<void>;
   readOnly?: boolean;
 }
 
@@ -53,6 +53,7 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
   const timing = battlefield.metaphysicsTiming;
   const [isRevealed, setIsRevealed] = useState(timing.isViewed);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,11 +83,19 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
     }
   };
 
-  const handleConfirmAndLock = () => {
-    if (readOnly) return;
-    if (onLockExecution) onLockExecution();
-    onClose();
-    soundManager.playBlip(900, 0.05);
+  const handleConfirmAndLock = async () => {
+    if (readOnly || isLocking) return;
+    setSaveError(null);
+    setIsLocking(true);
+    try {
+      await onLockExecution?.();
+      onClose();
+      soundManager.playBlip(900, 0.05);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '执行战令锁定失败，请重试。');
+    } finally {
+      setIsLocking(false);
+    }
   };
 
   return (
@@ -189,11 +198,12 @@ export const MetaphysicsTimingModal: React.FC<MetaphysicsTimingModalProps> = ({
                 收纳天时记录
               </button>}
               <button
-                onClick={handleConfirmAndLock}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white text-xs font-bold font-mono-code flex items-center gap-2 shadow-xl shadow-red-950/60 cursor-pointer"
+                onClick={() => void handleConfirmAndLock()}
+                disabled={isLocking}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white text-xs font-bold font-mono-code flex items-center gap-2 shadow-xl shadow-red-950/60 cursor-pointer disabled:cursor-wait disabled:opacity-60"
               >
                 <Lock className="w-4 h-4" />
-                <span>明心见性 · 锁定最终执行战令</span>
+                <span>{isLocking ? '正在锁定执行战令…' : '明心见性 · 锁定最终执行战令'}</span>
               </button>
             </div>
             {saveError && <p className="text-xs text-red-300" role="alert">{saveError}</p>}

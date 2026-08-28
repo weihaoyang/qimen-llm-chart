@@ -106,7 +106,12 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
         extractedDNA,
       });
       setIsSaved(true);
-      setTimeout(() => { void onReturnToStandardMode(); }, 1200);
+      window.setTimeout(() => {
+        void Promise.resolve(onReturnToStandardMode()).catch((error) => {
+          setIsSaved(false);
+          setSaveError(error instanceof Error ? error.message : '退出破局模式失败，请重试。');
+        });
+      }, 1200);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '复盘保存失败，请重试。');
     } finally {

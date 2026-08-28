@@ -698,6 +698,28 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     soundManager.playBlip(600, 0.04);
   };
 
+  // The timing ritual's final button must create the same canonical execution
+  // commitment as the strategy workbench. If a commitment already exists, the
+  // action is intentionally idempotent; changing lanes still belongs to the
+  // workbench where the user can provide a reason.
+  const handleLockExecution = async () => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法锁定执行战令。');
+    const current = await sessionApi.commitment(battleId);
+    if (current.commitment) return;
+    const candidate = battlefield.strategies.find((strategy) => strategy.status === 'PROPOSED' && /^[0-9a-f-]{36}$/i.test(strategy.id));
+    if (!candidate) throw new Error('请先在路径推演中保存一条策略草案，再锁定执行战令。');
+    const result = await sessionApi.commitMove(battleId, candidate.id);
+    const committedMoveId = String(result.commitment.moveId ?? candidate.id);
+    setBattlefield((previous) => ({
+      ...previous,
+      strategies: previous.strategies.map((strategy) => ({
+        ...strategy,
+        status: strategy.id === committedMoveId ? 'LOCKED' : strategy.status,
+      })),
+    }));
+  };
+
   const handleSelectPersona = async (persona: AIPersonaType) => {
     const battleId = session.activeBattle?.id;
     if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法切换 AI 人格。');
@@ -971,7 +993,9 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onOpenWarRoomsModal={() => setIsWarRoomsModalOpen(true)}
         onOpenExportBrief={() => setIsExportModalOpen(true)}
         onOpenDNAArchive={() => setIsDNAModalOpen(true)}
-        onResetToStandard={handleExitSingularity}
+        onResetToStandard={() => {
+          void handleExitSingularity().catch((error) => setPersistenceError(error instanceof Error ? error.message : '退出奇点失败，请重试。'));
+        }}
         isRiskTriggered={isRiskTriggered}
         selectedPersona={battlefield.selectedPersona || userProfile.aiPersona || 'ANALYST'}
         observerAlertCount={pendingDustCount + (battlefield.riskBreakers?.filter((breaker) => breaker.isTriggered).length ?? 0)}
@@ -1298,6 +1322,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           if (!battleId || !canWriteBattle) throw new Error('当前战局不可写，无法保存天时记录。');
           await saveBattleModule(battleId, 'battlefield-aux', { metaphysicsTiming: nextTiming }, { source: 'user_session' });
         }}
+        onLockExecution={handleLockExecution}
         readOnly={!canWriteBattle}
       />
 
