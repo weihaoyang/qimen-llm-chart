@@ -119,8 +119,15 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
   };
 
   const handleResetSimulation = async () => {
-    if (readOnly || !battleId) return;
+    if (readOnly) return;
     setSimulationError(null);
+    if (!battleId) {
+      setHasSimulated(false);
+      setUserSelectedChoiceId(null);
+      setSimulationResult(null);
+      soundManager.playBlip(600, 0.03);
+      return;
+    }
     try {
       // Reset is a user action, so persist it synchronously. Relying only on
       // the autosave debounce allowed a fast refresh to resurrect the old
