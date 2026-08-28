@@ -405,6 +405,7 @@ export async function listActiveMemorySummaries(subject: AccountSubject) {
 export async function saveMemory(subject: AccountSubject, input: { id?:string; battleId?:string|null; title:string; memory:Record<string, unknown>; source?:Record<string, unknown>; consentStatus?:"active"|"paused"|"revoked" }) {
   return withTransaction(async (client) => {
     const revoked = input.consentStatus === "revoked";
+    const source = input.source ?? {};
     // A memory may only reference a battle the subject can access. Without
     // this check a client could attach an otherwise valid memory to another
     // account's battle UUID, creating cross-account metadata leakage and
@@ -420,8 +421,24 @@ export async function saveMemory(subject: AccountSubject, input: { id?:string; b
       );
       if (!access.rowCount) return null;
     }
-    const id = input.id ?? randomUUID();
-    const result = await client.query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`INSERT INTO battle_memory_records(id,battle_id,platform_subject_type,platform_subject_id,title,memory_json,source_json,consent_status) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8) ON CONFLICT (id) DO UPDATE SET battle_id=EXCLUDED.battle_id,title=EXCLUDED.title,memory_json=EXCLUDED.memory_json,source_json=EXCLUDED.source_json,consent_status=EXCLUDED.consent_status,updated_at=now() WHERE battle_memory_records.platform_subject_type=$3 AND battle_memory_records.platform_subject_id=$4 RETURNING id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at`, [id,revoked ? null : input.battleId ?? null,...owner(subject),input.title,json(revoked ? {} : input.memory),json(revoked ? { reason:"consent_revoked" } : input.source ?? {}),input.consentStatus ?? "active"]);
+    // Callers that cannot safely manufacture a UUID (for example the
+    // browser-generated DNA record id) can still make retries idempotent by
+    // supplying a stable source recordId. Scope the lookup to this account so
+    // one user's memory can never update another user's row.
+    let id = input.id;
+    const sourceRecordId = typeof source.recordId === "string" ? source.recordId.trim().slice(0, 160) : "";
+    if (!id && sourceRecordId) {
+      const existing = await client.query<{ id:string }>(
+        `SELECT id FROM battle_memory_records
+          WHERE platform_subject_type=$1 AND platform_subject_id=$2
+            AND source_json->>'type'=$3 AND source_json->>'recordId'=$4
+          ORDER BY updated_at DESC LIMIT 1`,
+        [...owner(subject), typeof source.type === "string" ? source.type : "", sourceRecordId],
+      );
+      id = existing.rows[0]?.id;
+    }
+    const resolvedId = id ?? randomUUID();
+    const result = await client.query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`INSERT INTO battle_memory_records(id,battle_id,platform_subject_type,platform_subject_id,title,memory_json,source_json,consent_status) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8) ON CONFLICT (id) DO UPDATE SET battle_id=EXCLUDED.battle_id,title=EXCLUDED.title,memory_json=EXCLUDED.memory_json,source_json=EXCLUDED.source_json,consent_status=EXCLUDED.consent_status,updated_at=now() WHERE battle_memory_records.platform_subject_type=$3 AND battle_memory_records.platform_subject_id=$4 RETURNING id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at`, [resolvedId,revoked ? null : input.battleId ?? null,...owner(subject),input.title,json(revoked ? {} : input.memory),json(revoked ? { reason:"consent_revoked" } : source),input.consentStatus ?? "active"]);
     const row = result.rows[0];
     return row ? { id:row.id, battleId:row.battle_id, title:row.title, memory:parse(row.memory_json), source:parse(row.source_json), consentStatus:row.consent_status, createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() } : null;
   });

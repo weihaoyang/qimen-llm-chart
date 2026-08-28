@@ -617,9 +617,15 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       });
       const memory = await sessionApi.saveMemory({ battleId, title: record.battlefieldTitle, memory: { userKeyChoice: record.selectedStrategy, outcome: record.survivalOutcome, outcomeLabel: record.survivalOutcome, memoryQuote: record.userReflection, lessonLearned: record.extractedDNA.join('；'), timestamp: record.timestamp }, source: { type: 'decision_dna', recordId: record.id } });
       if (!memory) throw new Error('决策记忆保存失败，请重试。');
+      const updated = [record, ...dnaRecords.filter((item) => item.id !== record.id)];
+      // Confirm the battle snapshot before updating React state. The debounced
+      // effect remains useful for edits, but the terminal review action must
+      // survive an immediate refresh or tab close.
+      await saveBattleModule(battleId, 'decision-dna', { records: updated }, { source: 'user_session', operation: 'save_dna_record' });
+      setDnaRecords(updated);
+    } else {
+      setDnaRecords((current) => [record, ...current.filter((item) => item.id !== record.id)]);
     }
-    const updated = [record, ...dnaRecords];
-    setDnaRecords(updated);
     // Gain bond EXP with Symbiote only after the server-side memory is saved.
     setSymbioteState(prev => ({
       ...prev,
