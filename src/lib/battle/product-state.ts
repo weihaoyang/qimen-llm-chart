@@ -106,7 +106,6 @@ export async function saveModuleState(
     );
     const currentVersion = current.rows[0]?.version ?? 0;
     const payloadHash = hashSnapshot({ moduleId, state, consent });
-    if (options.expectedVersion !== undefined && options.expectedVersion !== currentVersion) return "conflict" as const;
 
     if (options.idempotencyKey) {
       const existing = await client.query<{ version:number; payload_hash:string|null }>(
@@ -128,6 +127,10 @@ export async function saveModuleState(
         return row ? { version:row.version, state:parse(row.state_json), consent:parse(row.consent_json), updatedAt:row.updated_at.toISOString(), reused:true } : "conflict" as const;
       }
     }
+    // Check the optimistic version only for a new operation. A retry with the
+    // same idempotency key must be able to recover its original result even if
+    // another tab has since appended a newer snapshot.
+    if (options.expectedVersion !== undefined && options.expectedVersion !== currentVersion) return "conflict" as const;
     const mergedState = { ...(current.rows[0] ? parse(current.rows[0].state_json) : {}), ...state };
     const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id=$2`, [battleId, moduleId])).rows[0].version;
     const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(mergedState), json(consent)]);
