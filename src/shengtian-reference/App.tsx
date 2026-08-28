@@ -1079,6 +1079,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
             <DecisionBoardView
               battleId={session.activeBattle?.id}
               readOnly={!canWriteBattle}
+              accessRole={session.activeBattle?.accessRole}
               battlefield={battlefield}
               onUpdateBattlefield={updateBattlefield}
             />

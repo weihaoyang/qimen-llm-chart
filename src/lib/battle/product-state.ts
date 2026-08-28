@@ -205,10 +205,10 @@ export async function mutateDecisionBoard(subject: AccountSubject, battleId: str
     );
     const role = access.rows[0]?.role;
     if (!role) return null;
-    const writable = role === "owner" || role === "contributor" || role === "advisor";
+    const writable = role === "owner" || role === "contributor";
     if (!writable) return "forbidden";
     if (mutation.type === "redaction" && role !== "owner") return "forbidden";
-    if (mutation.type === "ghost_strategy" && role !== "owner" && role !== "advisor") return "forbidden";
+    if (mutation.type === "ghost_strategy" && role !== "owner" && role !== "contributor") return "forbidden";
 
     await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-module:${battleId}:decision-board`]);
     const current = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(
@@ -229,7 +229,7 @@ export async function mutateDecisionBoard(subject: AccountSubject, battleId: str
         authorName: subject.subjectId,
         authorSubjectType: subject.subjectType,
         authorSubjectId: subject.subjectId,
-        authorRole: role === "advisor" ? "STRATEGIST" : role === "contributor" ? "COMMENTATOR" : "STRATEGIST",
+        authorRole: role === "contributor" ? "COMMENTATOR" : "STRATEGIST",
         avatar: subject.subjectId.slice(0, 1).toUpperCase(),
         targetType: mutation.targetType,
         targetTitle: mutation.targetTitle,
@@ -255,7 +255,7 @@ export async function mutateDecisionBoard(subject: AccountSubject, battleId: str
         creatorName: subject.subjectId,
         creatorSubjectType: subject.subjectType,
         creatorSubjectId: subject.subjectId,
-        creatorRoleTitle: role === "advisor" ? "参谋提交的并行策略" : "拥有者提交的并行策略",
+        creatorRoleTitle: role === "contributor" ? "贡献者提交的并行策略" : "拥有者提交的并行策略",
         strategyName: mutation.strategyName,
         coreThesis: mutation.coreThesis,
         estimatedSurvivalProb: mutation.estimatedSurvivalProb,

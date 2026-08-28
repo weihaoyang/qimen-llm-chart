@@ -34,6 +34,7 @@ import { sessionApi } from '../../session/api';
 interface DecisionBoardViewProps {
   battleId?: string;
   readOnly?: boolean;
+  accessRole?: 'owner' | 'viewer' | 'contributor' | 'advisor';
   battlefield: BattlefieldState;
   onUpdateBattlefield: (updater: (prev: BattlefieldState) => BattlefieldState) => void;
   onSelectGhostStrategy?: (ghost: GhostStrategyBranch) => void;
@@ -42,6 +43,7 @@ interface DecisionBoardViewProps {
 export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   battleId,
   readOnly = false,
+  accessRole,
   battlefield,
   onUpdateBattlefield,
 }) => {
@@ -49,6 +51,12 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   const strategist = board.members.find((member) => member.role === 'STRATEGIST');
   const hydratedRef = useRef(false);
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
+  const [advice, setAdvice] = useState<Array<Record<string, unknown>>>([]);
+  const [adviceOpinion, setAdviceOpinion] = useState('');
+  const [adviceRationale, setAdviceRationale] = useState('');
+  const [adviceUncertainty, setAdviceUncertainty] = useState('');
+  const [adviceBusy, setAdviceBusy] = useState(false);
+  const [adviceError, setAdviceError] = useState<string | null>(null);
   const [mutationBusy, setMutationBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const isRedacted = board.isRedacted;
@@ -74,9 +82,10 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     if (!battleId) return;
     let cancelled = false;
     hydratedRef.current = false;
-    void Promise.all([sessionApi.module(battleId, 'decision-board'), sessionApi.collaborators(battleId)]).then(([{ state }, { collaborators }]) => {
+    void Promise.all([sessionApi.module(battleId, 'decision-board'), sessionApi.collaborators(battleId), sessionApi.advice(battleId)]).then(([{ state }, { collaborators }, { advice: loadedAdvice }]) => {
       const snapshot = state && typeof state === 'object' ? state as { state?: unknown } : null;
       if (cancelled) return;
+      setAdvice(Array.isArray(loadedAdvice) ? loadedAdvice : []);
       const members: BoardMember[] = collaborators.filter((item) => item.status !== 'revoked').map((item) => ({
         id: item.id,
         name: item.subjectId,
@@ -100,6 +109,28 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
     });
     return () => { cancelled = true; };
   }, [battleId, onUpdateBattlefield]);
+
+  const handleSubmitAdvice = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (accessRole !== 'advisor' || !battleId || adviceBusy || !adviceOpinion.trim() || !adviceRationale.trim()) return;
+    setAdviceBusy(true);
+    setAdviceError(null);
+    try {
+      const result = await sessionApi.createAdvice(battleId, {
+        targetType: 'battle',
+        opinion: adviceOpinion.trim(),
+        rationale: adviceRationale.trim(),
+        uncertainty: adviceUncertainty.trim(),
+      });
+      setAdvice((current) => [result.advice, ...current]);
+      setAdviceOpinion('');
+      setAdviceRationale('');
+      setAdviceUncertainty('');
+      setPersistenceMessage('顾问意见已保存，等待战局所有者采纳。');
+    } catch (error) {
+      setAdviceError(error instanceof Error ? error.message : '顾问意见保存失败，请重试。');
+    } finally { setAdviceBusy(false); }
+  };
 
   const applyServerState = (payload: { state: { state?: unknown } }) => {
     const next = payload.state?.state;
@@ -177,6 +208,19 @@ export const DecisionBoardView: React.FC<DecisionBoardViewProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {readOnly && <div className="rounded-xl border border-sky-500/30 bg-sky-950/30 px-3 py-2 text-xs text-sky-200">只读协作角色：评论、投票、平行策略和脱敏设置不会开放。</div>}
+      {accessRole === 'advisor' && <section className="surface-obsidian rounded-2xl border border-cyan-500/30 p-5 shadow-xl">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div><h3 className="text-sm font-bold text-cyan-200">顾问意见</h3><p className="mt-1 text-xs text-slate-400">意见独立保存到顾问层，只有战局所有者可显式采纳为事实或行动。</p></div>
+          <span className="rounded-full border border-cyan-700/50 bg-cyan-950/40 px-2 py-1 text-[10px] text-cyan-300">ADVICE ONLY</span>
+        </div>
+        <form onSubmit={(event) => void handleSubmitAdvice(event)} className="grid gap-2 md:grid-cols-3">
+          <textarea value={adviceOpinion} onChange={(event) => setAdviceOpinion(event.target.value)} placeholder="你的判断" maxLength={12000} className="min-h-20 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" />
+          <textarea value={adviceRationale} onChange={(event) => setAdviceRationale(event.target.value)} placeholder="依据与推理" maxLength={12000} className="min-h-20 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" />
+          <div className="flex flex-col gap-2"><textarea value={adviceUncertainty} onChange={(event) => setAdviceUncertainty(event.target.value)} placeholder="不确定性（可选）" maxLength={6000} className="min-h-20 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="submit" disabled={adviceBusy || !adviceOpinion.trim() || !adviceRationale.trim()} className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{adviceBusy ? '保存中…' : '提交顾问意见'}</button></div>
+        </form>
+        {adviceError && <p className="mt-2 text-xs text-red-300">{adviceError}</p>}
+        {advice.length > 0 && <div className="mt-4 space-y-2">{advice.slice(0, 5).map((item, index) => <div key={String(item.id ?? index)} className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2 text-xs"><div className="text-slate-200">{String(item.opinion ?? '')}</div><div className="mt-1 text-[11px] text-slate-500">依据：{String(item.rationale ?? '—')} · 状态：{String(item.status ?? 'open')}</div></div>)}</div>}
+      </section>}
       {persistenceMessage && <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 py-2 text-xs text-blue-200">{persistenceMessage}</div>}
       
       {/* Top Banner: Asynchronous Decision Board Controls */}
