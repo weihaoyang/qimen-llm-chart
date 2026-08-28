@@ -31,7 +31,14 @@ export async function PUT(request: Request, context: Context) {
     if (JSON.stringify(consent).length > 32_000) return NextResponse.json({ error: "授权信息过大。", reasonCode: "payload_too_large" }, { status:413 });
     const validationError = validateBattleModuleState(moduleId, state);
     if (validationError) return NextResponse.json({ error: validationError, reasonCode: "module_state_invalid" }, { status: 400 });
-    const saved = await saveModuleState(await requireAccountSubject(request), id, moduleId, state, consent);
+    const rawExpectedVersion = body?.expectedVersion;
+    const expectedVersion = rawExpectedVersion === undefined ? undefined : Number(rawExpectedVersion);
+    if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) return NextResponse.json({ error: "模块版本无效。", reasonCode: "module_version_invalid" }, { status: 400 });
+    const idempotencyKey = typeof request.headers.get("idempotency-key") === "string"
+      ? request.headers.get("idempotency-key")!.trim().slice(0, 160)
+      : typeof body?.idempotencyKey === "string" ? body.idempotencyKey.trim().slice(0, 160) : undefined;
+    const saved = await saveModuleState(await requireAccountSubject(request), id, moduleId, state, consent, { idempotencyKey: idempotencyKey || undefined, expectedVersion });
+    if (saved === "conflict") return NextResponse.json({ error: "模块状态版本或幂等请求冲突，请刷新后重试。", reasonCode: "module_write_conflict" }, { status: 409 });
     return saved ? NextResponse.json({ state:saved }) : NextResponse.json({ error:"战局不存在或无写入权限。" }, { status:403 });
   } catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({ error:error.message }, { status:error.status }) : NextResponse.json({ error:"保存模块状态失败。" }, { status:500 }); }
 }
