@@ -39,6 +39,8 @@ interface ArchonSanctumModalProps {
   onAddArchiveAnnotation: (archiveId: string, lemma: string, annotation?: ArchonArchiveAnnotation) => void | Promise<void>;
   userEquity: number;
   battleId?: string;
+  currentUserName?: string;
+  currentUserSigil?: string;
   readOnly?: boolean;
 }
 
@@ -50,6 +52,8 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
   onAddArchiveAnnotation,
   userEquity,
   battleId,
+  currentUserName = '当前执棋官',
+  currentUserSigil = '已验证执政官印记',
   readOnly = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'PRECOGNITION' | 'ANNOTATIONS' | 'PROPOSALS'>('PRECOGNITION');
@@ -98,7 +102,7 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
     setError('');
     setSubmitting(true);
     try {
-      const annotation: ArchonArchiveAnnotation = { id:`ann-${crypto.randomUUID()}`,archiveId:selectedArchiveId,archiveTitle:selectedArchiveId.includes('ltcm')?'1998 LTCM 长期资本管理公司奇点':'1982 强生泰诺投毒公关保卫战',archonLemma:`【执政官因果引理】：${newLemma.trim()}`,authorArchonName:'当前执政官',authorSigil:'已验证执政官印记',createdAt:new Date().toISOString(),upvotes:0,isVerifiedByAethel:false };
+      const annotation: ArchonArchiveAnnotation = { id:`ann-${crypto.randomUUID()}`,archiveId:selectedArchiveId,archiveTitle:selectedArchiveId.includes('ltcm')?'1998 LTCM 长期资本管理公司奇点':'1982 强生泰诺投毒公关保卫战',archonLemma:`【执政官因果引理】：${newLemma.trim()}`,authorArchonName:currentUserName,authorSigil:currentUserSigil,createdAt:new Date().toISOString(),upvotes:0,isVerifiedByAethel:false };
       if (battleId) await sessionApi.consumeUsageAndSaveModule(battleId, 'archon_annotation', `archon-annotation:${battleId}:${selectedArchiveId}:${newLemma.trim()}`, 'archon-tier', { ...archonState,archiveAnnotations:[annotation,...archonState.archiveAnnotations] });
       await onAddArchiveAnnotation(selectedArchiveId, newLemma, annotation);
       setNewLemma('');

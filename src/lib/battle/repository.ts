@@ -16,8 +16,11 @@ type CommitmentRow = { id:string; battle_id:string; move_id:string; version:numb
 
 const ownership = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 const activeCollaborator = "bc.status='active' AND (bc.expires_at IS NULL OR bc.expires_at>now())";
-const writableBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND ${activeCollaborator} AND bc.role IN ('contributor','advisor'))`;
-const writableCasePredicate34 = (alias: string) => `(${alias}.platform_subject_type=$3 AND ${alias}.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=${alias}.id AND bc.subject_type=$3 AND bc.subject_id=$4 AND ${activeCollaborator} AND bc.role IN ('contributor','advisor'))`;
+// Advisors may read and annotate a battle, but cannot mutate canonical state.
+const contributorBattlePredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=b.id AND bc.subject_type=$2 AND bc.subject_id=$3 AND ${activeCollaborator} AND bc.role='contributor')`;
+const contributorCasePredicate34 = (alias: string) => `(${alias}.platform_subject_type=$3 AND ${alias}.platform_subject_id=$4) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=${alias}.id AND bc.subject_type=$3 AND bc.subject_id=$4 AND ${activeCollaborator} AND bc.role='contributor')`;
+const writableBattlePredicate = contributorBattlePredicate;
+const writableCasePredicate34 = contributorCasePredicate34;
 const asRecord = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const asStrings = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const iso = (value: Date|null|undefined) => value?.toISOString() ?? null;
@@ -55,7 +58,7 @@ export const createBattle = async (subject: AccountSubject, input: Pick<Battle, 
 export const updateBattle = async (subject: AccountSubject, id: string, input: Partial<Pick<Battle, "title"|"objective"|"minimumOutcome"|"idealOutcome"|"opponentSummary"|"hardDeadline"|"status">>) => {
   const current = await getBattle(subject, id);
   if (!current) return null;
-  const row = await query<CaseRow>(`UPDATE battle_cases b SET title=$4,objective=$5,minimum_outcome=$6,ideal_outcome=$7,opponent_summary=$8,status=$9,hard_deadline=$10,updated_at=now() WHERE b.id=$1 AND (${writableBattlePredicate}) RETURNING b.id,b.title,b.objective,b.minimum_outcome,b.ideal_outcome,b.opponent_summary,b.status,b.hard_deadline,b.created_at,b.updated_at,b.scenario_id,b.scenario_version,b.source_type`, [id, ...ownership(subject), input.title ?? current.title, input.objective ?? current.objective, input.minimumOutcome ?? current.minimumOutcome, input.idealOutcome ?? current.idealOutcome, input.opponentSummary ?? current.opponentSummary, input.status ?? current.status, input.hardDeadline === undefined ? current.hardDeadline : input.hardDeadline]);
+  const row = await query<CaseRow>(`UPDATE battle_cases b SET title=$4,objective=$5,minimum_outcome=$6,ideal_outcome=$7,opponent_summary=$8,status=$9,hard_deadline=$10,updated_at=now() WHERE b.id=$1 AND (${contributorBattlePredicate}) RETURNING b.id,b.title,b.objective,b.minimum_outcome,b.ideal_outcome,b.opponent_summary,b.status,b.hard_deadline,b.created_at,b.updated_at,b.scenario_id,b.scenario_version,b.source_type`, [id, ...ownership(subject), input.title ?? current.title, input.objective ?? current.objective, input.minimumOutcome ?? current.minimumOutcome, input.idealOutcome ?? current.idealOutcome, input.opponentSummary ?? current.opponentSummary, input.status ?? current.status, input.hardDeadline === undefined ? current.hardDeadline : input.hardDeadline]);
   return row.rows[0] ? mapBattle(row.rows[0]) : null;
 };
 

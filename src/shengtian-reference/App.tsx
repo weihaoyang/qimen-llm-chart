@@ -1179,6 +1179,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         onAddArchiveAnnotation={handleAddArchiveAnnotation}
         userEquity={userProfile.equityBalance}
         battleId={session.activeBattle?.id}
+        currentUserName={userProfile.username}
+        currentUserSigil={userProfile.sigil?.name || '已验证执政官印记'}
         readOnly={!canWriteBattle}
       />
 
