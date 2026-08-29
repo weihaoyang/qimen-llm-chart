@@ -58,6 +58,14 @@
     const button = dock.querySelector("button");
     const status = dock.querySelector("[data-status]");
     if (readOnly || !button || !status) return;
+    fetch(`/api/battles/${battleId}/world-pulse/observations`, { credentials: "include", headers: { accept: "application/json" }, cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (payload && Array.isArray(payload.observations) && payload.observations.length) {
+          status.textContent = `已恢复 ${payload.observations.length} 条观察记录；可继续保存当前视角。`;
+        }
+      })
+      .catch(() => { /* loading the map remains usable when the battle API is unavailable */ });
     button.addEventListener("click", async () => {
       button.disabled = true;
       status.textContent = "正在保存当前视角…";
