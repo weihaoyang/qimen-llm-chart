@@ -79,9 +79,10 @@ export class TacticalAIService {
     history: InterviewMessage[],
     userReply: string,
     currentBattle: Partial<BattlefieldState>
-  ): Promise<{ text: string; parameterExtracted?: { key: string; label: string; value: string | number }; extractedFacts?: Array<{ kind: 'fact'|'assumption'|'unknown'|'goal'|'emotion'; content: string; confidence: number }>; extractedConstraints?: Array<{ kind: string; label: string; description: string; hard: boolean; severity: number }> }> {
+  ): Promise<{ messageId: string; text: string; parameterExtracted?: { key: string; label: string; value: string | number }; extractedFacts?: Array<{ kind: 'fact'|'assumption'|'unknown'|'goal'|'emotion'; content: string; confidence: number }>; extractedConstraints?: Array<{ kind: string; label: string; description: string; hard: boolean; severity: number }> }> {
     try {
       const battleId = String(currentBattle.id ?? '');
+      const messageId = `msg-ai-${crypto.randomUUID()}`;
       const historyFingerprint = history.map((item) => `${item.sender}:${item.text.trim()}`).join('|').slice(-800);
       const idempotencyKey = `interview:${battleId}:${historyFingerprint}:${userReply.trim().slice(0, 240)}`;
       const response = await fetch(`/api/battles/${currentBattle.id}/ai/interview`, {
@@ -89,12 +90,13 @@ export class TacticalAIService {
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({
           idempotencyKey,
+          clientMessageId: messageId,
           question: userReply,
           history: history.map((item) => ({ role: item.sender === 'ai' ? 'assistant' : 'user', content: item.text }))
         })
       });
       if (!response.ok) throw new Error(`采访服务请求失败（${response.status}）`);
-      const data = await response.json();
+      const data = await response.json() as { interviewMessageId?: unknown; job?: unknown; analysis?: unknown; text?: unknown };
       const rawResult = await resolveJob(String(currentBattle.id), data.job);
       const structured = rawResult && typeof rawResult === 'object' && !Array.isArray(rawResult) ? rawResult as Record<string, unknown> : {};
       const rawText = typeof rawResult === 'object' && rawResult ? String((structured.assistantMessage ?? structured.summary ?? JSON.stringify(rawResult))) : String(rawResult ?? data.analysis ?? data.text ?? '');
@@ -119,7 +121,7 @@ export class TacticalAIService {
 
       const extractedFacts = Array.isArray(structured.extractedFacts) ? structured.extractedFacts.flatMap((item) => { const value = item && typeof item === 'object' ? item as Record<string, unknown> : {}; const kind = value.kind; const content = typeof value.content === 'string' ? value.content.trim() : ''; const confidence = typeof value.confidence === 'number' ? Math.max(0, Math.min(100, value.confidence)) : 70; return ['fact','assumption','unknown','goal','emotion'].includes(String(kind)) && content ? [{ kind: kind as 'fact'|'assumption'|'unknown'|'goal'|'emotion', content, confidence }] : []; }) : [];
       const extractedConstraints = Array.isArray(structured.extractedConstraints) ? structured.extractedConstraints.flatMap((item) => { const value = item && typeof item === 'object' ? item as Record<string, unknown> : {}; const label = typeof value.label === 'string' ? value.label.trim() : ''; const description = typeof value.description === 'string' ? value.description.trim() : ''; return label && description ? [{ kind: typeof value.kind === 'string' ? value.kind : 'other', label, description, hard: value.hard !== false, severity: typeof value.severity === 'number' ? Math.max(1, Math.min(5, value.severity)) : 3 }] : []; }) : [];
-      return { text, parameterExtracted, extractedFacts, extractedConstraints };
+      return { messageId: typeof data.interviewMessageId === 'string' ? data.interviewMessageId : messageId, text, parameterExtracted, extractedFacts, extractedConstraints };
     } catch (e) {
       console.error(e);
       throw e instanceof Error ? e : new Error('采访服务暂时不可用，请重试。');

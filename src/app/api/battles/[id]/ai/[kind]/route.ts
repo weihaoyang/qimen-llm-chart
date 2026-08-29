@@ -8,6 +8,7 @@ import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatfo
 import { appendInventory } from "@/lib/battle/repository";
 import { createAdvice, createReview } from "@/lib/battle/extended-repository";
 import { parseBattleAiJson, validateBattleAiResult, type BattleAiKind } from "@/lib/battle/ai-contract";
+import { appendInterviewTurn } from "@/lib/battle/interview-repository";
 
 const kinds = new Set(["interview", "cards", "red-team", "breakthrough", "review"]);
 const normalizeKind = (value: string) => value === "red-team" ? "red_team" : value;
@@ -38,7 +39,29 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     jobId = created.jobId;
     runToken = created.runToken;
     if (created.status === "conflict") return NextResponse.json({ error:"幂等键已绑定到不同的 AI 输入快照。",reasonCode:"idempotency_conflict" },{ status:409 });
-    if (created.reused && created.status === "succeeded") return NextResponse.json({ job:await getAiJob(subject,id,created.jobId),usage:created.usage,reused:true });
+    const interviewQuestion = kind === "interview" ? asText(body?.question, 12000) : null;
+    let interviewMessageId: string | undefined;
+    if (kind === "interview" && interviewQuestion) {
+      await appendInterviewTurn(subject, id, {
+        role: "user",
+        content: interviewQuestion,
+        idempotencyKey: `${idempotencyKey}:user`,
+      });
+    }
+    if (created.reused && created.status === "succeeded") {
+      if (kind === "interview" && created.result && typeof created.result === "object" && !Array.isArray(created.result)) {
+        const restoredTurn = await appendInterviewTurn(subject, id, {
+          role: "assistant",
+          content: String((created.result as Record<string, unknown>).assistantMessage ?? (created.result as Record<string, unknown>).summary ?? "采访结果"),
+          structured: created.result as Record<string, unknown>,
+          extractionStatus: Array.isArray((created.result as Record<string, unknown>).extractedFacts) || Array.isArray((created.result as Record<string, unknown>).extractedConstraints) ? "pending" : "none",
+          idempotencyKey: `${idempotencyKey}:assistant`,
+          clientMessageId: asText(body?.clientMessageId, 160) || undefined,
+        });
+        interviewMessageId = restoredTurn?.id;
+      }
+      return NextResponse.json({ job:await getAiJob(subject,id,created.jobId),usage:created.usage,reused:true, ...(interviewMessageId ? { interviewMessageId } : {}) });
+    }
     if (created.reused && !["committing","charged"].includes(created.status)) return NextResponse.json({ job:await getAiJob(subject,id,created.jobId),reused:true });
     const accessToken = readBearerToken(request.headers.get("authorization"));
     const cookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
@@ -79,6 +102,17 @@ export async function handleAiPost(request: Request, context: { params: Promise<
       jobCharged = true;
       reservationId = "";
     }
+    if (kind === "interview" && structured) {
+      const savedTurn = await appendInterviewTurn(subject, id, {
+        role: "assistant",
+        content: String(structured.assistantMessage ?? structured.summary ?? "采访结果"),
+        structured,
+        extractionStatus: Array.isArray(structured.extractedFacts) || Array.isArray(structured.extractedConstraints) ? "pending" : "none",
+        idempotencyKey: `${idempotencyKey}:assistant`,
+        clientMessageId: asText(body?.clientMessageId, 160) || undefined,
+      });
+      interviewMessageId = savedTurn?.id;
+    }
     if (kind === "cards") {
       const cards = asArray(structured.cards ?? structured.assets).map((item, index) => {
         const card = item && typeof item === "object" ? item as Record<string, unknown> : {};
@@ -96,7 +130,7 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     }
     const finished = await finishAiJob(subject,id,created.jobId,runToken);
     if (!finished) throw new Error("AI 任务已超时或不再处于可提交状态，未扣减本次权益。");
-    return NextResponse.json({ job: await getAiJob(subject,id,created.jobId), usage });
+    return NextResponse.json({ job: await getAiJob(subject,id,created.jobId), usage, ...(interviewMessageId ? { interviewMessageId } : {}) });
   } catch (error) {
     if (reservationId && !commitAttempted) { try { const token=readBearerToken(request.headers.get("authorization")); const cookieHeader=readPlatformCookieHeader(request.headers.get("cookie")); const csrfToken=readCookieValue(request.headers.get("cookie"),"ssp_csrf"); if (token) await releasePlatformUsage(token,reservationId,{planCode:AGENT_PLAN_CODE}); else await releasePlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken}); } catch {} }
     if (jobSubject && jobId && runToken && !commitAttempted && !jobCharged) { try { await failAiJob(jobSubject,(await context.params).id,jobId,runToken,"ai_request_failed",error instanceof Error ? error.message : "AI 推演失败。"); } catch {} }

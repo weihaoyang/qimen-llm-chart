@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { asDate, asRecord, asText, isConstraintKind, isFactKind, isUuid } from "@/lib/battle/input";
 import { confirmInterviewExtraction } from "@/lib/battle/repository";
+import { markInterviewTurnAccepted } from "@/lib/battle/interview-repository";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -47,13 +48,20 @@ export async function POST(request: Request, context: Context) {
     if (constraints.some((item) => !isConstraintKind(item.kind) || !item.label || item.description === null)) {
       return NextResponse.json({ error: "约束字段无效。" }, { status: 400 });
     }
+    const subject = await requireAccountSubject(request);
     const result = await confirmInterviewExtraction(
-      await requireAccountSubject(request),
+      subject,
       battleId,
       confirmationKey,
       facts as Parameters<typeof confirmInterviewExtraction>[3],
       constraints as Parameters<typeof confirmInterviewExtraction>[4],
     );
+    if (result !== null && typeof markInterviewTurnAccepted === "function") {
+      // The canonical facts/constraints transaction is the confirmation
+      // contract.  Transcript acknowledgement is an auxiliary projection;
+      // a transient projection failure must not undo a successful confirmation.
+      try { await markInterviewTurnAccepted(subject, battleId, confirmationKey); } catch { /* projection can be repaired on the next read */ }
+    }
     return result === null
       ? NextResponse.json({ error: "战局不存在。" }, { status: 404 })
       : NextResponse.json(result, { status: result.reused ? 200 : 201 });

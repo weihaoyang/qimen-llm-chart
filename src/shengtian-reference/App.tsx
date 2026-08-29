@@ -385,6 +385,51 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     return () => { cancelled = true; };
   }, [session.activeBattle?.id, applyVerifiedArchon, verifiedArchonProgress]);
 
+  // The transcript has its own canonical table.  The battlefield snapshot may
+  // already contain the same messages (including UI-only acceptance flags),
+  // so only hydrate from the transcript when the snapshot is empty.
+  useEffect(() => {
+    const battleId = session.activeBattle?.id;
+    if (!battleId) return;
+    let cancelled = false;
+    void sessionApi.interview(battleId).then(({ turns }) => {
+      if (cancelled || !Array.isArray(turns) || turns.length === 0) return;
+      setBattlefield((previous) => {
+        if (previous.interviewHistory.length > 0) return previous;
+        const history = turns.map((turn) => {
+          const structured = turn.structured ?? {};
+          const parameter = structured.parameterExtracted && typeof structured.parameterExtracted === 'object' && !Array.isArray(structured.parameterExtracted)
+            ? structured.parameterExtracted as { key?: unknown; label?: unknown; value?: unknown }
+            : null;
+          const extractedFacts = Array.isArray(structured.extractedFacts) ? structured.extractedFacts.flatMap((item) => {
+            const value = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+            return typeof value.content === 'string' && ['fact','assumption','unknown','goal','emotion'].includes(String(value.kind))
+              ? [{ kind: value.kind as 'fact'|'assumption'|'unknown'|'goal'|'emotion', content: value.content, confidence: typeof value.confidence === 'number' ? value.confidence : 70 }]
+              : [];
+          }) : [];
+          const extractedConstraints = Array.isArray(structured.extractedConstraints) ? structured.extractedConstraints.flatMap((item) => {
+            const value = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+            return typeof value.label === 'string' && typeof value.description === 'string'
+              ? [{ kind: typeof value.kind === 'string' ? value.kind : 'other', label: value.label, description: value.description, hard: value.hard !== false, severity: typeof value.severity === 'number' ? value.severity : 3 }]
+              : [];
+          }) : [];
+          return {
+            id: turn.id,
+            sender: turn.role === 'assistant' ? 'ai' as const : 'user' as const,
+            text: turn.content,
+            timestamp: new Date(turn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            parameterExtracted: parameter && typeof parameter.key === 'string' && typeof parameter.label === 'string' && (typeof parameter.value === 'string' || typeof parameter.value === 'number') ? { key: parameter.key, label: parameter.label, value: parameter.value } : undefined,
+            extractedFacts,
+            extractedConstraints,
+            extractedAccepted: turn.extractionStatus === 'accepted',
+          };
+        });
+        return { ...previous, interviewHistory: history };
+      });
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [session.activeBattle?.id]);
+
   useEffect(() => {
     const battleId = session.activeBattle?.id;
     if (!battleId) return;

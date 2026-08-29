@@ -63,6 +63,7 @@ export const sessionApi = {
   invitations: () => request<{ invitations: BattleInvitation[] }>("/api/battles/invitations"),
   respondInvitation: (invitationId:string, action:"accept"|"decline") => request<{ invitation: Collaborator }>("/api/battles/invitations", { method:"PATCH", body:JSON.stringify({ invitationId, action }) }),
   battle: (id:string) => request<{ battle: SessionBattle; scenario?: unknown }>(`/api/battles/${id}`),
+  interview: (id:string) => request<{ turns: Array<{ id:string; sequenceNo:number; role:"user"|"assistant"; content:string; structured:Record<string,unknown>; extractionStatus:"none"|"pending"|"accepted"; createdAt:string }> }>(`/api/battles/${id}/interview`),
   updateBattle: (id:string, input:Record<string, unknown>) => request<{ battle: SessionBattle }>(`/api/battles/${id}`, { method:"PATCH", body:JSON.stringify(input) }),
   deleteBattle: (id:string) => request<{ deleted:boolean }>(`/api/battles/${id}`, { method:"DELETE", body:JSON.stringify({ confirmation:"DELETE" }) }),
   analysis: (id:string) => request<{ gravity?: Record<string, unknown> | null; junctions: Array<Record<string, unknown>>; moves: Array<Record<string, unknown>> }>(`/api/battles/${id}/analysis`),
