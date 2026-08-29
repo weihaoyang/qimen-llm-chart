@@ -15,8 +15,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     );
     const payload = await delegated.json().catch(() => ({}));
     if (!delegated.ok) return NextResponse.json(payload, { status: delegated.status });
-    const module = payload && typeof payload === "object" && payload.module && typeof payload.module === "object" ? payload.module as { state?: unknown } : {};
-    const state = module.state && typeof module.state === "object" && !Array.isArray(module.state) ? module.state as { ownedTemplateIds?: unknown } : {};
+    const modulePayload = payload && typeof payload === "object" && payload.module && typeof payload.module === "object" ? payload.module as { state?: unknown } : {};
+    const state = modulePayload.state && typeof modulePayload.state === "object" && !Array.isArray(modulePayload.state) ? modulePayload.state as { ownedTemplateIds?: unknown } : {};
     const ownedTemplateIds = Array.isArray(state.ownedTemplateIds) ? state.ownedTemplateIds.filter((value): value is string => typeof value === "string") : [templateId];
     return NextResponse.json({ templateId, ownedTemplateIds, state: payload.module });
   } catch (error) {
