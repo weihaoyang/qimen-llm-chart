@@ -131,7 +131,17 @@ export async function saveModuleState(
     // same idempotency key must be able to recover its original result even if
     // another tab has since appended a newer snapshot.
     if (options.expectedVersion !== undefined && options.expectedVersion !== currentVersion) return "conflict" as const;
-    const mergedState = { ...(current.rows[0] ? parse(current.rows[0].state_json) : {}), ...state };
+    const previousState = current.rows[0] ? parse(current.rows[0].state_json) : {};
+    const mergedState = { ...previousState, ...state };
+    // Marketplace ownership is a set.  Preserve concurrent activations from
+    // separate tabs instead of letting a later array snapshot erase an
+    // earlier template while the module advisory lock is held.
+    if (moduleId === "marketplace" && Array.isArray(previousState.ownedTemplateIds) && Array.isArray(state.ownedTemplateIds)) {
+      mergedState.ownedTemplateIds = Array.from(new Set([
+        ...previousState.ownedTemplateIds.filter((value): value is string => typeof value === "string"),
+        ...state.ownedTemplateIds.filter((value): value is string => typeof value === "string"),
+      ]));
+    }
     const next = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id=$2`, [battleId, moduleId])).rows[0].version;
     const result = await client.query<{ version:number; state_json:unknown; consent_json:unknown; updated_at:Date }>(`INSERT INTO battle_module_states(id,battle_id,module_id,version,state_json,consent_json) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb) RETURNING version,state_json,consent_json,updated_at`, [randomUUID(), battleId, moduleId, next, json(mergedState), json(consent)]);
     await client.query(
