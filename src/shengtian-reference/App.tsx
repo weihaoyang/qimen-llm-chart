@@ -659,7 +659,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         facts: extracted.join('；'),
         whatChanged: record.userReflection,
         nextAdjustment: extracted[1] ?? extracted[0] ?? '继续核验事实与执行信号。',
-        diagnosis: { source: 'breakthrough_autopsy', fatalQuestion: record.fatalQuestion, strategy: record.selectedStrategy },
+        diagnosis: { source: 'breakthrough_autopsy', fatalQuestion: record.fatalQuestion, strategy: record.selectedStrategy, dnaRecord: record },
         commitmentId: null,
       });
       const memory = await sessionApi.saveMemory({ battleId, title: record.battlefieldTitle, memory: { userKeyChoice: record.selectedStrategy, outcome: record.survivalOutcome, outcomeLabel: record.survivalOutcome, memoryQuote: record.userReflection, lessonLearned: record.extractedDNA.join('；'), timestamp: record.timestamp }, source: { type: 'decision_dna', recordId: record.id } });

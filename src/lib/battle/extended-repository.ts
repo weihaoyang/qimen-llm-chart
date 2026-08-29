@@ -140,6 +140,20 @@ export const createReview = async (subject: AccountSubject, battleId: string, in
   const id = randomUUID();
   const diagnosis = idempotencyKey ? { ...input.diagnosis, _idempotencyKey:idempotencyKey } : input.diagnosis;
   const row = await client.query<ReviewRow>(`INSERT INTO battle_reviews(id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8) RETURNING id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment,reviewed_at`, [id,battleId,input.commitmentId,input.outcome,input.facts,input.whatChanged,JSON.stringify(diagnosis),input.nextAdjustment]);
+  // A confirmed DNA reflection gets its own indexed row.  The module snapshot
+  // remains the UI projection, while this table is the durable account-wide
+  // source used for profile aggregation and idempotent recovery.
+  const dna = record(input.diagnosis?.dnaRecord);
+  if (typeof dna.id === "string" && dna.id.length > 0 && typeof dna.battlefieldTitle === "string" && typeof dna.timestamp === "string" && typeof dna.selectedStrategy === "string" && typeof dna.survivalOutcome === "string" && ["SURVIVED","PARTIAL_SUCCESS","LESSON_LEARNED"].includes(dna.survivalOutcome)) {
+    const extracted = Array.isArray(dna.extractedDNA) ? dna.extractedDNA.filter((item): item is string => typeof item === "string").slice(0, 50) : [];
+    const decidedAt = Number.isNaN(Date.parse(dna.timestamp)) ? new Date() : new Date(dna.timestamp);
+    await client.query(
+      `INSERT INTO battle_decision_dna_records(id,battle_id,platform_subject_type,platform_subject_id,battlefield_title,decided_at,selected_strategy,survival_outcome,fatal_question,user_reflection,extracted_dna_json,source_review_id)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12)
+       ON CONFLICT (battle_id,id) DO UPDATE SET battlefield_title=EXCLUDED.battlefield_title,decided_at=EXCLUDED.decided_at,selected_strategy=EXCLUDED.selected_strategy,survival_outcome=EXCLUDED.survival_outcome,fatal_question=EXCLUDED.fatal_question,user_reflection=EXCLUDED.user_reflection,extracted_dna_json=EXCLUDED.extracted_dna_json,source_review_id=EXCLUDED.source_review_id,updated_at=now()`,
+      [dna.id, battleId, subject.subjectType, subject.subjectId, dna.battlefieldTitle, decidedAt, dna.selectedStrategy, dna.survivalOutcome, typeof dna.fatalQuestion === "string" ? dna.fatalQuestion : "", typeof dna.userReflection === "string" ? dna.userReflection : "", JSON.stringify(extracted), id],
+    );
+  }
   await client.query(`UPDATE battle_cases SET status='review',updated_at=now() WHERE id=$1`, [battleId]);
   return { ...mapReview(row.rows[0]), reused:false };
 });
@@ -158,6 +172,13 @@ export const getStrategyProfile = async (subject: AccountSubject) => {
  * into a second source of truth.
  */
 export const listDecisionDna = async (subject: AccountSubject) => {
+  const durable = await query<{ id:string; battlefield_title:string; decided_at:Date; selected_strategy:string; survival_outcome:string; fatal_question:string; user_reflection:string; extracted_dna_json:unknown }>(
+    `SELECT id,battlefield_title,decided_at,selected_strategy,survival_outcome,fatal_question,user_reflection,extracted_dna_json
+       FROM battle_decision_dna_records
+      WHERE platform_subject_type=$1 AND platform_subject_id=$2
+      ORDER BY decided_at DESC LIMIT 500`,
+    owner(subject),
+  );
   const result = await query<{ state_json: unknown }>(
     `SELECT latest.state_json
        FROM battle_module_states latest
@@ -175,6 +196,18 @@ export const listDecisionDna = async (subject: AccountSubject) => {
     owner(subject),
   );
   const byId = new Map<string, Json>();
+  for (const row of durable.rows) {
+    byId.set(row.id, {
+      id: row.id,
+      battlefieldTitle: row.battlefield_title,
+      timestamp: row.decided_at.toISOString(),
+      selectedStrategy: row.selected_strategy,
+      survivalOutcome: row.survival_outcome,
+      fatalQuestion: row.fatal_question,
+      userReflection: row.user_reflection,
+      extractedDNA: Array.isArray(row.extracted_dna_json) ? row.extracted_dna_json.filter((item): item is string => typeof item === "string") : [],
+    });
+  }
   for (const row of result.rows) {
     const state = record(row.state_json);
     const records = Array.isArray(state.records) ? state.records : [];
