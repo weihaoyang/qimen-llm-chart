@@ -4,7 +4,20 @@ import { deleteMemory, listMemories, saveMemory } from "@/lib/battle/product-sta
 import { asRecord, asText, isUuid } from "@/lib/battle/input";
 
 export async function GET(request: Request) {
-  try { return NextResponse.json({ memories: await listMemories(await requireAccountSubject(request)) }); }
+  try {
+    const memories = await listMemories(await requireAccountSubject(request));
+    if (new URL(request.url).searchParams.get('format') === 'json') {
+      return new NextResponse(JSON.stringify({ exportedAt: new Date().toISOString(), memories }, null, 2), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="shengtian-banzi-memories.json"',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+    return NextResponse.json({ memories });
+  }
   catch (error) { return error instanceof AccountSubjectError ? NextResponse.json({error:error.message},{status:error.status}) : NextResponse.json({error:"读取 AI 记忆失败。"},{status:500}); }
 }
 

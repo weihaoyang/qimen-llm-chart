@@ -93,7 +93,7 @@ export const sessionApi = {
   ai: (battleId:string, kind:string, body:Record<string, unknown>) => request<{ job: unknown; usage?: unknown }>(`/api/battles/${battleId}/ai/${kind}`, { method:"POST", body:JSON.stringify(body) }),
   aiJob: (battleId:string, jobId:string) => request<{ job: Record<string, unknown> }>(`/api/battles/${battleId}/jobs/${jobId}`),
   activateTemplate: (battleId:string, templateId:string) => request<{ templateId:string; ownedTemplateIds:string[] }>(`/api/battles/${battleId}/templates/${templateId}`, { method:"POST", body:JSON.stringify({}) }),
-  memories: () => request<{ memories: Array<Record<string, unknown>> }>(`/api/battles/memories`),
+  memories: (format?: "json") => request<{ memories: Array<Record<string, unknown>> }>(`/api/battles/memories${format ? `?format=${format}` : ''}`),
   profile: () => request<{ profile: { profile: Record<string, unknown> } | null; decisionDna?: DecisionDNARecord[]; archonProgress:{ reviewedBattles:number; committedBattles:number; collaborationBattles:number; archiveUnlocks:number; score:number; rankTitle:string; seals:number; privileges:{ precognition:boolean; archiveAnnotation:boolean; realityProposal:boolean } } }>(`/api/battles/profile`),
   entitlement: () => request<{ usage: { available:number; reserved:number; consumed:number } }>(`/api/entitlement`),
   saveProfile: (profile: Record<string, unknown>) => request<{ profile: unknown }>(`/api/battles/profile`, { method:"PUT", body:JSON.stringify({ profile }) }),

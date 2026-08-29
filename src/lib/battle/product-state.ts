@@ -505,13 +505,43 @@ export async function saveMemory(subject: AccountSubject, input: { id?:string; b
       id = existing.rows[0]?.id;
     }
     const resolvedId = id ?? randomUUID();
+    const previous = await client.query<{ consent_status:string; title:string }>(
+      `SELECT consent_status,title FROM battle_memory_records
+        WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3
+        FOR UPDATE`,
+      [resolvedId, ...owner(subject)],
+    );
     const result = await client.query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`INSERT INTO battle_memory_records(id,battle_id,platform_subject_type,platform_subject_id,title,memory_json,source_json,consent_status) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8) ON CONFLICT (id) DO UPDATE SET battle_id=EXCLUDED.battle_id,title=EXCLUDED.title,memory_json=EXCLUDED.memory_json,source_json=EXCLUDED.source_json,consent_status=EXCLUDED.consent_status,updated_at=now() WHERE battle_memory_records.platform_subject_type=$3 AND battle_memory_records.platform_subject_id=$4 RETURNING id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at`, [resolvedId,revoked ? null : input.battleId ?? null,...owner(subject),input.title,json(revoked ? {} : input.memory),json(revoked ? { reason:"consent_revoked" } : source),input.consentStatus ?? "active"]);
     const row = result.rows[0];
-    return row ? { id:row.id, battleId:row.battle_id, title:row.title, memory:parse(row.memory_json), source:parse(row.source_json), consentStatus:row.consent_status, createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() } : null;
+    if (!row) return null;
+    const nextStatus = row.consent_status as "active"|"paused"|"revoked"|"deleted";
+    const previousStatus = previous.rows[0]?.consent_status;
+    const eventType = revoked ? "revoked" : previousStatus === undefined ? "created" : nextStatus === "paused" ? "paused" : previousStatus === "paused" && nextStatus === "active" ? "resumed" : "updated";
+    await client.query(
+      `INSERT INTO battle_memory_record_events(id,memory_id,platform_subject_type,platform_subject_id,event_type,title,memory_json,source_json,consent_status)
+       VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9)`,
+      [randomUUID(), row.id, ...owner(subject), eventType, row.title, json(row.memory_json), json(row.source_json), nextStatus],
+    );
+    return { id:row.id, battleId:row.battle_id, title:row.title, memory:parse(row.memory_json), source:parse(row.source_json), consentStatus:row.consent_status, createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() };
   });
 }
 
 export async function deleteMemory(subject: AccountSubject, id:string) {
-  const result = await query(`UPDATE battle_memory_records SET battle_id=NULL,title='已删除记忆',memory_json='{}'::jsonb,source_json='{"reason":"user_deleted"}'::jsonb,consent_status='deleted',updated_at=now() WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`, [id,...owner(subject)]);
-  return Boolean(result.rowCount);
+  return withTransaction(async (client) => {
+    const result = await client.query<{ id:string; title:string }>(
+      `UPDATE battle_memory_records
+          SET battle_id=NULL,title='已删除记忆',memory_json='{}'::jsonb,source_json='{"reason":"user_deleted"}'::jsonb,consent_status='deleted',updated_at=now()
+        WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3
+        RETURNING id,title`,
+      [id,...owner(subject)],
+    );
+    const row = result.rows[0];
+    if (!row) return false;
+    await client.query(
+      `INSERT INTO battle_memory_record_events(id,memory_id,platform_subject_type,platform_subject_id,event_type,title,memory_json,source_json,consent_status)
+       VALUES($1,$2,$3,$4,'deleted',$5,'{}'::jsonb,'{"reason":"user_deleted"}'::jsonb,'deleted')`,
+      [randomUUID(), row.id, ...owner(subject), row.title],
+    );
+    return true;
+  });
 }

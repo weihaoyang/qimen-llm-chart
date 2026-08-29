@@ -7,24 +7,17 @@ import React, { useState } from 'react';
 import { 
   AISymbioteState, 
   SymbioteLongTermMemory,
-  AIPersonaType 
 } from '../../types';
 import { soundManager } from '../../utils/soundEffects';
 import { sessionApi } from '../../session/api';
 import { 
   X, 
-  Bot, 
   Heart, 
-  Sparkles, 
   Brain, 
-  Flame, 
   Edit3, 
   Check, 
   History, 
-  Quote, 
   TrendingUp, 
-  Shield, 
-  Zap,
   Award
 } from 'lucide-react';
 
@@ -52,6 +45,56 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
   const [memoryError, setMemoryError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSavingName, setIsSavingName] = useState(false);
+  const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
+  const [editQuote, setEditQuote] = useState('');
+  const [editLesson, setEditLesson] = useState('');
+  const [isSavingMemory, setIsSavingMemory] = useState(false);
+
+  const beginMemoryEdit = (memory: SymbioteLongTermMemory) => {
+    setEditingMemoryId(memory.id);
+    setEditQuote(memory.memoryQuote);
+    setEditLesson(memory.lessonLearned);
+    setMemoryError(null);
+  };
+
+  const saveMemoryEdit = async (memory: SymbioteLongTermMemory) => {
+    if (readOnly || isSavingMemory || !battleId) return;
+    setIsSavingMemory(true);
+    try {
+      const rows = await sessionApi.memories();
+      const row = rows.memories.find((item) => String(item.id) === memory.id);
+      if (!row) throw new Error('记忆不存在或已被删除。');
+      const current = row.memory && typeof row.memory === 'object' ? row.memory as Record<string, unknown> : {};
+      const saved = await sessionApi.saveMemory({
+        id: memory.id,
+        battleId,
+        title: String(row.title ?? memory.crisisTitle),
+        memory: { ...current, memoryQuote: editQuote.trim(), lessonLearned: editLesson.trim() },
+        source: row.source && typeof row.source === 'object' ? row.source as Record<string, unknown> : {},
+        consentStatus: (row.consentStatus === 'paused' || row.consentStatus === 'revoked') ? row.consentStatus : 'active',
+      });
+      const next = saved.memory && typeof saved.memory === 'object' ? saved.memory as Record<string, unknown> : {};
+      setMemories((currentMemories) => currentMemories.map((item) => item.id === memory.id ? { ...item, memoryQuote: String(next.memoryQuote ?? ''), lessonLearned: String(next.lessonLearned ?? '') } : item));
+      setEditingMemoryId(null);
+      soundManager.playSuccess();
+    } catch (error) {
+      setMemoryError(error instanceof Error ? error.message : '编辑记忆失败，请重试。');
+    } finally { setIsSavingMemory(false); }
+  };
+
+  const exportMemories = async () => {
+    try {
+      const response = await fetch('/api/battles/memories?format=json', { credentials: 'include' });
+      if (!response.ok) throw new Error('导出记忆失败，请重试。');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'shengtian-banzi-memories.json';
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) { setMemoryError(error instanceof Error ? error.message : '导出记忆失败，请重试。'); }
+  };
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -268,6 +311,7 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
               <span className="text-xs font-mono-code text-slate-400">
                 已沉淀 {memories.length} 条重大抉择记忆
               </span>
+              <button disabled={readOnly || memories.length === 0} onClick={() => void exportMemories()} className="ml-3 text-xs text-cyan-300 hover:text-cyan-200 disabled:opacity-40">导出全部记忆</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -284,15 +328,16 @@ export const AISymbioteModal: React.FC<AISymbioteModalProps> = ({
                   </div>
 
                   <p className="text-xs text-slate-300 leading-relaxed italic p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] font-serif-sc">
-                    {mem.memoryQuote}
+                    {editingMemoryId === mem.id ? <textarea value={editQuote} onChange={(event) => setEditQuote(event.target.value)} rows={3} className="w-full rounded-lg bg-black/50 p-2 text-xs text-white" /> : mem.memoryQuote}
                   </p>
 
                   <div className="text-[11px] font-mono-code text-slate-400 pt-2 border-t border-white/[0.04] flex items-center justify-between">
-                    <span className="text-amber-300/90">启示: {mem.lessonLearned}</span>
+                    <span className="text-amber-300/90">启示: {editingMemoryId === mem.id ? <textarea value={editLesson} onChange={(event) => setEditLesson(event.target.value)} rows={2} className="mt-1 w-full rounded-lg bg-black/50 p-2 text-xs text-white" /> : mem.lessonLearned}</span>
                     <span className="flex items-center gap-2">{mem.timestamp}
                       <span className={memoryStatuses[mem.id] === 'paused' ? 'text-amber-300' : memoryStatuses[mem.id] === 'revoked' ? 'text-red-300' : 'text-emerald-300'}>{memoryStatuses[mem.id] === 'paused' ? '已暂停' : memoryStatuses[mem.id] === 'revoked' ? '已撤销' : '已授权'}</span>
                       {memoryStatuses[mem.id] === 'active' ? <button disabled={readOnly} onClick={() => void handleSetMemoryConsent(mem.id, 'paused')} className="text-amber-300 hover:text-amber-200 disabled:opacity-40">暂停学习</button> : <button disabled={readOnly} onClick={() => void handleSetMemoryConsent(mem.id, 'active')} className="text-cyan-300 hover:text-cyan-200 disabled:opacity-40">恢复学习</button>}
                       <button disabled={readOnly} onClick={() => void handleSetMemoryConsent(mem.id, 'revoked')} className="text-red-300 hover:text-red-200 disabled:opacity-40">撤销</button>
+                      {editingMemoryId === mem.id ? <><button disabled={readOnly || isSavingMemory} onClick={() => void saveMemoryEdit(mem)} className="text-emerald-300 hover:text-emerald-200 disabled:opacity-40">保存</button><button disabled={isSavingMemory} onClick={() => setEditingMemoryId(null)} className="text-slate-300 hover:text-white">取消</button></> : <button disabled={readOnly} onClick={() => beginMemoryEdit(mem)} className="text-cyan-300 hover:text-cyan-200 disabled:opacity-40">编辑</button>}
                       <button disabled={readOnly} onClick={() => void handleDeleteMemory(mem.id)} className="text-red-300 hover:text-red-200 disabled:opacity-40">删除</button>
                     </span>
                   </div>
