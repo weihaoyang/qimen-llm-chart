@@ -53,7 +53,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     operationRecord = await beginUsageOperation(subject, id, operation, idempotencyKey, payloadHash);
     if (!operationRecord) return NextResponse.json({ error: "战局不存在或无权访问。" }, { status: 404 });
     if (operationRecord.reused) {
-      if (operationRecord.status === 'succeeded') return NextResponse.json({ operation, idempotencyKey, usage: operationRecord.usage, reused: true });
+      if (operationRecord.status === 'succeeded') {
+        const restoredModule = operation === 'template_activation' ? await getModuleState(subject, id, 'marketplace') : null;
+        return NextResponse.json({ operation, idempotencyKey, usage: operationRecord.usage, module: restoredModule, reused: true });
+      }
       if (operationRecord.status !== 'charged' && !(operationRecord.status === 'pending' && operationRecord.reservationId)) return NextResponse.json({ error: operationRecord.status === 'pending' ? "相同权益操作正在处理中，请稍候。" : operationRecord.errorMessage || "幂等请求冲突。" }, { status:409 });
     }
     let usage = operationRecord.usage;
