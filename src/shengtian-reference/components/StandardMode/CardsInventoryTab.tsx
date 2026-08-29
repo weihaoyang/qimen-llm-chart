@@ -154,12 +154,16 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     soundManager.playBlip(600, 0.03);
   };
 
-  const persistAssets = async (assets: CardAsset[]) => {
+  const persistAssets = async (assets: CardAsset[]): Promise<CardAsset[]> => {
     if (!battlefield.id) throw new Error('当前战局无效，无法保存底牌。');
     const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
     const response = await fetch(`/api/battles/${battlefield.id}/inventory`, {
       method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ inventory: assets.map((asset) => ({
+        // New cards use a temporary client id until the server allocates the
+        // canonical UUID. Existing server ids are sent back unchanged so
+        // strategies keep their card references after an edit.
+        ...( /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(asset.id) ? { id: asset.id } : {} ),
         label: asset.title.trim(), description: asset.description, category: categoryMap[asset.category],
         quantity: asset.numericValue ?? null, unit: asset.unit ?? null, availability: 'available', expiresAt: null,
         cost: {}, evidence: { tag: asset.tag, confidence: asset.confidence },
@@ -169,6 +173,12 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
       const detail = await response.json().catch(() => null) as { error?: unknown } | null;
       throw new Error(typeof detail?.error === 'string' ? detail.error : `底牌保存失败（${response.status}）。`);
     }
+    const payload = await response.json() as { inventory?: Array<Record<string, unknown>> };
+    if (!Array.isArray(payload.inventory) || payload.inventory.length !== assets.length) throw new Error('底牌保存结果不完整，请刷新后重试。');
+    return assets.map((asset, index) => {
+      const item = payload.inventory?.[index];
+      return item ? { ...asset, id: typeof item.id === 'string' ? item.id : asset.id } : asset;
+    });
   };
 
   const handleSaveCard = async () => {
@@ -200,9 +210,12 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     setCardSaveError(null);
     setIsSavingCard(true);
     try {
-      await persistAssets(nextAssets);
-      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
-      if (!editingCard) setExpandedCardIds(prev => ({ ...prev, [newCard.id]: true }));
+      const persistedAssets = await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: persistedAssets }));
+      if (!editingCard) {
+        const persisted = persistedAssets[persistedAssets.length - 1];
+        if (persisted) setExpandedCardIds(prev => ({ ...prev, [persisted.id]: true }));
+      }
       setActiveCategoryModal(null);
       setEditingCard(null);
       soundManager.playBlip(850, 0.05);
@@ -220,8 +233,8 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     setCardSaveError(null);
     setIsSavingCard(true);
     try {
-      await persistAssets(nextAssets);
-      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      const persistedAssets = await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: persistedAssets }));
       soundManager.playBlip(400, 0.04);
     } catch (error) {
       setCardSaveError(error instanceof Error ? error.message : '底牌删除失败，请重试。');
@@ -237,8 +250,8 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     setCardSaveError(null);
     setIsSavingCard(true);
     try {
-      await persistAssets(nextAssets);
-      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      const persistedAssets = await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: persistedAssets }));
       soundManager.playBlip(750, 0.03);
     } catch (error) { setCardSaveError(error instanceof Error ? error.message : '底牌标签保存失败，请重试。'); }
     finally { setIsSavingCard(false); }
@@ -257,8 +270,8 @@ export const CardsInventoryTab: React.FC<CardsInventoryTabProps> = ({
     setCardSaveError(null);
     setIsSavingCard(true);
     try {
-      await persistAssets(nextAssets);
-      onUpdateBattlefield((previous) => ({ ...previous, assets: nextAssets }));
+      const persistedAssets = await persistAssets(nextAssets);
+      onUpdateBattlefield((previous) => ({ ...previous, assets: persistedAssets }));
       soundManager.playBlip(delta > 0 ? 800 : 500, 0.02);
     } catch (error) { setCardSaveError(error instanceof Error ? error.message : '底牌置信度保存失败，请重试。'); }
     finally { setIsSavingCard(false); }

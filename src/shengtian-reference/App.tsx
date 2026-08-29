@@ -462,7 +462,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       const payload = await response.json() as { inventory?: Array<Record<string, unknown>> };
       if (cancelled || !Array.isArray(payload.inventory)) return;
       const categoryMap: Record<string, CardAsset['category']> = { cash:'FINANCIAL', time:'TIME', information:'INFO', skill:'CHIPS', asset:'CHIPS', relationship:'CHIPS', credential:'CHIPS', channel:'CHIPS', energy:'CHIPS', other:'CHIPS' };
-      const assets: CardAsset[] = payload.inventory.map((item, index) => ({ id:String(item.id ?? `inventory-${index}`), category:categoryMap[String(item.category)] ?? 'CHIPS', title:String(item.label ?? '未命名底牌'), description:String(item.description ?? ''), tag:'FACT', confidence:80, numericValue:typeof item.quantity === 'number' ? item.quantity : undefined, unit:typeof item.unit === 'string' ? item.unit : undefined, createdAt:String(item.createdAt ?? new Date().toISOString()) }));
+      const assets: CardAsset[] = payload.inventory.map((item, index) => {
+        const evidence = item.evidence && typeof item.evidence === 'object' && !Array.isArray(item.evidence) ? item.evidence as Record<string, unknown> : {};
+        const tag = ['FACT','HYPOTHESIS','RISK','OPPORTUNITY','THIRD_PARTY','USER_CLAIM'].includes(String(evidence.tag)) ? String(evidence.tag) as CardAsset['tag'] : 'FACT';
+        const confidence = typeof evidence.confidence === 'number' && Number.isFinite(evidence.confidence) ? Math.max(1, Math.min(100, evidence.confidence)) : 80;
+        return { id:String(item.id ?? `inventory-${index}`), category:categoryMap[String(item.category)] ?? 'CHIPS', title:String(item.label ?? '未命名底牌'), description:String(item.description ?? ''), tag, confidence, numericValue:typeof item.quantity === 'number' ? item.quantity : undefined, unit:typeof item.unit === 'string' ? item.unit : undefined, createdAt:String(item.createdAt ?? new Date().toISOString()) };
+      });
       const cashAsset = payload.inventory.find((item) => item.category === 'cash' && typeof item.quantity === 'number');
       const availableCash = typeof cashAsset?.quantity === 'number' ? Math.max(0, cashAsset.quantity) : null;
       setBattlefield((previous) => {
@@ -492,7 +497,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     if (!battleId || !canWriteBattle || !moduleHydratedRef.current['inventory']) return;
     const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
     const timer = window.setTimeout(() => {
-      void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
+      void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ id:asset.id, label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
         .then((response) => { if (!response.ok) throw new Error(`底牌保存失败（${response.status}）。`); })
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '底牌保存失败，请重试。'));
     }, 450);

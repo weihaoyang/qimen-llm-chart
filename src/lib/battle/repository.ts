@@ -190,16 +190,55 @@ export const listInventory = async (subject: AccountSubject, battleId: string) =
   return result.rows.map(mapInventory);
 };
 
-export const replaceInventory = async (subject: AccountSubject, battleId: string, input: Array<Omit<InventoryItem, "id"|"battleId">>) => withTransaction(async (client) => {
+export type InventoryWrite = Omit<InventoryItem, "battleId"> & { id?: string };
+
+export const replaceInventory = async (subject: AccountSubject, battleId: string, input: InventoryWrite[]) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
-  await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1`, [battleId]);
+  const requestedIds = input.map((item) => item.id).filter((id): id is string => typeof id === "string");
+  if (new Set(requestedIds).size !== requestedIds.length) {
+    throw Object.assign(new Error("底牌标识重复。"), { code: "inventory_duplicate_id" });
+  }
+  if (requestedIds.length) {
+    const existing = await client.query<{ id:string; battle_id:string }>(
+      `SELECT id,battle_id FROM battle_inventory_items WHERE id = ANY($1::uuid[])`,
+      [requestedIds],
+    );
+    const foreign = existing.rows.find((row) => row.battle_id !== battleId);
+    if (foreign) throw Object.assign(new Error("底牌不属于当前战局。"), { code: "inventory_scope_mismatch" });
+  }
+  const retainedIds: string[] = [];
   const items: InventoryItem[] = [];
   for (const item of input) {
-    const id = randomUUID();
-    const row = await client.query<InventoryRow>(`INSERT INTO battle_inventory_items(id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb) RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`, [id,battleId,item.category,item.label,item.description,item.quantity,item.unit,item.availability,item.expiresAt,JSON.stringify(item.cost),JSON.stringify(item.evidence)]);
+    const id = item.id ?? randomUUID();
+    retainedIds.push(id);
+    const row = await client.query<InventoryRow>(
+      `INSERT INTO battle_inventory_items(id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb)
+       ON CONFLICT (id) DO UPDATE SET category=EXCLUDED.category,label=EXCLUDED.label,description=EXCLUDED.description,
+         quantity=EXCLUDED.quantity,unit=EXCLUDED.unit,availability=EXCLUDED.availability,expires_at=EXCLUDED.expires_at,
+         cost_json=EXCLUDED.cost_json,evidence_json=EXCLUDED.evidence_json
+       RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`,
+      [id,battleId,item.category,item.label,item.description,item.quantity,item.unit,item.availability,item.expiresAt,JSON.stringify(item.cost),JSON.stringify(item.evidence)],
+    );
     items.push(mapInventory(row.rows[0]));
   }
+  if (retainedIds.length) {
+    await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1 AND NOT (id = ANY($2::uuid[]))`, [battleId, retainedIds]);
+  } else {
+    await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1`, [battleId]);
+  }
+  // Remove references to cards that are no longer part of this inventory.
+  // Strategy source is JSON by design, so clean only the known card-id field.
+  await client.query(
+    `UPDATE battle_moves
+     SET source_json = jsonb_set(source_json, '{assignedCardIds}',
+       COALESCE((SELECT jsonb_agg(to_jsonb(card_id))
+                 FROM jsonb_array_elements_text(source_json->'assignedCardIds') AS cards(card_id)
+                 WHERE card_id = ANY($2::text[])), '[]'::jsonb), true)
+     WHERE battle_id=$1 AND source_json ? 'assignedCardIds'`,
+    [battleId, retainedIds],
+  );
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
   return items;
 });
