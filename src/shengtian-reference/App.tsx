@@ -1149,7 +1149,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
 
         {/* VIEW 4: World's Pulse (Global 3D Earth Event Radar) */}
         {activeMainView === 'WORLD_PULSE' && (
-          <WorldPulseView />
+          <WorldPulseView
+            battleId={session.activeBattle?.id ?? battlefield.id}
+            readOnly={!canWriteBattle}
+          />
         )}
 
         {/* VIEW 5: Anonymous Case Study Lab */}
