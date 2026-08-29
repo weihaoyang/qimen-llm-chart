@@ -47,6 +47,13 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
     return { riskAppetite: Math.round(45 + outcomeScore * 30), infoRigor: evidenceScore, decisionSpeed: Math.min(100, 40 + dnaRecords.length * 8), adversityTenacity: Math.round(35 + outcomeScore * 55), counterIntuition: Math.min(100, 30 + reflectionScore / 2), valueAlignment: Math.min(100, 30 + reflectionScore / 1.5) };
   }, [dnaRecords]);
   const insights = useMemo<CognitivePatternInsight[]>(() => dnaRecords.length ? [{ id: 'derived-evidence', type: 'WINNING_FORMULA', title: '从已保存复盘中提取的决策规律', detail: `已分析 ${dnaRecords.length} 条本人复盘记录。`, evidence: dnaRecords.flatMap((record) => record.extractedDNA).slice(0, 4).join('；') || '当前复盘尚未提取明确 DNA。', actionableGuidance: '继续完成真实复盘，积累足够样本后再生成稳定模式。', createdAt: '实时计算' }] : [], [dnaRecords]);
+  const archetype = useMemo(() => {
+    if (!dnaRecords.length) return '样本不足 · 完成一次真实复盘后生成';
+    if (radar.infoRigor >= radar.riskAppetite && radar.infoRigor >= radar.decisionSpeed) return '事实校验优先 · 证据驱动型';
+    if (radar.riskAppetite >= radar.infoRigor && radar.adversityTenacity >= 65) return '逆境突围 · 非对称行动型';
+    if (radar.valueAlignment >= 65) return '底线清晰 · 价值约束型';
+    return '持续校准 · 混合决策型';
+  }, [dnaRecords.length, radar]);
   const [counterfactuals, setCounterfactuals] = useState<CounterfactualReviewItem[]>([]);
   const [selectedCfId, setSelectedCfId] = useState<string>('');
   const [counterfactualLoading, setCounterfactualLoading] = useState(false);
@@ -206,7 +213,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
             {/* Legend / Archetype Tag */}
             <div className="p-3.5 rounded-xl bg-black/60 border border-white/[0.06] text-xs font-mono-code text-center">
               <span className="text-slate-400">当前主导决策型格：</span>
-              <strong className="text-amber-300 ml-1">【严谨事实派 · 升维打击者】</strong>
+              <strong className="text-amber-300 ml-1">【{archetype}】</strong>
             </div>
           </div>
 

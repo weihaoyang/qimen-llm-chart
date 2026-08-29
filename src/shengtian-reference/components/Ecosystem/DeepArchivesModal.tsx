@@ -98,20 +98,18 @@ export const DeepArchivesModal: React.FC<DeepArchivesModalProps> = ({
     }
 
     soundManager.playBlip(600, 0.1);
-    setIsRestoring(true);
-
-    window.setTimeout(() => {
-      setIsRestoring(false);
-      setArchives(nextArchives);
-      setSelectedArchive(prev => prev ? { ...prev, isUnlocked: true } : prev);
-      soundManager.playStrategyLocked();
-      confetti({
-        particleCount: 70,
-        spread: 60,
-        origin: { y: 0.5 },
-        colors: ['#00F0FF', '#3A7DFF', '#FFFFFF'],
-      });
-    }, 1200);
+    // Persist first, then reveal the unlocked state immediately. The visual
+    // celebration must never be the thing that makes the unlock appear saved.
+    setArchives(nextArchives);
+    setSelectedArchive(prev => prev ? { ...prev, isUnlocked: true } : prev);
+    setIsRestoring(false);
+    soundManager.playStrategyLocked();
+    confetti({
+      particleCount: 70,
+      spread: 60,
+      origin: { y: 0.5 },
+      colors: ['#00F0FF', '#3A7DFF', '#FFFFFF'],
+    });
   };
 
   return (

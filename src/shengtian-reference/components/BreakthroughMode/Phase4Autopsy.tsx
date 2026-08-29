@@ -175,12 +175,13 @@ export const Phase4Autopsy: React.FC<Phase4AutopsyProps> = ({
         extractedDNA,
       });
       setIsSaved(true);
-      window.setTimeout(() => {
-        void Promise.resolve(onReturnToStandardMode()).catch((error) => {
-          setIsSaved(false);
-          setSaveError(error instanceof Error ? error.message : '退出破局模式失败，请重试。');
-        });
-      }, 1200);
+      // The review, DNA record and symbiote memory are durable by this point.
+      // Leave the mode immediately; a delayed callback could target a stale
+      // battle after the user switched tabs or closed the panel.
+      void Promise.resolve(onReturnToStandardMode()).catch((error) => {
+        setIsSaved(false);
+        setSaveError(error instanceof Error ? error.message : '退出破局模式失败，请重试。');
+      });
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '复盘保存失败，请重试。');
     } finally {

@@ -954,7 +954,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
         {
           id: 'anc-init',
           title: '密会正式建立',
-          content: '密会公共因果网络已连通全服。',
+          content: '密会已绑定当前战局，等待受邀成员加入协作。',
             timestamp: new Date().toISOString(),
         },
       ],

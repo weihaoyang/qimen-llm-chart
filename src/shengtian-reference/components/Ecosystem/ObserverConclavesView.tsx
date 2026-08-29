@@ -195,7 +195,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono-code">
-              跨越个体单打独斗，组建高阶因果博弈公会。注入集体资源池，开启 10+ 人超大规模同步推演。
+              跨越个体单打独斗，组建绑定当前战局的高阶因果博弈密会。注入集体资源池，开启多成员协作推演。
             </p>
           </div>
 

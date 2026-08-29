@@ -80,11 +80,12 @@ export const RealityEchoesModal: React.FC<RealityEchoesModalProps> = ({
       setResolvingOptionId(null);
       return;
     }
-    window.setTimeout(() => {
-      onResolveDustEvent(currentEcho.id, dust.id, option);
-      setResolvingOptionId(null);
-      soundManager.playSuccess();
-    }, 600);
+    // The durable module snapshot is already committed. Apply the same
+    // transition immediately so closing the modal cannot leave a timer that
+    // mutates a stale React tree after the user has moved to another battle.
+    onResolveDustEvent(currentEcho.id, dust.id, option);
+    setResolvingOptionId(null);
+    soundManager.playSuccess();
   };
 
   const handleClaimReward = async () => {

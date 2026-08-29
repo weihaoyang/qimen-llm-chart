@@ -55,11 +55,11 @@ export const EmotionalTelemetryModal: React.FC<EmotionalTelemetryModalProps> = (
       note: note.trim() || '日常状态记录',
     };
 
-    let aiInsight = '● 状态平稳：情绪指标处于安全区间，建议按既定博弈计划执行。';
+    let aiInsight = '● 当前记录：情绪指标处于安全区间，可按既定博弈计划执行；继续以可验证事实校准行动。';
     if (stress > 80) {
-      aiInsight = '⚠️ 警报：压力指数 (>80%) 处于严重超载区。历史数据表明，高压状态下你极易出现“恐慌性妥协降价”或“逃避关键谈判”的非理性行为。当前战局切勿轻举妄动，务必核对底牌硬核事实！';
+      aiInsight = '⚠️ 当前记录：压力指数 (>80%) 处于严重超载区。建议暂停不可逆妥协，先核对底牌事实与风险断路器。';
     } else if (energy < 40) {
-      aiInsight = '⚠️ 提示：精力水平偏低 (<40%)。认知带宽严重受限，请避免在今晚进行不可逆的重大合同条款决策。';
+      aiInsight = '⚠️ 当前记录：精力水平偏低 (<40%)。建议延后不可逆决策，或先安排复核与协作。';
     }
 
     const nextTelemetry: EmotionalTelemetry = {
