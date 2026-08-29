@@ -68,7 +68,7 @@ export const InterviewTab: React.FC<InterviewTabProps> = ({
       );
 
       const aiMsg: InterviewMessage = {
-        id: `msg-ai-${Date.now()}`,
+        id: response.messageId,
         sender: 'ai',
         text: response.text,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
