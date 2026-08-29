@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ArchonTierState, 
   PrecognitionEvent, 
@@ -67,9 +67,37 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
 
   // Annotation form
   const [newLemma, setNewLemma] = useState('');
-  const [selectedArchiveId, setSelectedArchiveId] = useState('archive-ltcm-1998');
+  const [selectedArchiveId, setSelectedArchiveId] = useState('arch-ltcm-1998');
+  const [archives, setArchives] = useState<Array<{ id: string; historicEventTitle: string }>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen || archives.length > 0) return;
+    let cancelled = false;
+    void fetch('/api/catalog/deep-archives', { credentials: 'include' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('历史档案目录读取失败。');
+        const payload = await response.json() as { archives?: unknown };
+        const next = Array.isArray(payload.archives)
+          ? payload.archives.flatMap((item) => {
+              if (!item || typeof item !== 'object') return [];
+              const value = item as Record<string, unknown>;
+              return typeof value.id === 'string' && typeof value.historicEventTitle === 'string'
+                ? [{ id: value.id, historicEventTitle: value.historicEventTitle }]
+                : [];
+            })
+          : [];
+        if (!cancelled) {
+          setArchives(next);
+          if (next.length > 0 && !next.some((archive) => archive.id === selectedArchiveId)) setSelectedArchiveId(next[0].id);
+        }
+      })
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : '历史档案目录读取失败。'); });
+    return () => { cancelled = true; };
+  }, [archives.length, isOpen, selectedArchiveId]);
+
+  const archivesLoading = isOpen && archives.length === 0 && !error;
 
   if (!isOpen) return null;
 
@@ -102,7 +130,9 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
     setError('');
     setSubmitting(true);
     try {
-      const annotation: ArchonArchiveAnnotation = { id:`ann-${crypto.randomUUID()}`,archiveId:selectedArchiveId,archiveTitle:selectedArchiveId.includes('ltcm')?'1998 LTCM 长期资本管理公司奇点':'1982 强生泰诺投毒公关保卫战',archonLemma:`【执政官因果引理】：${newLemma.trim()}`,authorArchonName:currentUserName,authorSigil:currentUserSigil,createdAt:new Date().toISOString(),upvotes:0,isVerifiedByAethel:false };
+      const archiveTitle = archives.find((archive) => archive.id === selectedArchiveId)?.historicEventTitle;
+      if (!archiveTitle) throw new Error('请选择一个有效的官方历史档案。');
+      const annotation: ArchonArchiveAnnotation = { id:`ann-${crypto.randomUUID()}`,archiveId:selectedArchiveId,archiveTitle,archonLemma:`【执政官因果引理】：${newLemma.trim()}`,authorArchonName:currentUserName,authorSigil:currentUserSigil,createdAt:new Date().toISOString(),upvotes:0,isVerifiedByAethel:false };
       if (battleId) await sessionApi.consumeUsageAndSaveModule(battleId, 'archon_annotation', `archon-annotation:${battleId}:${selectedArchiveId}:${newLemma.trim()}`, 'archon-tier', { ...archonState,archiveAnnotations:[annotation,...archonState.archiveAnnotations] });
       await onAddArchiveAnnotation(selectedArchiveId, newLemma, annotation);
       setNewLemma('');
@@ -307,9 +337,9 @@ export const ArchonSanctumModal: React.FC<ArchonSanctumModalProps> = ({
                     onChange={(e) => setSelectedArchiveId(e.target.value)}
                     className="bg-black border border-white/[0.15] rounded-lg px-2.5 py-1 text-xs text-slate-200"
                   >
-                    <option value="archive-ltcm-1998">1998 LTCM 长期资本管理公司奇点</option>
-                    <option value="archive-tylenol-1982">1982 强生泰诺投毒公关保卫战</option>
-                    <option value="archive-lehman-2008">2008 雷曼兄弟流动性枯竭仲裁</option>
+                    {archivesLoading && <option value="">正在读取官方档案…</option>}
+                    {!archivesLoading && archives.length === 0 && <option value="">暂无可用档案</option>}
+                    {archives.map((archive) => <option key={archive.id} value={archive.id}>{archive.historicEventTitle}</option>)}
                   </select>
                 </div>
 

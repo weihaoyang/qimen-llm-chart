@@ -277,8 +277,8 @@ export const SkillMarketplaceView: React.FC<SkillMarketplaceViewProps> = ({
 
           <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-800/50 text-xs text-blue-200 leading-relaxed font-mono-code">
             <strong className="text-blue-300 block mb-1 font-bold">💡 权益通证经济规则：</strong>
-            1. 在「推演案例库」中完成绝境案例推演，每次可获得 +6~8 权益点。<br />
-            2. 在「决策委员会」为他人提供参谋策略并被采纳，可获 +5 权益点。<br />
+            1. 在「推演案例库」中完成绝境案例推演；若平台配置奖励规则，完成记录会进入权益核算。<br />
+            2. 在「决策委员会」为他人提供参谋策略并被采纳；奖励以平台最终确认的权益为准。<br />
             3. 权益可用于解锁专家模板、加载危机AI模型，或在紧急时刻激活破局战情室。
           </div>
         </div>

@@ -193,6 +193,7 @@ export const CaseStudyLabView: React.FC<CaseStudyLabViewProps> = ({
                 setSelectedCaseId(cs.id);
                 setHasSimulated(false);
                 setUserSelectedChoiceId(null);
+                setSimulationResult(null);
                 soundManager.playBlip(700, 0.04);
               }}
               className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden shadow-xl cursor-pointer ${

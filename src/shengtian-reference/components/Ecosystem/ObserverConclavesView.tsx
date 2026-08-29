@@ -229,9 +229,9 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
             <div className="flex items-center justify-between text-xs font-mono-code">
               <span className="text-white font-bold flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                全球密会天梯榜 (TOP CONCLAVES)
+                当前战局密会 (TOP CONCLAVES)
               </span>
-              <span className="text-slate-400 text-[11px]">全局排序</span>
+              <span className="text-slate-400 text-[11px]">战局内排序</span>
             </div>
 
             <div className="space-y-2.5">
