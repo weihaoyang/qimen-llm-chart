@@ -165,6 +165,34 @@ export const getStrategyProfile = async (subject: AccountSubject) => {
 };
 
 /**
+ * Account-level counters used by the reference profile. These values are
+ * derived from canonical battle/review rows, never from the editable UI
+ * profile JSON, so a refresh or a client payload cannot fabricate progress.
+ */
+export const getAccountBattleStats = async (subject: AccountSubject) => {
+  const result = await query<{ total_battles:string; reviewed_battles:string; survived_reviews:string }>(
+    `SELECT
+       (SELECT COUNT(*)::text FROM battle_cases WHERE platform_subject_type=$1 AND platform_subject_id=$2) AS total_battles,
+       (SELECT COUNT(DISTINCT r.battle_id)::text
+          FROM battle_reviews r
+          JOIN battle_cases b ON b.id=r.battle_id
+         WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2) AS reviewed_battles,
+       (SELECT COUNT(*)::text
+          FROM battle_decision_dna_records d
+         WHERE d.platform_subject_type=$1 AND d.platform_subject_id=$2 AND d.survival_outcome='SURVIVED') AS survived_reviews`,
+    owner(subject),
+  );
+  const row = result.rows[0] ?? { total_battles:"0", reviewed_battles:"0", survived_reviews:"0" };
+  const totalBattles = Number(row.total_battles);
+  const reviewedBattles = Number(row.reviewed_battles);
+  const survivedReviews = Number(row.survived_reviews);
+  return {
+    totalSimulations: totalBattles,
+    singularitySuccessRate: reviewedBattles > 0 ? Math.round((survivedReviews / reviewedBattles) * 100) : 0,
+  };
+};
+
+/**
  * Return the latest decision-DNA snapshot from every battle owned by the
  * account. DNA is written to a battle module because each reflection belongs
  * to a battle, but the profile view is account-wide and must survive battle

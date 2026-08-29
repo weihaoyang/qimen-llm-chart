@@ -266,11 +266,18 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     let cancelled = false;
     void Promise.allSettled([sessionApi.profile(), sessionApi.entitlement()]).then(([profileResult, entitlementResult]) => {
       if (profileResult.status === 'rejected') throw profileResult.reason;
-      const { profile, decisionDna, archonProgress } = profileResult.value;
+      const { profile, decisionDna, archonProgress, battleStats } = profileResult.value;
       if (Array.isArray(decisionDna)) {
         setProfileDecisionDna(decisionDna.filter((item): item is DecisionDNARecord => typeof item.id === 'string' && typeof item.timestamp === 'string'));
       }
       setVerifiedArchonProgress(archonProgress);
+      if (battleStats) {
+        setUserProfile((previous) => ({
+          ...previous,
+          totalSimulations: battleStats.totalSimulations,
+          singularitySuccessRate: battleStats.singularitySuccessRate,
+        }));
+      }
       if (entitlementResult.status === 'fulfilled') {
         const { usage } = entitlementResult.value;
         setUserProfile((previous) => ({ ...previous, equityBalance: Math.max(0, usage.available - usage.reserved) }));
