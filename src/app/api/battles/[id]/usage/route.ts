@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { getBattle } from "@/lib/battle/repository";
+import { getModuleState } from "@/lib/battle/product-state";
 import { beginUsageOperation, finishUsageOperation, failUsageOperation, hashSnapshot, markUsageOperationCharged, saveModuleState, setUsageOperationReservation } from "@/lib/battle/product-state";
 import { getArchonProgress } from "@/lib/battle/extended-repository";
 import { asRecord, asText, isUuid } from "@/lib/battle/input";
 import { validateBattleModuleState } from "@/lib/battle/module-contract";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
+import { getOfficialCatalogEntry, OFFICIAL_CATALOG_TYPES } from "@/lib/catalog/official-repository";
 
-const operations = new Set(["world_pulse_intervention", "deep_archive_unlock", "reality_echo_resolution", "conclave_action", "archon_proposal", "archon_annotation", "breakthrough_activation"]);
-const operationModules: Record<string,string> = { world_pulse_intervention:"world-pulse", deep_archive_unlock:"deep-archives", reality_echo_resolution:"reality-echoes", conclave_action:"observer-conclaves", archon_proposal:"archon-tier", archon_annotation:"archon-tier", breakthrough_activation:"battlefield-aux" };
+const operations = new Set(["world_pulse_intervention", "deep_archive_unlock", "reality_echo_resolution", "conclave_action", "archon_proposal", "archon_annotation", "breakthrough_activation", "template_activation"]);
+const operationModules: Record<string,string> = { world_pulse_intervention:"world-pulse", deep_archive_unlock:"deep-archives", reality_echo_resolution:"reality-echoes", conclave_action:"observer-conclaves", archon_proposal:"archon-tier", archon_annotation:"archon-tier", breakthrough_activation:"battlefield-aux", template_activation:"marketplace" };
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   let reservationId = "";
@@ -24,7 +26,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const operation = asText(body?.operation, 80);
     const idempotencyKey = asText(body?.idempotencyKey, 160);
     if (!operation || !operations.has(operation) || !idempotencyKey) return NextResponse.json({ error: "权益操作参数无效。" }, { status: 400 });
-    const moduleUpdate = asRecord(body?.moduleUpdate);
+    const templateId = operation === "template_activation" ? asText(body?.templateId, 120) : null;
+    if (operation === "template_activation" && (!templateId || !await getOfficialCatalogEntry(OFFICIAL_CATALOG_TYPES.skillTemplate, templateId))) {
+      return NextResponse.json({ error: "模板不在官方目录中。" }, { status: 404 });
+    }
+    let moduleUpdate = asRecord(body?.moduleUpdate);
+    if (operation === "template_activation" && templateId && !moduleUpdate) {
+      const current = await getModuleState(subject, id, "marketplace");
+      const currentIds = Array.isArray(current?.state?.ownedTemplateIds) ? current.state.ownedTemplateIds.filter((value): value is string => typeof value === "string") : [];
+      moduleUpdate = { moduleId: "marketplace", state: { ownedTemplateIds: Array.from(new Set([...currentIds, templateId])) }, consent: { source: "platform_entitlement" } };
+    }
     const moduleId = moduleUpdate ? asText(moduleUpdate.moduleId,64) : null;
     const moduleState = moduleUpdate ? asRecord(moduleUpdate.state) : null;
     const moduleConsent = moduleUpdate ? asRecord(moduleUpdate.consent) ?? {} : {};
