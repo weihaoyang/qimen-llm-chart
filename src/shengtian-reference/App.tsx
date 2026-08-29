@@ -392,7 +392,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
             else apply(restored as never);
           }
         } catch { /* first run may not have a module snapshot yet */ }
-        moduleHydratedRef.current[moduleId] = true;
+        if (!cancelled) moduleHydratedRef.current[moduleId] = true;
       }
       if (!cancelled && verifiedArchonProgress) setArchonState(applyVerifiedArchon);
     };
@@ -403,8 +403,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       if (!cancelled && value && typeof value === 'object') {
         setBattlefield((previous) => ({ ...previous, ...(value as Partial<BattlefieldState>) }));
       }
-      moduleHydratedRef.current['battlefield-aux'] = true;
-    }).catch(() => { moduleHydratedRef.current['battlefield-aux'] = true; });
+      if (!cancelled) moduleHydratedRef.current['battlefield-aux'] = true;
+    }).catch(() => { if (!cancelled) moduleHydratedRef.current['battlefield-aux'] = true; });
     return () => { cancelled = true; };
   }, [session.activeBattle?.id, applyVerifiedArchon, verifiedArchonProgress]);
 
@@ -482,8 +482,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           },
         };
       });
-      moduleHydratedRef.current['inventory'] = true;
-    }).catch(() => undefined);
+      if (!cancelled) moduleHydratedRef.current['inventory'] = true;
+    }).catch(() => { if (!cancelled) moduleHydratedRef.current['inventory'] = true; });
     return () => { cancelled = true; };
   }, [session.activeBattle?.id]);
 
@@ -650,8 +650,8 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       // another battle's reflections into the active battle. The account-wide
       // profile records are merged only for rendering (see displayDnaRecords).
       if (!cancelled && Array.isArray(payload.state?.state?.records)) setDnaRecords(payload.state.state.records);
-      moduleHydratedRef.current['decision-dna'] = true;
-    }).catch(() => undefined);
+      if (!cancelled) moduleHydratedRef.current['decision-dna'] = true;
+    }).catch(() => { if (!cancelled) moduleHydratedRef.current['decision-dna'] = true; });
     return () => { cancelled = true; };
   }, [session.activeBattle?.id]);
 
