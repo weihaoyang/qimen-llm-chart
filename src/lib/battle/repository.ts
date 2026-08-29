@@ -236,7 +236,7 @@ export const replaceInventory = async (subject: AccountSubject, battleId: string
        COALESCE((SELECT jsonb_agg(to_jsonb(card_id))
                  FROM jsonb_array_elements_text(source_json->'assignedCardIds') AS cards(card_id)
                  WHERE card_id = ANY($2::text[])), '[]'::jsonb), true)
-     WHERE battle_id=$1 AND source_json ? 'assignedCardIds'`,
+     WHERE battle_id=$1 AND source_json ? 'assignedCardIds' AND jsonb_typeof(source_json->'assignedCardIds')='array'`,
     [battleId, retainedIds],
   );
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
