@@ -46,6 +46,23 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
     const reflectionScore = Math.min(100, Math.round(dnaRecords.reduce((sum, record) => sum + record.userReflection.length, 0) / dnaRecords.length));
     return { riskAppetite: Math.round(45 + outcomeScore * 30), infoRigor: evidenceScore, decisionSpeed: Math.min(100, 40 + dnaRecords.length * 8), adversityTenacity: Math.round(35 + outcomeScore * 55), counterIntuition: Math.min(100, 30 + reflectionScore / 2), valueAlignment: Math.min(100, 30 + reflectionScore / 1.5) };
   }, [dnaRecords]);
+  const radarAxes = useMemo(() => [
+    radar.infoRigor,
+    radar.adversityTenacity,
+    radar.counterIntuition,
+    radar.valueAlignment,
+    radar.decisionSpeed,
+    radar.riskAppetite,
+  ], [radar]);
+  const radarPolygon = useMemo(() => {
+    const center = 128;
+    const radius = 94;
+    return radarAxes.map((value, index) => {
+      const angle = -Math.PI / 2 + (index * Math.PI * 2) / radarAxes.length;
+      const scale = Math.max(0, Math.min(100, value)) / 100;
+      return `${(center + Math.cos(angle) * radius * scale).toFixed(2)},${(center + Math.sin(angle) * radius * scale).toFixed(2)}`;
+    }).join(' ');
+  }, [radarAxes]);
   const insights = useMemo<CognitivePatternInsight[]>(() => dnaRecords.length ? [{ id: 'derived-evidence', type: 'WINNING_FORMULA', title: '从已保存复盘中提取的决策规律', detail: `已分析 ${dnaRecords.length} 条本人复盘记录。`, evidence: dnaRecords.flatMap((record) => record.extractedDNA).slice(0, 4).join('；') || '当前复盘尚未提取明确 DNA。', actionableGuidance: '继续完成真实复盘，积累足够样本后再生成稳定模式。', createdAt: '实时计算' }] : [], [dnaRecords]);
   const archetype = useMemo(() => {
     if (!dnaRecords.length) return '样本不足 · 完成一次真实复盘后生成';
@@ -185,7 +202,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
               <span className="text-[10px] font-mono-code text-slate-500">动态拟合</span>
             </div>
 
-            {/* Simulated Geometric Polygon Radar */}
+            {/* Six-axis radar generated from the saved DNA metrics. */}
             <div className="relative py-4 flex items-center justify-center">
               <div className="w-64 h-64 relative flex items-center justify-center">
                 {/* Radar Grid Circles */}
@@ -200,12 +217,25 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
                 <div className="absolute w-full h-[1px] bg-white/[0.06] rotate-45" />
                 <div className="absolute w-full h-[1px] bg-white/[0.06] -rotate-45" />
 
-                {/* Radar Polygon Shape */}
-                <div className="w-44 h-44 bg-gradient-to-tr from-amber-500/20 via-blue-500/30 to-purple-500/20 border-2 border-amber-400/80 rounded-2xl rotate-12 flex items-center justify-center shadow-lg shadow-amber-950/40">
-                  <div className="text-center font-mono-code text-[11px] text-amber-300 font-bold">
-                    <span>综合战力</span>
-                    <span className="block text-white text-base font-black">{dnaRecords.length ? Math.round(Object.values(radar).reduce((sum, value) => sum + value, 0) / 6) : '—'}</span>
-                  </div>
+                <svg viewBox="0 0 256 256" className="absolute inset-0 h-full w-full" role="img" aria-label="由六维决策 DNA 数值生成的雷达图">
+                  <polygon points="128,34 209.4,81 209.4,175 128,222 46.6,175 46.6,81" fill="none" stroke="rgba(255,255,255,.08)" />
+                  <polygon points="128,65.3 178.8,94.7 178.8,161.3 128,190.7 77.2,161.3 77.2,94.7" fill="none" stroke="rgba(255,255,255,.08)" />
+                  <polygon points="128,96.7 148.2,108.3 148.2,147.7 128,159.3 107.8,147.7 107.8,108.3" fill="none" stroke="rgba(255,255,255,.08)" />
+                  <polygon points="128,128 128,128 128,128 128,128 128,128 128,128" fill="none" stroke="rgba(255,255,255,.08)" />
+                  {radarAxes.map((_, index) => {
+                    const angle = -Math.PI / 2 + (index * Math.PI * 2) / radarAxes.length;
+                    return <line key={index} x1="128" y1="128" x2={(128 + Math.cos(angle) * 94).toFixed(2)} y2={(128 + Math.sin(angle) * 94).toFixed(2)} stroke="rgba(255,255,255,.10)" />;
+                  })}
+                  <polygon points={radarPolygon} fill="rgba(245,158,11,.20)" stroke="rgba(251,191,36,.95)" strokeWidth="2" strokeLinejoin="round" />
+                  {radarAxes.map((value, index) => {
+                    const angle = -Math.PI / 2 + (index * Math.PI * 2) / radarAxes.length;
+                    const scale = Math.max(0, Math.min(100, value)) / 100;
+                    return <circle key={`point-${index}`} cx={(128 + Math.cos(angle) * 94 * scale).toFixed(2)} cy={(128 + Math.sin(angle) * 94 * scale).toFixed(2)} r="3" fill="#fbbf24" />;
+                  })}
+                </svg>
+                <div className="relative z-10 text-center font-mono-code text-[11px] text-amber-300 font-bold">
+                  <span>综合战力</span>
+                  <span className="block text-white text-base font-black">{dnaRecords.length ? Math.round(radarAxes.reduce((sum, value) => sum + value, 0) / radarAxes.length) : '—'}</span>
                 </div>
               </div>
             </div>
