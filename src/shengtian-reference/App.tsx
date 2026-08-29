@@ -78,6 +78,24 @@ import { generateDeciderSigil } from './utils/sigilGenerator';
 import { soundManager } from './utils/soundEffects';
 import { useBattleSession } from './session/useBattleSession';
 import { sessionApi } from './session/api';
+
+const stableSerialize = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+};
+
+const idempotencyHash = (value: string): string => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+};
 import type { CatalogScenario } from './session/api';
 
 function ScenarioChooser({ scenarios, invitations, error, onClone, onRespondInvitation }: { scenarios: CatalogScenario[]; invitations: ReturnType<typeof useBattleSession>['invitations']; error: string | null; onClone: (scenarioId: string) => Promise<unknown>; onRespondInvitation:(invitationId:string, action:'accept'|'decline')=>Promise<unknown> }) {
@@ -216,28 +234,12 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [verifiedArchonProgress, setVerifiedArchonProgress] = useState<Awaited<ReturnType<typeof sessionApi.profile>>['archonProgress'] | null>(null);
   const profileHydratedRef = React.useRef(false);
-  const stableSerialize = React.useCallback((value: unknown): string => {
-    if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
-    if (value && typeof value === 'object') {
-      const record = value as Record<string, unknown>;
-      return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`).join(',')}}`;
-    }
-    return JSON.stringify(value);
-  }, []);
-  const idempotencyHash = React.useCallback((value: string): string => {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0).toString(16).padStart(8, '0');
-  }, []);
   const saveBattleModule = React.useCallback(async (battleId: string, moduleId: string, state: unknown, consent: Record<string, unknown> = {}) => {
     const persistedState = Array.isArray(state) ? { items: state } : state;
     const operation = typeof consent.operation === 'string' ? consent.operation : 'autosave';
     const idempotencyKey = `module:${battleId}:${moduleId}:${operation}:${idempotencyHash(stableSerialize({ state: persistedState, consent }))}`;
     await sessionApi.saveModule(battleId, moduleId, persistedState, consent, { idempotencyKey });
-  }, [idempotencyHash, stableSerialize]);
+  }, []);
   const persistBattlefieldPatch = React.useCallback(async (patch: Partial<BattlefieldState>) => {
     const battleId = session.activeBattle?.id;
     if (!battleId) throw new Error('当前没有活动战局。');
