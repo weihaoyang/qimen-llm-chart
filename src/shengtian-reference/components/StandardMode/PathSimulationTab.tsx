@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, 
   GitBranch, 
@@ -59,34 +59,6 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
   const [commitPending, setCommitPending] = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState<string | null>(null);
   const [savePending, setSavePending] = useState(false);
-  const moduleHydratedRef = useRef(false);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    moduleHydratedRef.current = false;
-    void sessionApi.module(battleId, 'path-simulation').then(({ state }) => {
-      const envelope = state as { state?: unknown } | null;
-      const saved = (envelope?.state && typeof envelope.state === 'object' ? envelope.state : state) as { strategies?: unknown } | null;
-      if (!cancelled && Array.isArray(saved?.strategies)) {
-        const restored = saved.strategies.filter((item): item is StrategyBranch => Boolean(item && typeof item === 'object' && typeof (item as StrategyBranch).id === 'string'));
-        if (restored.length) onUpdateBattlefield((previous) => previous.strategies.length ? previous : { ...previous, strategies: restored });
-      }
-      moduleHydratedRef.current = true;
-    }).catch((error) => {
-      if (!cancelled) setPersistenceMessage(error instanceof Error ? error.message : '路径草案读取失败，请重试。');
-      moduleHydratedRef.current = true;
-    });
-    return () => { cancelled = true; };
-  }, [battleId, onUpdateBattlefield]);
-
-  React.useEffect(() => {
-    if (readOnly || !moduleHydratedRef.current) return;
-    const timer = window.setTimeout(() => {
-      void sessionApi.saveModule(battleId, 'path-simulation', { strategies: battlefield.strategies }, { source: 'path_simulation' })
-        .catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '路径草案保存失败，请重试。'));
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [battleId, battlefield.strategies, readOnly]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -223,32 +195,35 @@ export const PathSimulationTab: React.FC<PathSimulationTabProps> = ({
     } finally { setDeletePending(null); }
   };
 
-  const toggleAssignCard = (strategyId: string, cardId: string) => {
+  const [cardAssignPending, setCardAssignPending] = useState<string | null>(null);
+
+  const toggleAssignCard = async (strategyId: string, cardId: string) => {
     if (readOnly) return;
     const current = battlefield.strategies.find((strategy) => strategy.id === strategyId);
+    if (!current) return;
     const nextAssignedCardIds = current
       ? (current.assignedCardIds.includes(cardId) ? current.assignedCardIds.filter((id) => id !== cardId) : [...current.assignedCardIds, cardId])
       : [];
-    onUpdateBattlefield(prev => ({
-      ...prev,
-      strategies: prev.strategies.map(s => {
-        if (s.id === strategyId) {
-          const has = s.assignedCardIds.includes(cardId);
-          return {
-            ...s,
-            assignedCardIds: has ? s.assignedCardIds.filter(id => id !== cardId) : [...s.assignedCardIds, cardId],
-          };
-        }
-        return s;
-      }),
-    }));
-    if (/^[0-9a-f-]{36}$/i.test(strategyId) && current?.status === 'PROPOSED') {
-      void sessionApi.updateMoveSource(battleId, strategyId, {
-        layer: 'path_simulation',
-        assignedCardIds: nextAssignedCardIds,
-        targetTimelineDay: current.targetTimelineDay,
-        estimatedSurvivalProb: current.estimatedSurvivalProb,
-      }).catch((error) => setPersistenceMessage(error instanceof Error ? error.message : '策略底牌挂载保存失败，请重试。'));
+    const pendingKey = `${strategyId}:${cardId}`;
+    if (cardAssignPending) return;
+    setCardAssignPending(pendingKey);
+    try {
+      if (/^[0-9a-f-]{36}$/i.test(strategyId) && current.status === 'PROPOSED') {
+        await sessionApi.updateMoveSource(battleId, strategyId, {
+          layer: 'path_simulation',
+          assignedCardIds: nextAssignedCardIds,
+          targetTimelineDay: current.targetTimelineDay,
+          estimatedSurvivalProb: current.estimatedSurvivalProb,
+        });
+      }
+      onUpdateBattlefield(prev => ({
+        ...prev,
+        strategies: prev.strategies.map(s => s.id === strategyId ? { ...s, assignedCardIds: nextAssignedCardIds } : s),
+      }));
+    } catch (error) {
+      setPersistenceMessage(error instanceof Error ? error.message : '策略底牌挂载保存失败，请重试。');
+    } finally {
+      setCardAssignPending(null);
     }
     soundManager.playBlip(750, 0.02);
   };

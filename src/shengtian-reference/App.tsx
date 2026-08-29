@@ -74,6 +74,7 @@ import {
   AISymbioteState
   , CardAsset
 } from './types';
+import { isUuid } from '@/lib/battle/input';
 import { generateDeciderSigil } from './utils/sigilGenerator';
 import { soundManager } from './utils/soundEffects';
 import { useBattleSession } from './session/useBattleSession';
@@ -497,7 +498,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     if (!battleId || !canWriteBattle || !moduleHydratedRef.current['inventory']) return;
     const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
     const timer = window.setTimeout(() => {
-      void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ id:asset.id, label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
+      void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ ...(isUuid(asset.id) ? { id:asset.id } : {}), label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
         .then((response) => { if (!response.ok) throw new Error(`底牌保存失败（${response.status}）。`); })
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '底牌保存失败，请重试。'));
     }, 450);
