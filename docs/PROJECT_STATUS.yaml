@@ -5,8 +5,8 @@ objective: '按《胜天半子》产品宪法实现现实极限博弈 Battle Dom
 success_condition: '用户可建立战局、录入现实底牌/红线/资源、生成交叉点与三种落子、保存执行令和断路器、更新执行状态、复盘并导出战报；所有持久化按 subject ownership 且不改平台账户/支付真相'
 phase: 'completed'
 status: 'implemented_and_verified_locally'
-current_blocker: '生产部署尚未执行；需要明确上线授权并确认真实服务器拓扑、DATABASE_URL 与平台 gate 配置。'
-next_action: '若需上线，再按生产拓扑执行备份、迁移、重建、readiness 与无扣款冒烟'
+current_blocker: '生产仍运行 release 20260825-1415-ai-sdk-chat-scroll / commit 2d2149f；产品库 shengtian_banzi 尚无 schema_migrations 和 battle_cases，必须先备份并应用 001-029，不能直接切换新服务。'
+next_action: '完成剩余本地功能矩阵后，获得上线授权，按已确认的 qmdj.service + /srv/qmdj-releases + 127.0.0.1:3002 拓扑执行备份、迁移、release 切换、readiness 与不扣款冒烟'
 active_workers: []
 recent_evidence:
   - '2026-08-16: 修复奇门移动端摘要条的 36px 固定高度和省略裁切；390px 实测九项摘要的 strong scrollHeight 均等于 clientHeight，节气、旬首、值符、值使、驿马、时盘仪表与四柱均完整显示。'
@@ -29,7 +29,7 @@ recent_evidence:
   - '2026-08-21: 隔离 PostgreSQL 17（127.0.0.1:55432）真实执行 001-006 迁移；在平台 gate mock + Next production server 上完成 owner 创建/事实/约束/底牌/资源/分析恢复/落子/换线 409/执行台/行动更新/断路器、advisor 邀请接受与意见、第三方拒绝、匿名模式库脱敏、DELETE 确认与删除后不可读 HTTP 闭环。期间修复 updateExecutionAction 未使用 SQL 参数导致 PostgreSQL 42P18，以及匿名模式库 POST 回包泄露 battleId。'
   - '2026-08-21: 产品宪法完成审计收口：事实采集现在要求并展示来源、置信度、发生/核验时间；重力线可展示公开合法范围内的对手盘压力点、可争杠杆与未知变量；每个交叉点都生成强攻/试局/对冲，策略矩阵、行动实际成本、窗口衰减与错过代价、完整 Markdown/JSON 战报均可见。访客可在当前标签页完成确定性 P0 演练，刷新/关闭/换设备会明确丢失；登录后才持久化、协作和调用推演官。34 项目标测试、TypeScript、lint 和生产构建通过。'
 last_commit: '9d83e1e'
-remote_state: '本轮仅本地预览，未部署'
+remote_state: '2026-08-30 只读核对：qmdj.service active，release=20260825-1415-ai-sdk-chat-scroll，commit=2d2149f，产品库未初始化 Battle Domain；未部署、未重启、未改生产数据'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'
