@@ -79,3 +79,11 @@ Record only decisions that affect boundaries, data contracts, dependencies, depl
 - 原因：前端可见内容不能继续只依赖 TypeScript 常量，否则多实例、迁移和内容版本无法审计，且无法证明 clone 时使用的官方版本。
 - 代价：首次目录请求需要数据库 readiness；发布新官方内容必须新增版本并显式切换 published 状态。
 - Evidence: `database/migrations/019_official_catalog_entries.sql`, `src/lib/catalog/official-repository.ts`, 2026-08-29 catalog HTTP smoke。
+
+## 2026-08-30 · 世界脉搏商业发布只携带许可兼容的数据源
+
+- 决策：商业发布物不再包含或注册 TeleGeography 海底电缆数据和图层；构建门槛直接扫描公开目录和活动 bundle，防止禁用数据回流。
+- 决策：民航快照沿用 GEV 的 OpenSky-compatible JSON 契约，但 qmdj 服务端固定从 adsb.lol 的 250 海里区域接口获取并转换；军机与轨迹同样通过 adsb.lol 服务端代理。浏览器不直连上游，也不调用 OpenSky 非商业接口。
+- 原因：GEV 源代码是 MIT，但 TeleGeography 与 OpenSky 默认数据条款不能直接用于本产品商业上线；删除能力或伪造数据都不满足世界脉搏功能目标。
+- 代价：民航视图明确是当前镜头周围的区域观测，不宣称全球完整快照；更完整覆盖需要另行采购许可兼容的数据源。
+- Evidence: `public/gods-eye-view/THIRD_PARTY_NOTICES.txt`, `src/lib/scenarios/world-pulse-static-release.test.ts`, `src/lib/scenarios/adsb-lol.ts`, `src/app/api/[...path]/route.ts`。
