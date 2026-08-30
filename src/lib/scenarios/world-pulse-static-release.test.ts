@@ -18,6 +18,8 @@ describe("world pulse static release", () => {
     expect(moduleSrc).toBeTruthy();
     expect(existsSync(resolve(process.cwd(), "public", moduleSrc!.replace(/^\//, "")))).toBe(true);
     expect(html).toContain("/gods-eye-view/battle-observation-bridge.js");
+    expect(existsSync(join(publicRoot, "cesium", "Cesium.js"))).toBe(true);
+    expect(existsSync(join(publicRoot, "gods-eye-view", "cesium", "Cesium.js"))).toBe(false);
   });
 
   it("does not distribute the noncommercial TeleGeography dataset or layer", () => {
@@ -27,5 +29,7 @@ describe("world pulse static release", () => {
     const moduleSrc = html.match(/<script type="module"[^>]+src="([^"]+)"/)?.[1];
     const bundle = readFileSync(resolve(process.cwd(), "public", moduleSrc!.replace(/^\//, "")), "utf8");
     expect(bundle).not.toMatch(/telegeography-submarine-cables|submarinecablemap\.com|TeleGeography/);
+    expect(bundle).toContain("real-provider-only");
+    expect(bundle).toContain("VOICE NOT CONFIGURED");
   });
 });
