@@ -11,6 +11,7 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ] as const;
 const ADSBLOL_RADIUS_NM = 250;
+const MILITARY_INSTALLATION_CAP = 700;
 const servedRadioIds = new Set<string>();
 
 const jsonError = (status: number, error: string, reasonCode: string) => NextResponse.json({ error, reasonCode }, { status, headers: { "Cache-Control": "no-store" } });
@@ -45,6 +46,28 @@ async function readJsonCapped(response: Response) {
   return JSON.parse(new TextDecoder().decode(body)) as Record<string, unknown>;
 }
 
+async function proxyMilitaryInstallations(incoming: URL) {
+  const south = validCoordinate(incoming.searchParams.get("south"), -90, 90);
+  const west = validCoordinate(incoming.searchParams.get("west"), -180, 180);
+  const north = validCoordinate(incoming.searchParams.get("north"), -90, 90);
+  const east = validCoordinate(incoming.searchParams.get("east"), -180, 180);
+  if (south === null || west === null || north === null || east === null || south >= north || west >= east || north-south > 10 || east-west > 10) {
+    return jsonError(400, "军事设施观测需要不超过 10 度的非跨日界线视窗。", "invalid_bbox");
+  }
+  const bbox = `${south},${west},${north},${east}`;
+  const query = `[out:json][timeout:20];(nwr["military"~"^(airfield|naval_base|range|barracks|base)$"](${bbox});nwr["landuse"="military"](${bbox}););out center tags geom ${MILITARY_INSTALLATION_CAP};`;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const response = await fetchWithTimeout(endpoint, { method:"POST", headers:{ "Content-Type":"text/plain", Accept:"application/json", "User-Agent":"qmdj-world-pulse/1.0" }, body:query });
+      if (!response.ok) continue;
+      const payload = await readJsonCapped(response);
+      const elements = Array.isArray(payload.elements) ? payload.elements.slice(0, MILITARY_INSTALLATION_CAP) : [];
+      return NextResponse.json({ elements, saturated:elements.length >= MILITARY_INSTALLATION_CAP, elementCap:MILITARY_INSTALLATION_CAP, retrievedAt:new Date().toISOString(), status:"ready" }, { headers:{ "Cache-Control":"public, max-age=60" } });
+    } catch { /* try next mirror */ }
+  }
+  return jsonError(503, "地图军事设施观测源暂时不可用。", "upstream_unavailable");
+}
+
 async function proxyGet(path: string[], request: Request) {
   const [root, ...rest] = path;
   const incoming = new URL(request.url);
@@ -62,6 +85,8 @@ async function proxyGet(path: string[], request: Request) {
     // same-origin contract explicit so the GEV panel can show an unavailable
     // track instead of receiving a misleading synthetic line.
     return jsonError(503, "OpenSky 航迹需要已配置的历史轨迹源。", "track_source_unavailable");
+  } else if (root === "military-installations" && rest.length === 0) {
+    return proxyMilitaryInstallations(incoming);
   } else if (root === "adsblol" && rest.length === 1 && rest[0] === "mil") {
     target = new URL("https://api.adsb.lol/v2/mil");
   } else if (root === "adsblol" && rest.length === 1 && rest[0] === "trace") {
@@ -125,7 +150,7 @@ async function proxyGet(path: string[], request: Request) {
     target.searchParams.set("longitude", String(longitude));
     target.searchParams.set("current", "temperature_2m,apparent_temperature,precipitation,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,weather_code");
     target.searchParams.set("timezone", "UTC");
-  } else if (root === "ais-live" || root === "realtime" || root === "military-installations" || root === "google" || root === "gbfs" || root === "tomtom" || root === "radio" || root === "adsbdb" || root === "cctv" || root === "terrain") {
+  } else if (root === "ais-live" || root === "realtime" || root === "google" || root === "gbfs" || root === "tomtom" || root === "radio" || root === "adsbdb" || root === "cctv" || root === "terrain") {
     return jsonError(503, "该观测源需要在服务端配置后启用。", "upstream_not_configured");
   } else {
     return jsonError(404, "该观测接口未接入 qmdj。", "unknown_observation_endpoint");

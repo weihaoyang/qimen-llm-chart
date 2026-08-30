@@ -45,4 +45,18 @@ describe("God's Eye View observation proxy", () => {
     const click = await POST(new Request(`http://local/api/radio/click/${id}`, { method:"POST" }), { params:Promise.resolve({ path:["radio","click",id] }) });
     expect(click.status).toBe(204);
   });
+
+  it("rejects oversized installation viewports before contacting Overpass", async () => {
+    vi.mocked(fetch).mockClear();
+    const response = await GET(new Request("http://local/api/military-installations?south=0&west=0&north=20&east=20"), { params:Promise.resolve({ path:["military-installations"] }) });
+    expect(response.status).toBe(400);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it("returns bounded mapped military context with saturation metadata", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ elements:[{ type:"node", id:1, lat:31.2, lon:121.5, tags:{ military:"airfield" } }] }), { status:200 }));
+    const response = await GET(new Request("http://local/api/military-installations?south=31&west=121&north=31.5&east=121.8"), { params:Promise.resolve({ path:["military-installations"] }) });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ status:"ready", saturated:false, elementCap:700, elements:[{ id:1 }] });
+  });
 });
