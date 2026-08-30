@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeAdsbLolPointResponse } from "@/lib/scenarios/adsb-lol";
+import { normalizeRadioBrowserStation, radioStationIdValid } from "@/lib/scenarios/radio-browser";
 
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -10,6 +11,7 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ] as const;
 const ADSBLOL_RADIUS_NM = 250;
+const servedRadioIds = new Set<string>();
 
 const jsonError = (status: number, error: string, reasonCode: string) => NextResponse.json({ error, reasonCode }, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -66,6 +68,23 @@ async function proxyGet(path: string[], request: Request) {
     const hex = incoming.searchParams.get("hex")?.trim().toLowerCase() ?? "";
     if (!/^[0-9a-f~]{6,7}$/.test(hex)) return jsonError(400, "航空器标识无效。", "invalid_aircraft_id");
     target = new URL(`https://adsb.lol/data/traces/${hex.slice(-2)}/trace_full_${hex}.json`);
+  } else if (root === "adsbdb" && rest.length === 2 && rest[0] === "type" && /^[0-9a-f]{6}$/i.test(rest[1])) {
+    target = new URL(`https://api.adsbdb.com/v0/aircraft/${rest[1].toLowerCase()}`);
+  } else if (root === "adsbdb" && rest.length === 2 && rest[0] === "route" && /^[A-Z0-9]{2,8}$/i.test(rest[1])) {
+    target = new URL(`https://api.adsbdb.com/v0/callsign/${rest[1].toUpperCase()}`);
+  } else if (root === "radio" && rest.length === 1 && rest[0] === "stations") {
+    target = new URL("https://de1.api.radio-browser.info/json/stations/search");
+    target.searchParams.set("hidebroken", "true"); target.searchParams.set("limit", "750");
+    target.searchParams.set("order", "clickcount"); target.searchParams.set("reverse", "true");
+  } else if (root === "terrain" && rest.length === 1 && rest[0] === "heights") {
+    const points = (incoming.searchParams.get("points") ?? "").split(";").filter(Boolean);
+    if (!points.length || points.length > 200 || points.some((point) => { const [lon,lat,...extra]=point.split(","); return extra.length > 0 || !Number.isFinite(Number(lon)) || !Number.isFinite(Number(lat)) || Number(lon) < -180 || Number(lon) > 180 || Number(lat) < -90 || Number(lat) > 90; })) return jsonError(400, "地形坐标参数无效。", "invalid_coordinates");
+    target = new URL("https://terrain.reearth.land/heights.json");
+    target.searchParams.set("points", points.join(";"));
+  } else if (root === "tomtom" && rest.length === 1 && rest[0] === "status") {
+    return NextResponse.json({ hasKey:false, mode:"simulation", reasonCode:"provider_not_configured" }, { headers:{ "Cache-Control":"no-store" } });
+  } else if (root === "firms" && rest.length === 0) {
+    return NextResponse.json({ error:"no_key", fires:[] }, { status:503, headers:{ "Cache-Control":"no-store" } });
   } else if (root === "celestrak" && rest.length <= 1 && (rest.length === 0 || /^[A-Za-z0-9_.-]+$/.test(rest[0]))) {
     target = new URL("https://celestrak.org/NORAD/elements/gp.php");
     if (rest[0]) target.searchParams.set("GROUP", rest[0]);
@@ -106,7 +125,7 @@ async function proxyGet(path: string[], request: Request) {
     target.searchParams.set("longitude", String(longitude));
     target.searchParams.set("current", "temperature_2m,apparent_temperature,precipitation,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,weather_code");
     target.searchParams.set("timezone", "UTC");
-  } else if (root === "firms" || root === "ais-live" || root === "realtime" || root === "military-installations" || root === "google" || root === "gbfs" || root === "tomtom" || root === "radio" || root === "adsbdb" || root === "cctv" || root === "terrain") {
+  } else if (root === "ais-live" || root === "realtime" || root === "military-installations" || root === "google" || root === "gbfs" || root === "tomtom" || root === "radio" || root === "adsbdb" || root === "cctv" || root === "terrain") {
     return jsonError(503, "该观测源需要在服务端配置后启用。", "upstream_not_configured");
   } else {
     return jsonError(404, "该观测接口未接入 qmdj。", "unknown_observation_endpoint");
@@ -124,6 +143,26 @@ async function proxyGet(path: string[], request: Request) {
         "X-OpenSky-Auth-Mode-Used":"adsblol-regional",
         "X-OpenSky-Auth-Reason":"commercial-safe-regional-source",
       } });
+    }
+    if (root === "adsbdb") {
+      if (!response.ok) return NextResponse.json({ found:false }, { headers:{ "Cache-Control":"public, max-age=86400" } });
+      const source = await readJsonCapped(response);
+      if (rest[0] === "type") {
+        const aircraft = (source.response as Record<string, unknown> | undefined)?.aircraft as Record<string, unknown> | undefined;
+        return NextResponse.json(aircraft ? { found:true, typeCode:aircraft.icao_type ?? null, typeName:aircraft.manufacturer && aircraft.type ? `${aircraft.manufacturer} ${aircraft.type}` : aircraft.type ?? null, registration:aircraft.registration ?? null } : { found:false }, { headers:{ "Cache-Control":"public, max-age=86400" } });
+      }
+      const route = (source.response as Record<string, unknown> | undefined)?.flightroute as Record<string, unknown> | undefined;
+      const airport = (value: unknown) => { const item = value as Record<string, unknown> | undefined; return item ? { code:item.iata_code || item.icao_code || "", name:item.municipality || item.name || "", lat:Number.isFinite(item.latitude) ? item.latitude : null, lon:Number.isFinite(item.longitude) ? item.longitude : null } : null; };
+      return NextResponse.json(route?.origin && route?.destination ? { found:true, airline:(route.airline as Record<string, unknown> | undefined)?.name ?? null, origin:airport(route.origin), destination:airport(route.destination) } : { found:false }, { headers:{ "Cache-Control":"public, max-age=86400" } });
+    }
+    if (root === "radio") {
+      if (!response.ok) return jsonError(503, "Radio 目录暂时不可用。", "upstream_unavailable");
+      const raw = await readJsonCapped(response);
+      const rows = Array.isArray(raw) ? raw : [];
+      const stations = rows.filter((value): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value))).map(normalizeRadioBrowserStation).filter((value) => value !== null);
+      servedRadioIds.clear(); stations.forEach((station) => servedRadioIds.add(station.id));
+      const updatedAt = new Date().toISOString();
+      return NextResponse.json({ stations, updatedAt, stale:false, degraded:stations.length < 100, degradedReason:stations.length < 100 ? "low_station_coverage" : null, coverage:{ stationCount:stations.length }, acceptedGeneration:Math.max(1,Math.floor(Date.now()/2_700_000)), catalogInstance:"qmdj-radio-browser-v1" }, { headers:{ "Cache-Control":"public, max-age=900" } });
     }
     if (root === "weather-effects" && response.ok) {
       const payload = await response.json() as { current?: Record<string, unknown> };
@@ -161,5 +200,11 @@ export async function GET(request: Request, context: Context) {
 export async function POST(request: Request, context: Context) {
   const { path } = await context.params;
   if (path?.length === 1 && path[0] === "overpass") return proxyOverpass(request);
+  if (path?.length === 3 && path[0] === "radio" && path[1] === "click") {
+    const id = path[2].toLowerCase();
+    if (!radioStationIdValid(id) || !servedRadioIds.has(id)) return jsonError(404, "Radio 站点不存在。", "radio_station_not_found");
+    void fetchWithTimeout(`https://de1.api.radio-browser.info/json/url/${id}`, { method:"GET", headers:{ "User-Agent":"qmdj-world-pulse/1.0" } }).catch(() => undefined);
+    return new NextResponse(null, { status:204, headers:{ "Cache-Control":"no-store" } });
+  }
   return jsonError(405, "该观测接口不支持此方法。", "method_not_allowed");
 }
