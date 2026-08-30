@@ -28,7 +28,7 @@ recent_evidence:
   - '2026-08-21: 新增 owner 明确确认的 DELETE /api/battles/[id] 级联删除；active collaborator 可读取执行台。修复 getBattleAccess 将 collaborator 误判为 owner 的授权缺陷；新增 GET /api/battles/[id]/analysis，重新打开战局可恢复已持久化交叉点与策略；三种规则策略现在各自生成至少一条带硬期限的初始行动，落子后执行令可直接保存；首屏支持事实/假设/未知/目标/情绪分层入账并补齐理想结果字段；换线要求变化原因，机会雷达保留历史窗口，匿名模式库输出不泄露 battleId，复盘诊断可沉淀校准事件。33 项 Battle/Agent/AppShell 测试、TypeScript、目标 lint、生产构建通过。'
   - '2026-08-21: 隔离 PostgreSQL 17（127.0.0.1:55432）真实执行 001-006 迁移；在平台 gate mock + Next production server 上完成 owner 创建/事实/约束/底牌/资源/分析恢复/落子/换线 409/执行台/行动更新/断路器、advisor 邀请接受与意见、第三方拒绝、匿名模式库脱敏、DELETE 确认与删除后不可读 HTTP 闭环。期间修复 updateExecutionAction 未使用 SQL 参数导致 PostgreSQL 42P18，以及匿名模式库 POST 回包泄露 battleId。'
   - '2026-08-21: 产品宪法完成审计收口：事实采集现在要求并展示来源、置信度、发生/核验时间；重力线可展示公开合法范围内的对手盘压力点、可争杠杆与未知变量；每个交叉点都生成强攻/试局/对冲，策略矩阵、行动实际成本、窗口衰减与错过代价、完整 Markdown/JSON 战报均可见。访客可在当前标签页完成确定性 P0 演练，刷新/关闭/换设备会明确丢失；登录后才持久化、协作和调用推演官。34 项目标测试、TypeScript、lint 和生产构建通过。'
-last_commit: '540e67e'
+last_commit: '9d83e1e'
 remote_state: '本轮仅本地预览，未部署'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
