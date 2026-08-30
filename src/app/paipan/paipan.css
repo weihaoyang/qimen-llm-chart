@@ -99,6 +99,81 @@ body:has(.product-chart),
   }
 }
 
+/* Final responsive Agent entry contract. Wide layouts already expose the
+   Agent rail; the floating entry belongs only to the compact drawer. */
+@media (min-width: 1181px) {
+  html body .product-chart .chart-analysis-toggle { display: none !important; }
+}
+
+/* The compact drawer is the same chat surface as the desktop rail: transcript
+   first, composer last, and only the transcript viewport scrolls. */
+html body .product-chart .chart-analysis-drawer .agent-panel--chart {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .chart-inspector-head { flex: 0 0 auto !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--result {
+  order: 1 !important;
+  display: flex !important;
+  flex: 1 1 0% !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--result > .agent-panel__section-head { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--result > .inspector-scroll {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--result > .inspector-scroll [data-radix-scroll-area-viewport] {
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question {
+  order: 2 !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 8px 12px !important;
+  border-top: 2px solid var(--paipan-ink) !important;
+  border-bottom: 0 !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__angles,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__followups { display: none !important; }
+html body .product-chart #chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head,
+html body .product-chart #chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__angles,
+html body .product-chart #chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta,
+html body .product-chart #chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__followups { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__angles { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart .agent-panel__textarea {
+  width: 100% !important;
+  min-height: 54px !important;
+  max-height: 120px !important;
+  resize: vertical !important;
+  box-sizing: border-box !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__toolbar {
+  order: 3 !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 7px 12px !important;
+  border-top: 0 !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__guest-recovery-note,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__error { display: none !important; }
+
 /* Classic methods share the existing gated research Agent. The board stays
    primary; this rail owns questions, evidence and the answer. */
 @media (min-width: 1041px) {
@@ -2336,6 +2411,72 @@ body .product-chart .agent-panel__guest-recovery-note {
     max-height: 100% !important;
   }
 }
+
+/* Final responsive Agent entry contract. */
+@media (min-width: 1181px) {
+  html body .product-chart .chart-analysis-toggle { display: none !important; }
+}
+
+/* Compact analysis drawer: reuse the chat-first order used by the desktop
+   rail and keep overflow inside the Radix viewport. */
+html body .product-chart .chart-analysis-drawer .agent-panel--chart {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--result {
+  order: 1 !important;
+  display: flex !important;
+  flex: 1 1 0% !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--result > .agent-panel__section-head { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart .agent-panel__section--result > .inspector-scroll {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart .agent-panel__section--result > .inspector-scroll [data-radix-scroll-area-viewport] {
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question {
+  order: 2 !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 8px 12px !important;
+  border-top: 2px solid var(--paipan-ink) !important;
+  border-bottom: 0 !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__angles,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__section--question .agent-panel__followups { display: none !important; }
+html body .product-chart .chart-analysis-drawer .agent-panel--chart .agent-panel__textarea {
+  width: 100% !important;
+  min-height: 54px !important;
+  max-height: 120px !important;
+  resize: vertical !important;
+  box-sizing: border-box !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__toolbar {
+  order: 3 !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 7px 12px !important;
+  border-top: 0 !important;
+}
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__guest-recovery-note,
+html body .product-chart .chart-analysis-drawer .agent-panel--chart > .agent-panel__error { display: none !important; }
 
 /* Final chat viewport contract. */
 @media (min-width: 721px) {
