@@ -82,6 +82,23 @@ body:has(.product-chart),
   }
 }
 
+/* Final chat viewport contract. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__guest-recovery-note { display: none !important; }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result {
+    display: flex !important; flex-direction: column !important; overflow: hidden !important; min-height: 0 !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result > .inspector-scroll {
+    flex: 1 1 auto !important; min-height: 0 !important; overflow: hidden !important;
+  }
+  html body .product-chart .agent-panel--chart .inspector-scroll .semi-scroll-content { max-height: 100% !important; overflow-y: auto !important; }
+  html body .product-chart .agent-panel--chart .inspector-scroll [data-radix-scroll-area-viewport] {
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+}
+
 /* Classic methods share the existing gated research Agent. The board stays
    primary; this rail owns questions, evidence and the answer. */
 @media (min-width: 1041px) {
@@ -2297,6 +2314,62 @@ body .product-chart .agent-panel__guest-recovery-note {
   html body .page-shell.product-chart .observatory-hero .hero-action { display: none !important; }
 }
 
+/* Absolute final owner for the desktop Agent height. This is intentionally
+   after the legacy desktop rules above: sidebar height is the hard boundary,
+   transcript is the only scrolling child. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart > .semi-tabs-content,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .semi-tabs-pane,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .semi-tabs-pane-motion-overlay,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .inspector-tabs__content,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .agent-panel--chart {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+}
+
+/* Final chat viewport contract. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__guest-recovery-note { display: none !important; }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result {
+    display: flex !important; flex-direction: column !important; overflow: hidden !important; min-height: 0 !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result > .inspector-scroll {
+    flex: 1 1 auto !important; min-height: 0 !important; overflow: hidden !important;
+  }
+  html body .product-chart .agent-panel--chart .inspector-scroll .semi-scroll-content { max-height: 100% !important; overflow-y: auto !important; }
+}
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__guest-recovery-note {
+    display: none !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result > .inspector-scroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__section--result > .inspector-scroll .semi-scroll-content {
+    max-height: 100% !important;
+    overflow-y: auto !important;
+  }
+}
+
 /* Chat-first Agent surface: transcript owns the vertical space and the
  * question editor becomes a compact composer below it, like a chat client. */
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart {
@@ -2306,6 +2379,23 @@ html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart 
   height: 100% !important;
   overflow: hidden !important;
   gap: 0 !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart,
+html body .product-chart #qimen-agent .agent-surface--chart > .semi-tabs-content,
+html body .product-chart #qimen-agent .agent-surface--chart .inspector-tabs__content,
+html body .product-chart #qimen-agent .agent-surface--chart .semi-tabs-pane,
+html body .product-chart #qimen-agent .agent-surface--chart .semi-tabs-pane-motion-overlay {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+html body .product-chart #qimen-agent > .sidebar-panel > .agent-surface--chart {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
 }
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .chart-inspector-head { flex: 0 0 auto !important; }
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--result {
@@ -2427,6 +2517,72 @@ body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--re
   min-height: 270px !important;
 }
 
+/* Single owner for the chart Agent layout. The transcript is the only
+   scrolling region; the composer stays pinned to the bottom of the sidebar. */
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  align-content: normal !important;
+  grid-template-rows: none !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .chart-inspector-head {
+  flex: 0 0 auto !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--question {
+  order: 2 !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 8px !important;
+  border-top: 1px solid var(--paipan-ink) !important;
+  border-bottom: 0 !important;
+  background: var(--paipan-paper) !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--result {
+  order: 1 !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  border: 0 !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--result > .agent-panel__section-head {
+  display: none !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__section--result > .inspector-scroll {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 12px !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__toolbar {
+  order: 3 !important;
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  padding: 6px 8px !important;
+  border-top: 0 !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__guest-recovery-note,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel--chart > .agent-panel__error {
+  order: 4 !important;
+  flex: 0 0 auto !important;
+}
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__section-head,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__angles,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__question-meta,
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__followups { display: none !important; }
+html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__textarea {
+  width: 100% !important;
+  min-height: 52px !important;
+  max-height: 120px !important;
+  resize: vertical !important;
+  box-sizing: border-box !important;
+}
+
 /* Final desktop owner: this is the rendered hierarchy after removing the
    resizable-panel wrapper. Keep it last so legacy compatibility rules cannot
    turn the workbench back into a stacked layout. */
@@ -2462,5 +2618,25 @@ body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--re
   }
   html body .page-shell.product-chart #qimen-workbench-layout > #qimen-chart > .canvas-panel {
     min-height: 0 !important; height: 100% !important; overflow: hidden !important;
+  }
+}
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart > .semi-tabs-content,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .semi-tabs-pane,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .semi-tabs-pane-motion-overlay,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .inspector-tabs__content,
+  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .agent-panel--chart {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
   }
 }

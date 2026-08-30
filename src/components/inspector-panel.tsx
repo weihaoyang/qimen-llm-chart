@@ -138,16 +138,6 @@ export function InspectorPanel({
               <Clipboard data-icon="inline-start" />
               {copyState === "text" ? "已复制文本" : "复制结构化文本"}
             </Button>
-            {isChartSurface ? (
-              <Button
-                className="command-button agent-report-button"
-                type="button"
-                onClick={() => onAgentAnalyze("请基于当前盘面生成一份完整报告：先给出结论摘要，再列出关键盘面依据、时间窗口、风险与验证动作。请用清晰的小标题组织，避免泛泛而谈。")}
-                disabled={agentLoading || !structuredText || !jsonPayload || agentUsageAvailable <= 0}
-              >
-                生成完整报告
-              </Button>
-            ) : null}
           </div>
           <ScrollArea className="inspector-scroll inspector-scroll-plain">
             <StructuredOutput selectedPalace={selectedPalace} structuredText={structuredText} />
@@ -297,8 +287,18 @@ export function InspectorPanel({
                     ? agentUsageAvailable > 0
                       ? "发送问题 · 消耗 1 轮"
                       : `${agentPurchaseLabel.replace("购买", "再购买")}`
-                    : agentPurchaseLabel}
+                  : agentPurchaseLabel}
             </Button>
+            {isChartSurface ? (
+              <Button
+                className="command-button agent-report-button"
+                type="button"
+                onClick={() => onAgentAnalyze("请基于当前盘面生成一份完整报告：先给出结论摘要，再列出关键盘面依据、时间窗口、风险与验证动作。请用清晰的小标题组织，避免泛泛而谈。")}
+                disabled={agentLoading || !structuredText || !jsonPayload}
+              >
+                生成完整报告
+              </Button>
+            ) : null}
           </div>
 
           {platformStatus === "guest" ? (
@@ -330,21 +330,21 @@ export function InspectorPanel({
               </div>
             </div>
             <ScrollArea className="inspector-scroll inspector-scroll-plain">
+              {agentConversation.length === 0 ? (
+                <div className="agent-chat-welcome">
+                  <strong>先从一个问题开始</strong>
+                  <span>选择预设问题，或在下方输入你真正想核对的事项。</span>
+                  <div className="agent-chat-welcome__presets">
+                    {agentAngles.slice(0, 6).map((angle) => (
+                      <button key={angle.label} type="button" disabled={agentLoading} onClick={() => onAgentAnalyze(angle.question)}>
+                        <b>{angle.label}</b><span>{angle.question}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {agentStreamConfig ? (
                 <>
-                  {agentConversation.length === 0 ? (
-                    <div className="agent-chat-welcome">
-                      <strong>先从一个问题开始</strong>
-                      <span>选择预设问题，或在下方输入你真正想核对的事项。</span>
-                      <div className="agent-chat-welcome__presets">
-                        {agentAngles.slice(0, 6).map((angle) => (
-                          <button key={angle.label} type="button" disabled={agentLoading || agentUsageAvailable <= 0} onClick={() => onAgentAnalyze(angle.question)}>
-                            <b>{angle.label}</b><span>{angle.question}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
                   <AgentChatThread
                     chatId={agentStreamConfig.chatId}
                     initialMessages={agentConversation}
@@ -369,29 +369,7 @@ export function InspectorPanel({
                 </div>
               ) : agentResult ? (
                 <div className="agent-result"><AgentMarkdown content={agentResult} /></div>
-              ) : (
-                isChartSurface ? (
-                  <div className="agent-result-empty agent-result-empty--chart">
-                    <div className="agent-result-empty__stamp"><Sparkles /><span>ANALYSIS / READY</span></div>
-                    <div className="agent-result-empty__lead">
-                      <strong>等待一次可复核的解读</strong>
-                      <p>所问事项确定后，Agent 会只围绕当前盘面提取依据与行动提示。</p>
-                    </div>
-                    <div className="agent-result-empty__protocol" aria-label="分析流程">
-                      <span><b>01</b>输入所问</span>
-                      <span><b>02</b>盘面核验</span>
-                      <span><b>03</b>结构化交付</span>
-                    </div>
-                    <small>输出包含：盘面依据 · 现实映射 · 可执行建议</small>
-                  </div>
-                ) : (
-                  <div className="agent-result-empty">
-                    <Sparkles />
-                    <strong>{surface === "shengtian" ? "等待发起本次分析" : "访谈尚未开始"}</strong>
-                    <span>{surface === "shengtian" ? "选择一个主题或写下具体问题后，Agent 会按对应盘面组织分析。" : "先回答一个问题：你现在最想改变的现实选择是什么？"}</span>
-                  </div>
-                )
-              )}
+              ) : null}
             </ScrollArea>
           </section>
         </div>
