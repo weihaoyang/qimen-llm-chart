@@ -372,6 +372,11 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   useEffect(() => {
     const battleId = session.activeBattle?.id;
     if (!battleId) return;
+    // Clear hydration gates before any new-battle request starts. This effect
+    // runs before the debounced persistence effects; leaving the previous
+    // battle's gates set would allow its in-memory snapshot to be written into
+    // the newly selected battle.
+    moduleHydratedRef.current = {};
     let cancelled = false;
     const loadModules = async () => {
       for (const [moduleId, apply] of [
@@ -457,6 +462,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   useEffect(() => {
     const battleId = session.activeBattle?.id;
     if (!battleId) return;
+    moduleHydratedRef.current['inventory'] = false;
     let cancelled = false;
     void fetch(`/api/battles/${battleId}/inventory`, { credentials:'include' }).then(async (response) => {
       if (!response.ok) return;
@@ -498,6 +504,10 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
     if (!battleId || !canWriteBattle || !moduleHydratedRef.current['inventory']) return;
     const categoryMap: Record<CardAsset['category'], string> = { FINANCIAL:'cash', TIME:'time', CHIPS:'asset', INFO:'information' };
     const timer = window.setTimeout(() => {
+      // The ref can be cleared by a battle switch after this effect has
+      // scheduled its debounce. Re-check it at execution time so the first
+      // snapshot of the new battle cannot overwrite canonical inventory.
+      if (session.activeBattle?.id !== battleId || !moduleHydratedRef.current['inventory']) return;
       void fetch(`/api/battles/${battleId}/inventory`, { method:'PUT', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ inventory:battlefield.assets.map((asset) => ({ ...(isUuid(asset.id) ? { id:asset.id } : {}), label:asset.title, description:asset.description, category:categoryMap[asset.category], quantity:asset.numericValue ?? null, unit:asset.unit ?? null, availability:'available', expiresAt:null, cost:{}, evidence:{ tag:asset.tag, confidence:asset.confidence } })) }) })
         .then((response) => { if (!response.ok) throw new Error(`底牌保存失败（${response.status}）。`); })
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '底牌保存失败，请重试。'));
@@ -533,6 +543,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
       }],
     ];
     const timers = states.filter(([moduleId]) => moduleHydratedRef.current[moduleId]).map(([moduleId, state]) => window.setTimeout(() => {
+      if (session.activeBattle?.id !== battleId || !moduleHydratedRef.current[moduleId]) return;
       void saveBattleModule(battleId, moduleId, state, { source: 'user_session' })
         .catch((error) => setPersistenceError(error instanceof Error ? error.message : '战局模块保存失败，请重试。'));
     }, 300));
@@ -648,6 +659,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
   useEffect(() => {
     const battleId = session.activeBattle?.id;
     if (!battleId) return;
+    moduleHydratedRef.current['decision-dna'] = false;
     let cancelled = false;
     void fetch(`/api/battles/${battleId}/modules/decision-dna`, { credentials: 'include' }).then(async (response) => {
       if (!response.ok) return;
