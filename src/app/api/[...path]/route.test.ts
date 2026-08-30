@@ -59,4 +59,14 @@ describe("God's Eye View observation proxy", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status:"ready", saturated:false, elementCap:700, elements:[{ id:1 }] });
   });
+
+  it("proxies only allowlisted HTTPS GBFS feeds", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ data:{ stations:[] } }), { status:200, headers:{ "content-type":"application/json" } }));
+    const upstream = "https://gbfs.lyft.com/gbfs/2.3/bkn/en/station_status.json";
+    const response = await GET(new Request(`http://local/api/gbfs/${encodeURIComponent(upstream)}`), { params:Promise.resolve({ path:["gbfs",encodeURIComponent(upstream)] }) });
+    expect(response.status).toBe(200);
+    expect(vi.mocked(fetch).mock.calls.at(-1)?.[0].toString()).toBe(upstream);
+    const blocked = await GET(new Request(`http://local/api/gbfs/${encodeURIComponent("https://example.com/private.json")}`), { params:Promise.resolve({ path:["gbfs",encodeURIComponent("https://example.com/private.json")] }) });
+    expect(blocked.status).toBe(400);
+  });
 });

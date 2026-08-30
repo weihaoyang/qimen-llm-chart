@@ -13,6 +13,7 @@ const OVERPASS_ENDPOINTS = [
 const ADSBLOL_RADIUS_NM = 250;
 const MILITARY_INSTALLATION_CAP = 700;
 const servedRadioIds = new Set<string>();
+const GBFS_HOSTS = new Set(["gbfs.lyft.com","gbfs.bluebikes.com","gbfs.bcycle.com","gbfs.biketownpdx.com","gbfs.cogobikeshare.com"]);
 
 const jsonError = (status: number, error: string, reasonCode: string) => NextResponse.json({ error, reasonCode }, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -68,6 +69,17 @@ async function proxyMilitaryInstallations(incoming: URL) {
   return jsonError(503, "地图军事设施观测源暂时不可用。", "upstream_unavailable");
 }
 
+function gbfsTarget(incoming: URL) {
+  try {
+    const encoded = incoming.pathname.replace(/^\/api\/gbfs\//, "");
+    const target = new URL(decodeURIComponent(encoded));
+    const host = target.hostname.toLowerCase();
+    if (target.protocol !== "https:" || target.username || target.password || target.port
+      || !(GBFS_HOSTS.has(host) || host.endsWith(".publicbikesystem.net"))) return null;
+    return target;
+  } catch { return null; }
+}
+
 async function proxyGet(path: string[], request: Request) {
   const [root, ...rest] = path;
   const incoming = new URL(request.url);
@@ -101,6 +113,10 @@ async function proxyGet(path: string[], request: Request) {
     target = new URL("https://de1.api.radio-browser.info/json/stations/search");
     target.searchParams.set("hidebroken", "true"); target.searchParams.set("limit", "750");
     target.searchParams.set("order", "clickcount"); target.searchParams.set("reverse", "true");
+  } else if (root === "gbfs" && rest.length >= 1) {
+    const allowed = gbfsTarget(incoming);
+    if (!allowed) return jsonError(400, "GBFS 数据源不在允许列表中。", "invalid_gbfs_source");
+    target = allowed;
   } else if (root === "terrain" && rest.length === 1 && rest[0] === "heights") {
     const points = (incoming.searchParams.get("points") ?? "").split(";").filter(Boolean);
     if (!points.length || points.length > 200 || points.some((point) => { const [lon,lat,...extra]=point.split(","); return extra.length > 0 || !Number.isFinite(Number(lon)) || !Number.isFinite(Number(lat)) || Number(lon) < -180 || Number(lon) > 180 || Number(lat) < -90 || Number(lat) > 90; })) return jsonError(400, "地形坐标参数无效。", "invalid_coordinates");
@@ -150,7 +166,7 @@ async function proxyGet(path: string[], request: Request) {
     target.searchParams.set("longitude", String(longitude));
     target.searchParams.set("current", "temperature_2m,apparent_temperature,precipitation,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,weather_code");
     target.searchParams.set("timezone", "UTC");
-  } else if (root === "ais-live" || root === "realtime" || root === "google" || root === "gbfs" || root === "tomtom" || root === "radio" || root === "adsbdb" || root === "cctv" || root === "terrain") {
+  } else if (root === "ais-live" || root === "realtime" || root === "google" || root === "tomtom" || root === "radio" || root === "adsbdb" || root === "cctv" || root === "terrain") {
     return jsonError(503, "该观测源需要在服务端配置后启用。", "upstream_not_configured");
   } else {
     return jsonError(404, "该观测接口未接入 qmdj。", "unknown_observation_endpoint");
