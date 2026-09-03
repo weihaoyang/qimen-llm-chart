@@ -10,10 +10,22 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
 ] as const;
+const SATNOGS_TLE_ENDPOINT = "https://db.satnogs.org/api/tle/?format=json";
+const USGS_EARTHQUAKE_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
+// Some networks reject USGS's TLS chain. Jina relays the public, unmodified
+// feed in a text envelope, which lets the server preserve a real USGS payload
+// without exposing the browser to a cross-origin/TLS failure.
+const USGS_EARTHQUAKE_RELAY = `https://r.jina.ai/http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson`;
+const NASA_EONET_WILDFIRES = "https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=500";
 const ADSBLOL_RADIUS_NM = 250;
 const MILITARY_INSTALLATION_CAP = 700;
 const servedRadioIds = new Set<string>();
 const GBFS_HOSTS = new Set(["gbfs.lyft.com","gbfs.bluebikes.com","gbfs.bcycle.com","gbfs.biketownpdx.com","gbfs.cogobikeshare.com"]);
+let satnogsFallbackPromise: Promise<string | null> | null = null;
+let lastFlightSnapshot: Record<string, unknown> | null = null;
+let lastFlightSnapshotAt = 0;
+let lastMilitarySnapshot: Record<string, unknown> | null = null;
+let lastMilitarySnapshotAt = 0;
 
 const jsonError = (status: number, error: string, reasonCode: string) => NextResponse.json({ error, reasonCode }, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -45,6 +57,155 @@ async function readJsonCapped(response: Response) {
   const body = await response.arrayBuffer();
   if (body.byteLength > MAX_RESPONSE_BYTES) throw new Error("upstream_response_too_large");
   return JSON.parse(new TextDecoder().decode(body)) as Record<string, unknown>;
+}
+
+async function readTextCapped(response: Response) {
+  const body = await response.arrayBuffer();
+  if (body.byteLength > MAX_RESPONSE_BYTES) throw new Error("upstream_response_too_large");
+  return new TextDecoder().decode(body);
+}
+
+async function proxyEarthquakes() {
+  try {
+    const response = await fetchWithTimeout(USGS_EARTHQUAKE_FEED, {
+      headers: { Accept: "application/geo+json,application/json", "User-Agent": "qmdj-world-pulse/1.0" },
+    });
+    if (response.ok) {
+      return new NextResponse(await response.arrayBuffer(), {
+        headers: { "Content-Type": "application/geo+json; charset=utf-8", "Cache-Control": "public, max-age=60", "X-Earthquake-Source": "usgs" },
+      });
+    }
+  } catch { /* use the public relay below */ }
+
+  try {
+    const response = await fetchWithTimeout(USGS_EARTHQUAKE_RELAY, {
+      headers: { Accept: "text/plain", "User-Agent": "qmdj-world-pulse/1.0" },
+    });
+    if (!response.ok) return jsonError(503, "地震观测源暂时不可用。", "upstream_unavailable");
+    const text = await readTextCapped(response);
+    const marker = "Markdown Content:\n";
+    const markerIndex = text.indexOf(marker);
+    const payload = (markerIndex >= 0 ? text.slice(markerIndex + marker.length) : text).trim();
+    // Validate before returning so a relay error page is never presented to
+    // the globe as a successful earthquake catalog.
+    const parsed = JSON.parse(payload) as { type?: string; features?: unknown[] };
+    if (parsed.type !== "FeatureCollection" || !Array.isArray(parsed.features)) throw new Error("invalid_earthquake_payload");
+    return new NextResponse(JSON.stringify(parsed), {
+      headers: {
+        "Content-Type": "application/geo+json; charset=utf-8",
+        "Cache-Control": "public, max-age=60",
+        "X-Earthquake-Source": "usgs-via-public-relay",
+        "X-Earthquake-Degraded": "true",
+      },
+    });
+  } catch {
+    return jsonError(503, "地震观测源暂时不可用。", "upstream_unavailable");
+  }
+}
+
+type FireRecord = {
+  index: number;
+  lat: number;
+  lon: number;
+  frp: number;
+  confidence: number | null;
+  brightness: number;
+  acqMs: number | null;
+  satellite: string;
+  sensor: string;
+  night: boolean;
+  eventId?: string;
+  title?: string;
+};
+
+function parseFirmsCsv(csv: string): FireRecord[] {
+  const lines = csv.split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((value) => value.trim().toLowerCase());
+  const at = (name: string) => headers.indexOf(name);
+  const latAt = at("latitude");
+  const lonAt = at("longitude");
+  const frpAt = at("frp");
+  const confAt = at("confidence");
+  const brightnessAt = at("bright_ti4");
+  const dateAt = at("acq_date");
+  const timeAt = at("acq_time");
+  const satAt = at("satellite");
+  if (latAt < 0 || lonAt < 0) return [];
+  const records: FireRecord[] = [];
+  for (const line of lines.slice(1)) {
+    const values = line.split(",").map((value) => value.trim());
+    const lat = Number(values[latAt]);
+    const lon = Number(values[lonAt]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+    const time = dateAt >= 0 ? `${values[dateAt]}T${String(values[timeAt] ?? "0000").padStart(4, "0").slice(0, 2)}:${String(values[timeAt] ?? "0000").padStart(4, "0").slice(2)}:00Z` : "";
+    const acqMs = Date.parse(time);
+    records.push({ index: records.length, lat, lon, frp: Number.isFinite(Number(values[frpAt])) ? Number(values[frpAt]) : 0, confidence: confAt >= 0 && Number.isFinite(Number(values[confAt])) ? Number(values[confAt]) : null, brightness: brightnessAt >= 0 && Number.isFinite(Number(values[brightnessAt])) ? Number(values[brightnessAt]) : 0, acqMs: Number.isFinite(acqMs) ? acqMs : null, satellite: satAt >= 0 ? values[satAt] || "FIRMS" : "FIRMS", sensor: "VIIRS/MODIS", night: false });
+  }
+  return records;
+}
+
+async function proxyFirms() {
+  const mapKey = process.env.FIRMS_MAP_KEY?.trim();
+  if (mapKey) {
+    try {
+      const target = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${encodeURIComponent(mapKey)}/VIIRS_SNPP_NRT/world/1`;
+      const response = await fetchWithTimeout(target, { headers: { Accept: "text/csv", "User-Agent": "qmdj-world-pulse/1.0" } });
+      if (response.ok) {
+        const fires = parseFirmsCsv(await readTextCapped(response));
+        if (fires.length) return NextResponse.json({ fires, fetchedAt: Date.now(), stale: false, source: "NASA FIRMS", sourceKind: "satellite-hotspots", degraded: false }, { headers: { "Cache-Control": "public, max-age=300", "X-Fire-Source": "nasa-firms" } });
+      }
+    } catch { /* use the keyless public event catalog below */ }
+  }
+  try {
+    const response = await fetchWithTimeout(NASA_EONET_WILDFIRES, { headers: { Accept: "application/json", "User-Agent": "qmdj-world-pulse/1.0" } });
+    if (!response.ok) return jsonError(503, "公开野火事件观测源暂时不可用。", "upstream_unavailable");
+    const payload = await readJsonCapped(response) as { events?: Array<Record<string, unknown>> };
+    const fires: FireRecord[] = [];
+    for (const event of Array.isArray(payload.events) ? payload.events : []) {
+      const geometries = Array.isArray(event.geometry) ? event.geometry : [];
+      const geometry = geometries[geometries.length - 1] as Record<string, unknown> | undefined;
+      const coordinates = Array.isArray(geometry?.coordinates) ? geometry.coordinates : [];
+      const lon = Number(coordinates[0]);
+      const lat = Number(coordinates[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+      const magnitude = Number(geometry?.magnitudeValue);
+      const date = Date.parse(String(geometry?.date ?? ""));
+      fires.push({ index: fires.length, lat, lon, frp: Number.isFinite(magnitude) ? magnitude : 0, confidence: null, brightness: 0, acqMs: Number.isFinite(date) ? date : null, satellite: "EONET", sensor: "IRWIN", night: false, eventId: String(event.id ?? ""), title: String(event.title ?? "") });
+    }
+    return NextResponse.json({ fires, fetchedAt: Date.now(), stale: false, source: "NASA EONET / IRWIN", sourceKind: "open-wildfire-incidents", degraded: true }, { headers: { "Cache-Control": "public, max-age=300", "X-Fire-Source": "nasa-eonet", "X-Fire-Degraded": "true" } });
+  } catch {
+    return jsonError(503, "公开野火事件观测源暂时不可用。", "upstream_unavailable");
+  }
+}
+
+async function fetchSatnogsTleFallback() {
+  if (satnogsFallbackPromise) return satnogsFallbackPromise;
+  satnogsFallbackPromise = (async () => {
+    try {
+      const response = await fetchWithTimeout(SATNOGS_TLE_ENDPOINT, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "qmdj-world-pulse/1.0",
+        },
+      });
+      if (!response.ok) return null;
+      const payload = await readJsonCapped(response);
+      const rows = Array.isArray(payload) ? payload : [];
+      const text = rows
+        .filter((value): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value)))
+        .map((value) => [value.tle0, value.tle1, value.tle2].map((line) => typeof line === "string" ? line.trim() : ""))
+        .filter(([name, line1, line2]) => Boolean(name && line1.startsWith("1 ") && line2.startsWith("2 ")))
+        .map(([name, line1, line2]) => `${name}\n${line1}\n${line2}`)
+        .join("\n");
+      return text ? `${text}\n` : null;
+    } catch {
+      return null;
+    } finally {
+      satnogsFallbackPromise = null;
+    }
+  })();
+  return satnogsFallbackPromise;
 }
 
 async function proxyMilitaryInstallations(incoming: URL) {
@@ -92,6 +253,8 @@ async function proxyGet(path: string[], request: Request) {
     const roundedLat = Math.round(latitude * 4) / 4;
     const roundedLon = Math.round(longitude * 4) / 4;
     target = new URL(`https://api.adsb.lol/v2/lat/${roundedLat}/lon/${roundedLon}/dist/${ADSBLOL_RADIUS_NM}`);
+  } else if (root === "earthquakes" && rest.length === 0) {
+    return proxyEarthquakes();
   } else if (root === "opensky-track" && rest.length === 0) {
     // The upstream snapshot API does not provide historical traces. Keep the
     // same-origin contract explicit so the GEV panel can show an unavailable
@@ -125,15 +288,25 @@ async function proxyGet(path: string[], request: Request) {
   } else if (root === "tomtom" && rest.length === 1 && rest[0] === "status") {
     return NextResponse.json({ hasKey:false, mode:"simulation", reasonCode:"provider_not_configured" }, { headers:{ "Cache-Control":"no-store" } });
   } else if (root === "firms" && rest.length === 0) {
-    return NextResponse.json({ error:"no_key", fires:[] }, { status:503, headers:{ "Cache-Control":"no-store" } });
+    return proxyFirms();
   } else if (root === "celestrak" && rest.length <= 1 && (rest.length === 0 || /^[A-Za-z0-9_.-]+$/.test(rest[0]))) {
     target = new URL("https://celestrak.org/NORAD/elements/gp.php");
     if (rest[0]) target.searchParams.set("GROUP", rest[0]);
     incoming.searchParams.forEach((value, key) => target.searchParams.set(key, value));
+    // God's Eye View's open-source parser consumes the classic three-line TLE
+    // format. CelesTrak defaults to CSV when FORMAT is omitted, which returns
+    // HTTP 200 but produces an empty catalog in the client.
+    target.searchParams.set("FORMAT", "tle");
   } else if (root === "launches" && rest.length === 0) {
     target = new URL("https://ll.thespacedevs.com/2.3.0/launches/");
     target.searchParams.set("limit", incoming.searchParams.get("limit") ?? "100");
-    target.searchParams.set("net__gte", incoming.searchParams.get("net__gte") ?? new Date().toISOString());
+    // God's Eye View's open-source mission roster intentionally displays the
+    // previous 30 days (it applies its own `net <= now` filter). Requesting
+    // only future launches here made the upstream return data that the client
+    // then discarded, leaving a misleading 0/30D empty state.
+    const now = new Date();
+    target.searchParams.set("net__gte", incoming.searchParams.get("net__gte") ?? new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString());
+    target.searchParams.set("net__lte", incoming.searchParams.get("net__lte") ?? now.toISOString());
   } else if (root === "geocode" && rest.length === 1 && rest[0] === "json") {
     const address = incoming.searchParams.get("address")?.trim();
     if (!address || address.length > 200) return jsonError(400, "地址参数无效。", "invalid_address");
@@ -174,9 +347,62 @@ async function proxyGet(path: string[], request: Request) {
 
   try {
     const response = await fetchWithTimeout(target, { headers: { Accept: "application/json,text/plain;q=0.9", "User-Agent": "qmdj-world-pulse/1.0" } });
+    if (root === "celestrak" && !response.ok) {
+      const fallback = await fetchSatnogsTleFallback();
+      if (fallback) {
+        return new NextResponse(fallback, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "public, max-age=300",
+            "X-Satellite-Source": "satnogs-db",
+            "X-Satellite-Degraded": "true",
+          },
+        });
+      }
+    }
     if (root === "opensky") {
-      if (!response.ok) return jsonError(503, "区域航班观测源暂时不可用。", "upstream_unavailable");
+      if (!response.ok) {
+        const fallbackTarget = new URL("https://opensky-network.org/api/states/all");
+        const latitude = validCoordinate(incoming.searchParams.get("lat"), -90, 90);
+        const longitude = validCoordinate(incoming.searchParams.get("lon"), -180, 180);
+        const delta = 1.25;
+        fallbackTarget.searchParams.set("lamin", String(Math.max(-90, (latitude ?? 0) - delta)));
+        fallbackTarget.searchParams.set("lamax", String(Math.min(90, (latitude ?? 0) + delta)));
+        fallbackTarget.searchParams.set("lomin", String(Math.max(-180, (longitude ?? 0) - delta)));
+        fallbackTarget.searchParams.set("lomax", String(Math.min(180, (longitude ?? 0) + delta)));
+        try {
+          const fallbackResponse = await fetchWithTimeout(fallbackTarget, { headers: { Accept: "application/json", "User-Agent": "qmdj-world-pulse/1.0" } });
+          if (fallbackResponse.ok) {
+            const fallbackPayload = await readJsonCapped(fallbackResponse) as { states?: unknown; time?: unknown };
+            if (Array.isArray(fallbackPayload.states)) {
+              const payload = { time: fallbackPayload.time, states: fallbackPayload.states };
+              lastFlightSnapshot = payload;
+              lastFlightSnapshotAt = Date.now();
+              return NextResponse.json(payload, { headers: {
+                "Cache-Control":"public, max-age=10", "X-Flight-Source":"OpenSky Network",
+                "X-Flight-Coverage":"2.5° regional observed snapshot", "X-Flight-Degraded":"true",
+                "X-OpenSky-Auth-Mode-Used":"anonymous-regional", "X-OpenSky-Auth-Reason":"adsblol-rate-limit-fallback",
+              } });
+            }
+          }
+        } catch { /* return the explicit unavailable state below */ }
+        // A data refresh must not erase a previously verified real snapshot
+        // merely because both public providers are momentarily throttled.
+        // The stale timestamp is explicit for the UI and downstream consumers.
+        if (lastFlightSnapshot) {
+          return NextResponse.json(lastFlightSnapshot, { headers: {
+            "Cache-Control":"public, max-age=10", "X-Flight-Source":"adsb.lol / OpenSky cached snapshot",
+            "X-Flight-Coverage":`${ADSBLOL_RADIUS_NM}nm regional observed snapshot`, "X-Flight-Degraded":"true",
+            "X-Flight-Stale-At":new Date(lastFlightSnapshotAt).toISOString(),
+            "X-OpenSky-Auth-Mode-Used":"last-known-observed-snapshot", "X-OpenSky-Auth-Reason":"upstream-temporary-unavailable",
+          } });
+        }
+        return jsonError(503, "区域航班观测源暂时不可用。", "upstream_unavailable");
+      }
       const payload = normalizeAdsbLolPointResponse(await readJsonCapped(response));
+      lastFlightSnapshot = payload;
+      lastFlightSnapshotAt = Date.now();
       return NextResponse.json(payload, { headers: {
         "Cache-Control":"public, max-age=10",
         "X-Flight-Source":"adsb.lol",
@@ -184,6 +410,21 @@ async function proxyGet(path: string[], request: Request) {
         "X-OpenSky-Auth-Mode-Used":"adsblol-regional",
         "X-OpenSky-Auth-Reason":"commercial-safe-regional-source",
       } });
+    }
+    if (root === "adsblol" && rest[0] === "mil") {
+      if (response.ok) {
+        const payload = await readJsonCapped(response);
+        lastMilitarySnapshot = payload;
+        lastMilitarySnapshotAt = Date.now();
+        return NextResponse.json(payload, { headers: { "Cache-Control":"public, max-age=10", "X-Flight-Source":"adsb.lol" } });
+      }
+      if (lastMilitarySnapshot) {
+        return NextResponse.json(lastMilitarySnapshot, { headers: {
+          "Cache-Control":"public, max-age=10", "X-Flight-Source":"adsb.lol", "X-Flight-Degraded":"true",
+          "X-Flight-Stale-At": new Date(lastMilitarySnapshotAt).toISOString(),
+        } });
+      }
+      return jsonError(503, "军事航班观测源暂时不可用。", "upstream_unavailable");
     }
     if (root === "adsbdb") {
       if (!response.ok) return NextResponse.json({ found:false }, { headers:{ "Cache-Control":"public, max-age=86400" } });
@@ -222,7 +463,12 @@ async function proxyGet(path: string[], request: Request) {
 }
 
 async function proxyOverpass(request: Request) {
-  const body = await request.text();
+  const rawBody = await request.text();
+  // The untouched upstream frontend posts standard form encoding
+  // (`data=<overpass query>`).  Accept that contract as well as a raw query.
+  const body = request.headers.get("content-type")?.includes("application/x-www-form-urlencoded")
+    ? new URLSearchParams(rawBody).get("data") ?? ""
+    : rawBody;
   if (!body || body.length > 256_000 || !/\bout\s+(?:json|geom)\b/i.test(body) || !/\b(?:around|bbox|poly|area|geocodeArea)\b/i.test(body)) return jsonError(400, "Overpass 查询必须是有空间边界的请求。", "invalid_overpass_query");
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {

@@ -98,6 +98,7 @@ export const sessionApi = {
   entitlement: () => request<{ usage: { available:number; reserved:number; consumed:number } }>(`/api/entitlement`),
   saveProfile: (profile: Record<string, unknown>) => request<{ profile: unknown }>(`/api/battles/profile`, { method:"PUT", body:JSON.stringify({ profile }) }),
   saveCalibration: (input: { battleId?: string | null; dimension: string; expected?: number | null; actual?: number | null; note?: string }) => request<{ event: unknown }>(`/api/battles/calibration`, { method:"POST", body:JSON.stringify(input) }),
+  timing: (battleId:string, timeZone:string) => request<{ timing: import('../types').MetaphysicsTimingState }>(`/api/battles/${battleId}/timing`, { method:"POST", body:JSON.stringify({ timeZone }) }),
   saveReview: (battleId:string, input:{ outcome:string; facts:string; whatChanged:string; nextAdjustment:string; diagnosis?:Record<string, unknown>; commitmentId?:string|null; idempotencyKey?:string }) => request<{ review: Record<string, unknown> }>(`/api/battles/${battleId}/reviews`, { method:"POST", body:JSON.stringify(input) }),
   claimRealityEchoReward: (battleId:string, echoId:string) => request<{ state: unknown; reused?: boolean }>(`/api/battles/${battleId}/reality-echoes/claim`, { method:"POST", body:JSON.stringify({ echoId }) }),
   deleteMemory: (id:string) => request<{ deleted:boolean }>(`/api/battles/memories?id=${encodeURIComponent(id)}`, { method:"DELETE" }),

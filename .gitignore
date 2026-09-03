@@ -50,3 +50,19 @@ next-env.d.ts
 
 # local planning artifacts
 /docs/superpowers/
+
+# local Codex/agent run artifacts
+/.codex/
+/.agents/
+/.superpowers/
+/.yyrouter-image/
+/.codex-release-stage-*/
+/.next-*/
+/gods-eye-view/
+/outputs/
+*.pid
+*.log
+*.diff
+*.tar.gz
+*.zip
+*.tgz

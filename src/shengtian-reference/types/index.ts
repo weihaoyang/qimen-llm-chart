@@ -408,6 +408,16 @@ export interface MetaphysicsTimingState {
     elementEnergy: string;
   };
   symbolicReflection: string;
+  provenance?: {
+    source: 'server_qimen_chart';
+    calculatedAt: string;
+    localDateTime: string;
+    timeZone: string;
+    engine: string;
+    engineVersion: string;
+    dunType: string;
+    juNumber: number;
+  };
 }
 
 // 全局战局核心数据结构

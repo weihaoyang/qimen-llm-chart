@@ -1,11 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "react-iztro/lib/theme/default.css";
-import "react-iztro/lib/Iztrolabe/Iztrolabe.css";
-import "react-iztro/lib/Izpalace/Izpalace.css";
-import "react-iztro/lib/IzpalaceCenter/IzpalaceCenter.css";
-import "@douyinfe/semi-ui/lib/es/_base/base.css";
-import "./globals.css";
-import "./paipan/paipan.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shengtian.singseq.com"),
