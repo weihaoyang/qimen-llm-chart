@@ -1,6 +1,5 @@
-import { ShengtianReferenceEntry } from "@/components/shengtian-reference-entry";
-import "../shengtian-reference/index.css";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <ShengtianReferenceEntry />;
+  redirect("/paipan");
 }

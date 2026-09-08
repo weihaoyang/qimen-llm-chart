@@ -1,5 +1,5 @@
 {
-  "name": "qimen-llm-chart",
+  "name": "singseq-qmdj-paipan",
   "version": "0.1.0",
   "description": "Qimen chart workbench with human-readable board and LLM-structured output.",
   "private": true,
