@@ -11,6 +11,6 @@
 
 ## 迁移状态
 
-胜天半子已从 qmdj 工作区复制为独立 Git 仓库并提交。qmdj 根路径已重定向到排盘入口；旧 Vite 工程已移动到 `F:\shengtian-legacy-20260909` 作为可回滚归档。
+胜天半子已从 qmdj 工作区复制为独立 Git 仓库并提交。qmdj 专用 host 通过代理进入 `/paipan`；生产切流完成前根路径保留兼容入口。旧 Vite 工程已移动到 `F:\shengtian-legacy-20260909` 作为可回滚归档。
 
 生产平台合同目前仍沿用历史 `shengtian-banzi` product code，知几专用产品合同必须先在平台登记后才能切换，不能猜测新 code。

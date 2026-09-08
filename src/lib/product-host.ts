@@ -4,6 +4,8 @@
  * and the Consumer Platform account/payment boundary.
  */
 export const PAIPAN_HOSTS = new Set([
+  "qmdj.singseq.com",
+  "www.qmdj.singseq.com",
   "paipan.singseq.com",
   "www.paipan.singseq.com",
 ]);

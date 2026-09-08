@@ -1,24 +1,24 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://shengtian.singseq.com"),
-  title: "胜天半子",
-  description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
+  metadataBase: new URL("https://qmdj.singseq.com"),
+  title: "知几 · 术数排盘工作台",
+  description: "知几：奇门遁甲、八字、紫微斗数与三式研究的专业排盘工具。",
   alternates: {
-    canonical: "/",
+    canonical: "/paipan",
   },
   openGraph: {
-    title: "胜天半子",
-    description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
-    url: "/",
-    siteName: "胜天半子",
+    title: "知几 · 术数排盘工作台",
+    description: "知几：奇门遁甲、八字、紫微斗数与三式研究的专业排盘工具。",
+    url: "/paipan",
+    siteName: "知几",
     locale: "zh_CN",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "胜天半子",
-    description: "世界线观测工作台：以奇门、八字、紫微与序列排盘观测命运，在收束之前重构选择。",
+    title: "知几 · 术数排盘工作台",
+    description: "知几：奇门遁甲、八字、紫微斗数与三式研究的专业排盘工具。",
   },
   robots: {
     index: true,

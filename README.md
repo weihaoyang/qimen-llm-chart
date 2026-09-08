@@ -90,4 +90,4 @@ npm run build
 
 本仓库只负责排盘工作台、八字/奇门/紫微/三式盘面及其分析入口。账户、订单、支付和会员权益统一通过 Consumer Platform API/SDK 处理。
 
-胜天半子已迁移到独立仓库 `F:\shengtian`，不再使用本仓库根路径承载产品页面。
+胜天半子代码已复制到独立仓库 `F:\shengtian`。在生产切流完成前，本仓库保留根路径兼容入口；`qmdj.singseq.com` 通过 host 代理进入 `/paipan`。

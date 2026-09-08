@@ -8,7 +8,7 @@ describe("isPaipanHost", () => {
     expect(isPaipanHost("paipan.singseq.com")).toBe(true);
     expect(isPaipanHost("PAIPAN.SINGSEQ.COM:443")).toBe(true);
     expect(isPaipanHost("shengtian.singseq.com")).toBe(false);
-    expect(isPaipanHost("qmdj.singseq.com")).toBe(false);
+    expect(isPaipanHost("qmdj.singseq.com")).toBe(true);
     expect(isPaipanHost(undefined)).toBe(false);
   });
 });
