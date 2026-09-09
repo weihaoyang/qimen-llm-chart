@@ -2144,7 +2144,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       <footer className="qmdj-footer">
         {product === "chart" ? (
           <div className="qmdj-footer__compact">
-            <span>知几</span><span>© 2026 胜天半子</span>
+            <span>知几</span><span>© 2026 知几排盘</span>
             <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026026686号-1</a>
           </div>
         ) : (
