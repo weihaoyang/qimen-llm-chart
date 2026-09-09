@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   return NextResponse.json(
     {
-      service: "shengtian-banzi",
+      service: "qmdj",
       releaseId: process.env.QMDJ_RELEASE_ID ?? "unknown",
       commit: process.env.QMDJ_RELEASE_COMMIT ?? "unknown",
     },
