@@ -14,8 +14,8 @@
 
 - `platformWorkspace.status === "authenticated"`；
 - `platformWorkspace.session.access_token` 存在且可通过 `restorePlatformAccessState` 刷新；
-- `product_code === qmdj`；
-- `access_scope === qmdj-core`；
+- `product_code === shengtian-banzi`；
+- `access_scope === shengtian-banzi-core`；
 - `/api/agent` 请求带 `Authorization: Bearer <fresh access token>`；
 - 请求不得同时回退到旧的游客 checkout token。
 
