@@ -16,12 +16,12 @@ export async function GET() {
   try {
     await query("SELECT 1 AS healthy");
     return NextResponse.json(
-      { ok: true, service: "shengtian-banzi" },
+      { ok: true, service: "qmdj" },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
     return NextResponse.json(
-      { ok: false, service: "shengtian-banzi" },
+      { ok: false, service: "qmdj" },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }

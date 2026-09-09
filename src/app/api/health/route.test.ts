@@ -14,7 +14,7 @@ describe("GET /api/health", () => {
     const response = await GET();
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ ok: true, service: "shengtian-banzi" });
+    expect(await response.json()).toEqual({ ok: true, service: "qmdj" });
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(query).toHaveBeenCalledWith("SELECT 1 AS healthy");
 
@@ -22,6 +22,6 @@ describe("GET /api/health", () => {
     const unavailableResponse = await GET();
 
     expect(unavailableResponse.status).toBe(503);
-    expect(await unavailableResponse.json()).toEqual({ ok: false, service: "shengtian-banzi" });
+    expect(await unavailableResponse.json()).toEqual({ ok: false, service: "qmdj" });
   });
 });
