@@ -14,8 +14,8 @@
 
 - `platformWorkspace.status === "authenticated"`；
 - `platformWorkspace.session.access_token` 存在且可通过 `restorePlatformAccessState` 刷新；
-- `product_code === shengtian-banzi`；
-- `access_scope === shengtian-banzi-core`；
+- `product_code === qmdj`；
+- `access_scope === qmdj-core`；
 - `/api/agent` 请求带 `Authorization: Bearer <fresh access token>`；
 - 请求不得同时回退到旧的游客 checkout token。
 
@@ -102,4 +102,3 @@ GET https://api.singseq.com/api/v1/commerce/products/shengtian-banzi/plans
 ## 本次故障记录
 
 2026-08-25 曾出现“账户权益剩余 10 轮，但 AI 仍提示请登录”。根因是旧 guest 会话状态覆盖了已登录账户状态，导致客户端没有向 `/api/agent` 发送 Bearer token。修复后，账户权益优先逻辑已固化在 `src/components/app-shell.tsx`，并按本手册的账户/游客互斥规则维护。
-
