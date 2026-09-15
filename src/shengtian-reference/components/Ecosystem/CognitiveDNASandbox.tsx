@@ -410,7 +410,7 @@ export const CognitiveDNASandbox: React.FC<CognitiveDNASandboxProps> = ({
             </div>
 
             <div className="p-3.5 rounded-xl bg-blue-950/30 border border-blue-800/60 text-blue-200 leading-relaxed font-sans">
-              <strong className="text-amber-300 block mb-1">💡 首席顾问事后上帝视角洞察：</strong>
+              <strong className="text-amber-300 block mb-1">💡 首席顾问事后 Eyes of God 洞察：</strong>
               {activeCounterfactual.aiComparativeHindsight}
             </div>
           </div>}

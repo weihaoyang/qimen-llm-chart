@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
+import Link from 'next/link';
 import { getAccountGate, getAccountPaymentResult, getGuestPaymentResult, restorePlatformAccessState } from '../../lib/platform/browser';
 import { requirePlatformClientConfig } from '../../lib/platform/config';
 import { loadPlatformSession } from '../../lib/platform/session';
@@ -9,10 +10,7 @@ import { clearStorefrontCheckout, loadStorefrontCheckout } from '../../lib/platf
 
 const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-export const BillingResultView: React.FC = () => {
-  const params = new URLSearchParams(window.location.search);
-  const orderId = params.get('order_id')?.trim() ?? '';
-  const productCode = params.get('product_code')?.trim() ?? '';
+export const BillingResultView: React.FC<{ orderId?: string; productCode?: string }> = ({ orderId = '', productCode = '' }) => {
   const [message, setMessage] = useState('正在读取平台订单。');
   const [stage, setStage] = useState<'loading' | 'paid' | 'waiting' | 'failed'>('loading');
   const [orderStatus, setOrderStatus] = useState('');
@@ -67,7 +65,7 @@ export const BillingResultView: React.FC = () => {
         {orderStatus ? <p className="mt-3 text-sm text-slate-400">订单状态：{orderStatus}</p> : null}
         <p className="mt-4 text-xs leading-5 text-slate-500">订单、支付和权益以平台结果为准；刷新或重试不会直接放行受限能力。</p>
         {retryable ? <button type="button" onClick={() => void finish()} className="mt-6 rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-black hover:bg-amber-400">重试</button> : null}
-        <a href="/" className="mt-5 block text-xs text-slate-400 underline hover:text-white">返回工作台</a>
+        <Link href="/" className="mt-5 block text-xs text-slate-400 underline hover:text-white">返回工作台</Link>
       </section>
     </main>
   );

@@ -47,7 +47,11 @@ export type BattleInvitation = Collaborator & {
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, credentials: "include", headers: { "Content-Type":"application/json", ...(init?.headers ?? {}) } });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : `请求失败（${response.status}）`);
+  if (!response.ok) {
+    const error = new Error(typeof data?.error === "string" ? data.error : `请求失败（${response.status}）`);
+    Object.assign(error, { status: response.status });
+    throw error;
+  }
   return data as T;
 }
 

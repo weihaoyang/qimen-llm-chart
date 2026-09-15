@@ -692,12 +692,13 @@ export const requestAgentAnalysis = async (
  */
 export const streamAgentAnalysis = (
   payload: AgentRequestPayload,
-  options?: { env?: AgentEnvironment; onFinish?: (text: string) => Promise<void> | void; onError?: (error: unknown) => Promise<void> | void; onAbort?: () => Promise<void> | void },
+  options?: { env?: AgentEnvironment; abortSignal?: AbortSignal; onFinish?: (text: string) => Promise<void> | void; onError?: (error: unknown) => Promise<void> | void; onAbort?: () => Promise<void> | void },
 ) => {
   const config = getAgentConfig(options?.env ?? process.env);
   const provider = createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl });
   const isChoiceContract = payload.outputContract === "choice_json" || payload.outputContract === "choice_json_forced";
   return streamText({
+    abortSignal: options?.abortSignal,
     model: provider(config.model),
     messages: buildAgentMessages(payload),
     maxOutputTokens: isChoiceContract ? 900 : payload.analysisProduct === "kline" ? 3800 : 2600,

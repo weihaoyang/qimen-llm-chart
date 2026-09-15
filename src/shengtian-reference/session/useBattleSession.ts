@@ -34,6 +34,15 @@ export function useBattleSession() {
         setActiveBattle(selected);
       } catch (battleError) {
         if (sequence !== refreshSequence.current) return;
+        // An unauthenticated visitor has no personal battles or invitations;
+        // that is the normal catalog state, not a page error. Clone/create
+        // actions remain protected by their own API requests.
+        if (battleError instanceof Error && (battleError as Error & { status?: number }).status === 401) {
+          setBattles([]);
+          setInvitations([]);
+          setActiveBattle(null);
+          return;
+        }
         setError(battleError instanceof Error ? battleError.message : "登录后可保存自己的战局。");
       }
     } catch (catalogError) {

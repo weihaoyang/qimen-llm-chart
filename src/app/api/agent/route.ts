@@ -20,29 +20,29 @@ const MAX_HISTORY_MESSAGES = 18;
 const MAX_STRUCTURED_TEXT_LENGTH = 180_000;
 const MAX_JSON_LENGTH = 260_000;
 const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
-const QMDJ_SESSION_COOKIE_NAMES = new Set(["qmdj_platform_access", "qmdj_platform_refresh", "qmdj_platform_csrf"]);
-
+const COOKIE_ALIASES: Record<string, string> = {
+  qmdj_platform_access: "ssp_access",
+  qmdj_platform_refresh: "ssp_refresh",
+  qmdj_platform_csrf: "ssp_csrf",
+};
 const readPlatformCookieHeader = (cookieHeader: string | null) => (cookieHeader ?? "")
   .split(";")
   .map((part) => part.trim())
-  .filter((part) => PLATFORM_COOKIE_NAMES.has(part.split("=", 1)[0] ?? ""))
+  .map((part) => {
+    const separator = part.indexOf("=");
+    if (separator < 1) return "";
+    const name = COOKIE_ALIASES[part.slice(0, separator)] ?? part.slice(0, separator);
+    return PLATFORM_COOKIE_NAMES.has(name) ? `${name}=${part.slice(separator + 1)}` : "";
+  })
+  .filter(Boolean)
   .join("; ");
-
 const readCookieValue = (cookieHeader: string | null, name: string) => {
-  const prefix = `${name}=`;
-  return (cookieHeader ?? "")
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix))
-    ?.slice(prefix.length) ?? "";
+  const names = [name, ...Object.entries(COOKIE_ALIASES).filter(([, target]) => target === name).map(([source]) => source)];
+  return (cookieHeader ?? "").split(";").map((part) => part.trim()).map((part) => {
+    const separator = part.indexOf("=");
+    return separator < 1 ? null : { name: part.slice(0, separator), value: part.slice(separator + 1) };
+  }).find((part) => part && names.includes(part.name))?.value ?? "";
 };
-
-const readCookieHeaderFor = (cookieHeader: string | null, names: Set<string>) => (cookieHeader ?? "")
-  .split(";")
-  .map((part) => part.trim())
-  .filter((part) => names.has(part.split("=", 1)[0] ?? ""))
-  .join("; ");
-
 const isWorkbenchMode = (value: unknown): value is WorkbenchMode =>
   typeof value === "string" && WORKBENCH_MODES.includes(value as WorkbenchMode);
 
@@ -68,11 +68,8 @@ export async function POST(request: Request) {
     accessToken = readBearerToken(request.headers.get("authorization")) ?? "";
     platformCookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
     platformCsrfToken = readCookieValue(request.headers.get("cookie"), "ssp_csrf");
-    const qmdjCookieHeader = readCookieHeaderFor(request.headers.get("cookie"), QMDJ_SESSION_COOKIE_NAMES);
-    const qmdjAccessToken = readCookieValue(request.headers.get("cookie"), "qmdj_platform_access");
+    const qmdjAccessToken = readCookieValue(request.headers.get("cookie"), "ssp_access");
     if (!accessToken && qmdjAccessToken) accessToken = qmdjAccessToken;
-    if (!platformCookieHeader && qmdjCookieHeader) platformCookieHeader = qmdjCookieHeader;
-    if (!platformCsrfToken) platformCsrfToken = readCookieValue(request.headers.get("cookie"), "qmdj_platform_csrf");
     guestToken = readGuestCheckoutToken(request.headers.get("x-guest-checkout-token")) ?? "";
     if (!accessToken && !platformCookieHeader && !guestToken) {
       return NextResponse.json(
@@ -260,6 +257,7 @@ export async function POST(request: Request) {
         reservationId = "";
       };
       const result = streamAgentAnalysis(analysisPayload, {
+        abortSignal: request.signal,
         onFinish: commit,
         onError: async () => { await release(); },
         onAbort: async () => { await release(); },

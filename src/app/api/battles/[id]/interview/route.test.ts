@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 const handleAiPost = vi.hoisted(() => vi.fn(async (_request: Request, _context: unknown, kind?: string) => Response.json({ kind })));
-vi.mock("../ai/[kind]/route", () => ({ handleAiPost }));
+vi.mock("../ai/[kind]/handler", () => ({ handleAiPost }));
 
 import { POST } from "./route";
 

@@ -1,31 +1,30 @@
 # Current task contract
 
 ```yaml
-task: '胜天半子现实极限博弈终端目标模式重构'
-objective_key: 'shengtian-battle-domain-rebuild-20260820'
-ownership_key: 'shengtian-battle-domain'
+task: '知几排盘工作台本地开发收口与平台接入验证'
+objective_key: 'qmdj-paipan-local-completion-20260913'
+ownership_key: 'qmdj-paipan-workbench'
 owner: 'main'
 mode: 'completed_locally'
 scope:
   include:
-    - '建立 Battle Domain 领域模型、版本化持久化与纯规则引擎'
-    - '实现产品宪法中的 P0、P1、P2 功能，并保持付费、账户与平台 gate 边界'
-    - '把现有 Agent 工作区作为兼容入口迁移到 Battle Domain，不再扩展旧决策树字段'
+    - '保持 /paipan 为知几产品唯一主入口并完整复用参考排盘前端'
+    - '验证奇门、八字、紫微、三盘联合及分析能力的后端接入与本地持久化'
+    - '保持账户、套餐、支付、entitlement 与 AI gate 由 Consumer Platform 统一负责'
   exclude:
     - '把术数结论作为现实事实、预测保证或真实概率'
     - '新增未经授权的模型调用、真实扣款测试或生产部署'
     - '改动统一账户、支付、订单、entitlement 和平台 gate 真相'
 invariants:
-  - '现实事实、用户假设、AI 推演、行动结果必须有独立类型和来源，不能互相冒充'
-  - '每一手行动必须有验证信号、硬期限和至少一个风险断路器'
-  - '已落子版本不可被新结论静默覆盖；改线必须留下新版本与变化原因'
-  - '术数默认为可选证据叠层，关闭后 Battle Domain 仍完整可用'
-  - '新功能不能直接依赖旧 Agent UI state 或把 SQL 写入组件'
+  - '排盘领域逻辑与工作台状态保持在产品边界内，不复制平台账户/支付真相'
+  - '受限 AI 入口和后端 API 均先查询平台 gate，失败默认拦截'
+  - '支付回跳只用于恢复流程，不直接推断支付成功或权益'
+  - '新功能不能把 SQL 写入组件或建立第二套用户/订单/会员真相'
   acceptance:
-  - 'Battle Domain 类型、数据库迁移、领域服务和确定性规则测试通过'
-  - 'P0 API 与 UI 通过真实数据库/HTTP 的最小闭环验证'
-  - 'P1/P2 功能在独立模块中实现，不把研究端工具暴露给普通用户；顾问意见、事实和 AI 输出保持分层'
+  - '排盘类型、数据库迁移、领域服务和确定性规则测试通过'
+  - '/paipan 首屏与核心 API 通过真实数据库/HTTP 的最小闭环验证'
+  - '分析、登录恢复、支付恢复和 gate 在独立模块中实现，产品数据边界清晰'
   - '相关 TypeScript、lint、目标测试和生产构建通过；未授权前不部署'
 status: 'completed_locally'
-next_action: '如获上线授权，确认真实服务器拓扑后执行生产备份、迁移、重建、readiness 与无扣款冒烟；本轮不部署'
+next_action: '继续维护本地验证证据；未经明确授权不部署、不推送、不提交'
 ```

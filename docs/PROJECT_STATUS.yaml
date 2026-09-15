@@ -1,12 +1,12 @@
 project: 'qmdj'
 profile: 'high-risk'
-updated: '2026-08-30'
-objective: '按《胜天半子》产品宪法实现现实极限博弈 Battle Domain 的目标模式闭环'
-success_condition: '用户可建立战局、录入现实底牌/红线/资源、生成交叉点与三种落子、保存执行令和断路器、更新执行状态、复盘并导出战报；所有持久化按 subject ownership 且不改平台账户/支付真相'
+updated: '2026-09-13'
+objective: '完成知几排盘工作台的领域能力、平台接入与本地可验证闭环'
+success_condition: '用户可在 /paipan 使用奇门、八字、紫微与三盘联合排盘及相关分析；平台登录、套餐、支付恢复和受限 AI 均遵守统一平台 gate；产品业务数据留在本仓库边界且本地验证可复现'
 phase: 'completed'
 status: 'implemented_and_verified_locally'
 current_blocker: '无；本次登录链路修复已完成生产重建与授权跳转验证。磁盘剩余约 5.3GB（13%），后续需按保留策略清理旧 release 前先确认回滚目标。'
-next_action: '按生产保留策略监控新 release；如需继续清理旧 release，先保留当前版本与上一回滚版本并单独记录删除范围'
+next_action: '保持本地 PostgreSQL 与开发服务器可复现；在获得明确授权后再执行生产发布检查'
 active_workers: []
 recent_evidence:
   - '2026-08-16: 修复奇门移动端摘要条的 36px 固定高度和省略裁切；390px 实测九项摘要的 strong scrollHeight 均等于 clientHeight，节气、旬首、值符、值使、驿马、时盘仪表与四柱均完整显示。'

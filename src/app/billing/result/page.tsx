@@ -13,5 +13,5 @@ export default async function BillingResultPage({
   if (isPaipanHost(requestHeaders.get("host"))) {
     return <BillingResultClient orderId={params.order_id ?? ""} productCode={params.product_code ?? ""} />;
   }
-  return <BillingResultView />;
+  return <BillingResultView orderId={params.order_id ?? ""} productCode={params.product_code ?? ""} />;
 }

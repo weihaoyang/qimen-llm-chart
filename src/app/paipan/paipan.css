@@ -11,12 +11,33 @@
 html:has(.product-chart),
 body:has(.product-chart),
 .product-chart {
-  --paipan-ink: #171717;
-  --paipan-paper: #fffaf0;
-  --paipan-ground: #e9e3d9;
-  --paipan-yellow: #f2bd3f;
-  --paipan-red: #df4d32;
-  --paipan-violet: #55418c;
+  --paipan-ink: #121214;
+  --paipan-paper: #ffffff;
+  --paipan-ground: #f4f1ea;
+  --paipan-accent: #ffbe1a;
+  --paipan-accent-hover: #ffca36;
+  --paipan-yellow: #ffbe1a;
+  --paipan-red: #e63946;
+  --paipan-violet: #475569;
+  --paipan-slate: #71717a;
+  --paipan-slate-light: #e4e4e7;
+  --paipan-shadow: 3px 3px 0 var(--paipan-ink);
+  --paipan-shadow-sm: 2px 2px 0 var(--paipan-ink);
+  --paipan-shadow-lg: 4px 4px 0 var(--paipan-ink);
+  --paipan-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --paipan-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* End-of-file cascade guard: compact controls stay discoverable. */
+@media (max-width: 1040px) {
+  html body .page-shell.product-chart .observatory-hero .hero-action { display: inline-flex !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart .chart-time-stepper { display: grid !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__section-head,
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles,
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__question-meta { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups { display: block !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups > div { display: grid !important; }
 }
 
 /* Mobile header: one owner and three explicit rows. */
@@ -82,6 +103,47 @@ body:has(.product-chart),
   }
 }
 
+/* Final product polish: keep the two highest-value controls visible on every
+ * compact layout. The time control is the fastest way to explore a chart, and
+ * the Agent needs its angle chips and follow-up prompts to feel conversational. */
+@media (max-width: 1040px) {
+  html body .page-shell.product-chart .hero-action {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 36px !important;
+    padding: 8px 12px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    background: var(--paipan-yellow) !important;
+    color: var(--paipan-ink) !important;
+    font-weight: 950 !important;
+  }
+  html body .product-chart .chart-time-stepper {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin: 4px 0 8px !important;
+    padding: 8px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    background: #fff6dc !important;
+  }
+  html body .product-chart .chart-time-stepper strong { min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+  html body .product-chart .chart-time-stepper .datetime-stepper { grid-column: 1 / -1 !important; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; width: 100% !important; }
+  html body .product-chart .chart-time-stepper .datetime-stepper button { min-height: 34px !important; padding: 6px 4px !important; font-size: 11px !important; }
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head,
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__angles,
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta,
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__followups {
+    display: flex !important;
+  }
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head { flex-wrap: wrap !important; }
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+  html body .product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__followups { display: block !important; }
+}
+
 /* Final chat viewport contract. */
 @media (min-width: 721px) {
   html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent .agent-panel--chart > .agent-panel__guest-recovery-note { display: none !important; }
@@ -97,6 +159,132 @@ body:has(.product-chart),
     overflow-y: auto !important;
     overflow-x: hidden !important;
   }
+}
+
+/* Visual lock: disciplined neo-brutalist palette & surfaces */
+html body .page-shell.product-chart .observatory-hero {
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-bar {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab {
+  background: var(--paipan-ground) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 700 !important;
+  outline: none !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab strong { color: inherit !important; }
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  font-weight: 900 !important;
+  outline: none !important;
+}
+html body .page-shell.product-chart .canvas-panel,
+html body .page-shell.product-chart .sidebar-panel,
+html body .page-shell.product-chart .agent-surface--chart,
+html body .page-shell.product-chart .ziwei-panel,
+html body .page-shell.product-chart .ziwei-panel__canvas {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+}
+html body .page-shell.product-chart .agent-panel--chart .chart-inspector-head {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+}
+html body .page-shell.product-chart .agent-panel--chart .agent-panel__angle,
+html body .page-shell.product-chart .agent-panel--chart .agent-panel__followups button {
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+}
+html body .page-shell.product-chart .datetime-stepper button,
+html body .page-shell.product-chart .hero-action,
+html body .page-shell.product-chart .platform-account__button {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Ziwei metadata uses the same paper/ink palette as every other chart. */
+html body .page-shell.product-chart .ziwei-panel__meta,
+html body .page-shell.product-chart .ziwei-panel__meta > *,
+html body .page-shell.product-chart .ziwei-meta-chip {
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+}
+html body .page-shell.product-chart .ziwei-panel__meta small,
+html body .page-shell.product-chart .ziwei-panel__meta span { color: var(--paipan-slate) !important; }
+
+/* Readability floor for compact chart workbench. */
+@media (max-width: 720px) {
+  html body .page-shell.product-chart .hero-action,
+  html body .page-shell.product-chart .chart-time-stepper,
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper,
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper button {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  html body .page-shell.product-chart .chart-time-stepper { flex-wrap: wrap !important; color: var(--paipan-ink) !important; background: var(--paipan-paper) !important; border: 2px solid var(--paipan-ink) !important; box-shadow: var(--paipan-shadow-sm) !important; border-radius: 3px !important; }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper { display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)) !important; width: 100% !important; gap: 5px !important; }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper button { justify-content: center !important; min-height: 36px !important; color: var(--paipan-ink) !important; background: var(--paipan-ground) !important; border: 1.5px solid var(--paipan-ink) !important; border-radius: 2px !important; font-weight: 900 !important; }
+  html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__section-head,
+  html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__angles,
+  html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__question-meta { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+  html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+  html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__followups { display: block !important; visibility: visible !important; opacity: 1 !important; color: var(--paipan-ink) !important; }
+  html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__followups > div { display: grid !important; }
+}
+
+/* Product shell final contract (applies to both the desktop rail and the
+   mobile drawer, whose DOM roots differ). */
+html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__section-head,
+html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__angles,
+html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__question-meta { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__followups { display: block !important; visibility: visible !important; opacity: 1 !important; }
+html body .product-chart .agent-panel--chart .agent-panel__section--question .agent-panel__followups > div { display: grid !important; }
+html body .product-chart .chart-time-stepper { display: grid !important; visibility: visible !important; opacity: 1 !important; }
+html body .product-chart .observatory-hero .hero-action { display: inline-flex !important; visibility: visible !important; opacity: 1 !important; }
+
+/* Cascade lock: these controls must remain visible after all compatibility
+   rules, including the compact drawer overrides. */
+html body .page-shell.product-chart .observatory-hero .hero-action { display: inline-flex !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart .chart-time-stepper { display: grid !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__section-head,
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles,
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__question-meta { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups { display: block !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups > div { display: grid !important; }
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart .chart-time-stepper { grid-template-columns: auto minmax(0, 1fr) !important; gap: 7px !important; margin: 4px 0 8px !important; padding: 8px !important; border: 2px solid var(--paipan-ink) !important; border-radius: 3px !important; background: var(--paipan-paper) !important; box-shadow: var(--paipan-shadow-sm) !important; }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper { grid-column: 1 / -1 !important; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; width: 100% !important; }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper button { min-height: 34px !important; padding: 6px 4px !important; font-size: 11px !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups { max-height: 180px !important; overflow: auto !important; }
 }
 
 /* Final responsive Agent entry contract. Wide layouts already expose the
@@ -220,111 +408,859 @@ body .product-chart .classic-agent-rail .chart-inspector-head {
 
 /* The default surface is a six-column reading sheet. The exhaustive table
    remains available under details instead of competing with selected timing. */
-body .product-chart .bazi-panel { gap: 6px; }
-body .product-chart .bazi-panel__overview { padding: 6px !important; }
-body .product-chart .bazi-panel__overview .panel-heading,
+/* --------------------------------------------------------------------------
+   八字排盘 (BaZi): Disciplined Neo-Brutalist Architecture
+   -------------------------------------------------------------------------- */
+body .product-chart .bazi-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent !important;
+}
+
+body .product-chart .bazi-panel__overview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 !important;
+}
+
+body .product-chart .bazi-panel__overview .panel-heading {
+  display: none !important;
+}
+
 body .product-chart .bazi-relation-scale,
 body .product-chart .bazi-ten-god-meter,
-body .product-chart .bazi-element-meter { display: none !important; }
+body .product-chart .bazi-element-meter {
+  display: none !important;
+}
 
+/* Headband manifest card */
 body .product-chart .bazi-headband {
-  grid-template-columns: minmax(190px, 1.5fr) repeat(2, minmax(0, 1fr));
-  gap: 3px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 body .product-chart .bazi-headband__block {
-  min-height: 56px;
-  padding: 6px 8px;
-  border: 1px solid var(--paipan-ink) !important;
-  border-radius: 0 !important;
-  background: #fffdf7 !important;
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-body .product-chart .bazi-headband__block--hero { gap: 0; }
-body .product-chart .bazi-headband__hero-top { grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
-body .product-chart .bazi-headband__hero-main strong { font-size: 2rem !important; }
-body .product-chart .bazi-headband__hero-calendar { gap: 2px; padding-left: 7px; }
-body .product-chart .bazi-headband__hero-calendar-row strong,
-body .product-chart .bazi-headband__block--ledger strong { font-size: 0.76rem !important; }
+body .product-chart .bazi-headband__block--hero {
+  gap: 0;
+  background: var(--paipan-paper) !important;
+}
 
-body .product-chart .bazi-traditional-board { display: grid; gap: 0; }
-body .product-chart .bazi-traditional-board__header { align-items: center; padding: 7px 10px !important; }
+body .product-chart .bazi-headband__hero-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
 
-body .product-chart .bazi-reading-workspace { display: grid; grid-template-columns: minmax(0, 1.28fr) minmax(330px, .92fr); gap: 8px; align-items: stretch; }
+body .product-chart .bazi-headband__hero-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-body .product-chart .bazi-six-pillars { display: grid; gap: 1px; padding: 1px; background: var(--paipan-ink); }
-body .product-chart .bazi-six-pillars__row { display: grid; grid-template-columns: 48px repeat(6, minmax(0, 1fr)); gap: 1px; }
+body .product-chart .bazi-headband__hero-main span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+body .product-chart .bazi-headband__hero-main strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 2.3rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  color: var(--paipan-ink) !important;
+  letter-spacing: -0.04em !important;
+}
+
+body .product-chart .bazi-headband__hero-main em {
+  font-style: normal !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  padding: 2px 8px !important;
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: 1px 1px 0 var(--paipan-ink) !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart .bazi-headband__hero-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 10px;
+  border-left: 1.5px dashed #d4d4d8;
+}
+
+body .product-chart .bazi-headband__hero-calendar-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+body .product-chart .bazi-headband__hero-calendar-row small {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  min-width: 24px;
+}
+
+body .product-chart .bazi-headband__hero-calendar-row strong {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-headband__block--ledger {
+  gap: 2px;
+}
+
+body .product-chart .bazi-headband__block--ledger > span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+body .product-chart .bazi-headband__block--ledger strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  line-height: 1.25 !important;
+}
+
+body .product-chart .bazi-headband__block--ledger em {
+  font-style: normal !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: var(--paipan-slate) !important;
+}
+
+/* Six Pillars Reading Workspace */
+body .product-chart .bazi-traditional-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body .product-chart .bazi-traditional-board__header {
+  display: none !important;
+}
+
+body .product-chart .bazi-reading-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(320px, 0.9fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* Six Pillars Table */
+body .product-chart .bazi-six-pillars {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+  background: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart .bazi-six-pillars__row {
+  display: grid;
+  grid-template-columns: 46px repeat(6, minmax(0, 1fr));
+  gap: 2px;
+}
+
 body .product-chart .bazi-six-pillars__row > * {
   display: grid;
   min-width: 0;
-  min-height: 26px;
+  min-height: 30px;
   place-items: center;
-  padding: 3px 4px;
-  background: #fffdf7;
-  color: var(--paipan-ink);
+  padding: 4px 5px;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
   text-align: center;
 }
-body .product-chart .bazi-six-pillars__row > span { background: #f3ede2; color: #5d574f; font-size: 10px; font-weight: 900; }
+
+/* Left spine label */
+body .product-chart .bazi-six-pillars__row > span {
+  background: #18181b !important;
+  color: #ffffff !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Column head */
 body .product-chart .bazi-six-pillars__row--head > strong {
   align-content: center;
-  gap: 1px;
-  min-height: 47px;
-  font-family: ui-serif, "Songti SC", serif;
-  font-size: clamp(1.18rem, 1.7vw, 1.65rem);
-  line-height: 1;
+  gap: 2px;
+  min-height: 48px;
+  font-family: var(--paipan-font) !important;
+  font-size: 1.25rem !important;
+  font-weight: 950 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
 }
-body .product-chart .bazi-six-pillars__row--head small { color: #6b645c; font-family: var(--mono-font); font-size: 9px; font-weight: 900; }
-body .product-chart .bazi-six-pillars__row--head .is-day-master { border-top: 4px solid var(--paipan-red); background: #fff1e8; }
-body .product-chart .bazi-six-pillars__row--head .is-timing { background: #f2bd3f; }
+
+body .product-chart .bazi-six-pillars__row--head small {
+  font-family: var(--paipan-font-mono) !important;
+  color: var(--paipan-slate) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+}
+
+/* Day Master column head highlight */
+body .product-chart .bazi-six-pillars__row--head .is-day-master {
+  background: #fff9db !important;
+  border-top: none !important;
+  box-shadow: inset 0 3px 0 var(--paipan-accent) !important;
+}
+
+body .product-chart .bazi-six-pillars__row--head .is-day-master small {
+  color: #854d0e !important;
+  font-weight: 950 !important;
+}
+
+/* Timing columns head (大运/流年) */
+body .product-chart .bazi-six-pillars__row--head .is-timing {
+  background: #fafaf9 !important;
+}
+
+/* Ten God badges row */
+body .product-chart .bazi-ten-god-badge {
+  display: inline-block !important;
+  padding: 2px 5px !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 10.5px !important;
+  font-weight: 900 !important;
+  box-shadow: 1px 1px 0 var(--paipan-ink) !important;
+  line-height: 1.1 !important;
+}
+
+/* TianGan and DiZhi Glyphs: Heavy modern sans-serif */
 body .product-chart .bazi-six-pillars__row--glyph > strong {
-  min-height: 52px;
-  font-family: ui-serif, "Songti SC", serif;
-  font-size: clamp(1.7rem, 3vw, 2.6rem);
-  font-weight: 900;
-  line-height: 1;
+  min-height: 56px;
+  font-family: var(--paipan-font) !important;
+  font-size: 2.2rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
 }
-body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="木"] { color: #176c58; }
-body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="火"] { color: #b73425; }
-body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="土"] { color: #8b5a20; }
-body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="金"] { color: #555049; }
-body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="水"] { color: #55418c; }
-body .product-chart .bazi-six-pillars__row--glyph > strong.is-day-master { background: #fff1e8; }
-body .product-chart .bazi-six-pillars__row--timing small { font-size: 10px; font-weight: 800; }
-body .product-chart .bazi-six-pillars__row--nayin small { font-size: 10px; font-weight: 850; }
-body .product-chart .bazi-six-pillars__row--shensha > div { display: flex; min-height: 54px; align-content: center; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px 4px; padding: 5px; }
-body .product-chart .bazi-six-pillars__row--shensha > div small { color: #8b5a20; font-size: 9px; font-weight: 850; line-height: 1.15; }
 
-body .product-chart .bazi-timing-rail { display: grid; grid-template-rows: auto repeat(3, minmax(0, 1fr)) auto; min-height: 0; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); }
-body .product-chart .bazi-timing-rail__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 7px 9px; border-bottom: 2px solid var(--paipan-ink); background: var(--paipan-yellow); }
-body .product-chart .bazi-timing-rail__head strong { font-size: 13px; font-weight: 950; }
-body .product-chart .bazi-timing-rail__head span { color: var(--paipan-violet); font: 850 10px/1 var(--mono-font); }
-body .product-chart .bazi-timing-track { display: grid; grid-template-columns: 38px minmax(0, 1fr); min-height: 69px; border-bottom: 1px solid var(--paipan-ink); }
-body .product-chart .bazi-timing-track > span { display: grid; place-items: center; border-right: 1px solid var(--paipan-ink); background: #f3ede2; color: var(--paipan-ink); font: 950 11px/1 var(--mono-font); writing-mode: vertical-rl; }
-body .product-chart .bazi-timing-track > div { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
-body .product-chart .bazi-timing-track button { display: grid; min-width: 61px; flex: 1 0 61px; align-content: center; gap: 2px; padding: 4px 5px; border: 0; border-right: 1px solid #ded6c8; border-radius: 0; color: var(--paipan-ink); background: #fffdf7; cursor: pointer; }
-body .product-chart .bazi-timing-track button:hover { background: #f5e6bf; }
-body .product-chart .bazi-timing-track button.is-active { background: var(--paipan-yellow); box-shadow: inset 0 -4px 0 var(--paipan-red); }
-body .product-chart .bazi-timing-track button small { color: #5d574f; font: 800 9px/1 var(--mono-font); }
-body .product-chart .bazi-timing-track button strong { font-family: ui-serif, "Songti SC", serif; font-size: 22px; line-height: 1; }
-body .product-chart .bazi-timing-track button em { color: var(--paipan-red); font-size: 9px; font-style: normal; font-weight: 900; }
-body .product-chart .bazi-timing-track--month button { min-width: 48px; flex-basis: 48px; }
-body .product-chart .bazi-timing-track--month button strong { font-size: 18px; }
-body .product-chart .bazi-timing-rail > p { margin: 0; padding: 7px 9px; background: var(--paipan-ink); color: var(--paipan-paper); font: 800 10px/1.2 var(--mono-font); }
+/* High-contrast jewel tones for Five Elements */
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="木"] { color: #047857 !important; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="火"] { color: #dc2626 !important; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="土"] { color: #b45309 !important; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="金"] { color: #334155 !important; }
+body .product-chart .bazi-six-pillars__row--glyph > strong[data-element="水"] { color: #1d4ed8 !important; }
 
-body .product-chart .bazi-details { border-top: 1px solid var(--paipan-ink); background: #fffdf7; }
-body .product-chart .bazi-details > summary { cursor: pointer; padding: 7px 10px; color: #5d574f; font-size: 11px; font-weight: 900; }
-body .product-chart .bazi-details--secondary { border: 2px solid var(--paipan-ink); background: #f3ede2; }
+/* Day Master glyph cell */
+body .product-chart .bazi-six-pillars__row--glyph > strong.is-day-master {
+  background: #fff9db !important;
+}
 
-body .product-chart .bazi-compatibility-disclosure { margin-top: 6px; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); }
-body .product-chart .bazi-compatibility-disclosure > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 38px; align-items: center; gap: 10px; padding: 7px 10px; cursor: pointer; list-style: none; }
-body .product-chart .bazi-compatibility-disclosure > summary::-webkit-details-marker { display: none; }
-body .product-chart .bazi-compatibility-disclosure > summary strong { color: var(--paipan-ink); font-size: 13px; font-weight: 950; }
-body .product-chart .bazi-compatibility-disclosure > summary span { color: var(--paipan-violet); font-size: 10px; font-weight: 850; }
-body .product-chart .bazi-compatibility-disclosure > summary::after { content: "+"; color: var(--paipan-red); font: 950 18px/1 var(--mono-font); }
-body .product-chart .bazi-compatibility-disclosure[open] > summary { border-bottom: 2px solid var(--paipan-ink); background: var(--paipan-yellow); }
-body .product-chart .bazi-compatibility-disclosure[open] > summary::after { content: "−"; }
-body .product-chart .bazi-compatibility-disclosure:not([open]) > .bazi-compatibility-panel { display: none !important; }
-body .product-chart .bazi-compatibility-disclosure .bazi-compatibility-panel { margin-top: 0; border: 0; box-shadow: none; }
+body .product-chart .bazi-six-pillars__row--timing small {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-six-pillars__row--nayin small {
+  font-family: var(--paipan-font) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+
+body .product-chart .bazi-six-pillars__row--shensha > div {
+  display: flex;
+  min-height: 54px;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px 4px;
+  padding: 5px;
+}
+
+body .product-chart .bazi-six-pillars__row--shensha > div small {
+  display: inline-block;
+  padding: 1px 4px;
+  border: 1px solid #d4d4d8;
+  border-radius: 2px;
+  background: var(--paipan-ground);
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
+}
+
+/* Timing Rail Console */
+body .product-chart .bazi-timing-rail {
+  display: grid;
+  grid-template-rows: auto repeat(3, minmax(0, 1fr)) auto;
+  min-height: 0;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart .bazi-timing-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-ground);
+}
+
+body .product-chart .bazi-timing-rail__head strong {
+  font-family: var(--paipan-font);
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--paipan-ink);
+}
+
+body .product-chart .bazi-timing-rail__head span {
+  font-family: var(--paipan-font-mono);
+  font-size: 10.5px;
+  font-weight: 850;
+  color: var(--paipan-slate);
+}
+
+body .product-chart .bazi-timing-track {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  min-height: 64px;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+body .product-chart .bazi-timing-track > span {
+  display: grid;
+  place-items: center;
+  border-right: 2px solid var(--paipan-ink);
+  background: var(--paipan-ink);
+  color: var(--paipan-accent);
+  font-family: var(--paipan-font-mono);
+  font-size: 11px;
+  font-weight: 950;
+  writing-mode: horizontal-tb !important;
+  letter-spacing: 0.05em;
+}
+
+body .product-chart .bazi-timing-track > div {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--paipan-slate) var(--paipan-paper);
+  padding: 4px;
+  align-items: center;
+  gap: 4px;
+}
+
+body .product-chart .bazi-timing-track button {
+  display: grid;
+  min-width: 62px;
+  flex: 0 0 auto;
+  align-content: center;
+  gap: 2px;
+  padding: 5px 6px;
+  border: 1.5px solid var(--paipan-ink);
+  border-radius: 3px;
+  color: var(--paipan-ink);
+  background: var(--paipan-ground);
+  box-shadow: 1.5px 1.5px 0 var(--paipan-ink);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+body .product-chart .bazi-timing-track button:hover {
+  background: var(--paipan-paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--paipan-ink);
+}
+
+body .product-chart .bazi-timing-track button.is-active {
+  background: var(--paipan-accent) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+  transform: none !important;
+}
+
+body .product-chart .bazi-timing-track button small {
+  color: var(--paipan-slate);
+  font-family: var(--paipan-font-mono);
+  font-size: 9.5px;
+  font-weight: 850;
+}
+
+body .product-chart .bazi-timing-track button strong {
+  font-family: var(--paipan-font);
+  font-size: 1.15rem;
+  font-weight: 950;
+  line-height: 1;
+  color: var(--paipan-ink);
+}
+
+body .product-chart .bazi-timing-track button em {
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+body .product-chart .bazi-timing-track--month button {
+  min-width: 50px;
+}
+
+body .product-chart .bazi-timing-track--month button strong {
+  font-size: 1rem;
+}
+
+body .product-chart .bazi-timing-rail > p {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--paipan-ground);
+  border-top: 2px solid var(--paipan-ink);
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font-mono);
+  font-size: 11.5px;
+  font-weight: 850;
+}
+
+/* BaZi Details & Collapsible */
+body .product-chart .bazi-details {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart .bazi-details > summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font);
+  font-size: 12px;
+  font-weight: 900;
+  background: var(--paipan-ground);
+  border-bottom: 1px solid #e4e4e7;
+}
+
+/* BaZi Detailed Quad-Pillar Matrix (Inside details summary) */
+body .product-chart .bazi-traditional-board__viewport {
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--paipan-slate) var(--paipan-ground);
+  padding: 8px !important;
+  background: var(--paipan-ground) !important;
+}
+
+body .product-chart .bazi-panel .bazi-table {
+  display: grid !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  min-width: 720px;
+  overflow: hidden;
+}
+
+body .product-chart .bazi-panel .bazi-table__row {
+  display: grid !important;
+  grid-template-columns: 84px repeat(4, minmax(0, 1fr)) !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-panel .bazi-table__label {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+body .product-chart .bazi-panel .bazi-table__row--head .bazi-table__label {
+  background: var(--paipan-ink) !important;
+  color: #ffffff !important;
+}
+
+body .product-chart .bazi-panel .bazi-table__cell {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  padding: 8px 10px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body .product-chart .bazi-panel .bazi-table__cell--head {
+  background: var(--paipan-ground) !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px !important;
+}
+
+body .product-chart .bazi-panel .bazi-table__cell--head span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+
+body .product-chart .bazi-panel .bazi-table__cell--head strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 1.25rem !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Day master header column highlight */
+body .product-chart .bazi-panel .bazi-table__row--head .bazi-table__cell:nth-child(4) {
+  background: #fff9db !important;
+  border-top: 3px solid var(--paipan-accent) !important;
+  box-shadow: inset 0 0 0 1px var(--paipan-accent);
+}
+
+/* Glyph cell */
+body .product-chart .bazi-panel .bazi-glyph-cell {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  padding: 10px 14px !important;
+  gap: 8px !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart .bazi-panel .bazi-glyph-cell--day-master {
+  background: #fff9db !important;
+  box-shadow: inset 0 0 0 1.5px var(--paipan-accent) !important;
+}
+
+body .product-chart .bazi-panel .bazi-glyph-cell__glyph {
+  font-family: var(--paipan-font) !important;
+  font-size: 2.2rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+/* Five elements jewel colors for table glyphs */
+body .product-chart .bazi-panel .bazi-glyph-cell[data-element="木"] .bazi-glyph-cell__glyph { color: #047857 !important; }
+body .product-chart .bazi-panel .bazi-glyph-cell[data-element="火"] .bazi-glyph-cell__glyph { color: #dc2626 !important; }
+body .product-chart .bazi-panel .bazi-glyph-cell[data-element="土"] .bazi-glyph-cell__glyph { color: #b45309 !important; }
+body .product-chart .bazi-panel .bazi-glyph-cell[data-element="金"] .bazi-glyph-cell__glyph { color: #334155 !important; }
+body .product-chart .bazi-panel .bazi-glyph-cell[data-element="水"] .bazi-glyph-cell__glyph { color: #1d4ed8 !important; }
+
+body .product-chart .bazi-panel .bazi-glyph-cell__meta {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+
+/* Plain cell & stack cell */
+body .product-chart .bazi-panel .bazi-plain-cell {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-panel .bazi-stack-cell {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 6px 8px !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart .bazi-panel .bazi-stack-cell__item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 3px 8px !important;
+  background: var(--paipan-ground) !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 2px !important;
+  font-size: 11px !important;
+}
+
+body .product-chart .bazi-panel .bazi-stack-cell__item strong {
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+}
+
+body .product-chart .bazi-panel .bazi-stack-cell__item[data-element="木"] strong { color: #047857 !important; }
+body .product-chart .bazi-panel .bazi-stack-cell__item[data-element="火"] strong { color: #dc2626 !important; }
+body .product-chart .bazi-panel .bazi-stack-cell__item[data-element="土"] strong { color: #b45309 !important; }
+body .product-chart .bazi-panel .bazi-stack-cell__item[data-element="金"] strong { color: #334155 !important; }
+body .product-chart .bazi-panel .bazi-stack-cell__item[data-element="水"] strong { color: #1d4ed8 !important; }
+
+/* Support panel & table */
+body .product-chart .bazi-support-panel {
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  padding: 10px !important;
+}
+
+body .product-chart .bazi-support-panel__header h2 {
+  font-family: var(--paipan-font) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  margin-bottom: 8px;
+}
+
+body .product-chart .bazi-support-table {
+  display: grid !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  overflow: hidden;
+}
+
+body .product-chart .bazi-support-table__row {
+  display: grid !important;
+  grid-template-columns: 58px 70px minmax(118px, 1fr) minmax(118px, 1fr) minmax(96px, 0.9fr) minmax(144px, 1.15fr) !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-support-table__row--head > span {
+  background: var(--paipan-ink) !important;
+  color: #ffffff !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  padding: 6px 4px !important;
+  display: grid;
+  place-items: center;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body .product-chart .bazi-support-table__label,
+body .product-chart .bazi-support-table__pillar,
+body .product-chart .bazi-support-table__token,
+body .product-chart .bazi-support-table__meta {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+body .product-chart .bazi-support-table__pillar strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Yun panel & table */
+body .product-chart .bazi-yun-panel {
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  padding: 10px !important;
+}
+
+body .product-chart .bazi-yun-panel .panel-heading h2 {
+  font-family: var(--paipan-font) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  margin-bottom: 8px;
+}
+
+body .product-chart .bazi-yun-summary {
+  display: flex !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+}
+
+body .product-chart .bazi-yun-summary span {
+  background: var(--paipan-ground) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  padding: 3px 8px !important;
+}
+
+body .product-chart .bazi-yun-table {
+  display: grid !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  overflow-x: auto;
+}
+
+body .product-chart .bazi-yun-table__row {
+  display: grid !important;
+  grid-template-columns: 40px 60px minmax(136px, 1.05fr) minmax(136px, 1.05fr) 88px 112px minmax(116px, 0.95fr) !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-yun-table__row--head > span {
+  background: var(--paipan-ink) !important;
+  color: #ffffff !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  padding: 6px 4px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body .product-chart .bazi-yun-table__row > span,
+body .product-chart .bazi-yun-table__pillar,
+body .product-chart .bazi-yun-table__stack {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart .bazi-yun-table__pillar {
+  font-family: var(--paipan-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart .bazi-compatibility-disclosure {
+  margin-top: 8px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart .bazi-compatibility-disclosure > summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  background: var(--paipan-ground);
+}
+
+body .product-chart .bazi-compatibility-disclosure > summary strong {
+  color: var(--paipan-ink);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+body .product-chart .bazi-compatibility-disclosure > summary span {
+  color: var(--paipan-slate);
+  font-family: var(--paipan-font-mono);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+body .product-chart .bazi-compatibility-disclosure > summary::after {
+  content: "+";
+  color: var(--paipan-ink);
+  font: 950 18px/1 var(--paipan-font-mono);
+}
+
+body .product-chart .bazi-compatibility-disclosure[open] > summary {
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-accent);
+}
+
+body .product-chart .bazi-compatibility-disclosure[open] > summary::after {
+  content: "−";
+}
+
+body .product-chart .bazi-compatibility-disclosure:not([open]) > .bazi-compatibility-panel {
+  display: none !important;
+}
+
+body .product-chart .bazi-compatibility-disclosure .bazi-compatibility-panel {
+  margin-top: 0;
+  border: 0;
+  box-shadow: none;
+}
 
 /* K-line is a first-class workbench, not an unstyled SVG fallback.  Keep the
    Chinese market convention invariant: red means close >= open; green means
@@ -397,7 +1333,7 @@ body .product-chart .kline-panel__scales button {
 body .product-chart .kline-panel__switch button.is-active,
 body .product-chart .kline-panel__scales button.is-active {
   background: var(--paipan-yellow);
-  box-shadow: 3px 3px 0 var(--paipan-red);
+  box-shadow: 3px 3px 0 var(--paipan-ink);
 }
 
 body .product-chart .kline-panel__scales { margin-top: 11px; }
@@ -427,10 +1363,27 @@ body .product-chart .kline-panel__candle-body { stroke: var(--paipan-ink); strok
 body .product-chart .kline-panel__candle.is-up .kline-panel__candle-body { fill: var(--paipan-red); }
 body .product-chart .kline-panel__candle.is-down .kline-panel__candle-body { fill: #196b58; }
 body .product-chart .kline-panel__axis { fill: #655d53; font: 11px var(--mono-font); }
+body .product-chart .kline-panel__marker circle { stroke: var(--paipan-ink); stroke-width: 2; }
+body .product-chart .kline-panel__marker text { fill: var(--paipan-ink); font: 900 10px var(--mono-font); }
+body .product-chart .kline-panel__marker.is-rise circle { fill: var(--paipan-red); }
+body .product-chart .kline-panel__marker.is-turn-up circle { fill: var(--paipan-yellow); }
+body .product-chart .kline-panel__marker.is-turn-down circle { fill: #196b58; }
+body .product-chart .kline-panel__markers { display: grid; gap: 5px; margin-top: 12px; padding: 10px; border: 2px solid var(--paipan-ink); background: #f7ecd0; }
+body .product-chart .kline-panel__markers-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+body .product-chart .kline-panel__markers-head strong { font-size: 15px; }
+body .product-chart .kline-panel__markers-head span { color: var(--paipan-violet); font: 800 10px var(--mono-font); }
+body .product-chart .kline-panel__marker-row { display: grid; grid-template-columns: 52px 130px minmax(0, 1fr); gap: 8px; align-items: center; width: 100%; border: 1px solid var(--paipan-ink); background: #fffdf7; padding: 7px 8px; text-align: left; cursor: pointer; }
+body .product-chart .kline-panel__marker-row:hover { background: #fff6dc; transform: translateX(2px); }
+body .product-chart .kline-panel__marker-row b { font: 950 11px var(--mono-font); }
+body .product-chart .kline-panel__marker-row.is-rise b { color: var(--paipan-red); }
+body .product-chart .kline-panel__marker-row.is-turn-up b { color: #9a6b00; }
+body .product-chart .kline-panel__marker-row.is-turn-down b { color: #196b58; }
+body .product-chart .kline-panel__marker-row span { font: 800 11px var(--mono-font); }
+body .product-chart .kline-panel__marker-row em { color: #655d53; font-size: 12px; font-style: normal; line-height: 1.35; }
 
 body .product-chart .kline-panel__scale-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 body .product-chart .kline-panel__scale-card { min-width: 0; border: 2px solid var(--paipan-ink); background: #fff; padding: 8px; }
-body .product-chart .kline-panel__scale-card.is-selected { background: #fff6dc; box-shadow: 4px 4px 0 var(--paipan-red); }
+body .product-chart .kline-panel__scale-card.is-selected { background: #fffdf5; box-shadow: 4px 4px 0 var(--paipan-ink); }
 body .product-chart .kline-panel__scale-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 body .product-chart .kline-panel__scale-card-head strong { font-size: 16px; letter-spacing: .02em; }
 body .product-chart .kline-panel__scale-card-head span { color: #655d53; font: 11px var(--mono-font); white-space: nowrap; }
@@ -473,6 +1426,8 @@ body .product-chart .kline-panel__empty { margin-top: 12px; padding: 18px; borde
   body .product-chart .kline-panel__scale-card .kline-panel__plot-wrap { min-height: 150px; }
   body .product-chart .kline-panel__keypoints button { grid-template-columns: 1fr .35fr; }
   body .product-chart .kline-panel__keypoints button em { grid-column: 1 / -1; }
+  body .product-chart .kline-panel__marker-row { grid-template-columns: 48px 1fr; }
+  body .product-chart .kline-panel__marker-row em { grid-column: 1 / -1; }
   body .product-chart .kline-panel__ai-button { width: 100%; justify-content: center; }
 }
 
@@ -484,7 +1439,7 @@ body .product-chart .kline-panel__ai-report {
   margin-top: 10px;
   border: 2px solid var(--paipan-ink);
   background: var(--paipan-paper);
-  box-shadow: 5px 5px 0 var(--paipan-red);
+  box-shadow: var(--paipan-shadow-lg);
 }
 
 body .product-chart .kline-panel__ai-report > div {
@@ -525,86 +1480,296 @@ body .product-chart .kline-panel__ma { fill: none; stroke-width: 2.25; stroke-li
 body .product-chart .kline-panel__ma--5 { stroke: var(--paipan-ink); }
 body .product-chart .kline-panel__ma--10 { stroke: var(--paipan-red); stroke-dasharray: 5 4; }
 
-body .product-chart .ziwei-panel__canvas {
+/* --------------------------------------------------------------------------
+   紫微斗数 (Ziwei Doushu): Disciplined Neo-Brutalist Architecture
+   -------------------------------------------------------------------------- */
+body .product-chart .ziwei-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Meta chips */
+body .product-chart .ziwei-panel__meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body .product-chart .ziwei-meta-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--paipan-paper) !important;
   border: 2px solid var(--paipan-ink) !important;
-  border-radius: 0 !important;
-  background: #fffdf7 !important;
-  box-shadow: 5px 5px 0 var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
 }
 
+body .product-chart .ziwei-meta-chip span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+}
+
+body .product-chart .ziwei-meta-chip strong {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Astrolabe canvas frame */
+body .product-chart .ziwei-panel__canvas {
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  padding: 8px !important;
+  position: relative;
+}
+
+/* Astrolabe theme variables */
 body .product-chart .ziwei-panel__canvas .iztro-astrolabe-theme-default {
-  --iztro-color-major: #761f16;
-  --iztro-color-minor: #145845;
-  --iztro-color-adjective: #3f2f78;
-  --iztro-color-brightness: #8a4f16;
-  --iztro-color-horoscope: #7f2b1f;
-  --iztro-color-mutagen: #111111;
-  --iztro-color-palace: #111111;
-  --iztro-color-tianma: #6b3511;
-  --iztro-color-line: #171717;
-  --iztro-color-text: #171717;
-  --iztro-color-border: #171717;
-  --iztro-star-font-size-big: 14px;
-  --iztro-star-font-size-small: 12px;
+  --iztro-color-major: #991b1b;
+  --iztro-color-minor: #047857;
+  --iztro-color-adjective: #4338ca;
+  --iztro-color-brightness: #b45309;
+  --iztro-color-horoscope: #991b1b;
+  --iztro-color-mutagen: #121214;
+  --iztro-color-palace: #121214;
+  --iztro-color-tianma: #b45309;
+  --iztro-color-line: #121214;
+  --iztro-color-text: #121214;
+  --iztro-color-border: #121214;
+  --iztro-color-focus: #ffbe1a;
+  --iztro-color-quan: #b45309;
+  --iztro-color-tough: #991b1b;
+  --iztro-color-awesome: #d97706;
+  --iztro-color-active: #0284c7;
+  --iztro-color-happy: #7c3aed;
+  --iztro-color-nice: #059669;
+  --iztro-color-decorator-1: #475569;
+  --iztro-color-decorator-2: #6d28d9;
+  --iztro-star-font-size-big: 13.5px;
+  --iztro-star-font-size-small: 11px;
 }
 
+body .product-chart .ziwei-panel__canvas .iztro-astrolabe {
+  gap: 6px !important;
+  padding: 0 !important;
+}
+
+/* Palace cards: crisp rectangles, NO 18px rounded pills! */
 body .product-chart .ziwei-panel__canvas .iztro-palace,
 body .product-chart .ziwei-panel__canvas .iztro-center-palace {
   border: 1.5px solid var(--paipan-ink) !important;
-  border-radius: 0 !important;
-  background: #fffdf7 !important;
+  border-radius: 3px !important;
+  background: var(--paipan-paper) !important;
   color: var(--paipan-ink) !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+  backdrop-filter: none !important;
+  padding: 6px 7px !important;
+  transition: background 0.12s ease, box-shadow 0.12s ease !important;
 }
 
-body .product-chart .ziwei-panel__canvas .iztro-palace-name,
-body .product-chart .ziwei-panel__canvas .iztro-palace-name-body,
-body .product-chart .ziwei-panel__canvas .iztro-palace-heavenly-stem,
-body .product-chart .ziwei-panel__canvas .iztro-palace-earthly-branch,
-body .product-chart .ziwei-panel__canvas .iztro-palace-decadal,
-body .product-chart .ziwei-panel__canvas .iztro-palace-range,
-body .product-chart .ziwei-panel__canvas .iztro-palace-ages,
-body .product-chart .ziwei-panel__canvas .iztro-star,
-body .product-chart .ziwei-panel__canvas .iztro-star span,
-body .product-chart .ziwei-panel__canvas .iztro-palace-center-item,
-body .product-chart .ziwei-panel__canvas .iztro-palace-center-item span {
-  opacity: 1 !important;
-  text-shadow: none !important;
+/* Focused palace: solar warm highlight, NO dark-blue radial gradient! */
+body .product-chart .ziwei-panel__canvas .iztro-palace.focused-palace {
+  background: #fffde6 !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: inset 0 0 0 2px var(--paipan-accent), 3px 3px 0 var(--paipan-ink) !important;
 }
 
-body .product-chart .ziwei-panel__canvas .iztro-palace-name,
-body .product-chart .ziwei-panel__canvas .iztro-palace-name-body {
-  color: #111111 !important;
-  font-weight: 950 !important;
+/* Opposite and surrounded palaces */
+body .product-chart .ziwei-panel__canvas .iztro-palace.opposite-palace,
+body .product-chart .ziwei-panel__canvas .iztro-palace.surrounded-palace {
+  background: #fbf9f4 !important;
+  border-style: dashed !important;
 }
 
-body .product-chart .ziwei-panel__canvas .iztro-palace-name-taichi,
-body .product-chart .ziwei-panel__canvas .iztro-palace-fate span {
-  background: var(--paipan-yellow) !important;
-  color: var(--paipan-ink) !important;
-  border: 1px solid var(--paipan-ink) !important;
-}
-
+/* Stars hierarchy */
 body .product-chart .ziwei-panel__canvas .iztro-star-major {
-  color: #761f16 !important;
+  color: #991b1b !important;
+  font-family: var(--paipan-font) !important;
   font-weight: 950 !important;
+  font-size: 13.5px !important;
 }
 
 body .product-chart .ziwei-panel__canvas .iztro-star-minor {
-  color: #145845 !important;
-  font-weight: 850 !important;
+  color: #047857 !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 900 !important;
+  font-size: 11.5px !important;
 }
 
 body .product-chart .ziwei-panel__canvas .iztro-star-adjective,
 body .product-chart .ziwei-panel__canvas .iztro-palace-ages,
 body .product-chart .ziwei-panel__canvas .iztro-palace-decadal {
-  color: #3f2f78 !important;
+  color: #4338ca !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 800 !important;
+  font-size: 10.5px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-brightness {
+  font-style: normal !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  color: #b45309 !important;
+}
+
+/* Mutagen stamps (四化印章: 禄权科忌) */
+body .product-chart .ziwei-panel__canvas .iztro-star-mutagen {
+  font-weight: 950 !important;
+  font-size: 9px !important;
+  padding: 1px 3px !important;
+  border-radius: 2px !important;
+  line-height: 1 !important;
+  border: 1px solid var(--paipan-ink) !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-mutagen.mutagen-0 {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #166534 !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-mutagen.mutagen-1 {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #92400e !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-mutagen.mutagen-2 {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #1e40af !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-star-mutagen.mutagen-3 {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #991b1b !important;
+}
+
+/* Palace Footer */
+body .product-chart .ziwei-panel__canvas .iztro-palace-footer {
+  border-top: 1px dashed #d4d4d8 !important;
+  padding-top: 4px !important;
+  margin-top: 4px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-name {
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+  letter-spacing: -0.02em !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-name-taichi,
+body .product-chart .ziwei-panel__canvas .iztro-palace-fate span {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 1px solid var(--paipan-ink) !important;
+  border-radius: 2px !important;
+  font-weight: 900 !important;
+  padding: 1px 3px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-gz span {
+  font-family: var(--paipan-font-mono) !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Center Palace & High-Contrast Manifest (Fix white-on-white text!) */
+body .product-chart .ziwei-panel__canvas .iztro-center-palace {
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: 2.5px 2.5px 0 var(--paipan-ink) !important;
+}
+
+body .product-chart .ziwei-panel__canvas .center-title {
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.04em !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 8px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-center-palace ul.basic-info {
+  margin: 8px 10px !important;
+  column-gap: 12px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-center-item {
+  line-height: 1.6 !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-center-item label {
+  color: var(--paipan-slate) !important;
+  font-family: var(--paipan-font-mono) !important;
   font-weight: 850 !important;
+  font-size: 11px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .iztro-palace-center-item span {
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-weight: 900 !important;
+  font-size: 11.5px !important;
+}
+
+/* Horoscope / Timeline buttons in Center Palace: Tactile physical buttons */
+body .product-chart .ziwei-panel__canvas .horo-buttons {
+  margin: 10px 10px 6px !important;
+  gap: 6px !important;
+}
+
+body .product-chart .ziwei-panel__canvas .horo-buttons .center-button,
+body .product-chart .ziwei-panel__canvas .solar-horoscope .today {
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  padding: 4px 9px !important;
+  box-shadow: 1.5px 1.5px 0 var(--paipan-ink) !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+}
+
+body .product-chart .ziwei-panel__canvas .horo-buttons .center-button:not(.disabled):hover,
+body .product-chart .ziwei-panel__canvas .solar-horoscope .today:hover {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
 }
 
 body .product-chart .ziwei-panel__canvas .iztro-copyright {
-  color: rgb(23 23 23 / .48) !important;
+  color: var(--paipan-slate) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
 }
 
 @media (max-width: 1040px) {
@@ -851,7 +2016,7 @@ body .product-chart .ziwei-panel__canvas .iztro-copyright {
     gap: 8px !important;
     padding: 10px !important;
     border-bottom-width: 3px !important;
-    box-shadow: 3px 3px 0 var(--paipan-red) !important;
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
   }
 
   body .product-chart .observatory-hero__copy {
@@ -907,7 +2072,7 @@ body .product-chart .ziwei-panel__canvas .iztro-copyright {
   body .product-chart .combined-agent-surface,
   body .product-chart .classic-observatory,
   body .product-chart .kline-panel {
-    box-shadow: 3px 3px 0 var(--paipan-red) !important;
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
   }
 
   body .product-chart .combined-agent-surface__heading {
@@ -965,78 +2130,62 @@ body .page-shell.product-chart {
 }
 
 body .product-chart .observatory-hero {
-  display: grid !important;
   position: relative !important;
-  grid-template-columns: max-content minmax(420px, 1fr) max-content !important;
-  grid-template-rows: minmax(0, 1fr) !important;
-  min-height: 76px !important;
-  height: 76px !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 9px 190px 9px 14px !important;
   overflow: visible !important;
   border: 2px solid var(--paipan-ink) !important;
-  border-radius: 2px !important;
-  background: var(--paipan-ink) !important;
-  box-shadow: 7px 7px 0 var(--paipan-red) !important;
-  color: var(--paipan-paper) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  color: var(--paipan-ink) !important;
 }
 
 body .product-chart .observatory-hero__copy {
   display: flex !important;
-  grid-column: 1 !important;
-  grid-row: 1 !important;
   min-width: max-content !important;
   flex-direction: column !important;
   justify-content: center !important;
+  gap: 1px !important;
 }
 
 body .product-chart .workspace-kicker {
-  display: none !important;
+  display: block !important;
 }
 
 body .product-chart .observatory-hero__copy h1 {
-  margin: 3px 0 0 !important;
-  color: var(--paipan-paper) !important;
-  font-size: clamp(1.25rem, 2.1vw, 1.7rem) !important;
+  margin: 0 !important;
+  color: var(--paipan-ink) !important;
+  font-size: 1.65rem !important;
   font-weight: 950 !important;
-  letter-spacing: -.08em !important;
-  line-height: .95 !important;
+  letter-spacing: -.04em !important;
+  line-height: 1.1 !important;
 }
 
 body .product-chart .observatory-hero .workbench-tabs {
-  grid-column: 2 !important;
-  grid-row: 1 !important;
-  width: 100% !important;
   min-width: 0 !important;
 }
 
 body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
-  display: flex !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  padding: 3px !important;
-  border: 2px solid var(--paipan-yellow) !important;
-  border-radius: 0 !important;
-  background: var(--paipan-paper) !important;
+  border: none !important;
+  background: transparent !important;
 }
 
 body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
-  min-width: 0 !important;
-  flex: 1 1 0 !important;
-  margin: 0 !important;
-  padding: 6px 5px !important;
-  justify-content: center !important;
-  border-radius: 0 !important;
+  background: var(--paipan-ground) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
   color: var(--paipan-ink) !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
-  white-space: nowrap !important;
+  font-weight: 700 !important;
+  outline: none !important;
 }
 
 body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab-active {
-  background: var(--paipan-yellow) !important;
-  box-shadow: 3px 3px 0 var(--paipan-red) !important;
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  font-weight: 900 !important;
+  outline: none !important;
 }
 
 body .product-chart .observatory-hero .workbench-tabs .semi-tabs-ink-bar,
@@ -1045,17 +2194,12 @@ body .product-chart .observatory-hero__agent-entry {
 }
 
 body .product-chart .observatory-hero .platform-account {
-  position: absolute !important;
-  top: 50% !important;
-  right: 14px !important;
-  transform: translateY(-50%) !important;
-  align-self: center !important;
+  position: static !important;
+  transform: none !important;
 }
 
 body .product-chart .observatory-hero .hero-action {
-  grid-column: 3 !important;
-  grid-row: 1 !important;
-  align-self: center !important;
+  position: static !important;
 }
 
 body .product-chart .qmdj-footer {
@@ -1154,7 +2298,7 @@ body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--char
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) [data-slot="tabs-trigger"][data-state="active"],
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .semi-tabs-tab-active {
   background: var(--paipan-yellow) !important;
-  box-shadow: 3px 3px 0 var(--paipan-red) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
 }
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .semi-tabs-ink-bar { display: none !important; }
 
@@ -1206,27 +2350,29 @@ body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--char
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output__toolbar .command-button {
   min-height: 30px !important;
   padding: 4px 8px !important;
-  border: 1px solid var(--paipan-ink) !important;
-  border-radius: 0 !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
   color: var(--paipan-ink) !important;
-  background: #f5e6bf !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
   font: 850 .78rem/1.15 ui-sans-serif, system-ui, sans-serif !important;
+  cursor: pointer !important;
 }
-body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__angle.is-active { background: var(--paipan-yellow) !important; box-shadow: 2px 2px 0 var(--paipan-red) !important; transform: translate(-1px, -1px) !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__angle.is-active { background: var(--paipan-yellow) !important; box-shadow: 2px 2px 0 var(--paipan-ink) !important; transform: translate(-1px, -1px) !important; }
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__textarea {
   width: 100% !important;
   min-height: 76px !important;
   max-height: 112px !important;
   padding: 8px !important;
   border: 2px solid var(--paipan-ink) !important;
-  border-radius: 0 !important;
+  border-radius: 3px !important;
   color: var(--paipan-ink) !important;
   background: #fff !important;
   font: 800 .84rem/1.45 ui-sans-serif, system-ui, sans-serif !important;
   resize: vertical !important;
 }
-body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__question-meta { display: flex !important; justify-content: space-between !important; color: var(--paipan-violet) !important; font-size: .72rem !important; }
-body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__question-meta button { color: var(--paipan-violet) !important; font-weight: 850 !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__question-meta { display: flex !important; justify-content: space-between !important; color: var(--paipan-slate) !important; font-size: .72rem !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__question-meta button { color: var(--paipan-ink) !important; font-weight: 850 !important; }
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups { padding-top: 6px !important; border-top: 1px solid var(--paipan-ink) !important; color: var(--paipan-ink) !important; font-size: .74rem !important; }
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups > div { display: grid !important; gap: 4px !important; margin-top: 6px !important; }
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel__followups button { text-align: left !important; }
@@ -1237,16 +2383,17 @@ body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--char
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .command-button-primary {
   min-height: 42px !important;
   border: 2px solid var(--paipan-ink) !important;
-  border-radius: 0 !important;
+  border-radius: 3px !important;
   color: var(--paipan-ink) !important;
   background: var(--paipan-yellow) !important;
-  box-shadow: 4px 4px 0 var(--paipan-red) !important;
+  box-shadow: 3px 3px 0 var(--paipan-ink) !important;
   font: 950 .88rem/1.1 ui-sans-serif, system-ui, sans-serif !important;
+  cursor: pointer !important;
 }
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-scroll { min-height: 0 !important; height: 100% !important; border: 1px solid var(--paipan-ink) !important; border-radius: 0 !important; background: #fff !important; }
-body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty { min-height: 0 !important; color: var(--paipan-violet) !important; background: #f5e6bf !important; }
-body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty strong { color: var(--paipan-red) !important; font-size: 1rem !important; font-weight: 950 !important; }
-body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty span { max-width: 28rem !important; color: var(--paipan-violet) !important; font-weight: 750 !important; text-align: center !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty { min-height: 0 !important; color: var(--paipan-ink) !important; background: var(--paipan-ground) !important; border-radius: 3px !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty strong { color: var(--paipan-ink) !important; font-size: 1rem !important; font-weight: 950 !important; }
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty span { max-width: 28rem !important; color: var(--paipan-slate) !important; font-weight: 750 !important; text-align: center !important; }
 
 /* The empty result is an analysis protocol, not an oversized apology. */
 body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-result-empty--chart {
@@ -1328,8 +2475,8 @@ body .product-chart .combined-agent-surface {
   padding: 0 !important;
   border: 2px solid var(--paipan-ink) !important;
   border-radius: 0 !important;
-  background: var(--paipan-ground) !important;
-  box-shadow: 6px 6px 0 var(--paipan-red) !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
 }
 body .product-chart .combined-agent-surface__heading {
   display: flex !important;
@@ -1338,17 +2485,17 @@ body .product-chart .combined-agent-surface__heading {
   justify-content: space-between !important;
   gap: 16px !important;
   padding: 13px 16px !important;
-  border-bottom: 3px solid var(--paipan-ink) !important;
-  background: var(--paipan-ink) !important;
-  color: var(--paipan-paper) !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
 }
 body .product-chart .combined-agent-surface__heading > div { display: grid !important; min-width: 0 !important; align-content: center !important; gap: 4px !important; }
-body .product-chart .combined-agent-surface__heading > div > span:first-child { color: var(--paipan-yellow) !important; font: 900 10px/1 ui-monospace, monospace !important; letter-spacing: .1em !important; }
-body .product-chart .combined-agent-surface__heading h2 { margin: 0 !important; color: var(--paipan-paper) !important; font: 950 clamp(1.55rem, 2.3vw, 2.15rem)/.9 ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -.07em !important; }
-body .product-chart .combined-agent-surface__heading p { margin: 0 !important; color: #ded3c2 !important; font: 750 12px/1.35 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart .combined-agent-surface__heading > div > span:first-child { color: var(--paipan-ink) !important; font: 900 10px/1 ui-monospace, monospace !important; letter-spacing: .1em !important; }
+body .product-chart .combined-agent-surface__heading h2 { margin: 0 !important; color: var(--paipan-ink) !important; font: 950 clamp(1.55rem, 2.3vw, 2.15rem)/.9 ui-sans-serif, system-ui, sans-serif !important; letter-spacing: -.07em !important; }
+body .product-chart .combined-agent-surface__heading p { margin: 0 !important; color: var(--paipan-slate) !important; font: 750 12px/1.35 ui-sans-serif, system-ui, sans-serif !important; }
 body .product-chart .combined-agent-surface__sources { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 2px !important; }
-body .product-chart .combined-agent-surface__sources span { padding: 3px 5px !important; border: 1px solid #6c655c !important; color: var(--paipan-paper) !important; font: 850 9px/1 ui-monospace, monospace !important; }
-body .product-chart .combined-agent-surface__heading > strong { display: grid !important; flex: 0 0 auto !important; height: fit-content !important; align-self: center !important; padding: 8px 10px !important; border: 2px solid var(--paipan-ink) !important; background: var(--paipan-yellow) !important; box-shadow: 3px 3px 0 var(--paipan-red) !important; color: var(--paipan-ink) !important; font: 950 11px/1 ui-sans-serif, system-ui, sans-serif !important; }
+body .product-chart .combined-agent-surface__sources span { padding: 3px 5px !important; border: 1px solid var(--paipan-ink) !important; color: var(--paipan-ink) !important; font: 850 9px/1 ui-monospace, monospace !important; }
+body .product-chart .combined-agent-surface__heading > strong { display: grid !important; flex: 0 0 auto !important; height: fit-content !important; align-self: center !important; padding: 8px 10px !important; border: 2px solid var(--paipan-ink) !important; background: var(--paipan-yellow) !important; box-shadow: 2px 2px 0 var(--paipan-ink) !important; color: var(--paipan-ink) !important; font: 950 11px/1 ui-sans-serif, system-ui, sans-serif !important; }
 body .product-chart .combined-agent-surface > .inspector-tabs {
   display: grid !important;
   min-height: 0 !important;
@@ -1565,9 +2712,9 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     gap: 7px !important;
     padding: 0 13px !important;
     border: 2px solid var(--paipan-ink) !important;
-    border-radius: 0 !important;
+    border-radius: 3px !important;
     background: var(--paipan-yellow) !important;
-    box-shadow: 4px 4px 0 var(--paipan-red) !important;
+    box-shadow: var(--paipan-shadow) !important;
     color: var(--paipan-ink) !important;
     font: 950 13px/1 ui-sans-serif, system-ui, sans-serif !important;
     letter-spacing: -.02em !important;
@@ -1607,7 +2754,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     width: 100% !important;
     height: 100% !important;
     border: 0 !important;
-    background: rgb(23 23 23 / .72) !important;
+    background: rgb(18 18 20 / .6) !important;
     opacity: 0 !important;
     transition: opacity 160ms ease-out !important;
   }
@@ -1625,10 +2772,10 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     margin: auto !important;
     grid-template-rows: 46px minmax(0, 1fr) !important;
     overflow: hidden !important;
-    border: 3px solid var(--paipan-ink) !important;
-    border-radius: 0 !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 4px !important;
     background: var(--paipan-paper) !important;
-    box-shadow: 8px 8px 0 var(--paipan-red) !important;
+    box-shadow: var(--paipan-shadow-lg) !important;
     color: var(--paipan-ink) !important;
     transform: translateY(18px) !important;
     transition: transform 160ms ease-out !important;
@@ -1731,8 +2878,8 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
 
   body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-tab-active {
     border-color: var(--paipan-ink) !important;
-    background: var(--paipan-paper) !important;
-    box-shadow: 2px 2px 0 var(--paipan-red) !important;
+    background: var(--paipan-yellow) !important;
+    box-shadow: 2px 2px 0 var(--paipan-ink) !important;
   }
 
   body .product-chart .chart-analysis-drawer .inspector-tabs--chart .semi-tabs-ink-bar {
@@ -1808,8 +2955,8 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     min-height: 28px !important;
     padding: 4px 3px !important;
     border: 1.5px solid var(--paipan-ink) !important;
-    border-radius: 0 !important;
-    background: var(--paipan-paper) !important;
+    border-radius: 3px !important;
+    background: var(--paipan-ground) !important;
     color: var(--paipan-ink) !important;
     font: 900 11px/1.05 ui-sans-serif, system-ui, sans-serif !important;
     letter-spacing: -.04em !important;
@@ -1817,7 +2964,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
 
   body .product-chart .chart-analysis-drawer .agent-panel__angle.is-active {
     background: var(--paipan-yellow) !important;
-    box-shadow: 2px 2px 0 var(--paipan-red) !important;
+    box-shadow: 2px 2px 0 var(--paipan-ink) !important;
     transform: translate(-1px, -1px) !important;
   }
 
@@ -1915,10 +3062,10 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     padding: 6px 9px !important;
     justify-content: center !important;
     border: 2px solid var(--paipan-ink) !important;
-    border-radius: 0 !important;
-    background: var(--paipan-red) !important;
-    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
-    color: var(--paipan-paper) !important;
+    border-radius: 3px !important;
+    background: var(--paipan-accent) !important;
+    box-shadow: var(--paipan-shadow-sm) !important;
+    color: var(--paipan-ink) !important;
     font: 950 12px/1.1 ui-sans-serif, system-ui, sans-serif !important;
   }
 
@@ -2120,7 +3267,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     gap: 7px !important;
     min-height: 0 !important;
     padding: 8px !important;
-    box-shadow: 4px 4px 0 var(--paipan-red) !important;
+    box-shadow: var(--paipan-shadow) !important;
   }
 
   body .product-chart .observatory-hero__copy {
@@ -2157,7 +3304,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     overflow-x: auto !important;
     overscroll-behavior-inline: contain;
     scrollbar-width: thin;
-    scrollbar-color: var(--paipan-red) var(--paipan-paper);
+    scrollbar-color: var(--paipan-slate) var(--paipan-paper);
   }
 
   body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar,
@@ -2165,7 +3312,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
   body .product-chart .ziwei-panel__canvas::-webkit-scrollbar { height: 4px; }
   body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-thumb,
   body .product-chart .bazi-six-pillars::-webkit-scrollbar-thumb,
-  body .product-chart .ziwei-panel__canvas::-webkit-scrollbar-thumb { background: var(--paipan-red); }
+  body .product-chart .ziwei-panel__canvas::-webkit-scrollbar-thumb { background: var(--paipan-slate); border-radius: 2px; }
   body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-track,
   body .product-chart .bazi-six-pillars::-webkit-scrollbar-track,
   body .product-chart .ziwei-panel__canvas::-webkit-scrollbar-track { background: var(--paipan-paper); }
@@ -2242,7 +3389,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     scrollbar-width: thin;
-    scrollbar-color: var(--paipan-red) var(--paipan-paper);
+    scrollbar-color: var(--paipan-slate) var(--paipan-paper);
   }
 
   body .product-chart .ziwei-panel__canvas .iztro-astrolabe {
@@ -2256,7 +3403,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
 
   /* Classical boards and the all-Agent screen share the page edge rhythm. */
   body .product-chart :is(.classic-observatory, .combined-agent-surface, .kline-panel) {
-    box-shadow: 4px 4px 0 var(--paipan-red) !important;
+    box-shadow: var(--paipan-shadow) !important;
   }
 
   body .product-chart .combined-agent-surface__heading {
@@ -2322,7 +3469,7 @@ body .product-chart .combined-agent-surface .agent-result-empty__protocol span {
 /* Final mobile layout contract.  Keep the palette, but give the shell one
  * predictable reading order after all legacy route overrides. */
 @media (max-width: 720px) {
-  body .product-chart :is(.classic-observatory, .combined-agent-surface, .kline-panel) { box-shadow: 3px 3px 0 var(--paipan-red) !important; }
+  body .product-chart :is(.classic-observatory, .combined-agent-surface, .kline-panel) { box-shadow: var(--paipan-shadow) !important; }
 }
 
 @media (max-width: 420px) {
@@ -2371,45 +3518,464 @@ body .product-chart .agent-panel__guest-recovery-note {
     padding: 9px 12px !important;
     align-items: center !important;
   }
-  html body .page-shell.product-chart .observatory-hero__copy { grid-column: 1 !important; grid-row: 1 !important; min-width: 0 !important; }
-  html body .page-shell.product-chart .observatory-hero .platform-account {
-    position: static !important;
-    transform: none !important;
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    max-width: 390px !important;
-    min-width: 0 !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    gap: 5px !important;
-  }
-  html body .page-shell.product-chart .observatory-hero .workbench-tabs { grid-column: 1 / -1 !important; grid-row: 2 !important; }
-  html body .page-shell.product-chart .observatory-hero .hero-action { display: none !important; }
 }
 
-/* Absolute final owner for the desktop Agent height. This is intentionally
-   after the legacy desktop rules above: sidebar height is the hard boundary,
-   transcript is the only scrolling child. */
-@media (min-width: 721px) {
-  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart {
+/* Wide screen masthead (>= 1141px): clean single-row architectural bar */
+@media (min-width: 1141px) {
+  html body .page-shell.product-chart .observatory-hero {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    min-height: 62px !important;
+    padding: 10px 18px !important;
+    background: var(--paipan-paper) !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 4px !important;
+    box-shadow: var(--paipan-shadow-lg) !important;
+  }
+  html body .page-shell.product-chart .observatory-hero__copy {
+    flex: 0 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
-    overflow: hidden !important;
+    justify-content: center !important;
+    gap: 1px !important;
   }
-  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart > .semi-tabs-content,
-  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .semi-tabs-pane,
-  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .semi-tabs-pane-motion-overlay,
-  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .inspector-tabs__content,
-  html body .page-shell.product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel > .agent-surface--chart .agent-panel--chart {
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
   }
+  html body .page-shell.product-chart .observatory-hero .platform-account {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: static !important;
+    transform: none !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .hero-action {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+  }
+}
+
+/* Medium screen masthead (721px - 1140px): 2 clean non-colliding rows */
+@media (max-width: 1140px) and (min-width: 721px) {
+  html body .page-shell.product-chart .observatory-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 8px 12px !important;
+    min-height: 84px !important;
+    padding: 10px 14px !important;
+    background: var(--paipan-paper) !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 4px !important;
+    box-shadow: var(--paipan-shadow-lg) !important;
+    align-items: center !important;
+  }
+  html body .page-shell.product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 1px !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .platform-account {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    justify-self: end !important;
+    position: static !important;
+    transform: none !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .hero-action {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-self: end !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* Visual system: unified high-aesthetic neo-brutalist language across every mode */
+html body .page-shell.product-chart {
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+}
+
+html body .page-shell.product-chart .observatory-hero {
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+}
+
+/* Brand Identity */
+html body .page-shell.product-chart .observatory-hero__copy .workspace-kicker {
+  display: block !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  color: var(--paipan-ink) !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  margin: 0 0 2px 0 !important;
+}
+html body .page-shell.product-chart .observatory-hero__copy h1 {
+  margin: 0 !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 1.65rem !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.1 !important;
+  color: var(--paipan-ink) !important;
+  padding: 0 !important;
+}
+
+/* ModeTabs: physical keyboard / index key aesthetic */
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-bar {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  gap: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab {
+  background: var(--paipan-ground) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 5px 13px !important;
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+  outline: none !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab strong {
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:hover {
+  background: var(--paipan-paper) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  font-weight: 900 !important;
+  transform: none !important;
+  outline: none !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:focus,
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:focus-visible,
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active:focus,
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active:focus-visible {
+  outline: none !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-ink-bar {
+  display: none !important;
+}
+
+/* Account Info & Buttons */
+html body .page-shell.product-chart .observatory-hero .platform-account__status {
+  color: var(--paipan-ink) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  text-align: right !important;
+}
+html body .page-shell.product-chart .observatory-hero .platform-account__status small {
+  display: block !important;
+  color: var(--paipan-slate) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  margin-top: 1px !important;
+}
+html body .page-shell.product-chart .platform-account__button,
+html body .page-shell.product-chart .observatory-hero .hero-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 13px !important;
+  min-height: 34px !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+  outline: none !important;
+}
+html body .page-shell.product-chart .platform-account__button:hover,
+html body .page-shell.product-chart .observatory-hero .hero-action:hover {
+  background: var(--paipan-ground) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
+html body .page-shell.product-chart .platform-account__button:active,
+html body .page-shell.product-chart .observatory-hero .hero-action:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0 var(--paipan-ink) !important;
+}
+html body .page-shell.product-chart .platform-account__button.is-primary {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 850 !important;
+}
+html body .page-shell.product-chart .platform-account__button.is-primary:hover {
+  background: var(--paipan-accent-hover) !important;
+}
+
+/* Panels, Surfaces and Steppers */
+html body .page-shell.product-chart .canvas-panel,
+html body .page-shell.product-chart .sidebar-panel,
+html body .page-shell.product-chart .agent-surface--chart,
+html body .page-shell.product-chart .ziwei-panel,
+html body .page-shell.product-chart .ziwei-panel__canvas {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+}
+html body .page-shell.product-chart .agent-panel--chart,
+html body .page-shell.product-chart .agent-panel--chart * { color: var(--paipan-ink); }
+html body .page-shell.product-chart .agent-panel--chart .chart-inspector-head {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+}
+html body .page-shell.product-chart .agent-panel--chart .agent-panel__angle,
+html body .page-shell.product-chart .agent-panel--chart .agent-panel__followups button {
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+}
+html body .page-shell.product-chart .chart-time-stepper {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
+html body .page-shell.product-chart .datetime-stepper button {
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 2px !important;
+  box-shadow: 1.5px 1.5px 0 var(--paipan-ink) !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 800 !important;
+}
+
+/* Qimen Nine-Palace Grid & Cards: Disciplined Neo-Brutalist Architecture */
+html body .page-shell.product-chart .palace-grid {
+  gap: 2px !important;
+  background: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+}
+html body .page-shell.product-chart .palace-card {
+  background: var(--paipan-paper) !important;
+  border: none !important;
+  color: var(--paipan-ink) !important;
+  padding: 5px 6px !important;
+  transition: background 0.12s ease !important;
+  position: relative !important;
+}
+html body .page-shell.product-chart .palace-card::before {
+  display: none !important;
+}
+html body .page-shell.product-chart .palace-card:hover {
+  background: #faf8f3 !important;
+}
+html body .page-shell.product-chart .palace-card.is-selected {
+  background: #fffef2 !important;
+  box-shadow: inset 0 0 0 3px var(--paipan-accent) !important;
+}
+html body .page-shell.product-chart .palace-card.is-center {
+  background: #fbf9f5 !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__index {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__header h3 {
+  font-family: var(--paipan-font) !important;
+  font-size: 1.15rem !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  line-height: 1 !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__identity span {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  color: var(--paipan-slate) !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__status strong {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1px 4px !important;
+  font-size: 9.5px !important;
+  font-weight: 900 !important;
+  border: 1px solid var(--paipan-ink) !important;
+  border-radius: 2px !important;
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  line-height: 1.1 !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__primary-item span,
+html body .page-shell.product-chart .palace-card .palace-card__facts dt {
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  color: var(--paipan-slate) !important;
+  line-height: 1 !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__primary-item--star strong {
+  color: #b73425 !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__primary-item--gate strong {
+  color: #176c58 !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__primary-item--deity strong {
+  color: #854d0e !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+}
+html body .page-shell.product-chart .palace-card .palace-card__fact dd {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+}
+
+/* Qimen Summary Strip */
+html body .page-shell.product-chart .summary-strip {
+  background: var(--paipan-ground) !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+  gap: 6px !important;
+  padding: 4px 6px !important;
+}
+html body .page-shell.product-chart .summary-chip {
+  background: var(--paipan-paper) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: 1.5px 1.5px 0 var(--paipan-ink) !important;
+}
+html body .page-shell.product-chart .summary-chip__badge {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border-right: 1px solid var(--paipan-ink) !important;
+  border-radius: 2px 0 0 2px !important;
+  font-weight: 900 !important;
+}
+html body .page-shell.product-chart .summary-chip__content strong {
+  font-family: var(--paipan-font-mono) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 850 !important;
+}
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart .observatory-hero { box-shadow: var(--paipan-shadow) !important; }
+  html body .page-shell.product-chart .canvas-panel,
+  html body .page-shell.product-chart .sidebar-panel { box-shadow: var(--paipan-shadow) !important; }
+}
+
+/* Rebuilt responsive shell: one predictable reading flow on phones. */
+@media (max-width: 720px) {
+  html body .page-shell.product-chart { display: flex !important; min-height: 100dvh !important; height: auto !important; overflow-x: clip !important; }
+  html body .page-shell.product-chart .paipan-workspace { display: flex !important; flex-direction: column !important; gap: 12px !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  html body .page-shell.product-chart .paipan-workspace > #qimen-chart,
+  html body .page-shell.product-chart .paipan-workspace > #qimen-agent { width: 100% !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  html body .page-shell.product-chart .paipan-workspace > #qimen-workbench-separator { display: none !important; }
+  html body .page-shell.product-chart .paipan-workspace > #qimen-chart { order: 1 !important; }
+  html body .page-shell.product-chart .paipan-workspace > #qimen-agent { order: 2 !important; }
+  html body .page-shell.product-chart .paipan-workspace .canvas-panel { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  html body .page-shell.product-chart .paipan-workspace .canvas-panel__content { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  html body .page-shell.product-chart .paipan-workspace .sidebar-panel { height: auto !important; max-height: none !important; overflow: visible !important; }
+  html body .page-shell.product-chart .ziwei-panel__canvas { width: 100% !important; min-height: 0 !important; aspect-ratio: 1 / 1 !important; overflow: auto !important; }
+}
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart .paipan-workspace { display: grid !important; grid-template-columns: minmax(0, 1.75fr) 6px minmax(340px, .9fr) !important; grid-template-rows: minmax(0, 1fr) !important; height: 100% !important; min-height: 0 !important; overflow: hidden !important; }
+}
+
+/* EOF guard */
+@media (max-width: 1040px) {
+  html body .page-shell.product-chart .observatory-hero .hero-action { display: inline-flex !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart .chart-time-stepper { display: grid !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__section-head,
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles,
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__question-meta { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups { display: block !important; visibility: visible !important; opacity: 1 !important; }
+}
+
+/* Last cascade guard for compact controls. */
+html body .page-shell.product-chart .observatory-hero .hero-action { display: inline-flex !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart .chart-time-stepper { display: grid !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__section-head,
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles,
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__question-meta { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__angles { flex-wrap: wrap !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups { display: block !important; visibility: visible !important; opacity: 1 !important; }
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart .agent-panel__section--question .agent-panel__followups > div { display: grid !important; }
+@media (max-width: 720px) {
+  html body .page-shell.product-chart .chart-time-stepper { grid-template-columns: auto minmax(0, 1fr) !important; gap: 7px !important; margin: 4px 0 8px !important; padding: 8px !important; border: 2px solid var(--paipan-ink) !important; border-radius: 3px !important; background: var(--paipan-paper) !important; box-shadow: var(--paipan-shadow-sm) !important; }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper { grid-column: 1 / -1 !important; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; width: 100% !important; }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper button { min-height: 34px !important; padding: 6px 4px !important; font-size: 11px !important; background: var(--paipan-ground) !important; border: 1.5px solid var(--paipan-ink) !important; border-radius: 2px !important; }
 }
 
 /* Final responsive Agent entry contract. */
@@ -2582,18 +4148,50 @@ html body .product-chart .agent-chat-welcome {
   display: grid !important;
   gap: 6px !important;
   padding: 14px !important;
-  border-bottom: 1px solid var(--paipan-ink) !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
   color: var(--paipan-ink) !important;
-  background: #fffaf0 !important;
+  background: var(--paipan-paper) !important;
 }
 html body .product-chart .agent-chat-welcome > strong { font-size: 1.05rem !important; font-weight: 950 !important; }
-html body .product-chart .agent-chat-welcome > span { color: var(--paipan-violet) !important; font-size: .78rem !important; }
-html body .product-chart .agent-chat-welcome__presets { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6px !important; margin-top: 4px !important; }
-html body .product-chart .agent-chat-welcome__presets button { display: grid !important; gap: 3px !important; padding: 8px !important; border: 1px solid var(--paipan-ink) !important; border-radius: 0 !important; background: #f5e6bf !important; color: var(--paipan-ink) !important; text-align: left !important; cursor: pointer !important; }
-html body .product-chart .agent-chat-welcome__presets button:hover { background: var(--paipan-yellow) !important; }
-html body .product-chart .agent-chat-welcome__presets button b { font-size: .76rem !important; }
-html body .product-chart .agent-chat-welcome__presets button span { font-size: .68rem !important; line-height: 1.3 !important; }
-html body .product-chart .agent-report-button { min-height: 36px !important; padding-inline: 10px !important; border: 2px solid var(--paipan-ink) !important; border-radius: 0 !important; background: #f5e6bf !important; color: var(--paipan-ink) !important; font-weight: 900 !important; }
+html body .product-chart .agent-chat-welcome > span { color: var(--paipan-slate) !important; font-size: .8rem !important; }
+html body .product-chart .agent-chat-welcome__presets { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; margin-top: 6px !important; }
+html body .product-chart .agent-chat-welcome__presets button {
+  display: grid !important;
+  gap: 3px !important;
+  padding: 9px 10px !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+}
+html body .product-chart .agent-chat-welcome__presets button:hover {
+  background: var(--paipan-accent) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
+html body .product-chart .agent-chat-welcome__presets button b { font-size: .78rem !important; }
+html body .product-chart .agent-chat-welcome__presets button span { font-size: .7rem !important; line-height: 1.35 !important; color: var(--paipan-slate) !important; }
+html body .product-chart .agent-report-button {
+  min-height: 36px !important;
+  padding-inline: 12px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+}
+html body .product-chart .agent-report-button:hover {
+  background: var(--paipan-accent-hover) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
 
 /* Last-resort height contract (must remain after every legacy media rule). */
 @media (min-width: 721px) {
@@ -2716,6 +4314,70 @@ html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__sectio
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__angles,
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__question-meta,
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__section--question .agent-panel__followups { display: none !important; }
+
+/* FINAL OVERRIDE: the compact/mobile contract must win over legacy rules above. */
+html body .page-shell.product-chart .observatory-hero .hero-action {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html body .page-shell.product-chart .chart-time-stepper {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__section-head,
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__angles,
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__question-meta {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__angles {
+  flex-wrap: wrap !important;
+}
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__followups {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__followups > div {
+  display: grid !important;
+}
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart .chart-time-stepper {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    gap: 7px !important;
+    margin: 4px 0 8px !important;
+    padding: 8px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 3px !important;
+    background: var(--paipan-paper) !important;
+    box-shadow: var(--paipan-shadow-sm) !important;
+  }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+  html body .page-shell.product-chart .chart-time-stepper .datetime-stepper button {
+    min-height: 34px !important;
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    background: var(--paipan-ground) !important;
+    border: 1.5px solid var(--paipan-ink) !important;
+    border-radius: 2px !important;
+  }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__angles {
+    gap: 5px !important;
+  }
+  html body .page-shell.product-chart #qimen-agent .agent-panel--chart > .agent-panel__section--question .agent-panel__followups {
+    max-height: 180px !important;
+    overflow: auto !important;
+  }
+}
 html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__textarea {
   width: 100% !important;
   min-height: 52px !important;
@@ -2779,5 +4441,66 @@ html body .product-chart #qimen-agent .agent-surface--chart .agent-panel__textar
     height: 100% !important;
     min-height: 0 !important;
     max-height: 100% !important;
+  }
+}
+
+/* Desktop workbench corrections from visual review. */
+@media (min-width: 721px) {
+  /* The mode rail is navigation, not a row of tiny glyph buttons. */
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs {
+    width: min(100%, 600px) !important;
+    min-width: 500px !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    width: 100% !important;
+    min-width: 100% !important;
+    justify-content: flex-start !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    flex: 1 1 0 !important;
+    min-width: 66px !important;
+    padding-inline: 9px !important;
+  }
+
+  /* Every Qimen datum remains visible; compound readings own full rows. */
+  html body .page-shell.product-chart .canvas-panel[data-mode="qimen"] > .summary-strip {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(34px, auto) !important;
+    gap: 5px !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  html body .page-shell.product-chart .canvas-panel[data-mode="qimen"] > .summary-strip > .summary-chip {
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 34px !important;
+    overflow: visible !important;
+  }
+  html body .page-shell.product-chart .canvas-panel[data-mode="qimen"] > .summary-strip > :is(.summary-chip--metadata, .summary-chip--pillars) {
+    grid-column: span 2 !important;
+  }
+  html body .page-shell.product-chart .canvas-panel[data-mode="qimen"] > .summary-strip .summary-chip__content {
+    min-width: 0 !important;
+    height: auto !important;
+    white-space: normal !important;
+  }
+  html body .page-shell.product-chart .canvas-panel[data-mode="qimen"] > .summary-strip .summary-chip__content strong {
+    min-width: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Read the Bazi chart first, then follow its calendar trajectory below it. */
+  html body .page-shell.product-chart .bazi-reading-workspace {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    align-items: start !important;
+  }
+  html body .page-shell.product-chart .bazi-timing-rail {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 }

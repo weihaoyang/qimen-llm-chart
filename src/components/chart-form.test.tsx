@@ -96,9 +96,11 @@ describe("ChartForm", () => {
       throw new Error("form not found");
     }
 
-    fireEvent.change(within(form).getAllByLabelText("日期时间")[0], {
-      target: { value: "2026-07-03T08:15" },
-    });
+    fireEvent.change(within(form).getByLabelText("年"), { target: { value: "2026" } });
+    fireEvent.change(within(form).getByLabelText("月"), { target: { value: "7" } });
+    fireEvent.change(within(form).getByLabelText("日"), { target: { value: "3" } });
+    fireEvent.change(within(form).getByLabelText("时"), { target: { value: "8" } });
+    fireEvent.change(within(form).getByLabelText("分"), { target: { value: "15" } });
     fireEvent.click(within(form).getByRole("button", { name: "生成盘面" }));
 
     expect(props.onSubmit).toHaveBeenCalledWith({
@@ -136,11 +138,12 @@ describe("ChartForm", () => {
       />,
     );
 
-    const inputs = container.querySelectorAll('input[type="datetime-local"]');
-
     await waitFor(() => {
-      expect(inputs[0]).toHaveValue("2026-07-03T08:15");
-      expect(inputs[1]).toHaveValue("2026-07-03T08:15");
+      expect(within(container).getAllByLabelText("年")[0]).toHaveValue("2026");
+      expect(within(container).getAllByLabelText("月")[0]).toHaveValue("7");
+      expect(within(container).getAllByLabelText("日")[0]).toHaveValue("3");
+      expect(within(container).getAllByLabelText("时")[0]).toHaveValue("8");
+      expect(within(container).getAllByLabelText("分")[0]).toHaveValue("15");
     });
   });
 

@@ -108,8 +108,11 @@ function ScenarioChooser({ scenarios, invitations, error, onClone, onRespondInvi
         <p className="font-mono-code text-xs tracking-[0.3em] text-cyan-400">SHENGTIAN BANZI / OFFICIAL CATALOG</p>
         <h1 className="mt-4 text-4xl font-black">选择一个现实战局，开始自己的推演</h1>
         <p className="mt-4 max-w-2xl text-slate-400">官方案例只读。点击复制后会创建属于你的战局，后续采访、策略、突破和复盘都只写入你的会话。</p>
-        <div className="mt-6 flex justify-end"><PlatformAccountBar /></div>
-        {error || actionError ? <div className="mt-6 rounded-xl border border-amber-700/50 bg-amber-950/30 p-4 text-sm text-amber-200">{actionError ?? error}。请登录平台账户后复制案例。</div> : null}
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+          <a href="/gods-eye-view/index.html" className="inline-flex items-center rounded-xl border border-cyan-700/60 bg-cyan-950/40 px-3 py-2 text-xs font-bold text-cyan-200 hover:bg-cyan-900/60">免登录预览 Eyes of God</a>
+          <PlatformAccountBar />
+        </div>
+        {error || actionError ? <div className="mt-6 rounded-xl border border-amber-700/50 bg-amber-950/30 p-4 text-sm text-amber-200">{actionError ?? error} 请登录平台账户后复制案例。</div> : null}
         {invitations.length > 0 && <section className="mt-6 rounded-2xl border border-amber-600/40 bg-amber-950/20 p-5"><h2 className="font-bold text-amber-200">待处理协作邀请</h2><div className="mt-3 space-y-2">{invitations.map((invitation) => <div key={invitation.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-black/30 px-3 py-2 text-sm"><span><strong>{invitation.battleTitle}</strong> · {invitation.role}</span><span className="flex gap-3"><button className="text-emerald-300 underline" onClick={() => void onRespondInvitation(invitation.id, 'accept').catch((nextError) => setActionError(nextError instanceof Error ? nextError.message : '接受邀请失败。'))}>接受并进入</button><button className="text-slate-300 underline" onClick={() => void onRespondInvitation(invitation.id, 'decline').catch((nextError) => setActionError(nextError instanceof Error ? nextError.message : '拒绝邀请失败。'))}>拒绝</button></span></div>)}</div></section>}
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {scenarios.map((scenario) => (
@@ -162,9 +165,62 @@ function createBattlefieldShell(activeBattle: NonNullable<ReturnType<typeof useB
 
 export default function App() {
   const session = useBattleSession();
+  return <CalibrationLanding session={session} />;
+}
+
+function CalibrationLanding({ session }: { session: ReturnType<typeof useBattleSession> }) {
+  const [hydrated, setHydrated] = useState(false);
+  // Keep the server and first client render identical; the persisted visitor
+  // completion flag is applied during hydration below.
+  const [showCalibration, setShowCalibration] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const localCompleted = typeof window !== 'undefined' && window.localStorage.getItem('stbz-calibration-complete') === 'true';
+    if (localCompleted) {
+      const timer = window.setTimeout(() => {
+        if (!cancelled) setHydrated(true);
+      }, 0);
+      return () => { cancelled = true; window.clearTimeout(timer); };
+    }
+
+    void sessionApi.profile().then(({ profile }) => {
+      if (cancelled) return;
+      const saved = profile?.profile?.uiProfile;
+      setShowCalibration(!(saved && typeof saved === 'object' && !Array.isArray(saved) && (saved as Record<string, unknown>).isCalibrated === true));
+    }).catch(() => {
+      if (!cancelled) setShowCalibration(true);
+    }).finally(() => {
+      if (!cancelled) setHydrated(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleCompleteCalibration = async (profile: UserProfile, _sigil: DeciderSigil, answers: AIPersonaType[]) => {
+    const { equityBalance: _equityBalance, ...persistedProfile } = profile;
+    void _equityBalance;
+    const requests = [
+      sessionApi.saveProfile({ uiProfile: persistedProfile }),
+      ...(['information', 'reasoning', 'resource'] as const).map((dimension, index) => sessionApi.saveCalibration({
+        battleId: null,
+        dimension,
+        expected: null,
+        actual: answers[index] ? 1 : 0,
+        note: `首次认知校准：${answers[index] ?? profile.aiPersona}`,
+      })),
+    ];
+    const results = await Promise.allSettled(requests);
+    const blockingError = results.find((result) => result.status === 'rejected' && (result.reason as { status?: number })?.status !== 401);
+    if (blockingError && blockingError.status === 'rejected') throw blockingError.reason;
+    if (typeof window !== 'undefined') window.localStorage.setItem('stbz-calibration-complete', 'true');
+    setShowCalibration(false);
+  };
+
+  if (!hydrated) return <div className="min-h-screen bg-[#04070d] text-slate-200 grid place-items-center font-mono-code">正在准备认知校准协议…</div>;
+  if (showCalibration) return <CalibrationFlow onCompleteCalibration={handleCompleteCalibration} />;
+  if (session.activeBattle) return <BattleWorkspace key={session.activeBattle.id} session={session} />;
   if (session.loading) return <div className="min-h-screen bg-[#04070d] text-slate-200 grid place-items-center font-mono-code">正在加载官方案例与战局…</div>;
-  if (!session.activeBattle) return <ScenarioChooser scenarios={session.catalog} invitations={session.invitations} error={session.error} onClone={session.cloneScenario} onRespondInvitation={session.respondInvitation} />;
-  return <BattleWorkspace key={session.activeBattle.id} session={session} />;
+  return <ScenarioChooser scenarios={session.catalog} invitations={session.invitations} error={session.error} onClone={session.cloneScenario} onRespondInvitation={session.respondInvitation} />;
 }
 
 function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSession> }) {
@@ -1172,7 +1228,7 @@ function BattleWorkspace({ session }: { session: ReturnType<typeof useBattleSess
           </div>
         )}
 
-        {/* VIEW 4: World's Pulse (Global 3D Earth Event Radar) */}
+        {/* VIEW 4: Eyes of God (Global 3D Earth Observation) */}
         {activeMainView === 'WORLD_PULSE' && (
           <WorldPulseView
             battleId={session.activeBattle?.id ?? battlefield.id}

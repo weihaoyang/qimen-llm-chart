@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import type { PlanCatalogItem } from '@singularity-sequence/web-sdk';
 import { soundManager } from '../../utils/soundEffects';
-import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, listPlatformPlans } from '../../../lib/platform/browser';
+import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, listPlatformPlans, restorePlatformAccessState } from '../../../lib/platform/browser';
 import { loadPlatformSession } from '../../../lib/platform/session';
 import { requirePlatformClientConfig } from '../../../lib/platform/config';
 import { saveStorefrontCheckout } from '../../../lib/platform/storefront-recovery';
@@ -73,7 +73,10 @@ export const EquityStoreModal: React.FC<EquityStoreModalProps> = ({
       const channel = channels.find((item) => item.ready)?.channel;
       if (!channel) throw new Error('当前没有可用支付方式。');
       const returnUrl = (orderId: string) => `${window.location.origin}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(config.productCode)}`;
-      const session = loadPlatformSession();
+      const storedSession = loadPlatformSession();
+      // Tokens intentionally live in the HttpOnly platform-session bridge.
+      // Restore them before choosing the account checkout path.
+      const session = storedSession ? (await restorePlatformAccessState(storedSession)).session : null;
       let checkoutMode: 'account' | 'guest';
       let orderId: string;
       let checkoutToken = '';

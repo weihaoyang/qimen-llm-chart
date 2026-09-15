@@ -6,13 +6,114 @@
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>God's Eye View</title>
+  <title>Eyes of God</title>
   <link rel="icon" type="image/svg+xml" href="/gods-eye-view/logo.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+  <style>
+    @font-face {
+      font-family: "Material Symbols Outlined";
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+      src: url("/gods-eye-view/assets/material-symbols-outlined.ttf") format("truetype");
+    }
+    @font-face {
+      font-family: "Material Icons Round";
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+      src: url("/gods-eye-view/assets/material-icons-round.otf") format("opentype");
+    }
+    .material-symbols-outlined {
+      font-family: "Material Symbols Outlined";
+      font-weight: normal;
+      font-style: normal;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: "liga";
+      font-feature-settings: "liga";
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-icons-round {
+      font-family: "Material Icons Round", "Material Symbols Outlined";
+      font-weight: normal;
+      font-style: normal;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: "liga";
+      font-feature-settings: "liga";
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined[data-icon-fallback],
+    .material-icons-round[data-icon-fallback] {
+      font-family: Inter, "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif;
+      font-weight: 600;
+      font-feature-settings: normal;
+    }
+  </style>
+  <script>
+    (() => {
+      const icons = {
+        adjust: '◉', arrow_drop_down: '▾', arrow_forward: '→', arrow_left: '←',
+        arrow_right: '→', chevron_left: '‹', chevron_right: '›', close: '×',
+        close_fullscreen: '⤢', dark_mode: '◐', east: '→', flare: '✦', flight: '✈',
+        layers_clear: '▱', light_mode: '☼', local_fire_department: '♨', my_location: '⌖',
+        navigation: '➤', open_in_full: '⤢', public: '◎', radar: '◌', radio: '◉',
+        right_panel_close: '›', right_panel_open: '‹', rocket_launch: '↗',
+        skip_next: '»', skip_previous: '«'
+      };
+      let fontAvailable = false;
+      const applyFallback = (root) => {
+        if (!root || !root.querySelectorAll || fontAvailable) return;
+        root.querySelectorAll('.material-symbols-outlined, .material-icons-round').forEach((node) => {
+          const key = (node.textContent || '').trim();
+          if (icons[key]) {
+            node.textContent = icons[key];
+            node.dataset.iconFallback = key;
+          }
+        });
+      };
+      const enableFallback = () => {
+        if (fontAvailable) return;
+        applyFallback(document);
+        new MutationObserver((records) => {
+          if (fontAvailable) return;
+          records.forEach((record) => {
+            record.addedNodes.forEach((node) => applyFallback(node.nodeType === 1 ? node : node.parentElement));
+            if (record.type === 'characterData') applyFallback(record.target.parentElement);
+          });
+        }).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+      };
+
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('16px "Material Symbols Outlined"').then((fonts) => {
+          if (fonts && fonts.length > 0) {
+            fontAvailable = true;
+          } else {
+            enableFallback();
+          }
+        }).catch(() => {
+          enableFallback();
+        });
+        setTimeout(() => {
+          if (!fontAvailable && (!document.fonts.check || !document.fonts.check('16px "Material Symbols Outlined"'))) {
+            enableFallback();
+          }
+        }, 1500);
+      } else {
+        enableFallback();
+      }
+    })();
+  </script>
   <script type="module" crossorigin src="/gods-eye-view/assets/index-CA2BS-2n.js"></script>
   <script defer src="/gods-eye-view/battle-observation-bridge.js"></script>
   <link rel="stylesheet" crossorigin href="/gods-eye-view/assets/index-B7GmiLPR.css">
@@ -30,7 +131,7 @@
   <!-- Title -->
   <div id="title-bar">
     <div class="title-glow"></div>
-    <h1><span class="title-logo brand-logo" data-logo-gaze data-logo-src="/logo.svg" aria-hidden="true"><img src="/gods-eye-view/logo.svg" alt="" /></span> <span>GOD'S EYE <span class="title-accent">VIEW</span></span></h1>
+    <h1><span class="title-logo brand-logo" data-logo-gaze data-logo-src="/gods-eye-view/logo.svg" aria-hidden="true"><img src="/gods-eye-view/logo.svg" alt="" /></span> <span>EYES OF <span class="title-accent">GOD</span></span></h1>
     <p class="subtitle">NO PLACE LEFT BEHIND</p>
   </div>
 
@@ -893,8 +994,8 @@
   <!-- Loading screen -->
   <div id="loading-screen">
     <div class="loader-content">
-      <span class="loader-logo brand-logo" data-logo-gaze data-logo-src="/logo.svg" aria-hidden="true"><img src="/gods-eye-view/logo.svg" alt="" /></span>
-      <h2>GOD'S EYE <span class="title-accent">VIEW</span></h2>
+      <span class="loader-logo brand-logo" data-logo-gaze data-logo-src="/gods-eye-view/logo.svg" aria-hidden="true"><img src="/gods-eye-view/logo.svg" alt="" /></span>
+      <h2>EYES OF <span class="title-accent">GOD</span></h2>
       <p class="loader-status">Initializing photorealistic world...</p>
     </div>
   </div>

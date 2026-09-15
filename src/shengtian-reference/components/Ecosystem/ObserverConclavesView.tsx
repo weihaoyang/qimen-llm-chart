@@ -336,7 +336,7 @@ export const ObserverConclavesView: React.FC<ObserverConclavesViewProps> = ({
                         向组织资源池注入推演权益
                       </span>
                       <p className="text-[11px] text-slate-400 font-mono-code">
-                        公共资源池用于集体启动高维世界脉搏大型事件，并为全体成员带来 +15% α-加成
+                        公共资源池用于集体启动高维 Eyes of God 观测事件，并为全体成员带来 +15% α-加成
                       </p>
                     </div>
 

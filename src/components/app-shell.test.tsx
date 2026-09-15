@@ -5,6 +5,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AppShell } from "./app-shell";
 
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+}
+
 describe("AppShell", () => {
   afterEach(() => cleanup());
 
@@ -22,7 +26,7 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "调整盘面" }));
     expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "序列" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "结构化文本" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "JSON" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "盘面资料" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "发送给 Agent 的问题" })).toBeInTheDocument();
   }, 60000);
 });

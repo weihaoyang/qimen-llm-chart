@@ -17,6 +17,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^4.0.47",
     "@ai-sdk/react": "^4.0.82",
+    "@assistant-ui/react": "^0.15.19",
     "@douyinfe/semi-ui": "^2.102.0",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@singularity-sequence/web-sdk": "file:../singularity-sequence-consumer-platform/packages/web-sdk",

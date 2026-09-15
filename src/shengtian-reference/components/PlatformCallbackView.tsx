@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
+import Link from 'next/link';
 import {
   consumePlatformOAuthRequest,
   parsePlatformOAuthCallback,
@@ -59,7 +60,7 @@ export const PlatformCallbackView: React.FC = () => {
         <p className="mt-5 font-mono-code text-xs tracking-[0.25em] text-cyan-400">PLATFORM SESSION</p>
         <h1 className="mt-3 text-2xl font-black">平台登录回跳</h1>
         <p role={failed ? 'alert' : 'status'} className="mt-4 text-sm leading-6 text-slate-300">{message}</p>
-        {failed ? <a href="/" className="mt-6 inline-flex rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold hover:bg-cyan-500">返回工作台</a> : null}
+        {failed ? <Link href="/" className="mt-6 inline-flex rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold hover:bg-cyan-500">返回工作台</Link> : null}
       </section>
     </main>
   );

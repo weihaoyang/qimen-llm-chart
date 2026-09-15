@@ -1,26 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #e9e3d9;
-  --background-alt: #f5efe5;
-  --foreground: #171717;
-  --muted: #e7dcc6;
-  --panel: #fffaf0;
-  --panel-strong: #ffffff;
-  --panel-stroke: #171717;
-  --accent: #df4d32;
-  --accent-strong: #b73425;
-  --accent-soft: #f5d5cb;
-  --ink-soft: #55418c;
-  --ink-subtle: #7e6e61;
+  --background: #05090d;
+  --background-alt: #07161f;
+  --foreground: #dcecf0;
+  --muted: #17313b;
+  --panel: #07161f;
+  --panel-strong: #0a202b;
+  --panel-stroke: rgba(54, 220, 255, 0.26);
+  --accent: #36dcff;
+  --accent-strong: #00b8df;
+  --accent-soft: rgba(54, 220, 255, 0.16);
+  --ink-soft: #9fc5cf;
+  --ink-subtle: #72909a;
   --mode-glow: transparent;
-  --shadow: 0 2px 8px rgba(28, 31, 35, 0.08);
-  --shadow-soft: 0 1px 4px rgba(28, 31, 35, 0.08);
-  --surface-line: #171717;
-  --surface-muted: #f5efe5;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.48), 0 0 1rem rgba(0, 212, 255, 0.04);
+  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --surface-line: rgba(54, 220, 255, 0.24);
+  --surface-muted: #0b2029;
   --display-font: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   --mono-font: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
+
+/* Parameters drawer owns its visual language; keep legacy workbench rules out. */
+html body #chart-parameters-popover :is(.command-bar, .command-bar__section, .command-bar__group) { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+html body #chart-parameters-popover :is(input, select, .control-select, .control-field__input-wrap) { color: #171714 !important; background: #fffdf8 !important; border-color: #171714 !important; border-radius: 0 !important; }
+html body #chart-parameters-popover .sidebar-quick-controls { background: #df392b !important; border-color: #171714 !important; }
+html body #chart-parameters-popover .datetime-wheels { background: #df392b !important; border: 3px solid #171714 !important; }
 
 
 html {
@@ -38,6 +44,52 @@ body {
   display: flex;
   flex-direction: column;
   -moz-osx-font-smoothing: grayscale;
+  background: #05090d;
+}
+
+.gods-eye-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #05090d;
+}
+
+.gods-eye-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  border: 0;
+  background: #05090d;
+}
+
+.gods-eye-back {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(54, 220, 255, 0.36);
+  border-radius: 0.35rem;
+  color: #bcecf5;
+  background: rgba(4, 15, 22, 0.78);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px);
+  font-family: var(--mono-font);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.gods-eye-back:hover {
+  border-color: rgba(54, 220, 255, 0.75);
+  color: #fff;
+  background: rgba(7, 31, 42, 0.9);
 }
 
 * {
@@ -75,8 +127,8 @@ a {
 
 .page-shell::after {
   inset: 10px;
-  border: 1px solid rgba(154, 107, 51, 0.08);
-  border-radius: 32px;
+  border: 1px solid rgba(54, 220, 255, 0.12);
+  border-radius: 8px;
 }
 
 .page-shell > * {

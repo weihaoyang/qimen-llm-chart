@@ -60,6 +60,37 @@ const parseDateTime = (datetime: string) => {
   };
 };
 
+function DateTimeWheels({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const parts = parseDateTime(value);
+  const update = (key: keyof ReturnType<typeof parseDateTime>, next: number) => {
+    const nextParts = { ...parts, [key]: next };
+    const month = String(nextParts.month).padStart(2, "0");
+    const day = String(Math.min(nextParts.day, new Date(nextParts.year, nextParts.month, 0).getDate())).padStart(2, "0");
+    onChange(`${nextParts.year}-${month}-${day}T${String(nextParts.hour).padStart(2, "0")}:${String(nextParts.minute).padStart(2, "0")}`);
+  };
+  const wheel = (label: string, key: keyof typeof parts, values: number[], suffix: string) => (
+    <label className="datetime-wheel">
+      <span>{label}</span>
+      <select value={String(parts[key])} onChange={(event) => update(key, Number(event.target.value))} aria-label={label}>
+        {values.map((item) => <option key={item} value={item}>{item}{suffix}</option>)}
+      </select>
+    </label>
+  );
+  return <div className="datetime-wheels" aria-label="滚轮调整日期时间">
+    {wheel("年", "year", Array.from({ length: 201 }, (_, index) => 1900 + index), "年")}
+    {wheel("月", "month", Array.from({ length: 12 }, (_, index) => index + 1), "月")}
+    {wheel("日", "day", Array.from({ length: 31 }, (_, index) => index + 1), "日")}
+    {wheel("时", "hour", Array.from({ length: 24 }, (_, index) => index), "时")}
+    {wheel("分", "minute", Array.from({ length: 12 }, (_, index) => index * 5), "分")}
+  </div>;
+}
+
 type ChartFormProps = {
   value: ProfileInput;
   qimenSettings: QimenSettings;
@@ -79,9 +110,11 @@ type ChartFormProps = {
   showSubmitAction?: boolean;
   submitLabel?: string;
   isSequenceMode?: boolean;
+  deferTimeSubmit?: boolean;
 };
 
 export function ChartForm({
+  deferTimeSubmit = false,
   value,
   qimenSettings,
   sequenceValue,
@@ -124,7 +157,7 @@ export function ChartForm({
     const nextValue = { ...value, datetime: shiftDateTimeInput(value.datetime, hours) };
     if (nextValue.datetime === value.datetime) return;
     onValueChange(nextValue);
-    onSubmit(nextValue);
+    if (!deferTimeSubmit) onSubmit(nextValue);
   };
 
   return (
@@ -163,17 +196,7 @@ export function ChartForm({
               {value.calendarMode === "solar" ? (
                 <label className="control-field control-field-wide">
                   <span>日期时间</span>
-                  <div className="control-field__input-wrap">
-                    <CalendarClock />
-                    <Input
-                      className="control-input"
-                      type="datetime-local"
-                      value={value.datetime}
-                      onChange={(event) =>
-                        onValueChange({ ...value, datetime: event.target.value })
-                      }
-                    />
-                  </div>
+                  <DateTimeWheels value={value.datetime} onChange={(datetime) => onValueChange({ ...value, datetime })} />
                   <DateTimeStepper onShift={shiftSolarDateTime} />
                 </label>
               ) : (

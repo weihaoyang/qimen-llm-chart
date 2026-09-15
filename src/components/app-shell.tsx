@@ -98,6 +98,9 @@ import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
 import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
 import { ZiweiPanel } from "./ziwei-panel";
+import { CombinedMap } from "./combined-map";
+import { ChartMaterials } from "./chart-materials";
+import parameterStyles from "./parameters-drawer.module.css";
 
 type AgentModeState = {
   question: string;
@@ -402,10 +405,16 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [agentResultCopied, setAgentResultCopied] = useState(false);
-  const [agentSubmitNonce, setAgentSubmitNonce] = useState(0);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
   const [parametersOpen, setParametersOpen] = useState(false);
-  const parametersPopoverRef = useRef<HTMLDivElement | null>(null);
+  const parameterSnapshot = useRef<{ profile: ProfileInput; settings: QimenSettings; sequence: ChartSequenceInput; quick: "single" | "series" } | null>(null);
+  const cancelParameters = () => {
+    const saved = parameterSnapshot.current;
+    if (saved) { setFormState(saved.profile); setQimenSettings(saved.settings); setSequenceFormState(saved.sequence); setQuickChartMode(saved.quick); }
+    setError(null);
+    setParametersOpen(false);
+  };
+  const parametersPopoverRef = useRef<HTMLElement | null>(null);
   const [researchTool, setResearchTool] = useState<ResearchTool>("trend");
   const [qimenVerificationRows, setQimenVerificationRows] = useState<VerificationRow[]>([]);
   const [platformCheckoutLoading, setPlatformCheckoutLoading] = useState<string | null>(null);
@@ -845,11 +854,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       setParametersOpen(false);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "生成排盘失败。");
-      setQimenChart(null);
-      setBaziChart(null);
-      setZiweiChart(null);
-      setSequence([]);
-      setSelectedSequenceIndex(0);
+      // Keep the last successful reading visible while the input is corrected.
     }
   };
 
@@ -1356,128 +1361,13 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     }));
     setAgentResultCopied(false);
 
-    // The entitled workbench is driven by the official AI SDK chat transport.
-    // The legacy fetch path below remains for non-stream products/compatibility.
+    // Chat submission is owned by assistant-ui. This entry handles checkout only.
     if (canUseAgentState(sharedState)) {
-      setAgentSubmitNonce((value) => value + 1);
+      handleAgentQuestionChange(currentQuestion);
+      setAgentState(current => ({ ...current, [mode]: { ...current[mode], loading: false } }));
       return;
     }
-
     try {
-      if (canUseAgentState(sharedState)) {
-        const sessionStructuredText = currentState.sessionStructuredText || structuredText;
-        const sessionJsonPayload = currentState.sessionJsonPayload || jsonPayload;
-        const accessToken = sharedState.authMode === "account" ? (await refreshPlatformAccount()).session.access_token : undefined;
-        const response = await fetch("/api/agent", {
-          method: "POST",
-          headers: { ...buildAgentRequestHeaders(sharedState, accessToken), "X-Agent-Stream": "1" },
-          body: JSON.stringify({
-            mode,
-            researchTool: mode === "research" ? researchTool : undefined,
-            question: currentQuestion,
-            focus,
-            history: currentState.conversation,
-            structuredText: sessionStructuredText,
-            jsonPayload: sessionJsonPayload,
-          }),
-        });
-        if (!response.ok) {
-          const result = await response.json().catch(() => ({})) as { error?: string };
-          throw new Error(result.error ?? "分析失败，请重试。");
-        }
-        if (response.body) {
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let streamedContent = "";
-          setAgentState((current) => ({
-            ...current,
-            [mode]: { ...current[mode], content: "", loading: true, error: null },
-          }));
-          while (true) {
-            const chunk = await reader.read();
-            if (chunk.done) break;
-            streamedContent += decoder.decode(chunk.value, { stream: true });
-            const content = streamedContent;
-            setAgentState((current) => ({
-              ...current,
-              [mode]: { ...current[mode], content, loading: true, error: null },
-            }));
-          }
-          streamedContent += decoder.decode();
-          const nextConversation: AgentConversationMessage[] = [
-            ...currentState.conversation,
-            { role: "user", content: conversationQuestion },
-            { role: "assistant", content: streamedContent },
-          ];
-          const nextAvailable = Math.max(sharedState.usageAvailable - 1, 0);
-          const nextState = { ...currentState, checkoutToken: sharedState.checkoutToken, orderId: sharedState.orderId, authMode: sharedState.authMode, question: "", focus, content: streamedContent, loading: false, error: null, conversation: nextConversation, usageAvailable: nextAvailable, usageConsumed: sharedState.usageConsumed + 1 };
-          setAgentState((current) => ({ ...current, [mode]: nextState }));
-          saveActiveAgentSession({ orderId: sharedState.orderId, checkoutToken: sharedState.checkoutToken, checkoutMode: sharedState.authMode, mode, focus, structuredText: sessionStructuredText, jsonPayload: sessionJsonPayload, messages: nextConversation, usageAvailable: nextAvailable, usageConsumed: nextState.usageConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
-          setPlatformWorkspace((current) => ({ ...current, usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextState.usageConsumed } : current.usage }));
-          return;
-        }
-        const result = (await response.json()) as {
-          content?: string;
-          model?: string;
-          error?: string;
-          usage?: { available?: number; consumed?: number };
-        };
-        if (!response.ok || !result.content) {
-          throw new Error(result.error ?? "分析失败，请重试。");
-        }
-
-        const nextConversation: AgentConversationMessage[] = [
-          ...currentState.conversation,
-          { role: "user", content: conversationQuestion },
-          { role: "assistant", content: result.content },
-        ];
-        const nextState = {
-          ...currentState,
-          checkoutToken: sharedState.checkoutToken,
-          orderId: sharedState.orderId,
-          authMode: sharedState.authMode,
-          question: "",
-          focus,
-          content: result.content,
-          model: result.model ?? null,
-          error: null,
-          loading: false,
-          conversation: nextConversation,
-          sessionStructuredText,
-          sessionJsonPayload,
-          usageAvailable: Number(result.usage?.available ?? Math.max(sharedState.usageAvailable - 1, 0)),
-          usageConsumed: Number(result.usage?.consumed ?? sharedState.usageConsumed + 1),
-        };
-        if (sharedState.authMode === "account") {
-          setPlatformWorkspace((current) => ({
-            ...current,
-            usage: current.usage ? { ...current.usage, available: nextState.usageAvailable, consumed: nextState.usageConsumed } : current.usage,
-          }));
-        }
-        setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
-          key,
-          key === mode
-            ? nextState
-            : state.authMode === sharedState.authMode && (sharedState.authMode === "account" || state.checkoutToken === sharedState.checkoutToken)
-              ? { ...state, checkoutToken: sharedState.checkoutToken, orderId: sharedState.orderId, authMode: sharedState.authMode, usageAvailable: nextState.usageAvailable, usageConsumed: nextState.usageConsumed }
-              : state,
-        ])) as Record<WorkbenchMode, AgentModeState>);
-        saveActiveAgentSession({
-          orderId: nextState.orderId,
-          checkoutToken: nextState.checkoutToken,
-          checkoutMode: nextState.authMode,
-          mode,
-          focus,
-          structuredText: sessionStructuredText,
-          jsonPayload: sessionJsonPayload,
-          messages: nextConversation,
-          usageAvailable: nextState.usageAvailable,
-          usageConsumed: nextState.usageConsumed,
-          totalTurns: nextState.totalTurns,
-          updatedAt: Date.now(),
-        });
-        return;
-      }
 
       await beginPaidCheckout(planCode, {
         mode,
@@ -1564,8 +1454,8 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       mode,
       focus: streamSharedState.focus,
       researchTool: mode === "research" ? researchTool : undefined,
-      structuredText: streamSharedState.sessionStructuredText || structuredText,
-      jsonPayload: streamSharedState.sessionJsonPayload || jsonPayload,
+      structuredText: agentState[mode].sessionStructuredText || structuredText,
+      jsonPayload: agentState[mode].sessionJsonPayload || jsonPayload,
     } satisfies Record<string, unknown>,
     requestHeaders: async () => {
       const accessToken = streamSharedState.authMode === "account"
@@ -1573,12 +1463,11 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         : undefined;
       return buildAgentRequestHeaders(streamSharedState, accessToken);
     },
-    submitNonce: agentSubmitNonce,
     onStart: () => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: true, error: null } })),
-    onFinish: (messages: AgentConversationMessage[]) => {
+    onFinish: (messages: AgentConversationMessage[], completed = true) => {
       const assistant = messages.filter((message) => message.role === "assistant").at(-1)?.content ?? "";
-      const nextAvailable = Math.max(streamSharedState.usageAvailable - 1, 0);
-      const nextConsumed = streamSharedState.usageConsumed + 1;
+      const nextAvailable = Math.max(streamSharedState.usageAvailable - (completed ? 1 : 0), 0);
+      const nextConsumed = streamSharedState.usageConsumed + (completed ? 1 : 0);
       const nextState = {
         ...agentState[mode],
         authMode: streamSharedState.authMode,
@@ -1591,8 +1480,8 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
         conversation: messages,
         usageAvailable: nextAvailable,
         usageConsumed: nextConsumed,
-        sessionStructuredText: streamSharedState.sessionStructuredText || structuredText,
-        sessionJsonPayload: streamSharedState.sessionJsonPayload || jsonPayload,
+        sessionStructuredText: agentState[mode].sessionStructuredText || structuredText,
+        sessionJsonPayload: agentState[mode].sessionJsonPayload || jsonPayload,
       };
       setAgentState((current) => ({ ...current, [mode]: nextState }));
       saveActiveAgentSession({ orderId: nextState.orderId, checkoutToken: nextState.checkoutToken, checkoutMode: nextState.authMode, mode, focus: nextState.focus, structuredText: nextState.sessionStructuredText, jsonPayload: nextState.sessionJsonPayload, messages, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
@@ -1604,7 +1493,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const agentInspector = (
     <InspectorPanel
       surface={product === "chart" ? "chart" : "shengtian"}
-      hideTechnicalTabs={product === "shengtian" && agentWorkspaceOpen}
+      hideTechnicalTabs
       hideObservatoryHeader={product === "shengtian" && agentWorkspaceOpen}
       agentTitle={classicWorkspace === "daliuren" ? "大六壬 Agent 分析" : classicWorkspace === "taiyi" ? "太乙 Agent 分析" : "AI 分析"}
       agentAngles={AGENT_ANALYSIS_ANGLES[mode]}
@@ -1664,24 +1553,9 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       return;
     }
 
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      const target = event.target;
-      if (target instanceof Node && !parametersPopoverRef.current?.contains(target)) {
-        setParametersOpen(false);
-      }
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setParametersOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", closeOnOutsidePointer);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsidePointer);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
   }, [parametersOpen]);
 
   const workbenchCanvas = (
@@ -1875,7 +1749,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       mode={mode}
       onCopyJson={handleCopyJson}
       onCopyText={handleCopyText}
-      onQimenSettingsChange={handleQimenSettingsChange}
+      onQimenSettingsChange={setQimenSettings}
       onSequenceSubmit={handleGenerateSequence}
       onSequenceValueChange={setSequenceFormState}
       onSubmit={(value) => {
@@ -1890,7 +1764,8 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
       sequenceValue={sequenceFormState}
       showCopyActions={false}
       showSequenceControls={false}
-      showSubmitAction={mode !== "qimen"}
+      showSubmitAction={false}
+      deferTimeSubmit
       isSequenceMode={mode === "qimen" && quickChartMode === "series"}
       value={formState}
     />
@@ -1988,7 +1863,7 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
     <div className={`page-shell product-${product}${agentWorkspaceOpen ? " is-agent-workspace" : ""}`} data-mode={mode}>
       {!(product === "shengtian" && agentWorkspaceOpen) ? <header className="observatory-hero">
         <div className="observatory-hero__copy">
-          <span className="workspace-kicker">{product === "shengtian" ? "胜天半子" : "知几"}</span>
+          <span className="workspace-kicker">{product === "shengtian" ? "胜天半子" : "知几 · 术数"}</span>
           <h1>{product === "shengtian" ? "胜天半子" : "知几"}</h1>
           {product === "shengtian" ? (
             <>
@@ -2037,27 +1912,28 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
             aria-controls="chart-parameters-popover"
             aria-expanded={parametersOpen}
             aria-haspopup="dialog"
-            onClick={() => setParametersOpen((open) => !open)}
+            onClick={() => { parameterSnapshot.current = {profile: formState, settings: qimenSettings, sequence: sequenceFormState, quick: quickChartMode}; setError(null); setParametersOpen(true); }}
           >
             调整盘面
           </button>
         ) : null}
 
-        {mode !== "research" && parametersOpen ? (
-          <div
-            ref={parametersPopoverRef}
-            id="chart-parameters-popover"
-            className="parameters-popover"
-            role="dialog"
-            aria-label="调整盘面"
-          >
-            <div className="parameters-popover__heading">
-              <strong>调整盘面</strong>
-              <span>排盘模式、时间、历法、真太阳时与排盘口径</span>
-            </div>
-            {chartModeControls}
-            {chartParametersForm}
-          </div>
+        {mode !== "research" && parametersOpen ? createPortal(
+          <div className={parameterStyles.overlay} onClick={event => { if(event.target === event.currentTarget) cancelParameters(); }}>
+            <section ref={parametersPopoverRef} id="chart-parameters-popover" className={parameterStyles.panel} role="dialog" aria-modal="true" aria-label="调整盘面" onKeyDown={event => {
+              if(event.key === "Escape") {event.stopPropagation();cancelParameters();}
+              if(event.key === "Tab" && event.currentTarget.contains(event.target as Node)) {
+                const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')).filter(node => node.getClientRects().length);
+                const first = items[0], last = items.at(-1);
+                if(event.shiftKey && document.activeElement === first) {event.preventDefault();last?.focus();}
+                else if(!event.shiftKey && document.activeElement === last) {event.preventDefault();first?.focus();}
+              }
+            }}>
+              <header className={parameterStyles.head}><div><small>CHART / PARAMETERS</small><h2>调整盘面</h2></div><button autoFocus aria-label="关闭调整盘面" onClick={cancelParameters}>关闭 ×</button></header>
+              <div className={parameterStyles.body}><h3>{activeModeMeta.title} · 排盘资料</h3><p>修改后点击“应用并重新排盘”；取消会恢复打开前的设置。</p>{mode === "combined" ? <p>当前三盘仍共用一组时间资料。独立出生时间与问事起局时间尚未接入，请勿视为不同时间分别起盘。</p> : null}{chartModeControls}{chartParametersForm}{error ? <p role="alert" className={parameterStyles.error}>{error}</p> : null}</div>
+              <footer className={parameterStyles.foot}><button onClick={cancelParameters}>取消</button><button onClick={() => {if(mode === "qimen" && quickChartMode === "series") handleGenerateSequence(sequenceFormState); else handleGenerate(formState);}}>应用并重新排盘 ↗</button></footer>
+            </section>
+          </div>, document.body
         ) : null}
 
         <div className="observatory-hero__agent-entry">
@@ -2068,6 +1944,9 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
 
       </header> : null}
 
+      <div style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+        <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
+      </div>
       {error ? <p className="error-banner">{error}</p> : null}
 
       {product === "shengtian" && decisionWorkspaceOpen ? (
@@ -2100,27 +1979,13 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
           </section>
         </main>
       ) : mode === "combined" ? (
-        <main className="analysis-layout analysis-layout--combined-agent" aria-label="三盘联合 Agent 分析">
-          <section className="combined-agent-surface">
-            <div className="combined-agent-surface__heading">
-              <div>
-                <span>TRI-CHART / RESEARCH CONTEXT</span>
-                <h2>三盘联合 Agent</h2>
-                <p>奇门、八字、紫微三盘数据会同时作为本次分析上下文。</p>
-                <div className="combined-agent-surface__sources" aria-label="已接入的盘面">
-                  <span>奇门遁甲</span><span>八字四柱</span><span>紫微斗数</span>
-                </div>
-              </div>
-              <strong>三盘已载入</strong>
-            </div>
-            {agentInspector}
-          </section>
-        </main>
+        <CombinedMap qimen={qimenChart} bazi={baziChart} ziwei={ziweiChart}
+          agent={agentInspector} onQuestion={handleAgentQuestionChange} />
       ) : (
         <>
           <main
             id="qimen-workbench-layout"
-            className="analysis-layout analysis-panel-group"
+            className="analysis-layout analysis-panel-group paipan-workspace"
             aria-label={product === "chart" ? "排盘主盘与智能分析分栏" : "主盘与智能分析分栏"}
           >
             <section id="qimen-chart" className="analysis-panel">

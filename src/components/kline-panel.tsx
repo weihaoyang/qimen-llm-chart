@@ -28,6 +28,25 @@ const pathFor = (values: readonly (number | null)[], count: number) => values
   .filter(Boolean)
   .join(" ");
 
+type KlineMarker = { kind: "rise" | "turn-up" | "turn-down"; label: string; reason: string };
+
+const markerFor = (points: KlinePoint[], index: number): KlineMarker | null => {
+  const point = points[index];
+  if (!point) return null;
+  const previous = points[index - 1];
+  const next = points[index + 1];
+  if (previous && point.delta >= 8) {
+    return { kind: "rise", label: "拉升", reason: `较上一点上升 ${point.delta} 分：${point.evidence.slice(0, 2).join("；")}` };
+  }
+  if (previous && next && point.close > previous.close && point.close >= next.close && point.close - next.close >= 4) {
+    return { kind: "turn-up", label: "上拐", reason: `高位后动能转弱：${point.evidence.slice(0, 2).join("；")}` };
+  }
+  if (previous && next && point.close < previous.close && point.close <= next.close && next.close - point.close >= 4) {
+    return { kind: "turn-down", label: "下拐", reason: `低位后出现修复：${point.evidence.slice(0, 2).join("；")}` };
+  }
+  return null;
+};
+
 function TrendPlot({ points, onSelect, life = false }: { points: KlinePoint[]; onSelect: (point: KlinePoint) => void; life?: boolean }) {
   const candleWidth = candleWidthFor(points.length);
   const ma5 = useMemo(() => movingAverage(points, 5), [points]);
@@ -51,6 +70,7 @@ function TrendPlot({ points, onSelect, life = false }: { points: KlinePoint[]; o
             <line x1={xFor(index, points.length)} x2={xFor(index, points.length)} y1={yFor(point.high)} y2={yFor(point.low)} className="kline-panel__candle-wick" />
             <rect x={xFor(index, points.length) - candleWidth / 2} y={Math.min(yFor(point.open), yFor(point.close))} width={candleWidth} height={Math.max(2, Math.abs(yFor(point.open) - yFor(point.close)))} className="kline-panel__candle-body" />
             {index % Math.max(1, Math.ceil(points.length / 8)) === 0 ? <text x={xFor(index, points.length)} y={height - 7} textAnchor="middle" className="kline-panel__axis">{point.datetime.slice(5, 10)}</text> : null}
+            {(() => { const marker = markerFor(points, index); if (!marker) return null; const y = marker.kind === "turn-down" ? yFor(point.high) - 10 : yFor(point.low) + 15; return <g className={`kline-panel__marker is-${marker.kind}`} aria-label={`${marker.label}：${marker.reason}`}><circle cx={xFor(index, points.length)} cy={y} r="5" /><text x={xFor(index, points.length)} y={marker.kind === "turn-down" ? y - 8 : y + 15} textAnchor="middle">{marker.label}</text></g>; })()}
           </g>
         ))}
       </svg>
@@ -65,6 +85,7 @@ export function KlinePanel({ life, relationship, relationshipScales, aiContent, 
   const series = kind === "life" ? life : relationshipScales?.[scale] ?? relationship;
   const selected = series.points[selectedIndex] ?? series.points.at(-1);
   const visiblePoints = useMemo(() => series.points.slice(0, 120), [series.points]);
+  const markers = useMemo(() => visiblePoints.map((point, index) => ({ point, marker: markerFor(visiblePoints, index) })).filter((item): item is { point: KlinePoint; marker: KlineMarker } => Boolean(item.marker)), [visiblePoints]);
   const relationshipScaleEntries = useMemo(
     () =>
       (["double-hour", "day", "month", "year"] as const).map((value) => ({
@@ -110,6 +131,7 @@ export function KlinePanel({ life, relationship, relationshipScales, aiContent, 
             </div>
           ) : <TrendPlot points={visiblePoints} life onSelect={(point) => setSelectedIndex(point.index)} />}
           {selected ? <div className="kline-panel__detail"><div><strong>{selected.label}</strong><span>变化 {selected.delta >= 0 ? "+" : ""}{selected.delta} · {selected.keyPoint || "常规点"}</span></div><div className="kline-panel__ohlc" aria-label="所选 K 线开高低收"><span>开 <b>{selected.open}</b></span><span>高 <b>{selected.high}</b></span><span>低 <b>{selected.low}</b></span><span>收 <b>{selected.close}</b></span></div><p>{selected.prediction}</p><div className="kline-panel__evidence">{selected.evidence.map((item) => <span key={item}>{item}</span>)}</div></div> : null}
+          {kind === "life" && markers.length ? <div className="kline-panel__markers" aria-label="人生 K 线拐点与拉升说明"><div className="kline-panel__markers-head"><strong>拐点与拉升</strong><span>规则识别 · 原因可复核</span></div>{markers.slice(0, 8).map(({ point, marker }) => <button type="button" key={`marker-${point.index}`} className={`kline-panel__marker-row is-${marker.kind}`} onClick={() => setSelectedIndex(point.index)}><b>{marker.label}</b><span>{point.datetime.slice(0, 4)} · {point.label}</span><em>{marker.reason}</em></button>)}</div> : null}
           <div className="kline-panel__keypoints"><strong>关键点</strong>{series.keyPoints.map((point) => <button type="button" key={`${point.datetime}-${point.index}`} onClick={() => setSelectedIndex(point.index)}><span>{point.datetime.replace("T", " ")}</span><b>{point.score}</b><em>{point.keyPoint}</em></button>)}</div>
           <div className="kline-panel__ai"><div><strong>AI 三线取象</strong><span>{kind === "life" ? "从大运、流年与阶段趋势推演上／中／下三档人生世界线" : "从奇门关系结构推演上／中／下三档感情世界线"}</span><small>每条世界线都给出触发条件、时间窗、行动建议与复盘边界。</small></div><button type="button" className="kline-panel__ai-button" onClick={() => onAnalyze(kind, kind === "relationship" ? scale : undefined)} disabled={loading}><Sparkles size={16} />{loading ? "正在生成" : `解锁三条世界线 · ${aiPriceLabel}`}</button></div>
           {aiError ? <p className="kline-panel__error">{aiError}</p> : null}

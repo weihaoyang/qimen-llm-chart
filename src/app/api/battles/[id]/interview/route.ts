@@ -1,7 +1,7 @@
 // Compatibility surface for clients that use the explicit interview route.
 // Keep it on the same audited AI-job pipeline as /ai/interview so every caller
 // receives the structured contract and identical gate/retry semantics.
-import { handleAiPost } from "../ai/[kind]/route";
+import { handleAiPost } from "../ai/[kind]/handler";
 import { NextResponse } from "next/server";
 import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
 import { isUuid } from "@/lib/battle/input";

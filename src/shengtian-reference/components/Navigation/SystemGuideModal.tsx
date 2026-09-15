@@ -25,7 +25,7 @@ import { soundManager } from '../../utils/soundEffects';
 interface SystemGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (view: 'WAR_ROOM' | 'DECISION_BOARD' | 'CASE_LAB' | 'COGNITIVE_DNA' | 'MARKETPLACE', tab?: 'interview' | 'cards' | 'simulation' | 'risks') => void;
+  onNavigate: (view: 'WAR_ROOM' | 'DECISION_BOARD' | 'CASE_LAB' | 'COGNITIVE_DNA' | 'MARKETPLACE' | 'WORLD_PULSE', tab?: 'interview' | 'cards' | 'simulation' | 'risks') => void;
   onOpenBreakthroughModal: () => void;
   onOpenEmotionalModal: () => void;
   onOpenValueModal: () => void;
@@ -87,6 +87,12 @@ export const SystemGuideModal: React.FC<SystemGuideModalProps> = ({
           desc: '在真实商业绝境案例中无风险试错，对比全网决策分布与当事人真实胜率。',
           action: () => { onNavigate('CASE_LAB'); onClose(); },
           btnText: '进入案例推演所',
+        },
+        {
+          name: 'Eyes of God 全球观测',
+          desc: '在真实地球观测界面中查看图层、镜头与场景，将确认的视角和校准记录绑定到当前战局。',
+          action: () => { onNavigate('WORLD_PULSE'); onClose(); },
+          btnText: '打开 Eyes of God',
         },
       ]
     },

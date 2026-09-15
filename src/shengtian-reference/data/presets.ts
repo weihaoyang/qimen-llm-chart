@@ -947,7 +947,7 @@ export const INITIAL_CONCLAVES: import('../types').ObserverConclave[] = [
       {
         id: 'anc-1',
         title: '密会资源池突破 3,000 点，已解锁全员协同推演实时算力加速',
-        content: '所有成员在介入世界脉搏事件时，将自动获得 +15% 初始 α-概率加成。',
+        content: '所有成员在介入 Eyes of God 观测事件时，将自动获得 +15% 初始 α-概率加成。',
         timestamp: '今天 06:00',
       },
       {

@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'WAR_ROOM' as const, label: '因果工作室', badge: '核心战场' },
     { id: 'CONCLAVES' as const, label: '密会公会', badge: '组织协同' },
     { id: 'DECISION_BOARD' as const, label: '决策委员会', badge: '智囊协同' },
-    { id: 'WORLD_PULSE' as const, label: '世界脉搏', badge: '全局事件' },
+    { id: 'WORLD_PULSE' as const, label: 'Eyes of God', badge: '全球观测' },
     { id: 'CASE_LAB' as const, label: '案例推演所', badge: '无风险试错' },
     { id: 'COGNITIVE_DNA' as const, label: '认知图谱', badge: 'DNA沙盒' },
     { id: 'MARKETPLACE' as const, label: '技能市场', badge: '生态通证' },
@@ -91,15 +91,15 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className={`w-full border-b transition-all duration-700 sticky top-0 z-40 backdrop-blur-xl ${
-      breakthroughActive 
-        ? 'bg-[#06080d]/95 border-red-900/40 shadow-2xl shadow-red-950/30' 
-        : 'bg-[#080b12]/95 border-white/[0.08] shadow-xl'
+        breakthroughActive
+          ? 'bg-[#06080d]/95 border-red-900/40 shadow-2xl shadow-red-950/30'
+          : 'bg-[#050c12]/95 border-cyan-400/20 shadow-xl shadow-cyan-950/20'
     }`}>
       {/* Precision Top Hairline */}
       <div className={`h-[1px] w-full transition-colors duration-700 ${
         breakthroughActive 
           ? 'bg-gradient-to-r from-transparent via-red-500/80 to-transparent' 
-          : 'bg-gradient-to-r from-transparent via-blue-500/50 to-transparent'
+          : 'bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent'
       }`} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between gap-3">
@@ -171,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono-code font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-md'
+                    ? 'bg-cyan-600 text-black shadow-md shadow-cyan-950/50'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
                 }`}
               >
