@@ -55,7 +55,7 @@ import {
   serializeZiweiToCompactJson,
   serializeZiweiToStructuredText,
 } from "@/lib/ziwei/serializer";
-import { buildPlatformOAuthLoginUrl, resolvePlatformClientConfig } from "@/lib/platform/config";
+import { buildPlatformOAuthLoginUrl, type PlatformClientConfig } from "@/lib/platform/config";
 import {
   createAccountCheckout,
   createGuestCheckout,
@@ -363,9 +363,10 @@ type ProductSurface = "shengtian" | "chart";
 
 type AppShellProps = {
   product?: ProductSurface;
+  platformConfig: PlatformClientConfig;
 };
 
-export function AppShell({ product = "shengtian" }: AppShellProps) {
+export function AppShell({ product = "shengtian", platformConfig }: AppShellProps) {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
   const [klineWorkspaceOpen, setKlineWorkspaceOpen] = useState(false);
@@ -441,6 +442,8 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   const [klineAiLoading, setKlineAiLoading] = useState(false);
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
+  const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
+  const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
   const platformSelectedChannel = platformWorkspace.channels.find((channel) => channel.ready)?.channel ?? "";
   // The Battle Domain uses the same paid Agent entitlement as the chart
   // workbench. A guest checkout token must be forwarded explicitly; login is
@@ -491,8 +494,6 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   }, [formState.datetime, formState.timeZone, qimenSettings]);
   const relationshipKline = relationshipKlines["double-hour"];
   const activeModeMeta = MODE_META[mode];
-  const platformConfig = useMemo(() => resolvePlatformClientConfig(), []);
-
   useEffect(() => {
     let cancelled = false;
     const loadPlatformWorkspace = async () => {
@@ -568,20 +569,27 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
   }, [platformConfig]);
 
   const handlePlatformLogin = async () => {
-    if (!platformConfig || typeof window === "undefined") return;
-    const returnUrl = `${window.location.origin}/auth/platform-callback`;
-    const oauthRequest = await createPlatformOAuthRequest();
-    savePlatformOAuthRequest(oauthRequest);
-    window.location.assign(buildPlatformOAuthLoginUrl({
-      baseUrl: platformConfig.baseUrl,
-      loginUrl: platformConfig.loginUrl,
-      clientId: platformConfig.productCode,
-      productCode: platformConfig.productCode,
-      accessScope: platformConfig.accessScope,
-      redirectUri: returnUrl,
-      codeChallenge: oauthRequest.challenge,
-      state: oauthRequest.state,
-    }));
+    if (typeof window === "undefined" || platformLoginBusy) return;
+    setPlatformLoginBusy(true);
+    setPlatformLoginError(null);
+    try {
+      const returnUrl = `${window.location.origin}/auth/platform-callback`;
+      const oauthRequest = await createPlatformOAuthRequest();
+      savePlatformOAuthRequest(oauthRequest);
+      window.location.assign(buildPlatformOAuthLoginUrl({
+        baseUrl: platformConfig.baseUrl,
+        loginUrl: platformConfig.loginUrl,
+        clientId: platformConfig.productCode,
+        productCode: platformConfig.productCode,
+        accessScope: platformConfig.accessScope,
+        redirectUri: returnUrl,
+        codeChallenge: oauthRequest.challenge,
+        state: oauthRequest.state,
+      }));
+    } catch (loginError) {
+      setPlatformLoginBusy(false);
+      setPlatformLoginError(loginError instanceof Error ? loginError.message : "无法打开统一登录，请稍后重试。");
+    }
   };
 
   const handlePlatformLogout = async () => {
@@ -1900,7 +1908,8 @@ export function AppShell({ product = "shengtian" }: AppShellProps) {
             <>
               <span className="platform-account__status">游客模式 · 当前标签页可恢复 <small>关闭页面或换设备可能丢失恢复信息</small></span>
               {invitationRedeemControl}
-              <button type="button" className="platform-account__button is-primary" onClick={handlePlatformLogin}>登录平台账户</button>
+              <button type="button" className="platform-account__button is-primary" disabled={platformLoginBusy} onClick={() => void handlePlatformLogin()}>{platformLoginBusy ? "正在打开登录…" : "登录平台账户"}</button>
+              {platformLoginError ? <span className="platform-account__error" role="alert">{platformLoginError}</span> : null}
             </>
           )}
         </div>

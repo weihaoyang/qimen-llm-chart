@@ -3767,6 +3767,14 @@ html body .page-shell.product-chart .platform-account__button.is-primary:hover {
   background: var(--paipan-accent-hover) !important;
 }
 
+html body .page-shell.product-chart .platform-account__error {
+  flex: 1 0 100%;
+  color: #8b1e14;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 /* Panels, Surfaces and Steppers */
 html body .page-shell.product-chart .canvas-panel,
 html body .page-shell.product-chart .sidebar-panel,

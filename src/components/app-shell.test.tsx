@@ -13,7 +13,11 @@ describe("AppShell", () => {
   afterEach(() => cleanup());
 
   it("keeps single-chart and sequence analysis in the chart product", async () => {
-    render(<AppShell product="chart" />);
+    render(<AppShell product="chart" platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
 
     expect(await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 })).toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).not.toBeInTheDocument();
