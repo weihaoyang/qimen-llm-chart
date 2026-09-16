@@ -85,8 +85,8 @@
 不消耗 AI 次数的发布检查：
 
 ```text
-GET https://paipan.singseq.com/api/health
-GET https://paipan.singseq.com/api/version
+GET https://qmdj.singseq.com/api/health
+GET https://qmdj.singseq.com/api/version
 GET https://api.singseq.com/api/v1/commerce/products/shengtian-banzi/plans
 ```
 
@@ -102,3 +102,26 @@ GET https://api.singseq.com/api/v1/commerce/products/shengtian-banzi/plans
 ## 本次故障记录
 
 2026-08-25 曾出现“账户权益剩余 10 轮，但 AI 仍提示请登录”。根因是旧 guest 会话状态覆盖了已登录账户状态，导致客户端没有向 `/api/agent` 发送 Bearer token。修复后，账户权益优先逻辑已固化在 `src/components/app-shell.tsx`，并按本手册的账户/游客互斥规则维护。
+
+## 统一登录 CAPTCHA 发布门槛
+
+知几不得自行修复或绕过 CAPTCHA。登录链路固定为：
+
+```text
+qmdj OAuth/PKCE → singseq.com 统一登录 → platform identity/captcha
+→ browser Cap challenge/redeem → platform send-code/verify-code
+→ OAuth callback → qmdj session restore → gate
+```
+
+每次平台 API、统一官网、Cap、Nginx 或 qmdj callback 配置变更后，分别验证：
+
+1. `GET /identity/captcha` 返回同一代 challenge、provider、site key 和 canonical endpoint。
+2. 真实移动端可以完成 Cap；自动化浏览器被拒绝不能作为用户链路失败证据，也不能绕过。
+3. 点击发送验证码后，以 `send-code` HTTP 结果和平台脱敏审计确认短信阶段。
+4. 输入真实 OTP 后，以 verify-code/session 结果确认登录阶段。
+5. OAuth callback state/PKCE 校验通过后，知几重新查询 gate；任何一步失败都保守拦截。
+
+2026-09-16 的生产修复为：platform `667f2aa` 使用 form-urlencoded
+siteverify，website `16c0b67` / release `20260916-214725-16c0b67` 使用
+canonical Cap endpoint。用户已确认此前的移动 CAPTCHA“验证失败”消失；没有新的
+`send-code` 审计时，不应写成完整 OTP 登录已完成。

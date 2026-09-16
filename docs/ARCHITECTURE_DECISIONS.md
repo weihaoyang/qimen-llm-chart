@@ -87,3 +87,11 @@ Record only decisions that affect boundaries, data contracts, dependencies, depl
 - 原因：GEV 源代码是 MIT，但 TeleGeography 与 OpenSky 默认数据条款不能直接用于本产品商业上线；删除能力或伪造数据都不满足世界脉搏功能目标。
 - 代价：民航视图明确是当前镜头周围的区域观测，不宣称全球完整快照；更完整覆盖需要另行采购许可兼容的数据源。
 - Evidence: `public/gods-eye-view/THIRD_PARTY_NOTICES.txt`, `src/lib/scenarios/world-pulse-static-release.test.ts`, `src/lib/scenarios/adsb-lol.ts`, `src/app/api/[...path]/route.ts`。
+
+## 2026-09-16 · CAPTCHA 与 OTP 始终由统一身份平台负责
+
+- 决策：知几只发起 OAuth/PKCE、接收 callback、恢复平台 session，并在受限能力前查询 gate；不在产品仓库实现 CAPTCHA、siteverify、OTP、用户或 session 真相。
+- 决策：浏览器挑战由统一官网登录组件使用平台签发且严格 allowlist 的 canonical Cap endpoint；最终 token 验证由 Consumer Platform 以 form-urlencoded 调用 siteverify。
+- 原因：本次故障同时暴露了平台请求编码错误和官网代理额外故障面。把修复放进 qmdj 会制造第二套认证并让其他产品继续重复故障。
+- 证据边界：真实移动端用户确认原 CAPTCHA 错误消失；这不自动证明新的短信发送、OTP 验证或 OAuth 完整回跳。
+- Evidence: platform `667f2aa`; website `16c0b67` / release `20260916-214725-16c0b67`; `docs/platform-integration-status.md`。

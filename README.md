@@ -67,9 +67,13 @@ NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE=shengtian-banzi-core
 PLATFORM_BASE_URL=https://api.singseq.com
 PLATFORM_PRODUCT_CODE=shengtian-banzi
 PLATFORM_ACCESS_SCOPE=shengtian-banzi-core
+```
 
 本产品已经在平台正式注册，线上平台地址为 `https://api.singseq.com`。
-```
+
+统一登录由 `https://singseq.com` 与 Consumer Platform 承担。本仓库只发起
+OAuth/PKCE、恢复平台 session，并在受限 AI 调用前查询 gate；不得在知几内部
+实现 CAPTCHA、OTP、用户或会员真相。
 
 ## 构建与测试
 
@@ -84,10 +88,16 @@ npm run build
 ## 许可证
 
 本项目使用 `GNU GPL v3.0` 许可证，详见 [LICENSE](./LICENSE)。
-# 知几排盘
+
+## 生产入口
 
 知几是 SingSeq 的术数排盘产品，生产入口为 `https://qmdj.singseq.com/paipan`。
 
 本仓库只负责排盘工作台、八字/奇门/紫微/三式盘面及其分析入口。账户、订单、支付和会员权益统一通过 Consumer Platform API/SDK 处理。
 
-胜天半子代码已复制到独立仓库 `F:\shengtian`。在生产切流完成前，本仓库保留根路径兼容入口；`qmdj.singseq.com` 通过 host 代理进入 `/paipan`。
+胜天半子代码已复制到独立仓库 `F:\shengtian`。本仓库保留根路径兼容入口；
+知几正式入口为 `https://qmdj.singseq.com/paipan`。
+
+2026-09-16 统一登录 CAPTCHA 故障已在平台与官网边界修复：平台使用
+form-urlencoded 调用 Cap siteverify，官网移动控件使用平台签发的 canonical
+Cap endpoint。知几无需、也禁止复制该逻辑。

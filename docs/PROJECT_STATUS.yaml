@@ -1,12 +1,12 @@
 project: 'qmdj'
 profile: 'high-risk'
-updated: '2026-09-13'
+updated: '2026-09-16'
 objective: '完成知几排盘工作台的领域能力、平台接入与本地可验证闭环'
 success_condition: '用户可在 /paipan 使用奇门、八字、紫微与三盘联合排盘及相关分析；平台登录、套餐、支付恢复和受限 AI 均遵守统一平台 gate；产品业务数据留在本仓库边界且本地验证可复现'
 phase: 'completed'
-status: 'implemented_and_verified_locally'
-current_blocker: '无；本次登录链路修复已完成生产重建与授权跳转验证。磁盘剩余约 5.3GB（13%），后续需按保留策略清理旧 release 前先确认回滚目标。'
-next_action: '保持本地 PostgreSQL 与开发服务器可复现；在获得明确授权后再执行生产发布检查'
+status: 'implemented_locally_and_platform_login_verified_in_production'
+current_blocker: '无；知几产品代码未因本次统一登录故障新增第二套认证逻辑。完整 OTP 登录仍需用户控制的手机号与短信验证码。'
+next_action: '保持本地 PostgreSQL 与开发服务器可复现；平台、官网或 Cap 变更后按联合登录门槛复测，不在产品仓库修补 OTP/CAPTCHA。'
 active_workers: []
 recent_evidence:
   - '2026-08-16: 修复奇门移动端摘要条的 36px 固定高度和省略裁切；390px 实测九项摘要的 strong scrollHeight 均等于 clientHeight，节气、旬首、值符、值使、驿马、时盘仪表与四柱均完整显示。'
@@ -28,8 +28,9 @@ recent_evidence:
   - '2026-08-21: 新增 owner 明确确认的 DELETE /api/battles/[id] 级联删除；active collaborator 可读取执行台。修复 getBattleAccess 将 collaborator 误判为 owner 的授权缺陷；新增 GET /api/battles/[id]/analysis，重新打开战局可恢复已持久化交叉点与策略；三种规则策略现在各自生成至少一条带硬期限的初始行动，落子后执行令可直接保存；首屏支持事实/假设/未知/目标/情绪分层入账并补齐理想结果字段；换线要求变化原因，机会雷达保留历史窗口，匿名模式库输出不泄露 battleId，复盘诊断可沉淀校准事件。33 项 Battle/Agent/AppShell 测试、TypeScript、目标 lint、生产构建通过。'
   - '2026-08-21: 隔离 PostgreSQL 17（127.0.0.1:55432）真实执行 001-006 迁移；在平台 gate mock + Next production server 上完成 owner 创建/事实/约束/底牌/资源/分析恢复/落子/换线 409/执行台/行动更新/断路器、advisor 邀请接受与意见、第三方拒绝、匿名模式库脱敏、DELETE 确认与删除后不可读 HTTP 闭环。期间修复 updateExecutionAction 未使用 SQL 参数导致 PostgreSQL 42P18，以及匿名模式库 POST 回包泄露 battleId。'
   - '2026-08-21: 产品宪法完成审计收口：事实采集现在要求并展示来源、置信度、发生/核验时间；重力线可展示公开合法范围内的对手盘压力点、可争杠杆与未知变量；每个交叉点都生成强攻/试局/对冲，策略矩阵、行动实际成本、窗口衰减与错过代价、完整 Markdown/JSON 战报均可见。访客可在当前标签页完成确定性 P0 演练，刷新/关闭/换设备会明确丢失；登录后才持久化、协作和调用推演官。34 项目标测试、TypeScript、lint 和生产构建通过。'
+  - '2026-09-16: 统一登录边界完成生产修复：platform 667f2aa 使用 form-urlencoded siteverify，website release 20260916-214725-16c0b67 使用 canonical Cap endpoint；/login、/paipan、identity captcha、Cap challenge 均 200，真实移动端用户确认原 CAPTCHA 验证失败消失。'
 last_commit: '67c5579'
-remote_state: '2026-08-30 已部署并重建：qmdj.service active，release=20260830-224505-67c5579，commit=67c5579，正式 NEXT_PUBLIC_PLATFORM_* 已注入构建；127.0.0.1:3002 与 https://paipan.singseq.com 均健康；公网点击登录已跳转到 https://singseq.com/oauth/authorize 并显示登录页；迁移 001-029 applied；备份=/srv/qmdj-releases/qmdj-backup-20260830-224631.tar.gz，数据库备份=/srv/qmdj-releases/qmdj-db-backup-20260830-230208.sql.gz'
+remote_state: 'qmdj.service 继续运行既有知几 release；2026-09-16 登录依赖已在 Consumer Platform commit 667f2aa 与 website release 20260916-214725-16c0b67 修复并由用户验收。qmdj 主入口 https://qmdj.singseq.com/paipan 200；本次未重新部署知几产品代码。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'

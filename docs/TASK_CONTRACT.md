@@ -5,7 +5,7 @@ task: '知几排盘工作台本地开发收口与平台接入验证'
 objective_key: 'qmdj-paipan-local-completion-20260913'
 ownership_key: 'qmdj-paipan-workbench'
 owner: 'main'
-mode: 'completed_locally'
+mode: 'completed_with_platform_dependency_verified'
 scope:
   include:
     - '保持 /paipan 为知几产品唯一主入口并完整复用参考排盘前端'
@@ -20,11 +20,13 @@ invariants:
   - '受限 AI 入口和后端 API 均先查询平台 gate，失败默认拦截'
   - '支付回跳只用于恢复流程，不直接推断支付成功或权益'
   - '新功能不能把 SQL 写入组件或建立第二套用户/订单/会员真相'
-  acceptance:
+acceptance:
   - '排盘类型、数据库迁移、领域服务和确定性规则测试通过'
   - '/paipan 首屏与核心 API 通过真实数据库/HTTP 的最小闭环验证'
   - '分析、登录恢复、支付恢复和 gate 在独立模块中实现，产品数据边界清晰'
   - '相关 TypeScript、lint、目标测试和生产构建通过；未授权前不部署'
-status: 'completed_locally'
-next_action: '继续维护本地验证证据；未经明确授权不部署、不推送、不提交'
+  - '统一登录 CAPTCHA 在平台/官网边界修复，知几不建立第二套认证实现'
+  - '真实移动端用户确认原 CAPTCHA 验证失败消失；不将其误报为新的 OTP 或完整登录证据'
+status: 'completed_with_platform_dependency_verified'
+next_action: '平台、官网或 Cap 发布后复测真实移动 CAPTCHA、OTP、OAuth callback 和 gate；产品仓库保持边界不变'
 ```

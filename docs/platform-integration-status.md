@@ -4,6 +4,10 @@
 
 本仓库现在只承载知几排盘代码；胜天半子已复制到独立仓库 `F:\shengtian`。生产平台合同暂仍是历史兼容的 **胜天半子** product code，知几专用 product code/access scope 尚未登记，不能自行改名。
 
+截至 2026-09-16，知几正式域名的统一 OAuth/PKCE 登录入口和移动端
+CAPTCHA 已完成生产验收。CAPTCHA/OTP 仍完全属于 Consumer Platform 与统一
+官网登录边界；知几只负责发起授权、接收 callback 和恢复平台 session。
+
 我已检查的平台仓库实现包括：
 
 - `F:\\singularity-sequence-consumer-platform\\docs\\integration\\ai-agent-platform-integration-spec.md`
@@ -91,6 +95,10 @@
 4. 行业入口：`GET /api/v1/commerce/industries/metaphysics_workbench/launch`
 5. 数据库迁移：生产环境 migration head 已对齐
 6. seed 状态：生产环境已包含 `shengtian-banzi` 产品、三档套餐与行业入口
+7. OAuth callback：`https://qmdj.singseq.com/auth/platform-callback`
+8. CAPTCHA：平台运行 `667f2aa`（form-urlencoded siteverify）；官网运行
+   `20260916-214725-16c0b67`（canonical Cap endpoint）；真实移动端用户确认原
+   “验证失败”已消失
 
 ## 当前仓库需要填写的环境变量
 
@@ -111,5 +119,9 @@ PLATFORM_ACCESS_SCOPE=shengtian-banzi-core
 
 1. 把正式 `product_code / access_scope` 填入本仓库环境变量
 2. 把平台地址统一指向 `https://api.singseq.com`
-3. 确认产品自己的线上域名已经加入平台 `return_url` 白名单
-4. 再跑一次真实登录、支付回跳与 gate 联调
+3. 保持正式 callback 与平台 `return_url` 白名单一致；域名或路径变化时重新登记
+4. 任何平台/官网/CAP 发布后重新跑真实移动 CAPTCHA、OTP、OAuth callback 与 gate 联调
+
+注意：CAPTCHA 成功、短信发送、OTP 验证和 OAuth 回跳是四个独立证据点。
+2026-09-16 的用户确认覆盖此前失败的 CAPTCHA 交互，不应被扩大解释为新的
+短信发送或完整登录审计记录。
