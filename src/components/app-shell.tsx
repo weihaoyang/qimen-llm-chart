@@ -55,7 +55,7 @@ import {
   serializeZiweiToCompactJson,
   serializeZiweiToStructuredText,
 } from "@/lib/ziwei/serializer";
-import { buildPlatformOAuthLoginUrl, type PlatformClientConfig } from "@/lib/platform/config";
+import { type PlatformClientConfig } from "@/lib/platform/config";
 import {
   createAccountCheckout,
   createGuestCheckout,
@@ -64,7 +64,7 @@ import {
   listPlatformPlans,
   redeemInvitationCode,
   restorePlatformAccessState,
-  createPlatformOAuthRequest,
+  preparePlatformOAuthLogin,
   savePlatformOAuthRequest,
 } from "@/lib/platform/browser";
 import { createPlatformClient } from "@/lib/platform/client";
@@ -573,19 +573,9 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     setPlatformLoginBusy(true);
     setPlatformLoginError(null);
     try {
-      const returnUrl = `${window.location.origin}/auth/platform-callback`;
-      const oauthRequest = await createPlatformOAuthRequest();
-      savePlatformOAuthRequest(oauthRequest);
-      window.location.assign(buildPlatformOAuthLoginUrl({
-        baseUrl: platformConfig.baseUrl,
-        loginUrl: platformConfig.loginUrl,
-        clientId: platformConfig.productCode,
-        productCode: platformConfig.productCode,
-        accessScope: platformConfig.accessScope,
-        redirectUri: returnUrl,
-        codeChallenge: oauthRequest.challenge,
-        state: oauthRequest.state,
-      }));
+      const login = await preparePlatformOAuthLogin(platformConfig, window.location.origin);
+      savePlatformOAuthRequest(login.request);
+      window.location.assign(login.url);
     } catch (loginError) {
       setPlatformLoginBusy(false);
       setPlatformLoginError(loginError instanceof Error ? loginError.message : "无法打开统一登录，请稍后重试。");

@@ -1,9 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAccountCheckout, createGuestCheckout, parsePlatformCallbackFragment, redeemInvitationCode, toPlatformSession } from "./browser";
+import { createAccountCheckout, createGuestCheckout, parsePlatformCallbackFragment, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
 
 describe("platform browser helpers", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("prepares a PKCE login redirect for the production product callback", async () => {
+    const login = await preparePlatformOAuthLogin({
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }, "https://qmdj.singseq.com/");
+    const url = new URL(login.url);
+
+    expect(url.origin + url.pathname).toBe("https://singseq.com/oauth/authorize");
+    expect(url.searchParams.get("client_id")).toBe("shengtian-banzi");
+    expect(url.searchParams.get("access_scope")).toBe("shengtian-banzi-core");
+    expect(url.searchParams.get("redirect_uri")).toBe("https://qmdj.singseq.com/auth/platform-callback");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("code_challenge")).toBe(login.request.challenge);
+    expect(url.searchParams.get("state")).toBe(login.request.state);
+    expect(login.request.verifier.length).toBeGreaterThan(40);
   });
   it("parses the social login callback hash fragment", () => {
     const result = parsePlatformCallbackFragment(

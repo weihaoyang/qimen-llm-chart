@@ -1,6 +1,6 @@
 import { PlatformHttpError, type EntitlementGateResponse, type InvitationCodeRedemption, type PlanCatalogItem, type PlatformProfile, type PlatformSession } from "@singularity-sequence/web-sdk";
 import { createPlatformClient } from "@/lib/platform/client";
-import { requirePlatformClientConfig } from "@/lib/platform/config";
+import { buildPlatformOAuthLoginUrl, requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
 import {
   clearPlatformSession,
   isPlatformRefreshExpired,
@@ -206,6 +206,27 @@ export const createPlatformOAuthRequest = async () => {
     verifier,
     challenge: base64UrlEncode(new Uint8Array(digest)),
     state: randomUrlToken(32),
+  };
+};
+
+export const preparePlatformOAuthLogin = async (
+  config: PlatformClientConfig,
+  origin: string,
+) => {
+  const request = await createPlatformOAuthRequest();
+  const redirectUri = `${origin.replace(/\/$/, "")}/auth/platform-callback`;
+  return {
+    request,
+    url: buildPlatformOAuthLoginUrl({
+      baseUrl: config.baseUrl,
+      loginUrl: config.loginUrl,
+      clientId: config.productCode,
+      productCode: config.productCode,
+      accessScope: config.accessScope,
+      redirectUri,
+      codeChallenge: request.challenge,
+      state: request.state,
+    }),
   };
 };
 
