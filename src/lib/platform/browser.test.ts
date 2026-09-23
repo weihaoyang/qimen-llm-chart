@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAccountCheckout, createGuestCheckout, parsePlatformCallbackFragment, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
+import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, parsePlatformCallbackFragment, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
 
 describe("platform browser helpers", () => {
   afterEach(() => {
@@ -94,13 +94,17 @@ describe("platform browser helpers", () => {
       return new Response(JSON.stringify({ checkout_token: "guest-token", order: { order_id: "guest-order" } }), { status: 200 });
     }));
 
-    await createAccountCheckout("account-token", "shengtian-banzi-analysis-10", "alipay", "https://qmdj.example.com/billing/result");
-    await createGuestCheckout("shengtian-banzi-analysis-10", "alipay");
+    await createAccountCheckout("account-token", "shengtian-banzi-analysis-10", "alipay", "https://qmdj.example.com/billing/result", undefined, "wap");
+    const guest = await createGuestCheckout("shengtian-banzi-analysis-10", "alipay");
+    await createGuestPaymentAttempt(guest, "alipay", "https://qmdj.example.com/billing/result", "wap");
 
     const accountBody = JSON.parse(requests[0]?.body ?? "{}");
     const guestBody = JSON.parse(requests[2]?.body ?? "{}");
     expect(accountBody.idempotency_key.length).toBeGreaterThanOrEqual(32);
     expect(guestBody.idempotency_key.length).toBeGreaterThanOrEqual(32);
+    expect(JSON.parse(requests[0]?.body ?? "{}").payment_scene).toBeUndefined();
+    expect(JSON.parse(requests[1]?.body ?? "{}").payment_scene).toBe("wap");
+    expect(JSON.parse(requests[3]?.body ?? "{}").payment_scene).toBe("wap");
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = previous.base;
     process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = previous.product;
     process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = previous.scope;

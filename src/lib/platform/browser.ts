@@ -33,6 +33,7 @@ export type PlatformPlanState = {
   channels: Array<{
     channel: string;
     ready: boolean;
+    mobile_ready: boolean;
     reason_code: string;
     message: string;
   }>;
@@ -94,7 +95,7 @@ export const createGuestCheckout = (planCode: string, paymentChannel: string, id
     },
   });
 
-export const createGuestPaymentAttempt = (checkout: GuestCheckout, paymentChannel: string, returnUrl: string) =>
+export const createGuestPaymentAttempt = (checkout: GuestCheckout, paymentChannel: string, returnUrl: string, paymentScene: "web" | "wap" = "web") =>
   guestRequest<{ provider_checkout_url: string }>("/api/v1/commerce/guest/payment-attempts", {
     method: "POST",
     token: checkout.checkout_token,
@@ -102,6 +103,7 @@ export const createGuestPaymentAttempt = (checkout: GuestCheckout, paymentChanne
       order_id: checkout.order.order_id,
       product_code: requirePlatformClientConfig().productCode,
       payment_channel: paymentChannel,
+      payment_scene: paymentScene,
       return_url: returnUrl,
     },
   });
@@ -139,6 +141,7 @@ export const createAccountCheckout = async (
   paymentChannel: string,
   returnUrl: string | ((orderId: string) => string),
   options?: { csrfToken?: string },
+  paymentScene: "web" | "wap" = "web",
 ): Promise<PlatformCheckout> => {
   const config = requirePlatformClientConfig();
   const client = createPlatformClient({ accessToken, csrfToken: options?.csrfToken });
@@ -154,6 +157,7 @@ export const createAccountCheckout = async (
     order_id: orderId,
     product_code: config.productCode,
     payment_channel: paymentChannel,
+    payment_scene: paymentScene,
     return_url: typeof returnUrl === "function" ? returnUrl(orderId) : returnUrl,
   }) as { provider_checkout_url?: unknown; checkout_url?: unknown; url?: unknown };
   const providerCheckoutUrl = asProviderCheckoutUrl(paymentResponse);

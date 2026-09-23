@@ -133,7 +133,7 @@ type PlatformWorkspaceState = {
   gate: { allowed: boolean; mode: string; reason_code: string; message: string } | null;
   usage: { available: number; reserved: number; consumed: number } | null;
   plans: PlanCatalogItem[];
-  channels: Array<{ channel: string; ready: boolean; reason_code: string; message: string }>;
+  channels: Array<{ channel: string; ready: boolean; mobile_ready: boolean; reason_code: string; message: string }>;
   error: string | null;
 };
 
@@ -452,7 +452,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
   const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
-  const platformSelectedChannel = platformWorkspace.channels.find((channel) => channel.ready)?.channel ?? "";
   // The Battle Domain uses the same paid Agent entitlement as the chart
   // workbench. A guest checkout token must be forwarded explicitly; login is
   // only required for persistence, not for consuming a paid guest turn.
@@ -1132,14 +1131,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
     if (platformWorkspace.status !== "authenticated" && platformWorkspace.status !== "guest") {
       throw new Error(platformWorkspace.error || "平台状态异常，请刷新后重试。");
     }
-    let paymentChannel = platformSelectedChannel;
+    const paymentScene: "web" | "wap" = window.matchMedia("(max-width: 767px)").matches ? "wap" : "web";
+    const supportsScene = (channel: { ready: boolean; mobile_ready: boolean }) => paymentScene === "wap" ? channel.mobile_ready : channel.ready;
+    let paymentChannel = platformWorkspace.channels.find(supportsScene)?.channel ?? "";
     if (!paymentChannel) {
       if (platformWorkspace.catalogStatus === "loading") {
         throw new Error("正在读取支付方式，请稍候再发起支付。");
       }
       try {
         const catalog = await listPlatformPlans(platformConfig.productCode);
-        paymentChannel = catalog.channels.find((channel) => channel.ready)?.channel ?? "";
+        paymentChannel = catalog.channels.find(supportsScene)?.channel ?? "";
         setPlatformWorkspace((current) => ({
           ...current,
           catalogStatus: "ready",
@@ -1153,7 +1154,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         throw new Error(`无法读取支付方式，请检查网络后重试。${message}`);
       }
       if (!paymentChannel) {
-        throw new Error("当前支付方式暂不可用，请稍后重试。");
+        throw new Error(paymentScene === "wap" ? "平台当前没有已开通的手机支付方式，请稍后重试或使用电脑完成支付。" : "当前支付方式暂不可用，请稍后重试。");
       }
     }
     const returnUrl = (orderId: string) => `${window.location.origin}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(platformConfig.productCode)}`;
@@ -1172,6 +1173,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           paymentChannel,
           returnUrl,
           { csrfToken: access.session.csrf_token },
+          paymentScene,
         );
         savePendingPaidAnalysis({
           ...pending,
@@ -1190,6 +1192,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         checkout,
         paymentChannel,
         returnUrl(checkout.order.order_id),
+        paymentScene,
       );
       savePendingPaidAnalysis({
         ...pending,
@@ -1963,7 +1966,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
       </header>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+      <div className="chart-materials-entry" style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
         <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
       </div>
       {error ? <p className="error-banner">{error}</p> : null}
