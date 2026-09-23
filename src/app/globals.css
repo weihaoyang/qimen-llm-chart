@@ -23,18 +23,35 @@
 }
 
 /* Parameters drawer owns its visual language; keep legacy workbench rules out. */
-html body #chart-parameters-popover :is(.command-bar, .command-bar__section, .command-bar__group) { background: transparent !important; border: 0 !important; box-shadow: none !important; }
-html body #chart-parameters-popover :is(input, select, .control-select, .control-field__input-wrap) { color: #171714 !important; background: #fffdf8 !important; border-color: #171714 !important; border-radius: 0 !important; }
-html body #chart-parameters-popover .sidebar-quick-controls { background: #df392b !important; border-color: #171714 !important; }
-html body #chart-parameters-popover .datetime-wheels { background: #df392b !important; border: 3px solid #171714 !important; }
 
+html body #chart-parameters-popover :is(.command-bar, .command-bar__section, .command-bar__group) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html body #chart-parameters-popover :is(input, select, .control-select, .control-field__input-wrap) {
+  color: #171714 !important;
+  background: #fffdf8 !important;
+  border-color: #171714 !important;
+  border-radius: 0 !important;
+}
+
+html body #chart-parameters-popover .sidebar-quick-controls {
+  background: #df392b !important;
+  border-color: #171714 !important;
+}
+
+html body #chart-parameters-popover .datetime-wheels {
+  background: #df392b !important;
+  border: 3px solid #171714 !important;
+}
 
 html {
   height: 100%;
 }
 
-html,
-body {
+html, body {
   max-width: 100vw;
   overflow: hidden;
 }
@@ -44,52 +61,6 @@ body {
   display: flex;
   flex-direction: column;
   -moz-osx-font-smoothing: grayscale;
-  background: #05090d;
-}
-
-.gods-eye-page {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  overflow: hidden;
-  background: #05090d;
-}
-
-.gods-eye-frame {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  border: 0;
-  background: #05090d;
-}
-
-.gods-eye-back {
-  position: fixed;
-  left: 1rem;
-  top: 1rem;
-  z-index: 10;
-  display: inline-flex;
-  align-items: center;
-  min-height: 2rem;
-  padding: 0.4rem 0.7rem;
-  border: 1px solid rgba(54, 220, 255, 0.36);
-  border-radius: 0.35rem;
-  color: #bcecf5;
-  background: rgba(4, 15, 22, 0.78);
-  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(16px);
-  font-family: var(--mono-font);
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-}
-
-.gods-eye-back:hover {
-  border-color: rgba(54, 220, 255, 0.75);
-  color: #fff;
-  background: rgba(7, 31, 42, 0.9);
 }
 
 * {
@@ -109,8 +80,7 @@ a {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
-.page-shell::before,
-.page-shell::after {
+.page-shell::before, .page-shell::after {
   content: "";
   position: absolute;
   pointer-events: none;
@@ -119,9 +89,7 @@ a {
 }
 
 .page-shell::before {
-  background:
-    radial-gradient(circle at 15% 20%, var(--mode-glow), transparent 22%),
-    radial-gradient(circle at 85% 0%, rgba(118, 154, 193, 0.14), transparent 24%);
+  background: radial-gradient(circle at 15% 20%, var(--mode-glow), transparent 22%), radial-gradient(circle at 85% 0%, rgba(118, 154, 193, 0.14), transparent 24%);
   filter: blur(14px);
 }
 
@@ -145,32 +113,6 @@ a {
   border-radius: 14px;
   border: 1px solid rgba(208, 170, 104, 0.14);
   backdrop-filter: blur(14px);
-}
-
-.qmdj-footer__brand {
-  display: grid;
-  gap: 2px;
-}
-
-.qmdj-footer__brand span {
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.qmdj-footer__brand p {
-  font-size: 0.72rem;
-  line-height: 1.4;
-}
-
-.qmdj-footer__meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
-  color: var(--ink-soft);
-  font-size: 0.68rem;
 }
 
 .workspace-kicker {
@@ -207,11 +149,6 @@ a {
   gap: 0;
 }
 
-.inspector-tabs__list {
-  border: 1px solid var(--panel-stroke);
-  backdrop-filter: blur(14px);
-}
-
 .inspector-tabs [data-slot="tabs-trigger"] {
   min-width: 80px;
   border-radius: 9px;
@@ -222,10 +159,7 @@ a {
   background: linear-gradient(135deg, rgba(201, 162, 106, 0.2), rgba(165, 190, 212, 0.18));
 }
 
-.command-bar,
-.canvas-panel,
-.inspector-panel,
-.summary-strip {
+.command-bar, .canvas-panel, .inspector-panel, .summary-strip {
   background: var(--panel);
   border: 1px solid var(--panel-stroke);
   box-shadow: var(--shadow);
@@ -246,9 +180,7 @@ a {
   gap: 5px;
   padding: 5px;
   border-radius: 18px;
-  background:
-    radial-gradient(circle at top right, rgba(201, 162, 106, 0.12), transparent 32%),
-    linear-gradient(180deg, rgba(255, 251, 246, 0.98), rgba(243, 236, 226, 0.94));
+  background: radial-gradient(circle at top right, rgba(201, 162, 106, 0.12), transparent 32%), linear-gradient(180deg, rgba(255, 251, 246, 0.98), rgba(243, 236, 226, 0.94));
 }
 
 .command-bar__group {
@@ -290,8 +222,7 @@ a {
   width: 100%;
 }
 
-.command-bar--sidebar .control-field span,
-.command-bar--sidebar .checkbox-field span {
+.command-bar--sidebar .control-field span, .command-bar--sidebar .checkbox-field span {
   font-size: 0.5rem;
 }
 
@@ -341,8 +272,7 @@ a {
   min-width: 230px;
 }
 
-.command-bar--sidebar .control-field,
-.command-bar--sidebar .control-field-wide {
+.command-bar--sidebar .control-field, .command-bar--sidebar .control-field-wide {
   min-width: 0;
 }
 
@@ -370,8 +300,7 @@ a {
   font-size: 0.78rem;
 }
 
-.control-field input,
-.control-field__input-wrap {
+.control-field input, .control-field__input-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -384,8 +313,7 @@ a {
   color: var(--accent);
 }
 
-.control-input,
-.control-select {
+.control-input, .control-select {
   width: 100%;
   border: none;
   background: transparent;
@@ -423,83 +351,591 @@ a {
   color: #ffd6c8;
 }
 
-/* 术数研究：紧凑、方正、可滚动的研究工作区 */
-.research-panel {
-  min-height: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: var(--surface-primary, #fffdf8);
-  color: var(--text-primary, #2b2520);
-  overflow: auto;
+.research-sidebar-note {
+  margin: 10px 14px;
+  color: var(--text-secondary, #756b63);
+  font-size: 12px;
+  line-height: 1.5;
 }
-.research-panel__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.research-panel__eyebrow { color: var(--text-secondary, #756b63); font-size: 12px; letter-spacing: .08em; }
-.research-panel__header h2 { margin: 3px 0 0; font-size: clamp(20px, 2.2vw, 28px); line-height: 1.15; }
-.research-panel__scope { border: 1px solid var(--border-primary, #d8cec0); padding: 5px 9px; border-radius: 6px; font-size: 12px; white-space: nowrap; }
-.research-panel__tabs .semi-tabs-bar { border: 1px solid var(--border-primary, #d8cec0); border-radius: 7px; padding: 3px; }
-.research-panel__tabs .semi-tabs-tab { min-height: 34px; }
-.research-panel__hint { color: var(--text-secondary, #756b63); font-size: 13px; }
-.research-trend { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
-.research-trend__legend { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text-secondary, #756b63); }
-.research-trend__legend div { display: flex; align-items: baseline; gap: 9px; }
-.research-trend__legend strong { color: var(--text-primary, #2b2520); font-size: 15px; }
-.research-trend__chart-wrap { width: 100%; min-height: 190px; aspect-ratio: 3 / 1; border: 1px solid var(--border-primary, #d8cec0); background: #fffefb; border-radius: 7px; overflow: hidden; }
-.research-trend__chart { width: 100%; height: 100%; display: block; }
-.research-trend__grid { stroke: #e8dfd3; stroke-width: 1; stroke-dasharray: 3 4; }
-.research-trend__wick { stroke-width: 1.4; cursor: pointer; }
-.research-trend__wick.is-up { stroke: #a84632; }
-.research-trend__wick.is-down { stroke: #3f6b59; }
-.research-trend__candle { cursor: pointer; }
-.research-trend__candle.is-up { fill: #b4543d; }
-.research-trend__candle.is-down { fill: #4d8067; }
-.research-trend__axis { fill: #897e73; font-size: 11px; }
-.research-trend__detail { border: 1px solid var(--border-primary, #d8cec0); border-radius: 7px; padding: 10px 12px; background: #fffaf1; }
-.research-trend__detail-head, .research-trend__ohlc { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.research-trend__detail-head span, .research-trend__ohlc { color: var(--text-secondary, #756b63); font-size: 12px; }
-.research-trend__signals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.research-trend__signals span { border: 1px solid #d8cec0; border-radius: 4px; padding: 3px 6px; font-size: 12px; }
-.research-trend__signals .is-support { color: #3f6b59; border-color: #b7d0bf; }
-.research-trend__signals .is-review { color: #9b4b39; border-color: #e1b8ad; }
-.research-verification { min-height: 0; overflow: auto; }
-.research-verification__note { padding: 9px 11px; border-left: 3px solid #8d6b45; background: #fff9ee; color: #6d5b48; font-size: 12px; margin-bottom: 10px; }
-.research-verification__table { min-width: 680px; border: 1px solid var(--border-primary, #d8cec0); border-radius: 7px; overflow: hidden; }
-.research-verification__row { display: grid; grid-template-columns: 1.2fr 1fr 1fr .55fr; gap: 8px; padding: 9px 10px; border-top: 1px solid #eee5da; font-size: 12px; align-items: start; }
-.research-verification__row:first-child { border-top: 0; }
-.research-verification__row.is-head { background: #f5eee4; color: #675849; font-weight: 600; }
-.research-verification__row > span { min-width: 0; overflow-wrap: anywhere; }
-.research-verification__row > span:first-child { display: flex; flex-direction: column; gap: 2px; }
-.research-verification__row small { color: #897e73; }
-.research-verification__note-cell { grid-column: 1 / -1; color: #897e73; line-height: 1.45; }
-.status-match { color: #3f6b59; font-weight: 600; }
-.status-difference { color: #a84632; font-weight: 600; }
-.status-unavailable { color: #897e73; }
-.research-sidebar-note { margin: 10px 14px; color: var(--text-secondary, #756b63); font-size: 12px; line-height: 1.5; }
-.analysis-layout--classic { display: block; min-height: 0; }.classic-observatory { width: min(1440px, 100%); margin: 0 auto; padding: 20px; border: 3px solid #171717; background: #fffaf0; box-shadow: 8px 8px 0 #171717; }.classic-observatory__header { display: flex; justify-content: space-between; gap: 18px; align-items: start; }.classic-observatory__header > div:first-child { display: grid; gap: 5px; }.classic-observatory__header > div:first-child > span { display: inline-flex; align-items: center; gap: 6px; color: #9f3d2d; font: 800 11px ui-monospace, monospace; letter-spacing: .08em; }.classic-observatory h2 { margin: 0; font-size: clamp(26px, 3vw, 40px); line-height: 1; }.classic-observatory__header p { max-width: 670px; margin: 0; color: #594f46; font-size: 14px; line-height: 1.55; }.classic-observatory__protocol { display: grid; gap: 3px; min-width: 180px; padding: 10px; border: 2px solid #171717; background: #f2bd3f; }.classic-observatory__protocol strong { font-size: 12px; }.classic-observatory__protocol span { font: 11px ui-monospace, monospace; }
-@media (max-width: 720px) { .analysis-layout--classic { padding: 10px; }.classic-observatory { padding: 13px; box-shadow: 4px 4px 0 #171717; }.classic-observatory__header { display: grid; }.classic-observatory__protocol { min-width: 0; } }
+
+.analysis-layout--classic {
+  display: block;
+  min-height: 0;
+}
+
+.classic-observatory {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 20px;
+  border: 3px solid #171717;
+  background: #fffaf0;
+  box-shadow: 8px 8px 0 #171717;
+}
+
+.classic-observatory__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: start;
+}
+
+.classic-observatory__header > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.classic-observatory__header > div:first-child > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9f3d2d;
+  font: 800 11px ui-monospace, monospace;
+  letter-spacing: .08em;
+}
+
+.classic-observatory h2 {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 40px);
+  line-height: 1;
+}
+
+.classic-observatory__header p {
+  max-width: 670px;
+  margin: 0;
+  color: #594f46;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.classic-observatory__protocol {
+  display: grid;
+  gap: 3px;
+  min-width: 180px;
+  padding: 10px;
+  border: 2px solid #171717;
+  background: #f2bd3f;
+}
+
+.classic-observatory__protocol strong {
+  font-size: 12px;
+}
+
+.classic-observatory__protocol span {
+  font: 11px ui-monospace, monospace;
+}
+
+@media (max-width: 720px) {
+  .analysis-layout--classic {
+    padding: 10px;
+  }
+  .classic-observatory {
+    padding: 13px;
+    box-shadow: 4px 4px 0 #171717;
+  }
+  .classic-observatory__header {
+    display: grid;
+  }
+  .classic-observatory__protocol {
+    min-width: 0;
+  }
+}
 
 /* Three-method observatories: show calculated structures, never source JSON. */
-.classic-observatory__summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 18px; border-top: 2px solid #171717; border-left: 2px solid #171717; }.classic-observatory__summary > div { display: grid; gap: 3px; min-width: 0; padding: 9px; border-right: 2px solid #171717; border-bottom: 2px solid #171717; background: #fff; }.classic-observatory__summary span { color: #665b50; font-size: 11px; }.classic-observatory__summary strong { overflow-wrap: anywhere; font-size: 14px; }.classic-observatory__section-head { display: flex; justify-content: space-between; gap: 18px; align-items: end; margin: 22px 0 9px; }.classic-observatory__section-head > div { display: grid; gap: 1px; }.classic-observatory__section-head span { color: #9f3d2d; font: 800 11px ui-monospace, monospace; letter-spacing: .08em; }.classic-observatory__section-head h3 { margin: 0; font-size: 22px; }.classic-observatory__section-head p { max-width: 550px; margin: 0; color: #665b50; font-size: 12px; line-height: 1.5; }.daliuren-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid #171717; border-left: 2px solid #171717; }.daliuren-palace { display: grid; align-content: space-between; min-width: 0; min-height: 142px; padding: 8px; border-right: 2px solid #171717; border-bottom: 2px solid #171717; background: #fff; }.daliuren-palace.is-旺 { background: #f8e5a6; }.daliuren-palace.is-相 { background: #e2eee7; }.daliuren-palace.is-囚, .daliuren-palace.is-死 { background: #f4d4ca; }.daliuren-palace header, .daliuren-palace footer { display: flex; justify-content: space-between; gap: 5px; }.daliuren-palace header b { font: 900 18px ui-monospace, monospace; }.daliuren-palace header span, .daliuren-palace footer { color: #665b50; font-size: 10px; }.daliuren-palace > div { display: grid; gap: 1px; }.daliuren-palace > div strong { font-size: 24px; line-height: 1; }.daliuren-palace > div em { color: #9f3d2d; font-size: 13px; font-style: normal; font-weight: 800; }.daliuren-palace footer { flex-wrap: wrap; }.daliuren-courses__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }.daliuren-courses__grid article { display: grid; justify-items: center; gap: 3px; min-width: 0; padding: 10px; border: 2px solid #171717; background: #fff; }.daliuren-courses__grid span { color: #665b50; font-size: 11px; }.daliuren-courses__grid strong, .daliuren-courses__grid b { font-size: 21px; line-height: 1; }.daliuren-courses__grid i { color: #9f3d2d; font-style: normal; }.daliuren-courses__grid em { color: #226b61; font-size: 12px; font-style: normal; font-weight: 800; }.daliuren-transmissions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin-top: 12px; }.daliuren-transmissions article { position: relative; display: grid; gap: 4px; padding: 11px; border: 2px solid #171717; background: #171717; color: #fffaf0; }.daliuren-transmissions article > span { color: #f2bd3f; font: 800 11px ui-monospace, monospace; }.daliuren-transmissions article > strong { font-size: 28px; line-height: 1; }.daliuren-transmissions article > div { font-size: 13px; }.daliuren-transmissions article > small { color: #e0d3bc; font-size: 11px; }.daliuren-transmissions article > i { position: absolute; right: -18px; top: 50%; color: #9f3d2d; font-size: 25px; font-style: normal; transform: translateY(-50%); }.classic-observatory__anchors { display: grid; gap: 7px; margin-top: 12px; padding: 11px; border: 2px solid #171717; background: #f2bd3f; }.classic-observatory__anchors > strong { font-size: 13px; }.classic-observatory__anchors > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }.classic-observatory__anchors > div > div { display: grid; gap: 2px; min-width: 0; padding-right: 5px; border-right: 1px solid #171717; }.classic-observatory__anchors > div > div:last-child { border: 0; }.classic-observatory__anchors span { font-size: 10px; }.classic-observatory__anchors strong { overflow-wrap: anywhere; font-size: 12px; }.taiyi-star-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }.taiyi-star-grid article { display: grid; gap: 7px; min-width: 0; padding: 10px; border: 2px solid #171717; background: #fff; }.taiyi-star-grid header, .taiyi-star-grid footer { display: flex; justify-content: space-between; gap: 5px; }.taiyi-star-grid header span, .taiyi-star-grid footer { color: #665b50; font-size: 10px; }.taiyi-star-grid header b { color: #9f3d2d; font: 900 13px ui-monospace, monospace; }.taiyi-star-grid > article > strong { font-size: 21px; line-height: 1; }.taiyi-star-grid p { min-height: 38px; margin: 0; font-size: 13px; line-height: 1.45; }.taiyi-star-grid footer { flex-wrap: wrap; }.taiyi-reading { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }.taiyi-reading > div { display: grid; align-content: start; gap: 5px; padding: 11px; border: 2px solid #171717; background: #fff; }.taiyi-reading span { color: #9f3d2d; font: 800 11px ui-monospace, monospace; }.taiyi-reading strong { font-size: 17px; line-height: 1.4; }.taiyi-reading p { margin: 0; color: #594f46; font-size: 13px; line-height: 1.55; }
-@media (max-width: 820px) { .classic-observatory__summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }.daliuren-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }.classic-observatory__anchors > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }.classic-observatory__anchors > div > div:nth-child(2n) { border-right: 0; }.taiyi-star-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .classic-observatory__summary, .daliuren-board, .daliuren-courses__grid, .taiyi-star-grid, .taiyi-reading { grid-template-columns: 1fr; }.classic-observatory__section-head { display: grid; }.daliuren-palace { min-height: 118px; }.daliuren-transmissions { grid-template-columns: 1fr; gap: 10px; }.daliuren-transmissions article > i { display: none; }.classic-observatory__anchors > div { grid-template-columns: 1fr; }.classic-observatory__anchors > div > div { border-right: 0; border-bottom: 1px solid #171717; padding-bottom: 4px; }.classic-observatory__anchors > div > div:last-child { border-bottom: 0; } }
-.bazi-compatibility-panel { margin-top: 18px; padding: 16px; border: 3px solid #171717; background: #f7f0e3; box-shadow: 7px 7px 0 #171717; }.bazi-compatibility-panel__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }.bazi-compatibility-panel__head span { color: #9f3d2d; font: 700 11px ui-monospace, monospace; }.bazi-compatibility-panel h2 { margin: 4px 0; font-size: 26px; }.bazi-compatibility-panel__head p { margin: 0; color: #594f46; font-size: 13px; }.bazi-compatibility-panel__head button { border: 2px solid #171717; background: #f2bd3f; padding: 9px 12px; font-weight: 800; cursor: pointer; white-space: nowrap; }.bazi-compatibility-panel__inputs { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }.bazi-compatibility-panel__inputs label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; }.bazi-compatibility-panel__inputs input, .bazi-compatibility-panel__inputs select { min-height: 34px; border: 2px solid #171717; background: #fff; padding: 5px 8px; }.bazi-compatibility-panel__score { display: flex; align-items: baseline; gap: 10px; margin-top: 15px; }.bazi-compatibility-panel__score strong { font: 800 38px ui-monospace, monospace; }.bazi-compatibility-panel__grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 10px; }.bazi-compatibility-panel__grid article { border: 2px solid #171717; padding: 10px; background: #fff; }.bazi-compatibility-panel__grid h3 { margin: 0 0 6px; font-size: 14px; }.bazi-compatibility-panel__grid p { margin: 5px 0; font-size: 12px; line-height: 1.5; }.bazi-compatibility-panel small { display: block; margin-top: 10px; color: #6b6055; }
-@media (max-width: 680px) { .bazi-compatibility-panel__head { flex-direction: column; }.bazi-compatibility-panel__grid { grid-template-columns: 1fr; }.bazi-compatibility-panel__head button { width: 100%; } }
 
-/* Standalone Agent command center — shadcn-style primitives, product-owned workflow. */
+.classic-observatory__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 18px;
+  border-top: 2px solid #171717;
+  border-left: 2px solid #171717;
+}
 
-/* --------------------------------------------------------------------------
-   Agent control room — reference-driven product page
+.classic-observatory__summary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px;
+  border-right: 2px solid #171717;
+  border-bottom: 2px solid #171717;
+  background: #fff;
+}
 
-   The chart workbench remains a separate tool.  This page is the product's
-   decision surface: one living issue, a guided interview and a visible model
-   of mutually exclusive paths.  It intentionally overrides the old paper
-   workbench only while `.is-agent-workspace` is active.
-   -------------------------------------------------------------------------- */
-@media (max-width: 900px) {
-  .research-panel { padding: 12px; }
-  .research-trend__chart-wrap { aspect-ratio: 2 / 1; }
+.classic-observatory__summary span {
+  color: #665b50;
+  font-size: 11px;
+}
+
+.classic-observatory__summary strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.classic-observatory__section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+  margin: 22px 0 9px;
+}
+
+.classic-observatory__section-head > div {
+  display: grid;
+  gap: 1px;
+}
+
+.classic-observatory__section-head span {
+  color: #9f3d2d;
+  font: 800 11px ui-monospace, monospace;
+  letter-spacing: .08em;
+}
+
+.classic-observatory__section-head h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.classic-observatory__section-head p {
+  max-width: 550px;
+  margin: 0;
+  color: #665b50;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.daliuren-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 2px solid #171717;
+  border-left: 2px solid #171717;
+}
+
+.daliuren-palace {
+  display: grid;
+  align-content: space-between;
+  min-width: 0;
+  min-height: 142px;
+  padding: 8px;
+  border-right: 2px solid #171717;
+  border-bottom: 2px solid #171717;
+  background: #fff;
+}
+
+.daliuren-palace.is-旺 {
+  background: #f8e5a6;
+}
+
+.daliuren-palace.is-相 {
+  background: #e2eee7;
+}
+
+.daliuren-palace.is-囚, .daliuren-palace.is-死 {
+  background: #f4d4ca;
+}
+
+.daliuren-palace header, .daliuren-palace footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.daliuren-palace header b {
+  font: 900 18px ui-monospace, monospace;
+}
+
+.daliuren-palace header span, .daliuren-palace footer {
+  color: #665b50;
+  font-size: 10px;
+}
+
+.daliuren-palace > div {
+  display: grid;
+  gap: 1px;
+}
+
+.daliuren-palace > div strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.daliuren-palace > div em {
+  color: #9f3d2d;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.daliuren-palace footer {
+  flex-wrap: wrap;
+}
+
+.daliuren-courses__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.daliuren-courses__grid article {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 2px solid #171717;
+  background: #fff;
+}
+
+.daliuren-courses__grid span {
+  color: #665b50;
+  font-size: 11px;
+}
+
+.daliuren-courses__grid strong, .daliuren-courses__grid b {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.daliuren-courses__grid i {
+  color: #9f3d2d;
+  font-style: normal;
+}
+
+.daliuren-courses__grid em {
+  color: #226b61;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.daliuren-transmissions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 12px;
+}
+
+.daliuren-transmissions article {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+  border: 2px solid #171717;
+  background: #171717;
+  color: #fffaf0;
+}
+
+.daliuren-transmissions article > span {
+  color: #f2bd3f;
+  font: 800 11px ui-monospace, monospace;
+}
+
+.daliuren-transmissions article > strong {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.daliuren-transmissions article > div {
+  font-size: 13px;
+}
+
+.daliuren-transmissions article > small {
+  color: #e0d3bc;
+  font-size: 11px;
+}
+
+.daliuren-transmissions article > i {
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  color: #9f3d2d;
+  font-size: 25px;
+  font-style: normal;
+  transform: translateY(-50%);
+}
+
+.classic-observatory__anchors {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 11px;
+  border: 2px solid #171717;
+  background: #f2bd3f;
+}
+
+.classic-observatory__anchors > strong {
+  font-size: 13px;
+}
+
+.classic-observatory__anchors > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.classic-observatory__anchors > div > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-right: 5px;
+  border-right: 1px solid #171717;
+}
+
+.classic-observatory__anchors > div > div:last-child {
+  border: 0;
+}
+
+.classic-observatory__anchors span {
+  font-size: 10px;
+}
+
+.classic-observatory__anchors strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.taiyi-star-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.taiyi-star-grid article {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px;
+  border: 2px solid #171717;
+  background: #fff;
+}
+
+.taiyi-star-grid header, .taiyi-star-grid footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.taiyi-star-grid header span, .taiyi-star-grid footer {
+  color: #665b50;
+  font-size: 10px;
+}
+
+.taiyi-star-grid header b {
+  color: #9f3d2d;
+  font: 900 13px ui-monospace, monospace;
+}
+
+.taiyi-star-grid > article > strong {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.taiyi-star-grid p {
+  min-height: 38px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.taiyi-star-grid footer {
+  flex-wrap: wrap;
+}
+
+.taiyi-reading {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.taiyi-reading > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 11px;
+  border: 2px solid #171717;
+  background: #fff;
+}
+
+.taiyi-reading span {
+  color: #9f3d2d;
+  font: 800 11px ui-monospace, monospace;
+}
+
+.taiyi-reading strong {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.taiyi-reading p {
+  margin: 0;
+  color: #594f46;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (max-width: 820px) {
+  .classic-observatory__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .daliuren-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .classic-observatory__anchors > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .classic-observatory__anchors > div > div:nth-child(2n) {
+    border-right: 0;
+  }
+  .taiyi-star-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .classic-observatory__summary,
+  .daliuren-board,
+  .daliuren-courses__grid,
+  .taiyi-star-grid,
+  .taiyi-reading {
+    grid-template-columns: 1fr;
+  }
+  .classic-observatory__section-head {
+    display: grid;
+  }
+  .daliuren-palace {
+    min-height: 118px;
+  }
+  .daliuren-transmissions {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .daliuren-transmissions article > i {
+    display: none;
+  }
+  .classic-observatory__anchors > div {
+    grid-template-columns: 1fr;
+  }
+  .classic-observatory__anchors > div > div {
+    border-right: 0;
+    border-bottom: 1px solid #171717;
+    padding-bottom: 4px;
+  }
+  .classic-observatory__anchors > div > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+.bazi-compatibility-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border: 3px solid #171717;
+  background: #f7f0e3;
+  box-shadow: 7px 7px 0 #171717;
+}
+
+.bazi-compatibility-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.bazi-compatibility-panel__head span {
+  color: #9f3d2d;
+  font: 700 11px ui-monospace, monospace;
+}
+
+.bazi-compatibility-panel h2 {
+  margin: 4px 0;
+  font-size: 26px;
+}
+
+.bazi-compatibility-panel__head p {
+  margin: 0;
+  color: #594f46;
+  font-size: 13px;
+}
+
+.bazi-compatibility-panel__head button {
+  border: 2px solid #171717;
+  background: #f2bd3f;
+  padding: 9px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bazi-compatibility-panel__inputs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.bazi-compatibility-panel__inputs label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bazi-compatibility-panel__inputs input, .bazi-compatibility-panel__inputs select {
+  min-height: 34px;
+  border: 2px solid #171717;
+  background: #fff;
+  padding: 5px 8px;
+}
+
+.bazi-compatibility-panel__score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.bazi-compatibility-panel__score strong {
+  font: 800 38px ui-monospace, monospace;
+}
+
+.bazi-compatibility-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.bazi-compatibility-panel__grid article {
+  border: 2px solid #171717;
+  padding: 10px;
+  background: #fff;
+}
+
+.bazi-compatibility-panel__grid h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.bazi-compatibility-panel__grid p {
+  margin: 5px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.bazi-compatibility-panel small {
+  display: block;
+  margin-top: 10px;
+  color: #6b6055;
+}
+
+@media (max-width: 680px) {
+  .bazi-compatibility-panel__head {
+    flex-direction: column;
+  }
+  .bazi-compatibility-panel__grid {
+    grid-template-columns: 1fr;
+  }
+  .bazi-compatibility-panel__head button {
+    width: 100%;
+  }
 }
 
 .summary-strip {
@@ -516,8 +952,7 @@ a {
   width: fit-content;
 }
 
-.canvas-panel,
-.sidebar-panel {
+.canvas-panel, .sidebar-panel {
   animation: observatory-rise 680ms ease-out both;
   align-self: stretch;
   scrollbar-width: thin;
@@ -530,23 +965,16 @@ a {
   align-items: start;
 }
 
-.canvas-panel,
-.sidebar-panel,
-.inspector-scroll,
-.inspector-scroll-plain {
+.canvas-panel, .sidebar-panel {
   min-height: 0;
-  height: 100%;
 }
 
-.bazi-panel,
-.ziwei-panel,
-.inspector-tabs {
+.bazi-panel, .ziwei-panel, .inspector-tabs {
   height: auto;
   min-height: 0;
 }
 
-.bazi-panel,
-.ziwei-panel {
+.bazi-panel, .ziwei-panel {
   display: grid;
   gap: 8px;
   grid-template-rows: auto auto auto 1fr;
@@ -622,8 +1050,7 @@ a {
   line-height: 1.28;
 }
 
-.bazi-headband__block > span,
-.bazi-support-table__label span {
+.bazi-headband__block > span, .bazi-support-table__label span {
   color: #d2ae86;
   font-size: 0.62rem;
   text-transform: uppercase;
@@ -727,8 +1154,7 @@ a {
   gap: 3px;
 }
 
-.bazi-table__label,
-.bazi-table__cell {
+.bazi-table__label, .bazi-table__cell {
   border-radius: 12px;
   border: 1px solid rgba(208, 170, 104, 0.1);
   background: rgba(255, 248, 241, 0.92);
@@ -745,8 +1171,7 @@ a {
   letter-spacing: 0.02em;
   text-align: center;
   line-height: 1.05;
-  background:
-    linear-gradient(180deg, rgba(211, 163, 95, 0.12), rgba(255, 248, 241, 0.96));
+  background: linear-gradient(180deg, rgba(211, 163, 95, 0.12), rgba(255, 248, 241, 0.96));
 }
 
 .bazi-table__cell {
@@ -762,9 +1187,7 @@ a {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--foreground);
-  background:
-    radial-gradient(circle at top right, rgba(198, 142, 112, 0.1), transparent 36%),
-    rgba(255, 249, 243, 0.96);
+  background: radial-gradient(circle at top right, rgba(198, 142, 112, 0.1), transparent 36%), rgba(255, 249, 243, 0.96);
 }
 
 .bazi-table__cell--head span {
@@ -791,12 +1214,8 @@ a {
 
 .bazi-glyph-cell--day-master {
   border-color: rgba(190, 123, 83, 0.24);
-  background:
-    radial-gradient(circle at top, rgba(196, 132, 102, 0.16), transparent 44%),
-    rgba(255, 248, 240, 0.98);
-  box-shadow:
-    inset 0 0 0 1px rgba(190, 123, 83, 0.08),
-    0 10px 22px rgba(154, 107, 51, 0.08);
+  background: radial-gradient(circle at top, rgba(196, 132, 102, 0.16), transparent 44%), rgba(255, 248, 240, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(190, 123, 83, 0.08), 0 10px 22px rgba(154, 107, 51, 0.08);
 }
 
 .bazi-glyph-cell__meta,
@@ -1045,28 +1464,23 @@ a {
   opacity: 0.16;
 }
 
-.bazi-element-meter__item[data-element="木"] span,
-.bazi-element-meter__item[data-element="木"] strong {
+.bazi-element-meter__item[data-element="木"] span, .bazi-element-meter__item[data-element="木"] strong {
   color: #3f7a54;
 }
 
-.bazi-element-meter__item[data-element="火"] span,
-.bazi-element-meter__item[data-element="火"] strong {
+.bazi-element-meter__item[data-element="火"] span, .bazi-element-meter__item[data-element="火"] strong {
   color: #a94d3e;
 }
 
-.bazi-element-meter__item[data-element="土"] span,
-.bazi-element-meter__item[data-element="土"] strong {
+.bazi-element-meter__item[data-element="土"] span, .bazi-element-meter__item[data-element="土"] strong {
   color: #9a6b33;
 }
 
-.bazi-element-meter__item[data-element="金"] span,
-.bazi-element-meter__item[data-element="金"] strong {
+.bazi-element-meter__item[data-element="金"] span, .bazi-element-meter__item[data-element="金"] strong {
   color: #6f7376;
 }
 
-.bazi-element-meter__item[data-element="水"] span,
-.bazi-element-meter__item[data-element="水"] strong {
+.bazi-element-meter__item[data-element="水"] span, .bazi-element-meter__item[data-element="水"] strong {
   color: #386f91;
 }
 
@@ -1182,9 +1596,7 @@ a {
   text-transform: uppercase;
 }
 
-.bazi-support-table__label,
-.bazi-support-table__pillar,
-.bazi-support-table__meta {
+.bazi-support-table__label, .bazi-support-table__pillar, .bazi-support-table__meta {
   display: grid;
   place-items: center;
   padding: 4px 5px;
@@ -1212,8 +1624,7 @@ a {
   line-height: 1;
 }
 
-.bazi-support-table__token span,
-.bazi-support-table__meta strong {
+.bazi-support-table__token span, .bazi-support-table__meta strong {
   color: var(--foreground);
   font-size: 0.6rem;
   line-height: 1.12;
@@ -1246,8 +1657,7 @@ a {
   color: #386f91;
 }
 
-.bazi-panel__overview,
-.bazi-yun-panel {
+.bazi-panel__overview, .bazi-yun-panel {
   border-radius: 20px;
   border: 1px solid rgba(208, 170, 104, 0.12);
   background: rgba(255, 252, 247, 0.88);
@@ -1284,9 +1694,7 @@ a {
   min-width: 872px;
 }
 
-.bazi-yun-table__row > span,
-.bazi-yun-table__pillar,
-.bazi-yun-table__stack {
+.bazi-yun-table__row > span, .bazi-yun-table__pillar, .bazi-yun-table__stack {
   min-height: 31px;
   display: grid;
   place-items: center;
@@ -1415,8 +1823,7 @@ a {
   padding: 6px;
 }
 
-.ziwei-panel__canvas .iztro-palace,
-.ziwei-panel__canvas .iztro-center-palace {
+.ziwei-panel__canvas .iztro-palace, .ziwei-panel__canvas .iztro-center-palace {
   border-radius: 18px;
   backdrop-filter: blur(10px);
 }
@@ -1426,9 +1833,7 @@ a {
 }
 
 .ziwei-panel__canvas .iztro-palace.focused-palace {
-  background:
-    radial-gradient(circle at top right, rgba(118, 186, 255, 0.14), transparent 36%),
-    linear-gradient(180deg, rgba(18, 29, 46, 0.96), rgba(10, 17, 29, 0.9));
+  background: radial-gradient(circle at top right, rgba(118, 186, 255, 0.14), transparent 36%), linear-gradient(180deg, rgba(18, 29, 46, 0.96), rgba(10, 17, 29, 0.9));
   border-color: rgba(118, 186, 255, 0.26);
 }
 
@@ -1461,8 +1866,7 @@ a {
   flex-wrap: wrap;
 }
 
-.ziwei-panel__canvas .horo-buttons .center-button,
-.ziwei-panel__canvas .solar-horoscope .today {
+.ziwei-panel__canvas .horo-buttons .center-button, .ziwei-panel__canvas .solar-horoscope .today {
   border-radius: 999px;
   border-color: rgba(211, 163, 95, 0.16);
   background: rgba(255, 250, 243, 0.96);
@@ -1515,14 +1919,8 @@ a {
   font-size: 1.2rem;
 }
 
-.platform-result-card p,
-.platform-result-card a {
+.platform-result-card p, .platform-result-card a {
   color: var(--ink-soft);
-}
-
-.inspector-scroll,
-.inspector-scroll-plain {
-  max-height: none;
 }
 
 .panel-heading {
@@ -1580,14 +1978,11 @@ a {
   min-width: 126px;
   border: 1px solid rgba(208, 170, 104, 0.14);
   border-radius: 14px;
-  background:
-    radial-gradient(circle at top right, rgba(201, 162, 106, 0.1), transparent 34%),
-    rgba(255, 250, 244, 0.94);
+  background: radial-gradient(circle at top right, rgba(201, 162, 106, 0.1), transparent 34%), rgba(255, 250, 244, 0.94);
   padding: 7px 9px;
   text-align: left;
   cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease,
-    box-shadow 160ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
   position: relative;
   z-index: 1;
 }
@@ -1616,17 +2011,13 @@ a {
 .sequence-rail__item.is-active {
   transform: translateY(-2px);
   border-color: rgba(208, 170, 104, 0.32);
-  background:
-    radial-gradient(circle at top right, rgba(201, 162, 106, 0.18), transparent 36%),
-    rgba(247, 238, 226, 0.98);
+  background: radial-gradient(circle at top right, rgba(201, 162, 106, 0.18), transparent 36%), rgba(247, 238, 226, 0.98);
   box-shadow: 0 10px 20px rgba(116, 87, 49, 0.12);
 }
 
 .sequence-rail__item.is-active::after {
   background: var(--accent);
-  box-shadow:
-    0 0 0 4px rgba(211, 163, 95, 0.08),
-    0 0 18px rgba(211, 163, 95, 0.32);
+  box-shadow: 0 0 0 4px rgba(211, 163, 95, 0.08), 0 0 18px rgba(211, 163, 95, 0.32);
 }
 
 .palace-grid-shell {
@@ -1672,15 +2063,12 @@ a {
   pointer-events: none;
 }
 
-.palace-card:hover::before,
-.palace-card.is-selected::before {
+.palace-card:hover::before, .palace-card.is-selected::before {
   opacity: 1;
 }
 
 .palace-card.has-voidness {
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
-    inset 0 0 0 1px rgba(120, 133, 214, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 0 0 1px rgba(120, 133, 214, 0.08);
 }
 
 .palace-card__index {
@@ -1731,80 +2119,16 @@ a {
   padding-right: 2px;
 }
 
-.inspector-scroll-plain {
-  border-radius: 14px;
-}
-
 .inspector-tabs {
   align-content: start;
 }
 
-.inspector-tabs__list {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-radius: 11px;
-}
-
-.inspector-tabs .inspector-tabs__list [data-slot="tabs-trigger"] {
-  min-width: 0;
-  width: 100%;
-  justify-content: center;
-}
-
-.inspector-tabs__content,
-.inspector-tabs [data-slot="tabs-content"] {
+.inspector-tabs__content, .inspector-tabs [data-slot="tabs-content"] {
   min-height: 0;
 }
 
 .inspector-tabs__content[data-state="active"] {
   display: grid;
-}
-
-.inspector-tabs__content .inspector-scroll {
-  border-radius: 12px;
-  border: 1px solid rgba(208, 170, 104, 0.1);
-  background: rgba(255, 251, 246, 0.82);
-}
-
-.inspector-output {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 6px;
-  min-height: 0;
-  height: 100%;
-}
-
-.inspector-output__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 30px;
-  color: var(--ink-soft);
-  font-size: 0.66rem;
-}
-
-.inspector-output__toolbar .command-button {
-  width: auto;
-  min-height: 30px;
-  padding: 4px 8px;
-  font-size: 0.64rem;
-}
-
-.agent-panel {
-  display: grid;
-  min-height: 0;
-}
-
-.agent-panel__section {
-  display: grid;
-  gap: 6px;
-  border: 1px solid rgba(208, 170, 104, 0.12);
-}
-
-.agent-panel__section--result {
-  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .agent-panel__section-head {
@@ -1826,55 +2150,6 @@ a {
   line-height: 1.15;
 }
 
-.agent-panel__question {
-  display: grid;
-  gap: 4px;
-}
-
-.agent-panel__toolbar {
-  display: grid;
-  align-items: stretch;
-}
-
-.agent-panel__textarea {
-  width: 100%;
-  resize: vertical;
-  border: 1px solid rgba(208, 170, 104, 0.14);
-  font: inherit;
-  outline: none;
-}
-
-.agent-panel__error {
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(205, 113, 84, 0.18);
-  background: rgba(255, 234, 226, 0.88);
-  color: #924936;
-  font-size: 0.76rem;
-  line-height: 1.35;
-}
-
-.agent-panel__guest-recovery-note {
-  margin: 0;
-  padding: 7px 9px;
-  border: 1px dashed #171717;
-  background: #fff3cd;
-  color: #5f4210;
-  font-size: 0.7rem;
-  line-height: 1.4;
-}
-
-.agent-result {
-  margin: 0;
-  padding: 9px 10px;
-  border: 1px solid rgba(208, 170, 104, 0.12);
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: var(--font-geist-sans), sans-serif;
-  font-size: 0.76rem;
-  line-height: 1.48;
-}
-
 .agent-markdown {
   display: grid;
   gap: 0.65rem;
@@ -1888,72 +2163,70 @@ a {
 .agent-markdown p,
 .agent-markdown blockquote,
 .agent-markdown ul,
-.agent-markdown ol { margin: 0; }
+.agent-markdown ol {
+  margin: 0;
+}
 
-.agent-markdown h2 { font-size: 1.12rem; line-height: 1.25; }
-.agent-markdown h3 { font-size: 1rem; line-height: 1.3; }
-.agent-markdown h4 { font-size: .9rem; line-height: 1.35; }
-.agent-markdown p,
-.agent-markdown li { line-height: 1.62; }
-.agent-markdown ul,
-.agent-markdown ol { padding-left: 1.35rem; }
-.agent-markdown blockquote { padding-left: .8rem; border-left: 3px solid var(--accent); color: var(--muted-foreground); }
-.agent-markdown code { padding: .08rem .3rem; border-radius: 4px; background: var(--surface-muted); font-family: var(--mono-font); font-size: .9em; }
-.agent-markdown__code { margin: 0; padding: .65rem .75rem; overflow-x: auto; border: 1px solid var(--panel-stroke); border-radius: 6px; background: var(--surface-muted); font-family: var(--mono-font); white-space: pre; }
-.agent-markdown a { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 2px; }
+.agent-markdown h2 {
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
 
-.agent-panel .inspector-scroll {
-  min-height: 0;
-  height: 100%;
-  border: 0;
-  background: transparent;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  overscroll-behavior: contain;
+.agent-markdown h3 {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.agent-markdown h4 {
+  font-size: .9rem;
+  line-height: 1.35;
+}
+
+.agent-markdown p, .agent-markdown li {
+  line-height: 1.62;
+}
+
+.agent-markdown ul, .agent-markdown ol {
+  padding-left: 1.35rem;
+}
+
+.agent-markdown blockquote {
+  padding-left: .8rem;
+  border-left: 3px solid var(--accent);
+  color: var(--muted-foreground);
+}
+
+.agent-markdown code {
+  padding: .08rem .3rem;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  font-family: var(--mono-font);
+  font-size: .9em;
+}
+
+.agent-markdown__code {
+  margin: 0;
+  padding: .65rem .75rem;
+  overflow-x: auto;
+  border: 1px solid var(--panel-stroke);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  font-family: var(--mono-font);
+  white-space: pre;
+}
+
+.agent-markdown a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Long Agent answers must scroll inside the result surface.  Several desktop
-   layout rules intentionally clip the tab shell; without an explicit flex
-   boundary the answer is painted below the viewport and becomes unreachable. */
-.agent-panel__section--result {
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-.agent-panel__section--result > .inspector-scroll {
-  min-height: 0 !important;
-  max-height: none !important;
-  overflow-y: auto !important;
-}
-.agent-panel__section--result .agent-thread,
-.agent-panel__section--result > .agent-result {
-  min-height: min-content;
-  padding-bottom: 20px;
-}
-
-@media (max-width: 1180px) {
-  .agent-panel__section--result {
-    overflow: visible !important;
-  }
-  .agent-panel__section--result > .inspector-scroll {
-    height: auto !important;
-    max-height: min(62svh, 760px) !important;
-    overflow-y: auto !important;
-  }
-}
+  layout rules intentionally clip the tab shell; without an explicit flex
+  boundary the answer is painted below the viewport and becomes unreachable. */
 
 .agent-spin {
   animation: agent-spin 1s linear infinite;
-}
-
-.json-block {
-  margin: 0;
-  padding: 7px 8px;
-  border: 1px solid rgba(208, 170, 104, 0.12);
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 0.64rem;
-  line-height: 1.22;
 }
 
 .structured-block {
@@ -1969,9 +2242,7 @@ a {
 
 .structured-block.is-active {
   border-color: rgba(208, 170, 104, 0.22);
-  box-shadow:
-    inset 0 0 0 1px rgba(208, 170, 104, 0.08),
-    0 12px 20px rgba(116, 87, 49, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(208, 170, 104, 0.08), 0 12px 20px rgba(116, 87, 49, 0.12);
 }
 
 .structured-block__header {
@@ -2035,7 +2306,6 @@ a {
     opacity: 0;
     transform: translateY(12px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2046,152 +2316,105 @@ a {
   from {
     transform: rotate(0deg);
   }
-
   to {
     transform: rotate(360deg);
   }
 }
 
 @media (max-width: 1080px) {
-  html,
-  body {
+  html, body {
     overflow: auto;
   }
-
   .page-shell {
     width: min(100vw - 20px, 1400px);
     height: auto;
     min-height: 100svh;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
-
   .observatory-hero {
     grid-template-columns: 1fr;
   }
-
   .observatory-hero__copy h1 {
     max-width: 100%;
   }
-
-  .command-bar,
-  .analysis-layout,
-  .summary-strip {
+  .command-bar, .analysis-layout, .summary-strip {
     grid-template-columns: 1fr;
   }
-
   .command-bar--sidebar .command-bar__group--inputs,
   .command-bar--sidebar .command-bar__actions,
   .sequence-controls {
     grid-template-columns: 1fr;
   }
-
-  .bazi-headband,
-  .ziwei-panel__meta {
+  .bazi-headband, .ziwei-panel__meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .bazi-headband__block--hero {
     grid-column: 1 / -1;
   }
-
   .bazi-headband__hero-top {
     grid-template-columns: minmax(0, 0.68fr) minmax(0, 1fr);
   }
-
   .bazi-table__row {
     grid-template-columns: 80px repeat(4, minmax(0, 1fr));
   }
-
   .bazi-stack-cell__item {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .command-bar,
-  .panel-heading {
+  .command-bar, .panel-heading {
     display: grid;
   }
-
   .summary-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .analysis-layout {
     height: auto;
   }
-
-  .canvas-panel,
-  .sidebar-panel {
+  .canvas-panel, .sidebar-panel {
     height: auto;
     overflow: visible;
   }
-
   .palace-grid-shell {
     height: auto;
   }
-
   .sidebar-panel {
     grid-template-rows: auto auto auto;
   }
 }
 
 @media (max-width: 720px) {
-  .command-bar,
-  .canvas-panel,
-  .inspector-panel,
-  .summary-strip,
-  .palace-grid-shell {
+  .command-bar, .canvas-panel, .inspector-panel, .summary-strip, .palace-grid-shell {
     border-radius: 16px;
   }
-
-  .palace-grid,
-  .summary-strip,
-  .palace-card__facts,
-  .bazi-headband,
-  .ziwei-panel__meta {
+  .palace-grid, .summary-strip, .palace-card__facts, .bazi-headband, .ziwei-panel__meta {
     grid-template-columns: 1fr;
   }
-
-  .bazi-headband__hero-top,
-  .agent-panel__toolbar {
+  .bazi-headband__hero-top {
     grid-template-columns: 1fr;
   }
-
   .bazi-support-table__row {
     grid-template-columns: 1fr;
   }
-
   .bazi-support-table__row--head {
     display: none;
   }
-
   .bazi-support-table__token {
     justify-content: space-between;
   }
-
   .bazi-support-table__token,
   .bazi-support-table__meta,
   .bazi-support-table__pillar,
   .bazi-support-table__label {
     min-height: 36px;
   }
-
   .bazi-table {
     gap: 4px;
   }
-
-  .agent-panel .command-button {
-    width: 100%;
-    min-height: 34px;
-  }
-
   .bazi-table__row {
     grid-template-columns: 1fr;
   }
-
   .bazi-table__label {
     min-height: 36px;
   }
-
   .bazi-stack-cell__item {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
@@ -2199,6 +2422,7 @@ a {
 }
 
 /* Commercial flow state: one visible source of truth for identity, order and AI usage. */
+
 .platform-account {
   display: inline-flex;
   align-items: center;
@@ -2280,77 +2504,268 @@ a {
   line-height: 1.45;
 }
 
-.platform-account__redeem-error,
-.platform-account__redeem-success {
+.platform-account__redeem-error, .platform-account__redeem-success {
   font-size: 0.68rem;
   font-weight: 850;
   line-height: 1.4;
 }
 
-.platform-account__redeem-error { color: #b73425; }
-.platform-account__redeem-success { color: #28735a; }
-
-.admin-invitation-wrap { position: relative; }
-.admin-invitation-button { background: #8fbfcb; }
-.admin-invitation-popover { position: absolute; z-index: 90; top: calc(100% + 8px); right: 0; display: grid; gap: 10px; width: min(560px, calc(100vw - 24px)); max-height: min(720px, calc(100svh - 104px)); overflow: auto; padding: 14px; border: 3px solid #171717; background: #fffaf0; color: #171717; box-shadow: 8px 8px 0 #171717; text-align: left; }
-.admin-invitation-popover__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.admin-invitation-popover__head div { display: grid; gap: 3px; }
-.admin-invitation-popover__head span { color: #9f3d2d; font: 800 10px/1.2 ui-monospace, monospace; letter-spacing: .1em; }
-.admin-invitation-popover__head strong { font-size: 20px; letter-spacing: -.03em; }
-.admin-invitation-popover__head em { padding: 4px 7px; border: 2px solid #171717; background: #c5b4e3; font: 800 11px ui-monospace, monospace; font-style: normal; text-transform: uppercase; }
-.admin-invitation-popover__hint { margin: 0; color: #55418c; font-size: 12px; line-height: 1.45; }
-.admin-invitation-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; border: 2px solid #171717; background: #f2bd3f; }
-.admin-invitation-form label { display: grid; gap: 4px; min-width: 0; font-size: 11px; font-weight: 900; }
-.admin-invitation-form input { width: 100%; min-height: 32px; box-sizing: border-box; border: 2px solid #171717; border-radius: 0; background: #fff; color: #171717; padding: 5px 7px; font-size: 13px; }
-.admin-invitation-form small { color: #55418c; font-size: 10px; }
-.admin-invitation-form__wide { grid-column: 1 / -1; }
-.admin-invitation-form > .platform-account__button { justify-self: start; }
-.admin-invitation-raw { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px 10px; padding: 10px; border: 2px solid #171717; background: #a8d6c0; }
-.admin-invitation-raw small { grid-column: 1 / -1; font-size: 10px; font-weight: 900; }
-.admin-invitation-raw strong { overflow-wrap: anywhere; font: 900 15px/1.25 ui-monospace, monospace; }
-.admin-invitation-message { margin: 0; color: #28735a; font-size: 11px; font-weight: 800; line-height: 1.45; }
-.admin-invitation-list-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
-.admin-invitation-list-head button { border: 1px solid #171717; background: #fff; padding: 4px 7px; font-size: 11px; font-weight: 800; cursor: pointer; }
-.admin-invitation-list { display: grid; gap: 6px; }
-.admin-invitation-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 8px; border: 1px solid #171717; background: #fff; }
-.admin-invitation-row > div { display: grid; gap: 2px; min-width: 0; }
-.admin-invitation-row strong { overflow-wrap: anywhere; font: 800 12px ui-monospace, monospace; }
-.admin-invitation-row small { color: #6b6055; font-size: 10px; line-height: 1.35; }
-.admin-invitation-row > div:nth-child(2) { text-align: right; }
-.admin-invitation-row > button { border: 1px solid #171717; background: #df4d32; color: #fff; padding: 5px 7px; font-size: 11px; font-weight: 800; cursor: pointer; }
-.admin-invitation-status { width: fit-content; justify-self: end; padding: 2px 5px; border: 1px solid #171717; font-size: 10px; font-weight: 900; }
-.admin-invitation-status.is-active { background: #a8d6c0; }
-.admin-invitation-status.is-revoked, .admin-invitation-status.is-expired, .admin-invitation-status.is-exhausted { background: #e6c5b9; }
-.admin-invitation-empty { padding: 10px; border: 1px dashed #171717; color: #6b6055; font-size: 11px; }
-
-@media (max-width: 720px) {
-  .admin-invitation-popover { position: fixed; top: 76px; right: 12px; width: min(560px, calc(100vw - 24px)); }
-  .admin-invitation-form { grid-template-columns: 1fr; }
-  .admin-invitation-form__wide { grid-column: auto; }
-  .admin-invitation-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .admin-invitation-row > div:nth-child(2) { text-align: left; }
-  .admin-invitation-row > button { grid-column: 2; grid-row: 1 / span 2; }
+.platform-account__redeem-error {
+  color: #b73425;
 }
 
-.agent-panel__entitlement {
+.platform-account__redeem-success {
+  color: #28735a;
+}
+
+.admin-invitation-wrap {
+  position: relative;
+}
+
+.admin-invitation-button {
+  background: #8fbfcb;
+}
+
+.admin-invitation-popover {
+  position: absolute;
+  z-index: 90;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  gap: 10px;
+  width: min(560px, calc(100vw - 24px));
+  max-height: min(720px, calc(100svh - 104px));
+  overflow: auto;
+  padding: 14px;
+  border: 3px solid #171717;
+  background: #fffaf0;
+  color: #171717;
+  box-shadow: 8px 8px 0 #171717;
+  text-align: left;
+}
+
+.admin-invitation-popover__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-invitation-popover__head div {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-invitation-popover__head span {
+  color: #9f3d2d;
+  font: 800 10px/1.2 ui-monospace, monospace;
+  letter-spacing: .1em;
+}
+
+.admin-invitation-popover__head strong {
+  font-size: 20px;
+  letter-spacing: -.03em;
+}
+
+.admin-invitation-popover__head em {
+  padding: 4px 7px;
+  border: 2px solid #171717;
+  background: #c5b4e3;
+  font: 800 11px ui-monospace, monospace;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.admin-invitation-popover__hint {
+  margin: 0;
+  color: #55418c;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-invitation-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 2px solid #171717;
+  background: #f2bd3f;
+}
+
+.admin-invitation-form label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.admin-invitation-form input {
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  border: 2px solid #171717;
+  border-radius: 0;
+  background: #fff;
+  color: #171717;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.admin-invitation-form small {
+  color: #55418c;
+  font-size: 10px;
+}
+
+.admin-invitation-form__wide {
+  grid-column: 1 / -1;
+}
+
+.admin-invitation-form > .platform-account__button {
+  justify-self: start;
+}
+
+.admin-invitation-raw {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 10px;
+  padding: 10px;
+  border: 2px solid #171717;
+  background: #a8d6c0;
+}
+
+.admin-invitation-raw small {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.admin-invitation-raw strong {
+  overflow-wrap: anywhere;
+  font: 900 15px/1.25 ui-monospace, monospace;
+}
+
+.admin-invitation-message {
+  margin: 0;
+  color: #28735a;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.admin-invitation-list-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  width: 100%;
-  min-height: 30px;
-  padding: 5px 8px;
-  border: 2px solid #171717;
-  border-radius: 0;
-  background: #fffaf0;
-  color: #55418c;
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: 12px;
 }
 
-.agent-panel__entitlement strong {
-  color: #b73425;
-  font-size: 0.74rem;
+.admin-invitation-list-head button {
+  border: 1px solid #171717;
+  background: #fff;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-invitation-list {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-invitation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #171717;
+  background: #fff;
+}
+
+.admin-invitation-row > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-invitation-row strong {
+  overflow-wrap: anywhere;
+  font: 800 12px ui-monospace, monospace;
+}
+
+.admin-invitation-row small {
+  color: #6b6055;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.admin-invitation-row > div:nth-child(2) {
+  text-align: right;
+}
+
+.admin-invitation-row > button {
+  border: 1px solid #171717;
+  background: #df4d32;
+  color: #fff;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-invitation-status {
+  width: fit-content;
+  justify-self: end;
+  padding: 2px 5px;
+  border: 1px solid #171717;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.admin-invitation-status.is-active {
+  background: #a8d6c0;
+}
+
+.admin-invitation-status.is-revoked,
+.admin-invitation-status.is-expired,
+.admin-invitation-status.is-exhausted {
+  background: #e6c5b9;
+}
+
+.admin-invitation-empty {
+  padding: 10px;
+  border: 1px dashed #171717;
+  color: #6b6055;
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .admin-invitation-popover {
+    position: fixed;
+    top: 76px;
+    right: 12px;
+    width: min(560px, calc(100vw - 24px));
+  }
+  .admin-invitation-form {
+    grid-template-columns: 1fr;
+  }
+  .admin-invitation-form__wide {
+    grid-column: auto;
+  }
+  .admin-invitation-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .admin-invitation-row > div:nth-child(2) {
+    text-align: left;
+  }
+  .admin-invitation-row > button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 .platform-result-card__stage {
@@ -2364,10 +2779,21 @@ a {
   font-weight: 900;
 }
 
-.platform-result-card__stage.is-failed { background: #e36b4c; }
-.platform-result-card__stage.is-waiting { background: #c5b4e3; }
-.platform-result-card__stage.is-paid { background: #8fbfcb; }
-.platform-result-card__hint { font-size: 0.76rem; }
+.platform-result-card__stage.is-failed {
+  background: #e36b4c;
+}
+
+.platform-result-card__stage.is-waiting {
+  background: #c5b4e3;
+}
+
+.platform-result-card__stage.is-paid {
+  background: #8fbfcb;
+}
+
+.platform-result-card__hint {
+  font-size: 0.76rem;
+}
 
 @media (max-width: 720px) {
   .platform-account {
@@ -2375,9 +2801,9 @@ a {
     justify-content: space-between;
     margin-left: 0;
   }
-
-  .platform-account__status { text-align: left; }
-
+  .platform-account__status {
+    text-align: left;
+  }
   .platform-account__redeem-popover {
     position: fixed;
     top: 76px;
@@ -2386,6 +2812,7 @@ a {
 }
 
 /* Title-bar parameter menu and the compact chart context rail. */
+
 html body .observatory-hero {
   position: relative !important;
   z-index: 30 !important;
@@ -2535,13 +2962,13 @@ html body .observatory-hero {
 }
 
 /* The context rail now owns the former metadata cards; keep the board full
-   width instead of reserving a dead right column for the removed panel. */
+  width instead of reserving a dead right column for the removed panel. */
+
 @media (min-width: 721px) {
   html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence) {
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: minmax(0, 1fr) !important;
   }
-
   html body .canvas-panel[data-mode="qimen"] .qimen-board-layout:not(.has-sequence) > .palace-grid-shell {
     grid-column: 1 !important;
     grid-row: 1 !important;
@@ -2559,6 +2986,7 @@ html body .observatory-hero {
 }
 
 /* Final card geometry and container-aware type setting. */
+
 html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
   overflow: hidden !important;
 }
@@ -2584,16 +3012,13 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-card__primary-item {
     border-right: 0 !important;
     border-bottom: 1px solid #d8d1c6 !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-card__primary-item:last-child {
     border-bottom: 0 !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
@@ -2601,17 +3026,18 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 }
 
 /* At wide desktop widths the Agent column leaves narrow square cells; use a
-   single direct-reading primary column there. */
+  single direct-reading primary column there. */
 
 /* Final cascade override for the live DOM (the legacy ID selectors above do
-   not match the current component tree). */
+  not match the current component tree). */
 
 /* In the 16:9 desktop composition the chart shares the viewport with the
-   Agent rail. Cap it by the available vertical space so the square never
-   becomes a giant scrollable block. */
+  Agent rail. Cap it by the available vertical space so the square never
+  becomes a giant scrollable block. */
 
 /* The side-by-side desktop layout uses analysis-panel-group rather than the
-   stacked modifier, so keep the same square and dense card contract there. */
+  stacked modifier, so keep the same square and dense card contract there. */
+
 @media (min-width: 1201px) {
   .analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
     width: min(100%, calc(100svh - 300px)) !important;
@@ -2620,44 +3046,38 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     max-height: none !important;
     aspect-ratio: 1 / 1 !important;
   }
-
   .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__primary {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: minmax(0, 1fr) !important;
   }
-
   .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
-
   .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__facts .palace-card__fact--status {
     grid-column: span 2 !important;
   }
-
   .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__primary-item strong {
     font-size: clamp(1.12rem, 1.8vw, 1.48rem) !important;
   }
-
   .analysis-layout .canvas-panel__content .palace-grid .palace-card .palace-card__facts dd {
     font-size: clamp(1rem, 1.35vw, 1.22rem) !important;
   }
 }
 
 /* Final palace-density pass: each card is a reading unit, not a small
-   caption inside a large square. Keep the three major factors horizontal at
-   every desktop width and let the final status consume the otherwise-empty
-   lower-right cell. */
+  caption inside a large square. Keep the three major factors horizontal at
+  every desktop width and let the final status consume the otherwise-empty
+  lower-right cell. */
 
 /* Extra specificity is intentional: this stylesheet still contains the
-   original card rules from the first visual pass. */
+  original card rules from the first visual pass. */
 
 @media (min-width: 1200px) {
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-card__primary {
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-card__facts {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
@@ -2669,36 +3089,32 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
 }
 
 /* Readability contract for the nine-palace board.
-   A palace is a square, so its reading order must consume vertical space rather
-   than forcing three label/value pairs into a narrow horizontal strip. */
+  A palace is a square, so its reading order must consume vertical space rather
+  than forcing three label/value pairs into a narrow horizontal strip. */
 
 @media (max-width: 720px) {
   .palace-grid > .palace-card {
     gap: 4px !important;
     padding: 5px !important;
   }
-
   .palace-card__header h3 {
     font-size: clamp(0.98rem, 4.8vw, 1.15rem) !important;
   }
-
   .palace-card__primary-item {
     padding: 2px 4px !important;
   }
-
   .palace-card__primary-item strong {
     font-size: clamp(0.92rem, 4vw, 1.08rem) !important;
   }
-
   .palace-card__facts dd {
     font-size: clamp(0.76rem, 3.4vw, 0.9rem) !important;
   }
 }
 
 /* Palace cards use a compact horizontal reading grammar: label/value pairs
-   carry the hierarchy, while colour and type distinguish categories. */
-html body #qimen-workbench-layout .palace-grid > .palace-card,
-.palace-grid > .palace-card {
+  carry the hierarchy, while colour and type distinguish categories. */
+
+html body #qimen-workbench-layout .palace-grid > .palace-card, .palace-grid > .palace-card {
   border: 1px solid #c8c0b4 !important;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.88) !important;
   color: #26221d !important;
@@ -2713,13 +3129,11 @@ html body #qimen-workbench-layout .palace-grid > .palace-card.is-selected,
   box-shadow: inset 3px 0 0 #a85638, inset 0 0 0 1px rgba(168, 86, 56, 0.12) !important;
 }
 
-html body #qimen-workbench-layout .palace-card__topline,
-.palace-card__topline {
+html body #qimen-workbench-layout .palace-card__topline, .palace-card__topline {
   min-width: 0 !important;
 }
 
-html body #qimen-workbench-layout .palace-card__header,
-.palace-card__header {
+html body #qimen-workbench-layout .palace-card__header, .palace-card__header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -2732,16 +3146,14 @@ html body #qimen-workbench-layout .palace-card__header,
   align-items: baseline;
 }
 
-html body #qimen-workbench-layout .palace-card__index,
-.palace-card__index {
+html body #qimen-workbench-layout .palace-card__index, .palace-card__index {
   color: #827568 !important;
   font-family: var(--mono-font), ui-monospace, monospace;
   letter-spacing: 0 !important;
   white-space: nowrap;
 }
 
-html body #qimen-workbench-layout .palace-card__header h3,
-.palace-card__header h3 {
+html body #qimen-workbench-layout .palace-card__header h3, .palace-card__header h3 {
   margin: 0 !important;
   color: #2a2621 !important;
   font-family: var(--display-font), "STKaiti", "KaiTi", serif !important;
@@ -2753,8 +3165,7 @@ html body #qimen-workbench-layout .palace-card__header h3,
   white-space: nowrap;
 }
 
-html body #qimen-workbench-layout .palace-card__status,
-.palace-card__status {
+html body #qimen-workbench-layout .palace-card__status, .palace-card__status {
   display: flex !important;
   min-width: 0 !important;
   flex-wrap: wrap;
@@ -2763,8 +3174,7 @@ html body #qimen-workbench-layout .palace-card__status,
   overflow: visible !important;
 }
 
-html body #qimen-workbench-layout .palace-card__status strong,
-.palace-card__status strong {
+html body #qimen-workbench-layout .palace-card__status strong, .palace-card__status strong {
   display: inline-flex !important;
   align-items: center;
   min-height: 15px;
@@ -2779,13 +3189,11 @@ html body #qimen-workbench-layout .palace-card__status strong,
   white-space: nowrap !important;
 }
 
-html body #qimen-workbench-layout .palace-card__primary,
-.palace-card__primary {
+html body #qimen-workbench-layout .palace-card__primary, .palace-card__primary {
   margin-top: 4px;
 }
 
-html body #qimen-workbench-layout .palace-card__primary-item,
-.palace-card__primary-item {
+html body #qimen-workbench-layout .palace-card__primary-item, .palace-card__primary-item {
   display: flex !important;
   align-items: baseline !important;
   border: 1px solid transparent !important;
@@ -2807,12 +3215,19 @@ html body #qimen-workbench-layout .palace-card__primary-item strong,
   white-space: nowrap;
 }
 
-.palace-card__primary-item--star { border-color: #ecd1c3 !important; }
-.palace-card__primary-item--gate { border-color: #c9dfd4 !important; }
-.palace-card__primary-item--deity { border-color: #d8d0e8 !important; }
+.palace-card__primary-item--star {
+  border-color: #ecd1c3 !important;
+}
 
-html body #qimen-workbench-layout .palace-card__facts,
-.palace-card__facts {
+.palace-card__primary-item--gate {
+  border-color: #c9dfd4 !important;
+}
+
+.palace-card__primary-item--deity {
+  border-color: #d8d0e8 !important;
+}
+
+html body #qimen-workbench-layout .palace-card__facts, .palace-card__facts {
   min-width: 0 !important;
 }
 
@@ -2822,41 +3237,66 @@ html body #qimen-workbench-layout .palace-card__facts .palace-card__fact,
   background: transparent !important;
 }
 
-html body #qimen-workbench-layout .palace-card__facts dt,
-.palace-card__facts dt {
+html body #qimen-workbench-layout .palace-card__facts dt, .palace-card__facts dt {
   flex: 0 0 auto;
   color: #84776b !important;
   font-family: var(--mono-font), ui-monospace, monospace;
 }
 
-html body #qimen-workbench-layout .palace-card__facts dd,
-.palace-card__facts dd {
+html body #qimen-workbench-layout .palace-card__facts dd, .palace-card__facts dd {
   min-width: 0;
   margin: 0 !important;
   font-family: var(--display-font), "STKaiti", "KaiTi", serif !important;
   font-weight: 600;
 }
 
-.palace-card__fact--heaven dd { color: #a85d24 !important; }
-.palace-card__fact--earth dd { color: #34715e !important; }
-.palace-card__fact--hidden dd { color: #73558c !important; }
-.palace-card__fact--branch dd { color: #4c6077 !important; }
-.palace-card__fact--status dd { color: #785a35 !important; }
+.palace-card__fact--heaven dd {
+  color: #a85d24 !important;
+}
+
+.palace-card__fact--earth dd {
+  color: #34715e !important;
+}
+
+.palace-card__fact--hidden dd {
+  color: #73558c !important;
+}
+
+.palace-card__fact--branch dd {
+  color: #4c6077 !important;
+}
+
+.palace-card__fact--status dd {
+  color: #785a35 !important;
+}
 
 @media (max-width: 720px) {
-  .palace-grid > .palace-card { gap: 3px !important; padding: 4px !important; }
-  .palace-card__identity { gap: 3px; }
-  html body #qimen-workbench-layout .palace-card__header h3,
-  .palace-card__header h3 { font-size: clamp(0.96rem, 4.7vw, 1.2rem) !important; }
+  .palace-grid > .palace-card {
+    gap: 3px !important;
+    padding: 4px !important;
+  }
+  .palace-card__identity {
+    gap: 3px;
+  }
+  html body #qimen-workbench-layout .palace-card__header h3, .palace-card__header h3 {
+    font-size: clamp(0.96rem, 4.7vw, 1.2rem) !important;
+  }
   html body #qimen-workbench-layout .palace-card__primary-item strong,
-  .palace-card__primary-item strong { font-size: clamp(0.84rem, 4vw, 1.08rem) !important; }
-  html body #qimen-workbench-layout .palace-card__primary-item span,
-  .palace-card__primary-item span { font-size: clamp(0.54rem, 2.8vw, 0.68rem) !important; }
-  html body #qimen-workbench-layout .palace-card__facts dt,
-  .palace-card__facts dt { font-size: clamp(0.5rem, 2.5vw, 0.62rem) !important; }
-  html body #qimen-workbench-layout .palace-card__facts dd,
-  .palace-card__facts dd { font-size: clamp(0.68rem, 3.25vw, 0.84rem) !important; }
-  .palace-card__status strong { display: none !important; }
+  .palace-card__primary-item strong {
+    font-size: clamp(0.84rem, 4vw, 1.08rem) !important;
+  }
+  html body #qimen-workbench-layout .palace-card__primary-item span, .palace-card__primary-item span {
+    font-size: clamp(0.54rem, 2.8vw, 0.68rem) !important;
+  }
+  html body #qimen-workbench-layout .palace-card__facts dt, .palace-card__facts dt {
+    font-size: clamp(0.5rem, 2.5vw, 0.62rem) !important;
+  }
+  html body #qimen-workbench-layout .palace-card__facts dd, .palace-card__facts dd {
+    font-size: clamp(0.68rem, 3.25vw, 0.84rem) !important;
+  }
+  .palace-card__status strong {
+    display: none !important;
+  }
 }
 
 /* Semi component tokens mapped to the flat classical palette. */
@@ -2869,79 +3309,15 @@ html body #qimen-workbench-layout .palace-card__facts dd,
   border-color: var(--surface-line) !important;
 }
 
-.command-button-primary,
-.agent-panel .command-button-primary {
+.command-button-primary {
   border-color: var(--accent) !important;
 }
 
 /* Conversation affordances: make the paid Agent read like a guided session,
-   not a one-shot prompt box. */
-.agent-panel__followups {
-  display: grid;
-  gap: 7px;
-  margin-top: 12px;
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-}
-
-.agent-panel__followups > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.agent-panel__followups button {
-  border: 1px solid var(--surface-line);
-  border-radius: 4px;
-  padding: 7px 9px;
-  color: var(--accent);
-  background: var(--surface-muted);
-  font-size: 0.76rem;
-  line-height: 1.35;
-  text-align: left;
-  cursor: pointer;
-}
-
-.agent-panel__followups button:hover {
-  border-color: #a8d6c0;
-  background: var(--accent-soft);
-}
-
-.agent-panel__followups button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.agent-thread {
-  display: grid;
-  gap: 12px;
-  padding: 2px 0 16px;
-}
-
-.agent-thread__message {
-  display: grid;
-  gap: 5px;
-  border-left: 2px solid var(--surface-line);
-  padding-left: 11px;
-}
-
-.agent-thread__message > span {
-  color: var(--ink-subtle);
-  font-family: var(--mono-font);
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
+  not a one-shot prompt box. */
 
 .agent-thread__message--assistant {
   border-left-color: #a8d6c0;
-}
-
-.agent-thread__message--user .agent-result {
-  color: var(--accent-strong);
-  font-family: var(--display-font);
-  font-size: 0.88rem;
-  white-space: pre-wrap;
 }
 
 @media (min-width: 1181px) {
@@ -2949,17 +3325,14 @@ html body #qimen-workbench-layout .palace-card__facts dd,
     height: auto !important;
     min-height: 0 !important;
   }
-
   :is(#qimen-agent, [data-layout="agent-sidebar"]) {
     height: 100% !important;
     min-height: 0 !important;
     overflow: hidden;
   }
-
   .analysis-panel > .canvas-panel {
     height: auto !important;
   }
-
   .analysis-panel > .sidebar-panel {
     height: 100% !important;
     overflow-y: auto;
@@ -2968,8 +3341,8 @@ html body #qimen-workbench-layout .palace-card__facts dd,
 }
 
 /* 2026 workspace layout: chart first, Agent always visible, details on demand. */
-html,
-body {
+
+html, body {
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -3106,8 +3479,7 @@ body {
   color: var(--ink-soft);
 }
 
-.sidebar-quick-controls__field input,
-.sidebar-quick-controls__select {
+.sidebar-quick-controls__field input, .sidebar-quick-controls__select {
   min-width: 0;
   width: 100%;
 }
@@ -3144,11 +3516,9 @@ body {
 }
 
 @media (max-width: 720px) {
-  .sidebar-quick-controls,
-  .sidebar-quick-controls__actions {
+  .sidebar-quick-controls, .sidebar-quick-controls__actions {
     grid-template-columns: 1fr;
   }
-
   .sidebar-quick-controls__field--wide {
     grid-column: auto;
   }
@@ -3165,30 +3535,8 @@ body {
   border: 1px solid rgba(93, 111, 148, 0.14);
 }
 
-.inspector-tabs__list {
-  padding: 3px;
-  background: rgba(235, 239, 248, 0.7);
-  box-shadow: none;
-}
-
-.inspector-tabs .inspector-tabs__list [data-slot="tabs-trigger"] {
-  min-height: 36px;
-  font-size: 0.72rem;
-}
-
-.inspector-tabs__content,
-.inspector-tabs [data-slot="tabs-content"] {
+.inspector-tabs__content, .inspector-tabs [data-slot="tabs-content"] {
   height: auto;
-}
-
-.agent-panel {
-  height: auto;
-  grid-template-rows: auto auto auto auto minmax(260px, 1fr);
-  gap: 10px;
-}
-
-.agent-panel__section {
-  padding: 12px;
 }
 
 .agent-panel__section-head {
@@ -3201,144 +3549,81 @@ body {
   font-size: 0.78rem;
 }
 
-.agent-panel__textarea {
-  min-height: 104px;
-  max-height: 180px;
-  padding: 10px 11px;
-  font-size: 0.82rem;
-  line-height: 1.5;
-}
-
-.agent-panel__toolbar {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-}
-
-.agent-panel .command-button {
-  width: 100%;
-  min-height: 56px;
-  border-radius: 15px;
-  font-size: 0.9rem;
-  letter-spacing: -0.01em;
-}
-
-.agent-panel__section--result {
-  min-height: 270px;
-  height: auto;
-}
-
-.agent-result-empty {
-  min-height: 210px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  color: var(--ink-subtle);
-  font-size: 0.76rem;
-  text-align: center;
-}
-
-.agent-result-empty svg {
-  width: 22px;
-  height: 22px;
-  color: rgba(70, 105, 186, 0.56);
-}
-
 /* Desktop workbench: keep the complete reading surface inside a 16:9 viewport.
-   The board uses content-led row heights instead of stretching every palace
-   to the full height of the canvas. */
+  The board uses content-led row heights instead of stretching every palace
+  to the full height of the canvas. */
+
 @media (min-width: 1181px) and (min-height: 700px) {
-  html,
-  body {
+  html, body {
     height: 100%;
     overflow: hidden;
   }
-
   .page-shell {
     height: 100svh;
     min-height: 0;
     padding: 10px 0;
     overflow: hidden;
   }
-
   .analysis-layout {
     min-height: 0;
     align-items: stretch;
   }
-
   .canvas-panel {
     height: 100%;
     min-height: 0;
   }
-
-  .canvas-panel__content,
-  .canvas-panel__content > .palace-grid-shell {
+  .canvas-panel__content, .canvas-panel__content > .palace-grid-shell {
     min-height: 0;
   }
-
   .canvas-panel__content {
     align-content: start;
   }
-
   .canvas-panel__content > .palace-grid-shell {
     height: auto;
   }
-
   .palace-grid-shell {
     height: auto;
     grid-template-rows: auto auto auto;
   }
-
   .palace-grid {
     height: auto;
     grid-template-rows: repeat(3, clamp(147px, 15vh, 184px));
   }
-
   .palace-card {
     min-height: 0;
     padding: 3px;
   }
-
   .palace-card__header {
     gap: 4px;
   }
-
   .palace-card__facts div {
     padding: 1px 4px;
   }
-
   .palace-card__facts {
     margin-top: 1px;
   }
-
   .palace-grid-shell__legend {
     font-size: 0.62rem;
   }
-
-  .palace-card__index,
-  .palace-card__status span {
+  .palace-card__index, .palace-card__status span {
     font-size: 0.64rem;
   }
-
   .palace-card__header h3 {
     font-size: 1.16rem;
   }
-
   .palace-card__status strong {
     font-size: 0.7rem;
   }
-
   .palace-card__facts dt {
     font-size: 0.62rem;
   }
-
   .palace-card__facts dd {
     font-size: 0.88rem;
   }
 }
 
 /* Final workbench pass: keep the 16:9 reading surface tight and move Agent
-   into a compact, on-demand panel. */
+  into a compact, on-demand panel. */
 
 .analysis-panel-group {
   align-items: start !important;
@@ -3353,37 +3638,124 @@ body {
   font-weight: 600;
 }
 
-
 /* Desktop shared-height chart workspace */
+
 @media (min-width: 1181px) and (min-height: 640px) {
-  html body #qimen-workbench-layout { align-items: stretch !important; min-height: 0 !important; height: 100% !important; }
+  html body #qimen-workbench-layout {
+    align-items: stretch !important;
+    min-height: 0 !important;
+    height: 100% !important;
+  }
   html body #qimen-workbench-layout > #qimen-chart,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel,
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]),
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel { align-self: stretch !important; height: 100% !important; min-height: 0 !important; max-height: none !important; }
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel { display: grid !important; height: 100% !important; min-height: 0 !important; grid-template-rows: auto minmax(0,1fr) !important; overflow: hidden !important; }
-  html body #qimen-workbench-layout .canvas-panel__content { display: grid !important; grid-template-rows: minmax(0,1fr) !important; height: 100% !important; min-height: 0 !important; align-content: stretch !important; align-items: stretch !important; overflow: hidden !important; }
-  html body #qimen-workbench-layout .canvas-panel__content > .palace-grid-shell { height: 100% !important; min-height: 0 !important; align-self: stretch !important; align-content: stretch !important; grid-template-rows: auto auto minmax(0,1fr) !important; }
-  html body #qimen-workbench-layout .palace-grid-shell > .palace-grid { height: 100% !important; min-height: 0 !important; align-self: stretch !important; align-content: stretch !important; grid-template-rows: repeat(3,minmax(0,1fr)) !important; }
-  html body #qimen-workbench-layout .palace-grid > .palace-card { height: 100% !important; min-height: 0 !important; align-self: stretch !important; }
-  html body #qimen-workbench-layout :is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel { height: 100% !important; min-height: 0 !important; max-height: none !important; overflow-y: auto !important; }
+  html body #qimen-workbench-layout > :is(#qimen-agent,
+  [data-layout="agent-sidebar"]),
+  html body #qimen-workbench-layout > :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) > .analysis-panel {
+    align-self: stretch !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
+    display: grid !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    grid-template-rows: auto minmax(0,1fr) !important;
+    overflow: hidden !important;
+  }
+  html body #qimen-workbench-layout .canvas-panel__content {
+    display: grid !important;
+    grid-template-rows: minmax(0,1fr) !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    align-content: stretch !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+  html body #qimen-workbench-layout .canvas-panel__content > .palace-grid-shell {
+    height: 100% !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+    align-content: stretch !important;
+    grid-template-rows: auto auto minmax(0,1fr) !important;
+  }
+  html body #qimen-workbench-layout .palace-grid-shell > .palace-grid {
+    height: 100% !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+    align-content: stretch !important;
+    grid-template-rows: repeat(3,minmax(0,1fr)) !important;
+  }
+  html body #qimen-workbench-layout .palace-grid > .palace-card {
+    height: 100% !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+  }
+  html body #qimen-workbench-layout :is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+  }
 }
 
 /* Shared 16:9 workbench: keep the chart and inspector at one height. */
+
 @media (min-width: 1181px) and (min-height: 640px) {
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel { align-self: stretch !important; display: grid !important; flex: 1 1 auto !important; height: 100% !important; min-height: 0 !important; max-height: none !important; grid-template-rows: auto minmax(0, 1fr) !important; overflow: hidden !important; }
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content { display: grid !important; grid-template-rows: minmax(0, 1fr) !important; height: 100% !important; min-height: 0 !important; align-content: stretch !important; align-items: stretch !important; overflow: hidden !important; }
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell { height: 100% !important; min-height: 0 !important; align-self: stretch !important; align-content: stretch !important; grid-template-rows: auto auto minmax(0, 1fr) !important; }
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid { height: 100% !important; min-height: 0 !important; align-self: stretch !important; align-content: stretch !important; grid-template-rows: repeat(3, minmax(0, 1fr)) !important; }
-  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card { height: 100% !important; min-height: 0 !important; align-self: stretch !important; }
-  html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel { height: 100% !important; min-height: 0 !important; max-height: none !important; overflow-y: auto !important; overscroll-behavior: contain; }
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
+    align-self: stretch !important;
+    display: grid !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    overflow: hidden !important;
+  }
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content {
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    align-content: stretch !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell {
+    height: 100% !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+    align-content: stretch !important;
+    grid-template-rows: auto auto minmax(0, 1fr) !important;
+  }
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid {
+    height: 100% !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+    align-content: stretch !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+  }
+  html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card {
+    height: 100% !important;
+    min-height: 0 !important;
+    align-self: stretch !important;
+  }
+  html body #qimen-workbench-layout > :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
 }
 
 /* 16:9 desktop workbench: the chart and inspector are one shared reading
-   surface.  Keep the inspector scrollable, but let the nine-palace board use
-   the full row so the left side never collapses above a blank page trough. */
-@media (min-width: 1181px) and (min-height: 640px) {
+  surface.  Keep the inspector scrollable, but let the nine-palace board use
+  the full row so the left side never collapses above a blank page trough. */
 
+@media (min-width: 1181px) and (min-height: 640px) {
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content {
     display: grid !important;
     grid-template-rows: minmax(0, 1fr) !important;
@@ -3392,7 +3764,6 @@ body {
     align-content: stretch !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell {
     height: auto !important;
     min-height: 0 !important;
@@ -3402,142 +3773,24 @@ body {
 }
 
 /* Agent workflow: make the question itself actionable instead of leaving the
-   user with a blank prompt box.  These controls intentionally stay flat and
-   use the same xuan-paper / vermilion palette as the workbench. */
-.agent-panel__section--question {
-  gap: 8px;
-}
-
-.agent-panel__section--question .agent-panel__section-head {
-  align-items: baseline;
-}
-
-.agent-panel__section--question .agent-panel__section-head > span {
-  color: var(--ink-subtle);
-  font-size: 0.66rem;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.agent-panel__angles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.agent-panel__angle {
-  min-height: 28px;
-  padding: 3px 9px;
-  background-color: #f4ead8;
-  font-size: 0.7rem;
-  line-height: 1.1;
-  cursor: pointer;
-  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
-}
-
-.agent-panel__angle:hover,
-.agent-panel__angle.is-active {
-  background-color: #a54232;
-}
-
-.agent-panel__angle:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.agent-panel__question-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--ink-subtle);
-  font-size: 0.64rem;
-}
-
-.agent-panel__question-meta button {
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-}
-
-.agent-panel__question-meta button:disabled {
-  color: var(--ink-subtle);
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.agent-panel__result-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
-  min-width: 0;
-}
-
-.agent-panel__result-actions > span {
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-panel .agent-result-copy {
-  width: auto;
-  min-height: 28px;
-  padding: 3px 8px;
-  border-color: #d8c5a3;
-  border-radius: 8px;
-  color: #6d563e;
-  background-color: #f4ead8;
-  box-shadow: none;
-  font-size: 0.68rem;
-}
-
-.agent-panel .agent-result-copy:hover {
-  border-color: #a54232;
-  color: #813225;
-  background-color: #f1dfc0;
-}
-
-.literature-block {
-  margin: 0;
-  padding: 10px;
-  border: 1px solid #dfcdb0;
-  background-color: #fffaf0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: var(--font-geist-sans), sans-serif;
-  font-size: 0.74rem;
-  line-height: 1.55;
-}
-
-@media (max-width: 720px) {
-  .agent-panel__section--question .agent-panel__section-head {
-    align-items: start;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .agent-panel__result-actions > span {
-    max-width: 110px;
-  }
-}
+  user with a blank prompt box.  These controls intentionally stay flat and
+  use the same xuan-paper / vermilion palette as the workbench. */
 
 /* Keep the desktop nine-palace frame content-led.  The resizable group owns
-   the full viewport height for the sidebar, but the chart panel should stop
-   immediately after its summary and palace grid instead of inheriting that
-   height and leaving a blank trough below the grid. */
+  the full viewport height for the sidebar, but the chart panel should stop
+  immediately after its summary and palace grid instead of inheriting that
+  height and leaving a blank trough below the grid. */
+
 @media (min-width: 1181px) {
   /* The resizable-panel containment rules below this block also use
-     !important.  Keep a higher-specificity selector here so they cannot
-     re-stretch the first panel after the chart sizing pass. */
+    !important.  Keep a higher-specificity selector here so they cannot
+    re-stretch the first panel after the chart sizing pass. */
   html body #qimen-workbench-layout > #qimen-chart,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel {
     align-self: flex-start !important;
     height: auto !important;
     max-height: 100% !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
     align-self: flex-start !important;
     flex: 0 0 auto !important;
@@ -3545,7 +3798,6 @@ body {
     max-height: 100% !important;
     grid-template-rows: auto auto !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content {
     height: auto !important;
     align-content: start !important;
@@ -3553,13 +3805,13 @@ body {
 }
 
 /* Cross-mode desktop cleanup: keep the Bazi workspace inside its flex column
-   while letting its intentionally wide tables scroll in their own surfaces. */
+  while letting its intentionally wide tables scroll in their own surfaces. */
+
 @media (min-width: 1181px) and (min-height: 700px) {
   .bazi-panel {
     width: 100% !important;
     min-width: 0 !important;
   }
-
   .bazi-panel > .bazi-panel__overview,
   .bazi-panel > .bazi-traditional-board,
   .bazi-panel > .bazi-support-panel,
@@ -3567,31 +3819,28 @@ body {
     width: 100% !important;
     min-width: 0 !important;
   }
-
-  .bazi-support-panel,
-  .bazi-support-table {
+  .bazi-support-panel, .bazi-support-table {
     min-width: 0 !important;
     overflow-x: auto;
   }
-
   .bazi-support-table__row {
     width: 100%;
     min-width: 0;
   }
-
 }
 
 /* Final readability pass: the sidebar form used an older 0.5rem label rule,
-   which made the controls look like microtext at the 1280×720 workbench size.
-   Keep the compact two-column form, but bring labels and method chips back to
-   normal reading sizes. */
+  which made the controls look like microtext at the 1280×720 workbench size.
+  Keep the compact two-column form, but bring labels and method chips back to
+  normal reading sizes. */
 
 /* Agent output is a reading surface, so dense serialized data gets a
-   slightly larger type scale than the compact workbench chrome. */
+  slightly larger type scale than the compact workbench chrome. */
 
 /* Long-form modes need the full chart column height.  The compact Qimen
-   board is content-led, but Bazi/Ziwei/combined panels own an internal scroll
-   surface and must not collapse to zero inside the resizable group. */
+  board is content-led, but Bazi/Ziwei/combined panels own an internal scroll
+  surface and must not collapse to zero inside the resizable group. */
+
 @media (min-width: 1181px) {
   #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="bazi"]),
   #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="ziwei"]),
@@ -3600,14 +3849,12 @@ body {
     height: 100% !important;
     min-height: 0 !important;
   }
-
   #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="bazi"]) > .analysis-panel,
   #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="ziwei"]) > .analysis-panel,
   #qimen-workbench-layout > #qimen-chart:has(.canvas-panel[data-mode="combined"]) > .analysis-panel {
     align-self: stretch !important;
     height: 100% !important;
   }
-
   #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
   #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
   #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] {
@@ -3618,20 +3865,20 @@ body {
 }
 
 /* Final 16:9 containment pass.
-   The resize-panel library renders an extra .analysis-panel wrapper inside
-   #qimen-chart. Keep that wrapper and each long-form chart mode inside the
-   available workbench height; the chart body owns the scroll instead of
-   pushing the footer below the viewport. */
+  The resize-panel library renders an extra .analysis-panel wrapper inside
+  #qimen-chart. Keep that wrapper and each long-form chart mode inside the
+  available workbench height; the chart body owns the scroll instead of
+  pushing the footer below the viewport. */
+
 @media (min-width: 1181px) {
   #qimen-chart {
     /* Let the flex row stretch this panel; a percentage height here is
-       unresolved in the auto-height Group and collapses it to its content. */
+      unresolved in the auto-height Group and collapses it to its content. */
     height: auto !important;
     min-height: 0 !important;
     align-self: stretch !important;
     overflow: hidden !important;
   }
-
   #qimen-chart > .analysis-panel {
     display: flex !important;
     flex: 1 1 0 !important;
@@ -3641,21 +3888,18 @@ body {
     min-height: 0 !important;
     overflow: hidden !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel {
     flex: 1 1 0 !important;
     height: auto !important;
     min-height: 0 !important;
     overflow: auto !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] {
     display: flex !important;
     flex-direction: column !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content,
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content,
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] > .canvas-panel__content {
@@ -3666,7 +3910,6 @@ body {
     min-height: 0 !important;
     overflow: auto !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content > .bazi-panel,
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content > .ziwei-panel {
     flex: 1 1 auto !important;
@@ -3677,14 +3920,14 @@ body {
 }
 
 /* Keep long chart modes inside the 16:9 reading surface instead of letting
-   their intrinsic height push underneath the footer. */
+  their intrinsic height push underneath the footer. */
+
 @media (min-width: 1181px) {
   #qimen-chart > .analysis-panel {
     min-height: 0 !important;
     height: 100% !important;
     overflow: hidden !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] {
@@ -3692,14 +3935,12 @@ body {
     height: 100% !important;
     overflow: auto !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content,
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content,
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="combined"] > .canvas-panel__content {
     min-height: 0 !important;
     height: 100% !important;
   }
-
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"] > .canvas-panel__content > .bazi-panel,
   #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"] > .canvas-panel__content > .ziwei-panel {
     min-height: 0 !important;
@@ -3709,8 +3950,9 @@ body {
 }
 
 /* At tablet and narrow desktop widths the two sidebar columns leave a large
-   empty trough below the quick controls. Stack the controls with the form so
-   the reading surface follows its content instead of the taller neighbour. */
+  empty trough below the quick controls. Stack the controls with the form so
+  the reading surface follows its content instead of the taller neighbour. */
+
 @media (max-width: 960px) {
   .sidebar-panel {
     grid-template-columns: minmax(0, 1fr) !important;
@@ -3718,26 +3960,21 @@ body {
     align-items: stretch;
     gap: 6px;
   }
-
   .sidebar-quick-controls {
     width: 100%;
     min-width: 0;
-  }
-
-  .sidebar-quick-controls {
     align-self: start;
   }
 }
 
 /* The in-app preview commonly runs around 1080px wide. Keep the same
-   content-led palace sizing in that desktop/tablet band; the old 1181px
-   breakpoint left the grid's 1fr track stretching every card vertically. */
-@media (min-width: 721px) and (max-width: 1180px) and (min-height: 700px) {
+  content-led palace sizing in that desktop/tablet band; the old 1181px
+  breakpoint left the grid's 1fr track stretching every card vertically. */
 
+@media (min-width: 721px) and (max-width: 1180px) and (min-height: 700px) {
   .canvas-panel__content > .palace-grid-shell {
     min-height: 0;
   }
-
   .palace-grid-shell {
     height: auto;
     min-height: 0;
@@ -3745,7 +3982,6 @@ body {
     align-content: start;
     grid-template-rows: auto auto auto;
   }
-
   .palace-grid {
     height: auto;
     align-self: start;
@@ -3753,7 +3989,6 @@ body {
     align-content: start;
     grid-template-rows: repeat(3, max-content);
   }
-
   .palace-card {
     align-self: start;
     height: auto;
@@ -3764,18 +3999,15 @@ body {
   .observatory-hero {
     grid-template-columns: minmax(120px, 0.3fr) minmax(0, 1fr);
   }
-
   .workbench-tabs {
     min-width: 0;
     max-width: 100%;
   }
-
   .command-bar--sidebar .command-bar__group--inputs,
   .command-bar--sidebar .command-bar__actions,
   .sequence-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .command-bar--sidebar .control-field,
   .command-bar--sidebar .control-field-wide,
   .sequence-controls .control-field,
@@ -3789,27 +4021,22 @@ body {
     width: min(100vw - 20px, 1060px);
     padding-top: 10px;
   }
-
   .qmdj-footer {
     align-items: start;
   }
-
   .observatory-hero {
     position: relative;
     top: auto;
     grid-template-columns: minmax(140px, 0.35fr) minmax(420px, 1fr);
   }
-
   .analysis-layout {
     grid-template-columns: 1fr;
   }
-
   .sidebar-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: start;
   }
-
   .inspector-tabs {
     grid-column: 1 / -1;
     min-height: 560px;
@@ -3817,6 +4044,7 @@ body {
 }
 
 /* Agent rail: target Semi's rendered DOM, not the compatibility markers. */
+
 :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel {
   overflow: hidden !important;
 }
@@ -3831,8 +4059,10 @@ body {
   height: 100% !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel > .sidebar-quick-controls,
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel > .workspace-disclosure {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .sidebar-panel > .sidebar-quick-controls,
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .sidebar-panel > .workspace-disclosure {
   width: 100% !important;
 }
 
@@ -3848,8 +4078,10 @@ body {
   background: #fffaf0 !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar::before,
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar::after {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar::before,
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar::after {
   display: none !important;
 }
 
@@ -3873,26 +4105,33 @@ body {
   white-space: nowrap !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab:last-child {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab:last-child {
   border-right: 0 !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab-active {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab-active {
   color: #171717 !important;
   background: #f2bd3f !important;
   box-shadow: 3px 3px 0 #df4d32 !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab svg {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab svg {
   flex: 0 0 auto !important;
   width: 0.9rem !important;
   height: 0.9rem !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-content,
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs .semi-tabs-pane,
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs .semi-tabs-pane-motion-overlay,
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs .inspector-tabs__content {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-content,
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs .semi-tabs-pane,
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs .semi-tabs-pane-motion-overlay,
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .inspector-tabs .inspector-tabs__content {
   min-height: 0 !important;
   height: 100% !important;
   margin: 0 !important;
@@ -3903,20 +4142,22 @@ body {
   :is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-
-  :is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab:nth-child(2) {
+  :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab:nth-child(2) {
     border-right: 0 !important;
   }
-
-  :is(#qimen-agent, [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab:nth-child(-n + 2) {
+  :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) .inspector-tabs > .semi-tabs-bar > .semi-tabs-tab:nth-child(-n + 2) {
     border-bottom: 1px solid #171717 !important;
   }
 }
 
 /* The parameter controls live after the Agent surface in scroll order.  The
-   Agent itself always owns the visible rail, so its result area cannot be
-   squeezed to zero by the form below it. */
-html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel {
+  Agent itself always owns the visible rail, so its result area cannot be
+  squeezed to zero by the form below it. */
+
+html body #qimen-workbench-layout > :is(#qimen-agent,
+[data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel {
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -3925,7 +4166,8 @@ html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sideba
   overflow-x: hidden !important;
 }
 
-html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel > .inspector-tabs {
+html body #qimen-workbench-layout > :is(#qimen-agent,
+[data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel > .inspector-tabs {
   box-sizing: border-box !important;
   flex: 0 0 100% !important;
   width: 100% !important;
@@ -3934,8 +4176,10 @@ html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sideba
   max-height: 100% !important;
 }
 
-html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel > .sidebar-quick-controls,
-html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel > .workspace-disclosure {
+html body #qimen-workbench-layout > :is(#qimen-agent,
+[data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel > .sidebar-quick-controls,
+html body #qimen-workbench-layout > :is(#qimen-agent,
+[data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel > .workspace-disclosure {
   box-sizing: border-box !important;
   flex: 0 0 auto !important;
   width: 100% !important;
@@ -3947,57 +4191,38 @@ html body #qimen-workbench-layout > :is(#qimen-agent, [data-layout="agent-sideba
     gap: 8px;
     padding: 8px 0 16px;
   }
-
   .qmdj-footer {
     flex-direction: column;
     align-items: start;
   }
-
   .observatory-hero {
     grid-template-columns: 1fr;
     gap: 8px;
     padding: 10px;
   }
-
-  .analysis-layout,
-  .sidebar-panel {
+  .analysis-layout, .sidebar-panel {
     grid-template-columns: 1fr;
   }
-
   .canvas-panel {
     min-height: 0;
     padding: 7px;
   }
-
   .canvas-panel__content,
   .canvas-panel__content > .palace-grid-shell,
   .canvas-panel__content > .bazi-panel,
   .canvas-panel__content > .ziwei-panel {
     min-height: 0;
   }
-
   .inspector-tabs {
     grid-column: auto;
     min-height: 0;
     padding: 11px;
   }
-
-  .agent-panel__toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  .agent-panel .command-button {
-    width: 100%;
-  }
 }
 
 /* Flat classical Chinese palette: xuan paper, ink, vermilion, indigo and ochre. */
 
-html,
-body,
-body *::before,
-body *::after,
-body * {
+html, body, body *::before, body *::after, body * {
   background-image: none !important;
 }
 
@@ -4005,17 +4230,9 @@ body {
   background-color: var(--background);
 }
 
-.observatory-hero,
-.canvas-panel,
-.inspector-tabs {
+.observatory-hero, .canvas-panel, .inspector-tabs {
   background-color: var(--panel);
   border-color: var(--panel-stroke);
-}
-
-.inspector-tabs__list,
-.summary-chip {
-  background-color: #efe5d3;
-  border-color: #dbc9aa;
 }
 
 .inspector-tabs [data-slot="tabs-trigger"][data-state="active"] {
@@ -4028,14 +4245,11 @@ body {
   background-color: #efe4cf;
 }
 
-.palace-card,
-.palace-card.is-center,
-.palace-card__facts div {
+.palace-card, .palace-card.is-center, .palace-card__facts div {
   background-color: #fffaf0;
 }
 
-.palace-card.is-selected,
-.palace-card:hover {
+.palace-card.is-selected, .palace-card:hover {
   background-color: #f4e5c8;
 }
 
@@ -4051,46 +4265,23 @@ body {
   border-color: #7b5b43;
 }
 
-.palace-card__status strong,
-.palace-grid-shell__legend span {
+.palace-card__status strong, .palace-grid-shell__legend span {
   background-color: #f0ddba;
 }
 
-.agent-panel__section {
-  background-color: #f8f1e4;
-}
-
-.agent-panel__textarea {
-  background-color: #fffaf0;
-}
-
-.agent-panel .command-button {
-  background-color: #a54232;
-  border-color: #8d3427;
-  color: #fff8eb;
-  box-shadow: 0 9px 18px rgba(122, 48, 35, 0.18);
-}
-
-.agent-panel .command-button:hover {
-  background-color: #813225;
-  border-color: #6d291f;
-}
-
 /* Open-source resize panels: allow the reading surface to be tuned without
-   sacrificing the 16:9 default composition. */
+  sacrificing the 16:9 default composition. */
+
 .analysis-panel-group {
   gap: 0;
-  align-items: stretch;
 }
 
 .analysis-panel {
   min-width: 0;
   min-height: 0;
-  height: 100%;
 }
 
-.analysis-panel > .canvas-panel,
-.analysis-panel > .sidebar-panel {
+.analysis-panel > .canvas-panel, .analysis-panel > .sidebar-panel {
   min-width: 0;
   height: 100%;
 }
@@ -4158,18 +4349,14 @@ body {
   .analysis-panel-group {
     min-height: 0;
   }
-
-  .analysis-panel > .canvas-panel,
-  .analysis-panel > .sidebar-panel {
+  .analysis-panel > .canvas-panel, .analysis-panel > .sidebar-panel {
     min-height: 0;
   }
-
   .palace-grid-shell {
     height: 100%;
     min-height: 0;
     grid-template-rows: auto auto minmax(0, 1fr);
   }
-
   .palace-grid {
     height: auto;
     min-height: 0;
@@ -4179,7 +4366,6 @@ body {
     gap: 2px;
     grid-template-rows: repeat(3, max-content);
   }
-
   .palace-card {
     display: grid;
     align-self: start;
@@ -4188,24 +4374,19 @@ body {
     gap: 1px;
     padding: 3px;
   }
-
   .palace-card__header {
     align-items: start;
   }
-
   .palace-card__index {
     line-height: 1;
   }
-
   .palace-card__header h3 {
     line-height: 0.82;
   }
-
   .palace-card__facts {
     margin-top: 0;
     gap: 1px 2px;
   }
-
   .palace-card__facts div {
     display: flex;
     align-items: center;
@@ -4214,12 +4395,10 @@ body {
     padding-top: 1px;
     padding-bottom: 1px;
   }
-
   .palace-card__facts dt {
     flex: 0 0 auto;
     line-height: 1;
   }
-
   .palace-card__facts dd {
     min-width: 0;
     margin-top: 0;
@@ -4227,19 +4406,15 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
   .palace-card__header h3 {
     font-size: 1.24rem;
   }
-
   .palace-card__status strong {
     font-size: 0.74rem;
   }
-
   .palace-card__facts dt {
     font-size: 0.66rem;
   }
-
   .palace-card__facts dd {
     font-size: 0.94rem;
     line-height: 1.05;
@@ -4252,6 +4427,7 @@ body {
 }
 
 /* Authoritative final layout overrides. */
+
 .canvas-panel__content,
 .canvas-panel__content > .palace-grid-shell,
 .canvas-panel__content > .bazi-panel,
@@ -4286,21 +4462,19 @@ body {
   font-size: 0.76rem;
 }
 
-.sidebar-quick-controls__field input,
-.sidebar-quick-controls__select {
+.sidebar-quick-controls__field input, .sidebar-quick-controls__select {
   min-height: 38px;
   font-size: 0.84rem;
 }
 
 /* Compact chart summary: keep the key facts readable without stealing chart
-   height from the nine-palace surface. */
+  height from the nine-palace surface. */
+
 .summary-strip {
   background-color: #efe5d3;
 }
 
-.summary-chip,
-.summary-chip--core,
-.summary-chip--signal {
+.summary-chip, .summary-chip--core, .summary-chip--signal {
   min-width: 0;
   background-color: #fbf7ed;
   background-image: none !important;
@@ -4358,6 +4532,7 @@ body {
 }
 
 /* The Ziwei astrolabe remains a square reading surface at every width. */
+
 .ziwei-panel {
   grid-template-rows: auto auto minmax(0, 1fr);
 }
@@ -4402,7 +4577,6 @@ body {
     grid-template-columns: repeat(7, minmax(92px, 1fr)) !important;
     overflow-x: auto;
   }
-
   .ziwei-panel__canvas {
     width: 100%;
     max-height: none;
@@ -4414,13 +4588,11 @@ body {
     height: auto !important;
     min-height: 0 !important;
   }
-
   [data-testid="qimen-agent"] {
     height: 100% !important;
     min-height: 0 !important;
     overflow: hidden !important;
   }
-
   [data-testid="qimen-agent"] > .analysis-panel {
     display: flex !important;
     flex-direction: column;
@@ -4430,7 +4602,6 @@ body {
     min-height: 0 !important;
     overflow: hidden !important;
   }
-
   [data-testid="qimen-agent"] > .analysis-panel > .sidebar-panel {
     height: auto !important;
     max-height: none !important;
@@ -4438,10 +4609,8 @@ body {
     flex: 1 1 0 !important;
     overflow-y: auto !important;
   }
-
   /* Shared-height 16:9 board: the left chart must occupy the same workbench
-     row as the inspector instead of collapsing to its intrinsic content. */
-
+    row as the inspector instead of collapsing to its intrinsic content. */
   html body #qimen-workbench-layout .canvas-panel {
     display: grid !important;
     align-self: stretch !important;
@@ -4451,7 +4620,6 @@ body {
     grid-template-rows: auto minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout .canvas-panel__content {
     display: grid !important;
     grid-template-rows: minmax(0, 1fr) !important;
@@ -4461,7 +4629,6 @@ body {
     align-items: stretch !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout .canvas-panel__content > .palace-grid-shell {
     height: 100% !important;
     min-height: 0 !important;
@@ -4469,7 +4636,6 @@ body {
     align-content: stretch !important;
     grid-template-rows: auto auto minmax(0, 1fr) !important;
   }
-
   html body #qimen-workbench-layout .palace-grid-shell > .palace-grid {
     height: 100% !important;
     min-height: 0 !important;
@@ -4477,20 +4643,15 @@ body {
     align-content: stretch !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-}
-
-@media (min-width: 1181px) {
   .analysis-panel:nth-child(1) {
     height: auto !important;
     min-height: 0 !important;
   }
-
   .analysis-panel:nth-child(3) {
     height: 100% !important;
     min-height: 0 !important;
     overflow: hidden !important;
   }
-
   .analysis-panel:nth-child(3) > .sidebar-panel {
     height: auto !important;
     max-height: 100% !important;
@@ -4508,25 +4669,26 @@ body {
     align-self: start;
     overflow-y: visible;
   }
-
-  :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel[data-mode="bazi"],
-  :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel[data-mode="ziwei"],
-  :is(#qimen-agent, [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel[data-mode="combined"] {
+  :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel[data-mode="bazi"],
+  :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel[data-mode="ziwei"],
+  :is(#qimen-agent,
+  [data-layout="agent-sidebar"]) > .analysis-panel > .sidebar-panel[data-mode="combined"] {
     height: auto !important;
     flex: 0 0 auto !important;
     overflow-y: visible;
   }
 }
+
 /* --------------------------------------------------------------------------
-   Shared interaction foundation
+  Shared interaction foundation
+  Semi supplies component behavior and DOM structure; this layer normalizes
+  those controls to the shared flat palette. Product identity belongs to the
+  route-owned Shengtian and Paipan stylesheets.
+  -------------------------------------------------------------------------- */
 
-   Semi supplies component behavior and DOM structure; this layer normalizes
-   those controls to the shared flat palette. Product identity belongs to the
-   route-owned Shengtian and Paipan stylesheets.
-   -------------------------------------------------------------------------- */
-
-html,
-body {
+html, body {
   background: var(--background) !important;
   color: var(--foreground) !important;
 }
@@ -4551,6 +4713,7 @@ body {
 }
 
 /* Header and the actual Semi Tabs rendered by ModeTabs. */
+
 .observatory-hero {
   backdrop-filter: none !important;
 }
@@ -4559,14 +4722,12 @@ body {
   display: none !important;
 }
 
-.observatory-hero__copy h1,
-.observatory-hero__copy h1 strong {
+.observatory-hero__copy h1, .observatory-hero__copy h1 strong {
   color: var(--foreground) !important;
   font-family: var(--display-font) !important;
 }
 
-.workspace-kicker,
-.observatory-hero .workspace-kicker {
+.workspace-kicker, .observatory-hero .workspace-kicker {
   color: var(--accent) !important;
 }
 
@@ -4596,11 +4757,8 @@ body {
 }
 
 /* Shared Semi-like surfaces. */
-.canvas-panel,
-.sidebar-panel,
-.inspector-tabs,
-.summary-strip,
-.command-bar {
+
+.canvas-panel, .sidebar-panel, .inspector-tabs, .summary-strip, .command-bar {
   border-color: var(--panel-stroke) !important;
   border-radius: 6px !important;
   box-shadow: var(--shadow-soft) !important;
@@ -4629,14 +4787,9 @@ body {
   box-shadow: none !important;
 }
 
-.qmdj-footer__brand span,
-.qmdj-footer__meta a {
-  color: var(--accent) !important;
-}
-
 /* Form controls and action hierarchy. */
-.command-bar__section,
-.sidebar-quick-controls {
+
+.command-bar__section, .sidebar-quick-controls {
   border-color: var(--panel-stroke) !important;
   border-radius: 6px !important;
   background: var(--surface-muted) !important;
@@ -4651,7 +4804,6 @@ body {
 .control-select,
 .sidebar-quick-controls__field input,
 .sidebar-quick-controls__select,
-.agent-panel__textarea,
 .semi-input-wrapper,
 .semi-select {
   border-color: var(--panel-stroke) !important;
@@ -4666,7 +4818,6 @@ body {
 .control-select:focus,
 .sidebar-quick-controls__field input:focus,
 .sidebar-quick-controls__select:focus,
-.agent-panel__textarea:focus,
 .semi-input-wrapper-focus,
 .semi-select-focus {
   border-color: var(--accent) !important;
@@ -4674,11 +4825,7 @@ body {
   outline: none !important;
 }
 
-.command-button,
-.agent-result-copy,
-.quick-chart-toggle button,
-.agent-panel__angle,
-.agent-panel__question-meta button {
+.command-button, .quick-chart-toggle button {
   border: 1px solid var(--panel-stroke) !important;
   border-radius: 6px !important;
   color: var(--accent) !important;
@@ -4686,19 +4833,13 @@ body {
   box-shadow: none !important;
 }
 
-.command-button:hover,
-.agent-result-copy:hover,
-.quick-chart-toggle button:hover,
-.agent-panel__angle:hover,
-.agent-panel__question-meta button:hover {
+.command-button:hover, .quick-chart-toggle button:hover {
   border-color: var(--accent) !important;
   color: var(--accent-strong) !important;
   background: var(--accent-soft) !important;
 }
 
-.command-button-primary,
-.agent-panel .command-button-primary,
-button.command-button-primary {
+.command-button-primary, button.command-button-primary {
   border: 1px solid var(--accent) !important;
   border-radius: 6px !important;
   color: #ffffff !important;
@@ -4706,9 +4847,7 @@ button.command-button-primary {
   box-shadow: 0 2px 6px rgba(223, 77, 50, 0.18) !important;
 }
 
-.command-button-primary:hover,
-.agent-panel .command-button-primary:hover,
-button.command-button-primary:hover {
+.command-button-primary:hover, button.command-button-primary:hover {
   border-color: var(--accent-strong) !important;
   color: #ffffff !important;
   background: var(--accent-strong) !important;
@@ -4727,18 +4866,15 @@ button.command-button-primary:hover {
 }
 
 /* Signal chips share the product palette; semantic error states stay red. */
-.summary-chip__badge,
-.palace-card__status strong,
-.palace-grid-shell__legend span {
+
+.summary-chip__badge, .palace-card__status strong, .palace-grid-shell__legend span {
   border-color: #df4d32 !important;
   border-radius: 4px !important;
   color: var(--accent) !important;
   background: var(--accent-soft) !important;
 }
 
-.summary-chip,
-.summary-chip--core,
-.summary-chip--signal {
+.summary-chip, .summary-chip--core, .summary-chip--signal {
   border-color: var(--panel-stroke) !important;
   border-radius: 6px !important;
   background: var(--panel) !important;
@@ -4746,6 +4882,7 @@ button.command-button-primary:hover {
 }
 
 /* Qimen grid and the Bazi/combined cards. */
+
 .palace-grid-shell,
 .bazi-headband__block,
 .bazi-support-panel,
@@ -4762,32 +4899,25 @@ button.command-button-primary:hover {
   box-shadow: none !important;
 }
 
-.palace-card,
-.palace-card.is-center,
-.palace-card__facts div {
+.palace-card, .palace-card.is-center, .palace-card__facts div {
   border-color: var(--panel-stroke) !important;
   border-radius: 6px !important;
   background: var(--panel) !important;
   box-shadow: none !important;
 }
 
-.palace-card:hover,
-.palace-card.is-selected {
+.palace-card:hover, .palace-card.is-selected {
   border-color: var(--accent) !important;
   background: var(--accent-soft) !important;
   box-shadow: 0 2px 8px rgba(223, 77, 50, 0.12) !important;
   transform: translateY(-1px);
 }
 
-.palace-card.is-zhifu,
-.palace-card.is-zhishi,
-.palace-card.is-posthorse,
-.palace-card.has-voidness {
+.palace-card.is-zhifu, .palace-card.is-zhishi, .palace-card.is-posthorse, .palace-card.has-voidness {
   border-left-color: var(--accent) !important;
 }
 
-.bazi-headband__block--hero,
-.ziwei-panel__canvas .iztro-center-palace {
+.bazi-headband__block--hero, .ziwei-panel__canvas .iztro-center-palace {
   background: var(--accent-soft) !important;
 }
 
@@ -4810,22 +4940,12 @@ button.command-button-primary:hover {
 
 /* Agent is a standard Semi surface rather than a second dark theme. */
 
-.agent-panel__section,
-.agent-result,
-.json-block,
-.literature-block,
 .structured-block {
   border-color: var(--panel-stroke) !important;
   border-radius: 6px !important;
   color: var(--foreground) !important;
   background: var(--panel) !important;
   box-shadow: none !important;
-}
-
-.agent-panel__angle.is-active {
-  border-color: var(--accent) !important;
-  color: var(--accent-strong) !important;
-  background: var(--accent-soft) !important;
 }
 
 .tooltip-content {
@@ -4841,6 +4961,7 @@ button.command-button-primary:hover {
 }
 
 /* Final interaction polish: boxed mode tabs and an inline combined Agent. */
+
 .observatory-hero {
   grid-template-columns: minmax(150px, 0.42fr) minmax(420px, 1.25fr) auto !important;
 }
@@ -4852,8 +4973,7 @@ button.command-button-primary:hover {
   min-width: 0;
 }
 
-.observatory-hero__agent-entry > button,
-.observatory-hero__agent-status {
+.observatory-hero__agent-entry > button, .observatory-hero__agent-status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -4918,27 +5038,6 @@ button.command-button-primary:hover {
   display: none !important;
 }
 
-.analysis-layout--combined-agent {
-  display: flex !important;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: auto !important;
-  align-items: stretch !important;
-}
-
-.combined-agent-surface {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-  padding: 12px;
-  border: 1px solid var(--panel-stroke);
-  border-radius: 6px;
-  background: var(--panel);
-  box-shadow: var(--shadow-soft);
-}
-
 .combined-agent-surface__heading {
   display: flex;
   align-items: flex-start;
@@ -4983,63 +5082,19 @@ button.command-button-primary:hover {
   font-weight: 600;
 }
 
-.combined-agent-surface > .inspector-tabs {
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-  border: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-.combined-agent-surface > .inspector-tabs .semi-tabs-content,
-.combined-agent-surface > .inspector-tabs .semi-tabs-pane,
-.combined-agent-surface > .inspector-tabs .inspector-tabs__content {
-  min-height: 0;
-  height: 100%;
-}
-
-.combined-agent-surface > .inspector-tabs .semi-tabs-content,
-.combined-agent-surface > .inspector-tabs .semi-tabs-pane {
-  overflow: hidden !important;
-}
-
-.combined-agent-surface .semi-tabs-pane-motion-overlay {
-  height: 100% !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-.combined-agent-surface .agent-panel {
-  height: 100% !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain;
-}
-
-.combined-agent-surface > .inspector-tabs .inspector-tabs__content {
-  overflow: auto;
-}
-
 @media (max-width: 980px) {
   .observatory-hero {
     grid-template-columns: 1fr !important;
   }
-
   .observatory-hero__agent-entry {
     justify-content: flex-start;
   }
-
   .observatory-hero .workbench-tabs {
     width: 100%;
   }
 }
 
 @media (max-width: 720px) {
-  .combined-agent-surface {
-    padding: 9px;
-  }
-
   .combined-agent-surface__heading {
     flex-direction: column;
     gap: 8px;
@@ -5047,8 +5102,9 @@ button.command-button-primary:hover {
 }
 
 /* The Qimen board is a square reading surface. Its size follows the shorter
-   viewport axis so a 16:9 window never creates tall empty rows or stretched
-   palace cards. */
+  viewport axis so a 16:9 window never creates tall empty rows or stretched
+  palace cards. */
+
 html body #qimen-workbench-layout .canvas-panel__content > .palace-grid-shell {
   grid-template-rows: auto auto minmax(0, 1fr) !important;
   align-items: stretch !important;
@@ -5074,18 +5130,15 @@ html body #qimen-workbench-layout .palace-card__topline {
   display: grid !important;
   grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr) !important;
   gap: 3px !important;
-  min-width: 0;
   min-height: 0;
 }
 
 html body #qimen-workbench-layout .palace-card__header {
   grid-column: 1 !important;
   grid-row: 1 !important;
-  min-width: 0;
 }
 
 html body #qimen-workbench-layout .palace-card__facts {
-  min-width: 0;
   align-self: stretch;
 }
 
@@ -5110,11 +5163,6 @@ html body #qimen-workbench-layout .palace-card__facts dd {
   line-height: 1 !important;
 }
 
-html body #qimen-workbench-layout .palace-card__status {
-  min-width: 0;
-  overflow: hidden;
-}
-
 html body #qimen-workbench-layout .palace-card__status strong,
 html body #qimen-workbench-layout .palace-card__facts dd {
   overflow: hidden;
@@ -5123,7 +5171,7 @@ html body #qimen-workbench-layout .palace-card__facts dd {
 }
 
 /* Final responsive board contract: the nine-palace board is always a square,
-   but its square uses all available panel height instead of an arbitrary vh cap. */
+  but its square uses all available panel height instead of an arbitrary vh cap. */
 
 html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid {
   width: auto !important;
@@ -5164,18 +5212,15 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
     height: auto !important;
     aspect-ratio: 1 / 1 !important;
   }
-
   html body #qimen-workbench-layout .palace-card__index,
   html body #qimen-workbench-layout .palace-card__status span,
   html body #qimen-workbench-layout .palace-card__facts dt {
     font-size: 0.58rem !important;
     line-height: 1.1 !important;
   }
-
   html body #qimen-workbench-layout .palace-card__header h3 {
     font-size: 1.04rem !important;
   }
-
   html body #qimen-workbench-layout .palace-card__facts dd {
     font-size: 0.72rem !important;
     line-height: 1.1 !important;
@@ -5183,8 +5228,9 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
 }
 
 /* Authoritative final reading grammar for a square palace.  Keep the field
-   names and their values on one row, but stack the three primary fields so
-   the characters have room to be read at desktop and phone sizes. */
+  names and their values on one row, but stack the three primary fields so
+  the characters have room to be read at desktop and phone sizes. */
+
 .palace-grid > .palace-card {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
@@ -5195,7 +5241,9 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
   overflow: hidden !important;
 }
 
-.palace-card__topline { display: contents !important; }
+.palace-card__topline {
+  display: contents !important;
+}
 
 .palace-card__header {
   grid-column: 1 !important;
@@ -5206,10 +5254,20 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
   min-width: 0 !important;
 }
 
-.palace-card__identity { min-width: 0 !important; gap: 5px !important; }
-.palace-card__index,
-.palace-card__identity > span { font-size: 0.7rem !important; line-height: 1 !important; }
-.palace-card__header h3 { font-size: clamp(1rem, 1.45vw, 1.2rem) !important; line-height: 1 !important; }
+.palace-card__identity {
+  min-width: 0 !important;
+  gap: 5px !important;
+}
+
+.palace-card__index, .palace-card__identity > span {
+  font-size: 0.7rem !important;
+  line-height: 1 !important;
+}
+
+.palace-card__header h3 {
+  font-size: clamp(1rem, 1.45vw, 1.2rem) !important;
+  line-height: 1 !important;
+}
 
 .palace-card__status {
   display: flex !important;
@@ -5286,8 +5344,15 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
   border-radius: 3px !important;
 }
 
-.palace-card__facts .palace-card__fact--status { grid-column: 1 / -1 !important; }
-.palace-card__facts dt { flex: 0 0 auto !important; font-size: 0.68rem !important; line-height: 1 !important; }
+.palace-card__facts .palace-card__fact--status {
+  grid-column: 1 / -1 !important;
+}
+
+.palace-card__facts dt {
+  flex: 0 0 auto !important;
+  font-size: 0.68rem !important;
+  line-height: 1 !important;
+}
 
 .palace-card__facts dd {
   min-width: 0 !important;
@@ -5300,6 +5365,7 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
 }
 
 /* Supersede the legacy three-column card rules above. */
+
 html body #qimen-workbench-layout .canvas-panel__content > .palace-grid-shell > .palace-grid {
   width: auto !important;
   height: 100% !important;
@@ -5337,7 +5403,6 @@ html body #qimen-workbench-layout .palace-grid > .palace-card .palace-card__fact
     grid-template-rows: none !important;
     gap: 5px !important;
   }
-
   html body #qimen-workbench-layout .palace-grid > .palace-card {
     width: 100% !important;
     height: auto !important;
@@ -5347,7 +5412,8 @@ html body #qimen-workbench-layout .palace-grid > .palace-card .palace-card__fact
 }
 
 /* Dense reading sheet: a palace is a compact field record, not a stack of
-   decorative pills.  Labels carry colour; values sit directly beside them. */
+  decorative pills.  Labels carry colour; values sit directly beside them. */
+
 html body #qimen-workbench-layout .palace-grid > .palace-card {
   grid-template-rows: auto auto minmax(0, 1fr) !important;
   gap: 3px !important;
@@ -5429,9 +5495,17 @@ html body #qimen-workbench-layout .palace-card__primary-item strong {
   letter-spacing: -0.04em !important;
 }
 
-html body #qimen-workbench-layout .palace-card__primary-item--star { color: #c8432e !important; }
-html body #qimen-workbench-layout .palace-card__primary-item--gate { color: #24745d !important; }
-html body #qimen-workbench-layout .palace-card__primary-item--deity { color: #6551a4 !important; }
+html body #qimen-workbench-layout .palace-card__primary-item--star {
+  color: #c8432e !important;
+}
+
+html body #qimen-workbench-layout .palace-card__primary-item--gate {
+  color: #24745d !important;
+}
+
+html body #qimen-workbench-layout .palace-card__primary-item--deity {
+  color: #6551a4 !important;
+}
 
 html body #qimen-workbench-layout .palace-card__facts {
   grid-column: 1 !important;
@@ -5477,18 +5551,17 @@ html body #qimen-workbench-layout .palace-card__facts dd {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout .palace-card__primary-item:nth-child(2) {
     border-right: 0 !important;
   }
-
   html body #qimen-workbench-layout .palace-card__primary-item:last-child {
     grid-column: 1 / -1 !important;
   }
 }
 
 /* The chart host has two id anchors in the legacy stylesheet; repeat them
-   here so the dense reading sheet is the final cascade winner. */
+  here so the dense reading sheet is the final cascade winner. */
+
 html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
   grid-template-rows: auto auto minmax(0, 1fr) !important;
   gap: 3px !important;
@@ -5546,19 +5619,18 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-card__primary-item:nth-child(2) {
     border-right: 0 !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-card__primary-item:last-child {
     grid-column: 1 / -1 !important;
   }
 }
 
 /* Absolute last word: the previous legacy rules used a single-column
-   primary track. This keeps the direct-reading layout at the actual end of
-   the cascade, after all legacy responsive blocks. */
+  primary track. This keeps the direct-reading layout at the actual end of
+  the cascade, after all legacy responsive blocks. */
+
 .analysis-layout .canvas-panel .canvas-panel__content .palace-grid .palace-card .palace-card__primary {
   align-self: stretch !important;
   height: auto !important;
@@ -5613,6 +5685,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   font-size: clamp(1.08rem, 1.8vw, 1.38rem) !important;
   line-height: 1.05 !important;
 }
+
 .analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
   width: min(100%, 72vh) !important;
   height: auto !important;
@@ -5621,8 +5694,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   aspect-ratio: 1 / 1 !important;
   align-self: start !important;
   justify-self: center !important;
-}
-.analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
   grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   align-content: stretch !important;
   align-items: stretch !important;
@@ -5635,8 +5706,9 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
 }
 
 /* Four pillars are a reading table, not a field of equal-weight cards.
-   The major stems and branches own the visual hierarchy; all relationships
-   remain available as concise annotations in the same column. */
+  The major stems and branches own the visual hierarchy; all relationships
+  remain available as concise annotations in the same column. */
+
 .bazi-panel .bazi-traditional-board {
   padding: 0 !important;
   overflow: hidden;
@@ -5683,8 +5755,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   background: #2a2723;
 }
 
-.bazi-panel .bazi-table__label,
-.bazi-panel .bazi-table__cell {
+.bazi-panel .bazi-table__label, .bazi-panel .bazi-table__cell {
   min-width: 0;
   margin: 0 !important;
   border: 0 !important;
@@ -5751,8 +5822,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
 .bazi-panel .bazi-glyph-cell {
   display: grid !important;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    "glyph meta relation";
+  grid-template-areas: "glyph meta relation";
   align-items: center;
   justify-items: start;
   min-height: 76px;
@@ -5789,8 +5859,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   grid-area: relation;
 }
 
-.bazi-panel .bazi-relation-badge,
-.bazi-panel .bazi-ten-god-badge {
+.bazi-panel .bazi-relation-badge, .bazi-panel .bazi-ten-god-badge {
   min-height: 20px;
   padding: 0 6px;
   border: 1px solid currentColor !important;
@@ -5896,31 +5965,27 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts dd {
   .bazi-panel .bazi-traditional-board {
     border-width: 1px !important;
   }
-
   .bazi-panel .bazi-traditional-board__header {
     padding: 9px 12px 7px;
   }
-
   .bazi-panel .bazi-table {
     min-width: 760px;
   }
-
   .bazi-panel .bazi-table__row {
     grid-template-columns: 78px repeat(4, minmax(160px, 1fr)) !important;
   }
-
   .bazi-panel .bazi-glyph-cell {
     min-height: 82px;
   }
-
   .bazi-panel .bazi-glyph-cell__glyph {
     font-size: 3rem !important;
   }
 }
 
 /* The qimen surface is deliberately height-bound because its nine palaces
-   form a square. Other disciplines are document-like reading tools: they
-   must own a real scroll region rather than inherit that square constraint. */
+  form a square. Other disciplines are document-like reading tools: they
+  must own a real scroll region rather than inherit that square constraint. */
+
 html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="bazi"],
 html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="ziwei"],
 html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel[data-mode="research"] {
@@ -5943,8 +6008,9 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
 }
 
 /* Three-method research is a dense reference sheet.  The original shared
-   observatory rhythm was designed for an editorial product page and left too
-   much dead space between the actual Daliuren structures. */
+  observatory rhythm was designed for an editorial product page and left too
+  much dead space between the actual Daliuren structures. */
+
 .analysis-layout--classic {
   padding: 10px !important;
 }
@@ -6058,22 +6124,21 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
   .analysis-layout--classic {
     padding: 7px !important;
   }
-
   .analysis-layout--classic .classic-observatory {
     padding: 10px !important;
     box-shadow: 3px 3px 0 #171717 !important;
   }
-
   .analysis-layout--classic .classic-observatory__summary > div {
     min-height: 56px;
   }
-
   .analysis-layout--classic .daliuren-palace {
     min-height: 96px;
   }
 }
+
 /* Fauvist tool language: saturated flat blocks, paper ground, and hard
-   editorial edges. No gradients, no glass treatment. */
+  editorial edges. No gradients, no glass treatment. */
+
 body {
   background: #e9e3d9 !important;
   color: #171717 !important;
@@ -6091,8 +6156,7 @@ body {
   color: #fffaf0 !important;
 }
 
-.observatory-hero__copy small,
-.observatory-hero__copy p {
+.observatory-hero__copy small, .observatory-hero__copy p {
   color: #f2bd3f !important;
 }
 
@@ -6119,15 +6183,19 @@ body {
   box-shadow: 4px 4px 0 #171717 !important;
 }
 
-.canvas-panel,
-.sidebar-panel {
+.canvas-panel, .sidebar-panel {
   border: 2px solid #171717 !important;
   border-radius: 2px !important;
   box-shadow: 6px 6px 0 #171717 !important;
 }
 
-.canvas-panel { background: #f5efe5 !important; }
-.sidebar-panel { background: #f5efe5 !important; }
+.canvas-panel {
+  background: #f5efe5 !important;
+}
+
+.sidebar-panel {
+  background: #f5efe5 !important;
+}
 
 .summary-strip {
   gap: 5px !important;
@@ -6144,11 +6212,17 @@ body {
   box-shadow: none !important;
 }
 
-.summary-strip > :nth-child(1),
-.summary-strip > :nth-child(4) { background: #f2bd3f !important; }
-.summary-strip > :nth-child(2),
-.summary-strip > :nth-child(5) { background: #e36b4c !important; }
-.summary-strip > :nth-child(7) { background: #a9c64a !important; }
+.summary-strip > :nth-child(1), .summary-strip > :nth-child(4) {
+  background: #f2bd3f !important;
+}
+
+.summary-strip > :nth-child(2), .summary-strip > :nth-child(5) {
+  background: #e36b4c !important;
+}
+
+.summary-strip > :nth-child(7) {
+  background: #a9c64a !important;
+}
 
 .palace-grid-shell {
   border: 2px solid #171717 !important;
@@ -6171,25 +6245,30 @@ body {
   box-shadow: 5px 5px 0 #df4d32 !important;
 }
 
-.palace-card__primary-item--star { background: #f5b09a !important; color: #7e251c !important; }
-.palace-card__primary-item--gate { background: #a8d6c0 !important; color: #14543e !important; }
+.palace-card__primary-item--star {
+  background: #f5b09a !important;
+  color: #7e251c !important;
+}
 
-.palace-card__primary-item strong,
-.palace-card__facts dd { color: #171717 !important; }
+.palace-card__primary-item--gate {
+  background: #a8d6c0 !important;
+  color: #14543e !important;
+}
 
-.sidebar-panel .semi-tabs-tab-active,
-.sidebar-quick-controls__actions button:hover {
+.palace-card__primary-item strong, .palace-card__facts dd {
+  color: #171717 !important;
+}
+
+.sidebar-panel .semi-tabs-tab-active, .sidebar-quick-controls__actions button:hover {
   background: #f2bd3f !important;
   color: #171717 !important;
 }
 
-.sidebar-panel button,
-.sidebar-panel input,
-.sidebar-panel select,
-.sidebar-panel textarea {
+.sidebar-panel button, .sidebar-panel input, .sidebar-panel select, .sidebar-panel textarea {
   border-radius: 0 !important;
   border-color: #171717 !important;
 }
+
 html body #qimen-workbench-layout.analysis-layout.analysis-panel-group > #qimen-chart > .analysis-panel .palace-card__primary {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   grid-template-rows: minmax(0, 1fr) !important;
@@ -6205,12 +6284,12 @@ html body #qimen-workbench-layout.analysis-layout.analysis-panel-group > #qimen-
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout.analysis-layout.analysis-panel-group > #qimen-chart > .analysis-panel .palace-card__facts {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
 }
+
 html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-card__primary {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   grid-template-rows: minmax(0, 1fr) !important;
@@ -6220,6 +6299,7 @@ html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-ch
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
 }
+
 html body #qimen-workbench-layout > #qimen-chart .palace-card__topline {
   display: contents !important;
 }
@@ -6241,6 +6321,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 /* Final cascade override for the live DOM. */
 
 /* Mirror the dense contract in the side-by-side desktop layout. */
+
 @media (min-width: 1201px) {
   .analysis-layout .canvas-panel .canvas-panel__content > .palace-grid-shell > .palace-grid {
     width: min(100%, 66.5vh) !important;
@@ -6254,19 +6335,19 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 }
 
 /* A nine-palace chart must remain a nine-cell square on a phone. The older
-   single-column fallback made each palace only a few pixels tall. */
+  single-column fallback made each palace only a few pixels tall. */
 
 /* One sizing contract for the desktop workbench.
-   The left rail owns the available height; the canvas consumes it; the
-   palace grid consumes only the remaining canvas row and derives its width
-   from that height. This removes every viewport-based guess and prevents a
-   square from either collapsing to its intrinsic content or growing past its
-   panel. */
+  The left rail owns the available height; the canvas consumes it; the
+  palace grid consumes only the remaining canvas row and derives its width
+  from that height. This removes every viewport-based guess and prevents a
+  square from either collapsing to its intrinsic content or growing past its
+  panel. */
+
 @media (min-width: 721px) {
   html body .analysis-layout.analysis-panel-group > .analysis-panel {
     min-height: 0 !important;
   }
-
   html body .analysis-layout.analysis-panel-group .canvas-panel {
     align-self: stretch !important;
     height: 100% !important;
@@ -6274,21 +6355,18 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     max-height: none !important;
     grid-template-rows: auto minmax(0, 1fr) !important;
   }
-
   html body .analysis-layout.analysis-panel-group .canvas-panel__content {
     height: 100% !important;
     min-height: 0 !important;
     grid-template-rows: minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
-
   html body .analysis-layout.analysis-panel-group .palace-grid-shell {
     height: 100% !important;
     min-height: 0 !important;
     grid-template-rows: auto auto minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
-
   html body .analysis-layout.analysis-panel-group .palace-grid-shell > .palace-grid {
     width: auto !important;
     height: 100% !important;
@@ -6302,7 +6380,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body .analysis-layout.analysis-panel-group .palace-grid > .palace-card {
     width: auto !important;
     height: 100% !important;
@@ -6312,7 +6389,8 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 }
 
 /* Match the live panel IDs so legacy high-specificity rules cannot collapse
-   the canvas back to its intrinsic 250px height. */
+  the canvas back to its intrinsic 250px height. */
+
 @media (min-width: 1181px) and (min-height: 640px) {
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
     align-self: stretch !important;
@@ -6321,21 +6399,18 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     max-height: 100% !important;
     grid-template-rows: auto minmax(0, 1fr) !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content {
     height: 100% !important;
     min-height: 0 !important;
     grid-template-rows: minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell {
     height: 100% !important;
     min-height: 0 !important;
     grid-template-rows: auto auto minmax(0, 1fr) !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid {
     width: auto !important;
     height: 100% !important;
@@ -6349,7 +6424,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card {
     width: auto !important;
     height: 100% !important;
@@ -6407,9 +6481,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
     text-overflow: ellipsis !important;
     font-size: clamp(0.68rem, 0.98vw, 0.9rem) !important;
   }
-}
-
-@media (min-width: 1181px) and (max-height: 800px) {
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__primary {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
@@ -6424,7 +6495,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__facts .palace-card__fact--status {
     grid-column: span 2 !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid-shell__legend {
     height: 14px !important;
     min-height: 0 !important;
@@ -6433,6 +6503,7 @@ html body #qimen-workbench-layout > #qimen-chart .palace-card__facts {
 }
 
 /* Final workbench composition: one square chart and one focused Agent rail. */
+
 html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell {
   grid-template-rows: auto minmax(0, 1fr) !important;
 }
@@ -6445,8 +6516,10 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
   grid-row: 2 !important;
 }
 
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .analysis-panel,
-:is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel {
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .analysis-panel,
+:is(#qimen-agent,
+[data-layout="agent-sidebar"]) .sidebar-panel {
   min-height: 0 !important;
   overflow: hidden !important;
 }
@@ -6461,9 +6534,11 @@ html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-pan
 }
 
 /* Shared Agent sidebar surface. The stacked layout uses a semantic host
-   marker; keep its controls on the same flat Fauvist system as desktop. */
+  marker; keep its controls on the same flat Fauvist system as desktop. */
+
 html body [data-layout="agent-sidebar"] > .sidebar-panel,
-html body :is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel {
+html body :is(#qimen-agent,
+[data-layout="agent-sidebar"]) .sidebar-panel {
   background: #f5efe5 !important;
   border: 2px solid #171717 !important;
   border-radius: 0 !important;
@@ -6471,8 +6546,10 @@ html body :is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-panel {
 }
 
 html body [data-layout="agent-sidebar"] > .sidebar-panel > .sidebar-quick-controls,
-html body :is(#qimen-agent, [data-layout="agent-sidebar"]) .sidebar-quick-controls,
-html body :is(#qimen-agent, [data-layout="agent-sidebar"]) .workspace-disclosure {
+html body :is(#qimen-agent,
+[data-layout="agent-sidebar"]) .sidebar-quick-controls,
+html body :is(#qimen-agent,
+[data-layout="agent-sidebar"]) .workspace-disclosure {
   border: 2px solid #171717 !important;
   border-radius: 0 !important;
   background: #fffaf0 !important;
@@ -6514,7 +6591,8 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 }
 
 /* Workbench controls that sit in the title/board flow. Keep these as flat,
-   high-contrast blocks so the layout reads the same at every viewport size. */
+  high-contrast blocks so the layout reads the same at every viewport size. */
+
 .hero-action {
   align-self: center !important;
   min-height: 38px !important;
@@ -6528,8 +6606,7 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
   cursor: pointer !important;
 }
 
-.hero-action:hover,
-.hero-action[aria-expanded="true"] {
+.hero-action:hover, .hero-action[aria-expanded="true"] {
   background: #e36b4c !important;
 }
 
@@ -6570,70 +6647,23 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
     grid-template-columns: 1fr !important;
     align-items: stretch !important;
   }
-
   html body .qimen-board-layout .palace-grid .palace-card .palace-card__primary-item span,
   html body .qimen-board-layout .palace-grid .palace-card .palace-card__facts dt {
     font-size: 0.82rem !important;
   }
-
   html body .qimen-board-layout .palace-grid .palace-card .palace-card__primary-item strong {
     font-size: 1.06rem !important;
   }
-
   html body .qimen-board-layout .palace-grid .palace-card .palace-card__facts dd {
     font-size: 0.92rem !important;
   }
 }
 
 /* Compact brand statement that keeps the workbench dense
-   while carrying the user's new observatory narrative. */
-.observatory-hero__manifesto {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 0;
-  color: #55418c;
-  font-size: clamp(0.65rem, 0.8vw, 0.78rem);
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-}
-
-.observatory-hero__manifesto strong {
-  color: #df4d32;
-  font-size: 0.88rem;
-  font-weight: 950;
-  letter-spacing: 0.04em;
-}
-
-.observatory-hero__manifesto span {
-  font-weight: 750;
-}
-
-.observatory-hero__workspace { display: block; margin-top: 2px; color: #f2bd3f; font-size: .74rem; font-weight: 800; letter-spacing: .12em; }
-
-.observation-journal { margin-top: 26px; padding: 18px; border: 3px solid #171717; background: #fffaf0; box-shadow: 7px 7px 0 #171717; }.observation-journal__head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }.observation-journal__head > div { display: grid; gap: 4px; }.observation-journal__head span { display: inline-flex; align-items: center; gap: 5px; color: #9f3d2d; font: 800 11px ui-monospace, monospace; letter-spacing: .08em; }.observation-journal__head h2 { margin: 0; font-size: clamp(21px, 2.4vw, 30px); line-height: 1.05; }.observation-journal__head p { max-width: 720px; margin: 0; color: #594f46; font-size: 13px; line-height: 1.55; }.observation-journal__head > strong { flex: none; padding: 6px 8px; border: 2px solid #171717; background: #f2bd3f; font: 800 12px ui-monospace, monospace; }.observation-journal__form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) 150px auto; gap: 8px; align-items: end; margin-top: 15px; }.observation-journal__form label { display: grid; gap: 4px; }.observation-journal__form label > span { font-size: 11px; font-weight: 800; }.observation-journal__form textarea, .observation-journal__form input { width: 100%; border: 2px solid #171717; border-radius: 0; background: #fff; color: #171717; font: 13px/1.4 inherit; }.observation-journal__form textarea { min-height: 70px; resize: vertical; padding: 7px; }.observation-journal__form input { min-height: 37px; padding: 6px; }.observation-journal__form button { min-height: 39px; border: 2px solid #171717; border-radius: 0; background: #171717; color: #fffaf0; padding: 8px 12px; font-weight: 800; cursor: pointer; }.observation-journal__form button:disabled { opacity: .45; cursor: not-allowed; }.observation-journal__entries { display: grid; gap: 7px; margin-top: 14px; }.observation-journal__entries article { position: relative; display: grid; gap: 4px; padding: 10px 42px 10px 10px; border: 2px solid #171717; background: #fff; }.observation-journal__entries article > div { display: flex; gap: 9px; color: #665b50; font: 11px ui-monospace, monospace; }.observation-journal__entries strong { font-size: 14px; }.observation-journal__entries p { margin: 0; color: #594f46; font-size: 13px; line-height: 1.45; }.observation-journal__entries button { position: absolute; top: 9px; right: 9px; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #171717; border-radius: 0; background: #fffaf0; color: #9f3d2d; cursor: pointer; }.observation-journal__empty { margin: 14px 0 0; color: #665b50; font-size: 13px; }
-
-@media (max-width: 760px) { .observation-journal { margin-top: 18px; padding: 13px; box-shadow: 4px 4px 0 #171717; }.observation-journal__form { grid-template-columns: 1fr; }.observation-journal__form textarea { min-height: 76px; }.observation-journal__form button { width: 100%; }.observatory-hero__workspace { font-size: .68rem; } }
-
-.qmdj-footer__brand p {
-  color: #55418c;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-@media (max-width: 720px) {
-  .observatory-hero__manifesto {
-    gap: 3px 8px;
-    font-size: 0.72rem;
-  }
-
-  .observatory-hero__manifesto strong {
-    font-size: 0.84rem;
-  }
-}
+  while carrying the user's new observatory narrative. */
 
 /* Final cascade: the metadata rail has moved into the summary strip. */
+
 .observatory-hero {
   overflow: visible !important;
 }
@@ -6655,26 +6685,19 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
   .summary-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-
-  .summary-strip > .summary-chip--metadata,
-  .summary-strip > .summary-chip--pillars {
+  .summary-strip > .summary-chip--metadata, .summary-strip > .summary-chip--pillars {
     grid-column: span 2 !important;
   }
-}
-
-@media (max-width: 720px) {
   .observatory-hero .workbench-tabs {
     width: 100% !important;
     min-width: 0 !important;
     overflow-x: auto !important;
     scrollbar-width: thin;
   }
-
   .observatory-hero .workbench-tabs .semi-tabs-bar {
     width: max-content !important;
     min-width: 100% !important;
   }
-
   .observatory-hero .workbench-tabs .semi-tabs-tab {
     min-width: 56px !important;
     margin-inline: 0 !important;
@@ -6684,7 +6707,8 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 }
 
 /* Qimen layout contract: the board owns this surface; K-line is a separate
-   title-bar workspace and must never consume the board's grid track. */
+  title-bar workspace and must never consume the board's grid track. */
+
 .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout {
   display: grid !important;
   grid-template-rows: auto auto !important;
@@ -6723,7 +6747,8 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 }
 
 /* Keep the same contract when the resizable desktop group supplies an
-   explicit height to its wrappers. */
+  explicit height to its wrappers. */
+
 @media (min-width: 1181px) {
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout {
     height: auto !important;
@@ -6732,15 +6757,15 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
     grid-template-rows: auto auto !important;
     align-content: start !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout.has-sequence {
     grid-template-rows: auto auto auto !important;
   }
 }
 
 /* Narrow workbenches use normal document flow.  The shell grows around the
-   legend and the width-owned square, so neither is clipped or able to escape
-   its frame. */
+  legend and the width-owned square, so neither is clipped or able to escape
+  its frame. */
+
 @media (min-width: 721px) and (max-width: 1180px) {
   html body #qimen-workbench-layout .canvas-panel__content.qimen-board-layout > .palace-grid-shell,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
@@ -6752,7 +6777,6 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
     align-items: start !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
     width: min(100%, calc(100svh - 280px)) !important;
@@ -6768,8 +6792,9 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 }
 
 /* Wide workbenches have one geometry owner: the shell's second track.  The
-   legend, padding and gap are resolved before the square receives its size,
-   so the board cannot extend beyond the shell. */
+  legend, padding and gap are resolved before the square receives its size,
+  so the board cannot extend beyond the shell. */
+
 @media (min-width: 1181px) {
   html body #qimen-workbench-layout .canvas-panel__content.qimen-board-layout > .palace-grid-shell,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
@@ -6781,7 +6806,6 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
     min-height: 0 !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
     display: grid !important;
@@ -6797,7 +6821,6 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
     align-self: center !important;
     justify-self: center !important;
   }
-
   html body #qimen-workbench-layout .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card,
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card {
     width: 100% !important;
@@ -6813,9 +6836,10 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 }
 
 /* Tablet-width navigation keeps every primary workspace reachable.  The
-   desktop grid only begins once all ten labels can be shown at once; before
-   that, the tab rail deliberately scrolls instead of silently clipping the
-   Agent and classical research tools. */
+  desktop grid only begins once all ten labels can be shown at once; before
+  that, the tab rail deliberately scrolls instead of silently clipping the
+  Agent and classical research tools. */
+
 @media (min-width: 721px) and (max-width: 1040px) {
   .observatory-hero .workbench-tabs {
     width: 100% !important;
@@ -6824,13 +6848,11 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
   }
-
   .observatory-hero .workbench-tabs .semi-tabs-bar {
     display: flex !important;
     width: max-content !important;
     min-width: 100% !important;
   }
-
   .observatory-hero .workbench-tabs .semi-tabs-tab {
     flex: 0 0 auto !important;
     min-width: 82px !important;
@@ -6840,22 +6862,21 @@ html body [data-layout="agent-sidebar"] .sidebar-quick-controls select {
 }
 
 /* --------------------------------------------------------------------------
-   Final workbench geometry contract
+  Final workbench geometry contract
+  The previous responsive experiments left the board with two incompatible
+  sizing sources: a viewport-sized square and a smaller canvas track.  The
+  canvas is now the only source of truth.  On a desktop viewport the chart,
+  its legend and the metadata strip must all live in the available workbench
+  height; the nine palaces then occupy the remaining square exactly once.
+  -------------------------------------------------------------------------- */
 
-   The previous responsive experiments left the board with two incompatible
-   sizing sources: a viewport-sized square and a smaller canvas track.  The
-   canvas is now the only source of truth.  On a desktop viewport the chart,
-   its legend and the metadata strip must all live in the available workbench
-   height; the nine palaces then occupy the remaining square exactly once.
-   -------------------------------------------------------------------------- */
-
-html body,
-html body * {
+html body, html body * {
   background-image: none !important;
 }
 
 /* Keep the product palette flat and classical: ink, bone, ochre, vermilion,
-   celadon and bronze.  These two chips formerly reintroduced lilac/blue. */
+  celadon and bronze.  These two chips formerly reintroduced lilac/blue. */
+
 .summary-strip > .summary-chip--metadata {
   background: #d7bd80 !important;
 }
@@ -6864,9 +6885,7 @@ html body * {
   background: #9eb7a5 !important;
 }
 
-.summary-strip > :nth-child(3),
-.summary-strip > :nth-child(6),
-.palace-card__primary-item--deity {
+.summary-strip > :nth-child(3), .summary-strip > :nth-child(6), .palace-card__primary-item--deity {
   background: #d8b98b !important;
   color: #4d3721 !important;
 }
@@ -6877,14 +6896,13 @@ html body * {
 }
 
 @media (min-width: 1041px) and (min-height: 700px) {
-  .page-shell:not(.is-agent-workspace) {
+  .page-shell {
     height: 100svh;
     min-height: 0;
     padding: 14px 0 8px;
     gap: 8px;
     overflow: hidden;
   }
-
   .observatory-hero {
     position: relative;
     top: auto;
@@ -6894,22 +6912,15 @@ html body * {
     padding: 9px 14px;
     gap: 8px 14px;
   }
-
   .observatory-hero__copy h1 {
     font-size: 1.65rem;
   }
-
-  .observatory-hero__manifesto {
-    margin: 3px 0 0;
-  }
-
   .observatory-hero .workbench-tabs .semi-tabs-bar {
     display: grid !important;
     grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
     width: 100% !important;
     min-width: 0 !important;
   }
-
   .observatory-hero .workbench-tabs .semi-tabs-tab {
     min-width: 0 !important;
     width: auto !important;
@@ -6919,47 +6930,32 @@ html body * {
     overflow: hidden !important;
     white-space: nowrap !important;
   }
-
   .observatory-hero .workbench-tabs .semi-tabs-tab-inner {
     min-width: 0 !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
-
   .qmdj-footer {
     min-height: 28px;
     height: 28px;
     padding: 0 4px;
     overflow: hidden;
   }
-
-  .qmdj-footer__brand p,
-  .qmdj-footer__meta {
-    font-size: 10px;
-  }
-
-  .analysis-layout,
-  .analysis-layout.analysis-panel-group,
-  .analysis-layout > .analysis-panel {
+  .analysis-layout, .analysis-layout.analysis-panel-group, .analysis-layout > .analysis-panel {
     height: auto;
     min-height: 0;
     align-items: stretch;
   }
-
-  .analysis-layout > .analysis-panel,
-  .analysis-layout .canvas-panel,
-  .analysis-layout .sidebar-panel {
+  .analysis-layout > .analysis-panel, .analysis-layout .canvas-panel, .analysis-layout .sidebar-panel {
     min-height: 0 !important;
     height: auto !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel {
     grid-template-rows: 36px minmax(0, 1fr) auto !important;
     gap: 7px !important;
     padding: 8px 10px !important;
     overflow: hidden !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout {
     display: grid !important;
     grid-template-rows: auto !important;
@@ -6967,7 +6963,6 @@ html body * {
     min-height: 0 !important;
     overflow: visible !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
     display: grid !important;
     grid-template-rows: auto auto !important;
@@ -6976,7 +6971,6 @@ html body * {
     min-height: 0 !important;
     overflow: visible !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
     width: 100% !important;
     height: auto !important;
@@ -6988,67 +6982,56 @@ html body * {
     align-self: start !important;
     justify-self: stretch !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card {
     min-width: 0 !important;
     min-height: 0 !important;
     overflow: hidden !important;
   }
-
   /* A palace is read across, not as a stack of tiny labels.  Giving the
-     three principal symbols one row and the six factual values two rows
-     makes every category visually distinct without wasting cell height. */
+    three principal symbols one row and the six factual values two rows
+    makes every category visually distinct without wasting cell height. */
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
     gap: 3px !important;
     padding: 4px !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: minmax(0, 1fr) !important;
     gap: 3px !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
     gap: 2px 4px !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
     line-height: 1 !important;
   }
-
   /* Match the legacy high-specificity compact rule once, then neutralise it.
-     This is intentionally the last board rule in the stylesheet. */
+    This is intentionally the last board rule in the stylesheet. */
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__primary {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: minmax(0, 1fr) !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__primary-item:last-child {
     grid-column: auto !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart > .analysis-panel > .canvas-panel > .canvas-panel__content > .palace-grid-shell > .palace-grid > .palace-card .palace-card__facts .palace-card__fact--status {
     grid-column: auto !important;
   }
-
   /* Palace reading units: the square is intentionally dense.  Labels stay
-     small, while the actual symbols sit side-by-side and consume the cell. */
+    small, while the actual symbols sit side-by-side and consume the cell. */
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card {
     border: 2px solid #171717 !important;
     border-radius: 0 !important;
     background: #fffaf0 !important;
     box-shadow: none !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__fact {
     display: flex !important;
@@ -7061,11 +7044,9 @@ html body * {
     border-radius: 0 !important;
     background: transparent !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item {
     flex-direction: column !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
     flex: 0 0 auto !important;
@@ -7073,7 +7054,6 @@ html body * {
     font-weight: 900 !important;
     letter-spacing: .04em !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong {
     max-width: 100% !important;
     overflow: hidden !important;
@@ -7083,7 +7063,6 @@ html body * {
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
     min-width: 0 !important;
     margin: 0 !important;
@@ -7094,21 +7073,29 @@ html body * {
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
   }
-
-  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--star strong { color: #b73425 !important; font-family: ui-serif, "Songti SC", serif !important; }
-  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--gate strong { color: #176c58 !important; font-family: ui-sans-serif, "PingFang SC", sans-serif !important; }
-  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--deity strong { color: #7a501d !important; font-family: ui-monospace, "SFMono-Regular", monospace !important; }
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--star strong {
+    color: #b73425 !important;
+    font-family: ui-serif, "Songti SC", serif !important;
+  }
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--gate strong {
+    color: #176c58 !important;
+    font-family: ui-sans-serif, "PingFang SC", sans-serif !important;
+  }
+  html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary-item--deity strong {
+    color: #7a501d !important;
+    font-family: ui-monospace, "SFMono-Regular", monospace !important;
+  }
 }
 
 /* --------------------------------------------------------------------------
-   Palace reading contract
+  Palace reading contract
+  One palace is a compact line-by-line instrument: labels and their symbols
+  share a line, so the symbol is never a tiny caption floating inside a large
+  cell.  This deliberately lives at the end of the cascade: the old mobile
+  fallback made the nine-grid a single vertical list, which defeated both the
+  square-board geometry and legibility at the same time.
+  -------------------------------------------------------------------------- */
 
-   One palace is a compact line-by-line instrument: labels and their symbols
-   share a line, so the symbol is never a tiny caption floating inside a large
-   cell.  This deliberately lives at the end of the cascade: the old mobile
-   fallback made the nine-grid a single vertical list, which defeated both the
-   square-board geometry and legibility at the same time.
-   -------------------------------------------------------------------------- */
 html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
 html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact {
   flex-direction: row !important;
@@ -7136,7 +7123,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
   html body #qimen-workbench-layout > #qimen-chart .palace-grid-shell {
     min-width: 0 !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid-shell > .palace-grid {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -7147,53 +7133,44 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     aspect-ratio: 1 / 1 !important;
     margin-inline: auto !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card {
     min-width: 0 !important;
     min-height: 0 !important;
     padding: 3px !important;
     gap: 2px !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__header {
     gap: 2px !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__index,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__status span {
     font-size: 9px !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__header h3,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__status strong {
     font-size: 12px !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts {
     min-width: 0 !important;
     gap: 1px !important;
   }
-
   /* A 110px palace cannot hold three label/value pairs side by side without
-     collisions.  On phones the three principal symbols become three dense
-     horizontal reading lines; their values stay large and never overlap. */
+    collisions.  On phones the three principal symbols become three dense
+    horizontal reading lines; their values stay large and never overlap. */
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__primary,
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart .palace-grid > .palace-card .palace-card__facts {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact--status {
     grid-column: auto !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__fact {
     min-width: 0 !important;
@@ -7202,17 +7179,14 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     gap: 1px !important;
     padding: 0 !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item {
     justify-content: flex-start !important;
     padding-inline: 3px !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item span,
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dt {
     font-size: 9px !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__primary-item strong {
     min-width: 0 !important;
     overflow: hidden !important;
@@ -7221,7 +7195,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
   }
-
   html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .palace-card__facts dd {
     min-width: 0 !important;
     max-width: 100% !important;
@@ -7231,15 +7204,12 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
   }
-
   /* The mobile renderer intentionally drops the desktop panel IDs.  Keep a
-     class-based contract for that DOM instead of relying on desktop-only
-     selectors; otherwise legacy stacked-layout rules silently win. */
-
+    class-based contract for that DOM instead of relying on desktop-only
+    selectors; otherwise legacy stacked-layout rules silently win. */
   /* Facts remain a 3 × 2 instrument field; a compact vertical key/value
-     treatment gives every stem its own real column instead of squeezing a
-     label and value into five pixels. */
-
+    treatment gives every stem its own real column instead of squeezing a
+    label and value into five pixels. */
   body .product-chart .canvas-panel[data-mode="qimen"] .canvas-panel__content.qimen-board-layout,
   body .product-chart .canvas-panel[data-mode="qimen"] .palace-grid-shell {
     display: grid !important;
@@ -7251,7 +7221,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     overflow: visible !important;
     align-content: start !important;
   }
-
   body .product-chart .canvas-panel[data-mode="qimen"] .palace-grid-shell > .palace-grid {
     display: grid !important;
     width: 100% !important;
@@ -7266,14 +7235,12 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     justify-self: stretch !important;
     align-self: start !important;
   }
-
   body .product-chart .canvas-panel[data-mode="qimen"] .palace-grid-shell > .palace-grid > .palace-card {
     width: 100% !important;
     height: 100% !important;
     min-width: 0 !important;
     min-height: 0 !important;
   }
-
   body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel {
     display: grid !important;
     height: auto !important;
@@ -7281,7 +7248,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     grid-template-rows: auto auto auto !important;
     overflow: visible !important;
   }
-
   body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout {
     display: grid !important;
     width: 100% !important;
@@ -7290,7 +7256,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     grid-template-rows: auto !important;
     overflow: visible !important;
   }
-
   body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell {
     display: grid !important;
     width: 100% !important;
@@ -7299,7 +7264,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     grid-template-rows: auto auto !important;
     overflow: visible !important;
   }
-
   body .product-chart #qimen-workbench-layout > #qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
     display: grid !important;
     width: 100% !important;
@@ -7312,7 +7276,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid {
     display: grid !important;
     width: 100% !important;
@@ -7324,14 +7287,12 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     justify-self: stretch !important;
     align-self: start !important;
   }
-
   html body .product-chart #qimen-workbench-layout#qimen-workbench-layout.analysis-panel-group {
     display: block !important;
     width: 100% !important;
     height: auto !important;
     overflow: visible !important;
   }
-
   html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart.analysis-panel {
     display: block !important;
     width: 100% !important;
@@ -7339,12 +7300,10 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     height: auto !important;
     overflow: visible !important;
   }
-
   html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-workbench-separator,
   html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent {
     display: none !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart.analysis-panel > .canvas-panel > .canvas-panel__content.qimen-board-layout > .palace-grid-shell > .palace-grid > .palace-card {
     display: grid !important;
     width: 100% !important;
@@ -7352,7 +7311,6 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
     min-width: 0 !important;
     min-height: 0 !important;
   }
-
   html body #qimen-workbench-layout#qimen-workbench-layout > #qimen-chart#qimen-chart.analysis-panel > .canvas-panel > .summary-strip {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -7362,36 +7320,16 @@ html body #qimen-workbench-layout > #qimen-chart .palace-grid > .palace-card .pa
 }
 
 /* Final guard: answer content owns a real scrollport even when an upstream
-   workbench shell clips its tab panel. */
-html body .agent-panel__section--result {
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-html body .agent-panel__section--result > .inspector-scroll {
-  min-height: 0 !important;
-  height: clamp(260px, 58svh, 760px) !important;
-  max-height: clamp(260px, 58svh, 760px) !important;
-  flex: 0 0 auto !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  overscroll-behavior: contain;
-}
-html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll-area-viewport"] {
-  height: 100% !important;
-  max-height: 100% !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain;
-}
+  workbench shell clips its tab panel. */
 
-/*
- * Agent rail scroll contract (desktop)
- *
- * The workbench used to have three competing scrollports: the resizable
- * panel, the sidebar and the answer area.  A long streamed answer could make
- * the panel itself grow beyond the viewport, leaving neither the wheel nor a
- * scrollbar attached to the visible right rail.  Keep one owner only: the
- * sidebar.  The answer remains ordinary content inside that rail.
- */
+/* * Agent rail scroll contract (desktop)
+  *
+  * The workbench used to have three competing scrollports: the resizable
+  * panel, the sidebar and the answer area.  A long streamed answer could make
+  * the panel itself grow beyond the viewport, leaving neither the wheel nor a
+  * scrollbar attached to the visible right rail.  Keep one owner only: the
+  * sidebar.  The answer remains ordinary content inside that rail. */
+
 @media (min-width: 1181px) {
   html body .product-chart #qimen-workbench-layout > #qimen-agent,
   html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"],
@@ -7404,7 +7342,6 @@ html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll
     max-height: 100% !important;
     overflow: hidden !important;
   }
-
   html body .product-chart #qimen-workbench-layout > #qimen-agent > .analysis-panel,
   html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"] > .analysis-panel,
   html body .product-chart #qimen-workbench-layout > [data-layout="agent-sidebar"] > .analysis-panel {
@@ -7415,7 +7352,6 @@ html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll
     height: 100% !important;
     overflow: hidden !important;
   }
-
   html body .product-chart #qimen-workbench-layout > #qimen-agent > .sidebar-panel,
   html body .product-chart #qimen-workbench-layout > #qimen-agent > .analysis-panel > .sidebar-panel,
   html body .product-chart #qimen-workbench-layout > [data-testid="qimen-agent"] > .sidebar-panel,
@@ -7432,9 +7368,12 @@ html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll
     overscroll-behavior-y: contain;
     scrollbar-gutter: stable;
   }
-
-  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .inspector-tabs,
-  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .inspector-tabs__content {
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent,
+  [data-testid="qimen-agent"],
+  [data-layout="agent-sidebar"]) .inspector-tabs,
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent,
+  [data-testid="qimen-agent"],
+  [data-layout="agent-sidebar"]) .inspector-tabs__content {
     display: block !important;
     flex: none !important;
     min-height: 0 !important;
@@ -7442,19 +7381,23 @@ html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll
     max-height: none !important;
     overflow: visible !important;
   }
-
-  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .agent-panel__section--result,
-  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .agent-panel__section--result > .inspector-scroll,
-  html body .product-chart #qimen-workbench-layout :is(#qimen-agent, [data-testid="qimen-agent"], [data-layout="agent-sidebar"]) .agent-panel__section--result > .inspector-scroll > [data-slot="scroll-area-viewport"] {
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent,
+  [data-testid="qimen-agent"],
+  [data-layout="agent-sidebar"]) .agent-panel__section--result,
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent,
+  [data-testid="qimen-agent"],
+  [data-layout="agent-sidebar"]) .agent-panel__section--result > .inspector-scroll,
+  html body .product-chart #qimen-workbench-layout :is(#qimen-agent,
+  [data-testid="qimen-agent"],
+  [data-layout="agent-sidebar"]) .agent-panel__section--result > .inspector-scroll > [data-slot="scroll-area-viewport"] {
     min-height: 0 !important;
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
     overscroll-behavior: auto !important;
   }
-
   /* Beat the older grid/flex compatibility rules with the real rendered
-     hierarchy: Panel#qimen-agent > .analysis-panel > .sidebar-panel. */
+    hierarchy: Panel#qimen-agent > .analysis-panel > .sidebar-panel. */
   html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent#qimen-agent > .analysis-panel.analysis-panel > .sidebar-panel.sidebar-panel > .inspector-tabs.inspector-tabs {
     display: block !important;
     flex: none !important;
@@ -7463,16 +7406,7 @@ html body .agent-panel__section--result > .inspector-scroll > [data-slot="scroll
     max-height: none !important;
     overflow: visible !important;
   }
-
   html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent#qimen-agent > .analysis-panel.analysis-panel > .sidebar-panel.sidebar-panel > .inspector-tabs.inspector-tabs > .inspector-tabs__content {
-    display: block !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  html body .product-chart #qimen-workbench-layout#qimen-workbench-layout > #qimen-agent#qimen-agent > .analysis-panel.analysis-panel > .sidebar-panel.sidebar-panel > .inspector-tabs.inspector-tabs > .inspector-tabs__content > .agent-panel.agent-panel {
     display: block !important;
     height: auto !important;
     min-height: 0 !important;

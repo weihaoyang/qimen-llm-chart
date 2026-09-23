@@ -1,13 +1,118 @@
-.trigger { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border:2px solid #191919; background:#fffdf7; color:#191919; font-weight:750; cursor:pointer; box-shadow:2px 2px 0 #191919; white-space:nowrap; }
-.drawer { position:fixed; inset:0 0 0 auto; margin:0; width:min(620px,94vw); height:100dvh; max-height:100dvh; max-width:100vw; box-sizing:border-box; border:0; border-left:3px solid #191919; padding:0; color:#191919; background:#fffdf7; }
-.drawer[open] { display:flex; flex-direction:column; }
-.drawer::backdrop { background:#19191970; }
-.drawer header { display:flex; justify-content:space-between; align-items:center; padding:20px; border-bottom:2px solid #191919; }
-.drawer h2 { margin:6px 0 0; font-size:24px; }.drawer small { font:11px monospace; letter-spacing:.12em; }
-.drawer button { display:inline-flex; gap:6px; align-items:center; background:transparent; color:#191919; border:1px solid #191919; padding:8px 12px; cursor:pointer; }
-.drawer button:focus-visible,.trigger:focus-visible { outline:3px solid #bd482b; outline-offset:2px; }
-.drawer button:disabled { opacity:.45; cursor:default; }
-.drawer nav { display:flex; gap:8px; padding:16px 20px 0; }.drawer nav button[aria-pressed=true] { background:#f3c537; font-weight:800; }
-.actions { display:flex; align-items:center; gap:10px; padding:14px 20px; font-size:12px; }
-.drawer pre { flex:1; min-height:0; overflow:auto; margin:0; padding:20px; white-space:pre-wrap; overflow-wrap:anywhere; border-top:1px solid #ccc4b4; font:13px/1.8 monospace; }
-@media(max-width:720px) { .drawer { inset:auto 0 0; width:100%; height:85dvh; border-left:0; border-top:3px solid #191919; } }
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 2px solid #191919;
+  background: #fffdf7;
+  color: #191919;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #191919;
+  white-space: nowrap;
+}
+
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(620px,94vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100vw;
+  box-sizing: border-box;
+  border: 0;
+  border-left: 3px solid #191919;
+  padding: 0;
+  color: #191919;
+  background: #fffdf7;
+}
+
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer::backdrop {
+  background: #19191970;
+}
+
+.drawer header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #191919;
+}
+
+.drawer h2 {
+  margin: 6px 0 0;
+  font-size: 24px;
+}
+
+.drawer small {
+  font: 11px monospace;
+  letter-spacing: .12em;
+}
+
+.drawer button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  background: transparent;
+  color: #191919;
+  border: 1px solid #191919;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.drawer button:focus-visible,.trigger:focus-visible {
+  outline: 3px solid #bd482b;
+  outline-offset: 2px;
+}
+
+.drawer button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.drawer nav {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px 0;
+}
+
+.drawer nav button[aria-pressed=true] {
+  background: #f3c537;
+  font-weight: 800;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  font-size: 12px;
+}
+
+.drawer pre {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-top: 1px solid #ccc4b4;
+  font: 13px/1.8 monospace;
+}
+
+@media (max-width:720px) {
+  .drawer {
+    inset: auto 0 0;
+    width: 100%;
+    height: 85dvh;
+    border-left: 0;
+    border-top: 3px solid #191919;
+  }
+}

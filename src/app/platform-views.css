@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0;
+    background-color: #05090d;
+    color: #dcecf0;
+  }
+  .font-mono-code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+}
+
+/* Tactical HUD & Luxury War Room Backgrounds */
+
+.tactical-grid {
+  background-size: 28px 28px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Glassmorphism Frosted Surfaces (backdrop-filter: blur(20px)) */
+
+.glass-content {
+  background: linear-gradient(180deg, rgba(8, 22, 29, 0.88) 0%, rgba(4, 10, 15, 0.94) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(54, 220, 255, 0.2);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 1.2rem rgba(0, 212, 255, 0.04);
+}
+
+/* Inner Glow Details */
+
+/* Tactical Scanline Effect */
+
+@keyframes scanline-glow {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+/* Tactical Bracket Accents */
+
+/* Glass & Obsidian Surfaces */
+
+.surface-card {
+  background: rgba(7, 24, 32, 0.72);
+  border: 1px solid rgba(54, 220, 255, 0.14);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card:hover {
+  background: rgba(10, 42, 53, 0.86);
+  border-color: rgba(54, 220, 255, 0.42);
+}
+
+/* Tactical Scanline & Radar */
+
+@keyframes radar-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 18px rgba(220, 38, 38, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(220, 38, 38, 0.7);
+  }
+}
+
+.glow-amber {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
+}
+
+.glow-red {
+  box-shadow: 0 0 30px -5px rgba(239, 68, 68, 0.45);
+}
+
+.glow-blue {
+  box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.35);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.35);
+}
+
+/* Custom Tactical Scrollbar */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 9, 14, 0.9);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.95);
+}
+
+/* Tactical Asset Card Physics & Hologram FX */
+
+@keyframes holo-sweep {
+  0% {
+    background-position: 100% 0%;
+  }
+  100% {
+    background-position: -100% 0%;
+  }
+}
