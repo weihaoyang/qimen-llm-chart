@@ -1,4 +1,9 @@
 import { requirePlatformServerConfig } from "@/lib/platform/config";
+import {
+  PLATFORM_BRIDGE_ACCESS_COOKIE,
+  PLATFORM_BRIDGE_CSRF_COOKIE,
+  PLATFORM_BRIDGE_REFRESH_COOKIE,
+} from "@/lib/platform/bridge";
 import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
 export { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 
@@ -52,9 +57,9 @@ export const readGuestCheckoutToken = (value: string | null) => {
 
 const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
 const QMDJ_COOKIE_ALIASES: Record<string, string> = {
-  qmdj_platform_access: "ssp_access",
-  qmdj_platform_refresh: "ssp_refresh",
-  qmdj_platform_csrf: "ssp_csrf",
+  [PLATFORM_BRIDGE_ACCESS_COOKIE]: "ssp_access",
+  [PLATFORM_BRIDGE_REFRESH_COOKIE]: "ssp_refresh",
+  [PLATFORM_BRIDGE_CSRF_COOKIE]: "ssp_csrf",
 };
 
 export const readPlatformCookieHeader = (cookieHeader: string | null) => {
@@ -101,6 +106,30 @@ type PlatformRequestOptions = {
   csrfToken?: string;
 };
 
+const PLATFORM_REQUEST_TIMEOUT_MS = 10_000;
+
+/**
+ * A platform call must never hang a product request indefinitely. A stalled
+ * gate or usage lookup would otherwise hold the request open — and, on the
+ * streaming path, keep a usage reservation alive — until the runtime kills it.
+ * Timeouts are surfaced as PlatformServerRequestError so callers can map them
+ * to a status code instead of an opaque 500.
+ */
+const fetchPlatform = async (
+  fetchImpl: typeof fetch,
+  url: URL,
+  init: RequestInit,
+): Promise<Response> => {
+  try {
+    return await fetchImpl(url, { ...init, signal: AbortSignal.timeout(PLATFORM_REQUEST_TIMEOUT_MS) });
+  } catch (error) {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      throw new PlatformServerRequestError(504, "platform_request_timeout", "平台响应超时，请稍后重试。");
+    }
+    throw error;
+  }
+};
+
 const buildPlatformHeaders = (accessToken: string | null, options?: PlatformRequestOptions) => ({
   ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   ...(options?.cookieHeader ? { Cookie: options.cookieHeader } : {}),
@@ -124,7 +153,7 @@ export const fetchPlatformGate = async (
   );
   url.searchParams.set("access_scope", config.accessScope);
 
-  const response = await fetchImpl(url, {
+  const response = await fetchPlatform(fetchImpl, url, {
     headers: buildPlatformHeaders(accessToken, options),
     cache: "no-store",
   });
@@ -163,7 +192,7 @@ const platformUsageRequest = async (
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   const url = new URL(path, config.baseUrl);
   if (options?.planCode) url.searchParams.set("plan_code", options.planCode);
-  const response = await (options?.fetchImpl ?? fetch)(url, {
+  const response = await fetchPlatform(options?.fetchImpl ?? fetch, url, {
     method: options?.method ?? "GET",
     headers: buildPlatformHeaders(accessToken, options),
     cache: "no-store",
@@ -203,7 +232,7 @@ const guestUsageRequest = async (
   if (options?.planCode) {
     url.searchParams.set("plan_code", options.planCode);
   }
-  const response = await (options?.fetchImpl ?? fetch)(url, {
+  const response = await fetchPlatform(options?.fetchImpl ?? fetch, url, {
     method: options?.method ?? "POST",
     headers: { "X-Guest-Checkout-Token": checkoutToken },
     cache: "no-store",

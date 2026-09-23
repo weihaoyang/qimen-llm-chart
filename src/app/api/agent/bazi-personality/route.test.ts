@@ -318,4 +318,76 @@ describe("POST /api/agent/bazi-personality", () => {
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toEqual({ error: "Agent 没有返回命局结构诊断。" });
   });
+
+  it("resolves the horoscope reference date in the caller's time zone", async () => {
+    // 2027-02-04T17:00Z is already 2027-02-05 in Asia/Shanghai while it is still
+    // 2027-02-04 in New York. A 流年 is defined against a civil date, so the
+    // payload has to use the caller's date — reading the server clock would
+    // report the previous 流年 for a few hours around 立春 / 春节.
+    //
+    // Both zones are asserted on purpose: whatever the test machine's own zone
+    // is, at least one of the two differs from the server-local date, so a
+    // regression back to `new Date()` cannot pass by luck.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2027-02-04T17:00:00.000Z"));
+    try {
+      const civilDateFor = async (timezone: string) => {
+        serializeBaziToStructuredTextMock.mockClear();
+        serializeBaziToCompactJsonMock.mockClear();
+        const response = await POST(signedRequest({ ...requestBody, timezone }));
+        expect(response.status).toBe(200);
+
+        const options = serializeBaziToStructuredTextMock.mock.calls.at(-1)?.[1] as { referenceDate?: Date };
+        expect(options?.referenceDate).toBeInstanceOf(Date);
+        // Both serializers must describe the same instant.
+        expect(serializeBaziToCompactJsonMock.mock.calls.at(-1)?.[1]).toEqual(options);
+        return [
+          options.referenceDate?.getFullYear(),
+          (options.referenceDate?.getMonth() ?? 0) + 1,
+          options.referenceDate?.getDate(),
+        ];
+      };
+
+      expect(await civilDateFor("Asia/Shanghai")).toEqual([2027, 2, 5]);
+      expect(await civilDateFor("America/New_York")).toEqual([2027, 2, 4]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps the chart fingerprint time-independent", async () => {
+    // The fingerprint identifies the chart; the cache entry is keyed by the
+    // fingerprint *and* the reference day, so a prediction generated while the
+    // payload said 丙午 is never replayed after the payload would say 丁未.
+    const first = await POST(signedRequest());
+    const firstBody = await first.json();
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2027-08-01T04:00:00.000Z"));
+    try {
+      const second = await POST(signedRequest());
+      const secondBody = await second.json();
+
+      expect(secondBody.chart_fingerprint).toBe(firstBody.chart_fingerprint);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reports a failed rule-release lookup instead of silently dropping the context", async () => {
+    // The rule release only decorates the prompt, so a lookup failure must not
+    // fail the prediction. But a silently dropped release is indistinguishable
+    // from a deliberate content change, so it has to leave a trace.
+    getActiveResearchRuleReleaseMock.mockRejectedValueOnce(new Error("rules store unreachable"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const response = await POST(signedRequest());
+
+      expect(response.status).toBe(200);
+      const reported = errorSpy.mock.calls.map((call) => String(call[0]));
+      expect(reported.some((line) => line.startsWith("[bazi-personality]"))).toBe(true);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
 });

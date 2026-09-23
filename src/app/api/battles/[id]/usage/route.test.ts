@@ -9,8 +9,16 @@ vi.mock("@/lib/agent/account-subject", () => ({ AccountSubjectError:class extend
 vi.mock("@/lib/battle/repository", () => ({ getBattle:vi.fn(async()=>({ id:"battle" })) }));
 vi.mock("@/lib/battle/extended-repository", () => ({ getArchonProgress:vi.fn() }));
 vi.mock("@/lib/battle/product-state", () => ({ beginUsageOperation:mocks.begin,finishUsageOperation:mocks.finish,failUsageOperation:mocks.fail,markUsageOperationCharged:mocks.markCharged,saveModuleState:mocks.saveModule,setUsageOperationReservation:mocks.setReservation,hashSnapshot:vi.fn(()=>"payload-hash") }));
-vi.mock("@/lib/platform/server", () => ({ AGENT_PLAN_CODE:"agent",readBearerToken:vi.fn(()=>"token"),readCookieValue:vi.fn(()=>""),readPlatformCookieHeader:vi.fn(()=>""),fetchPlatformGate:mocks.gate,reservePlatformUsage:mocks.reserve,commitPlatformUsage:mocks.commit,releasePlatformUsage:mocks.release }));
+// The real error class is passed through: `commitUsageSettling` distinguishes a
+// settled reservation from a transient failure with `instanceof`, so a stub class
+// would make the settled branch unreachable and the test below would pass for the
+// wrong reason.
+vi.mock("@/lib/platform/server", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/platform/server")>("@/lib/platform/server");
+  return { AGENT_PLAN_CODE:"agent",PlatformServerRequestError:actual.PlatformServerRequestError,readBearerToken:vi.fn(()=>"token"),readCookieValue:vi.fn(()=>""),readPlatformCookieHeader:vi.fn(()=>""),fetchPlatformGate:mocks.gate,reservePlatformUsage:mocks.reserve,commitPlatformUsage:mocks.commit,releasePlatformUsage:mocks.release };
+});
 
+import { PlatformServerRequestError } from "@/lib/platform/server";
 import { POST } from "./route";
 
 const battleId = "11111111-1111-4111-8111-111111111111";
@@ -56,5 +64,30 @@ describe("paid battle module operation recovery", () => {
     expect(response.status).toBe(500);
     expect(mocks.release).not.toHaveBeenCalled();
     expect(mocks.fail).not.toHaveBeenCalled();
+  });
+
+  // The same defect as W in the AI handler, reached through a different route: the
+  // stored reservation is resumed, the platform answers its one terminal 409
+  // because the earlier attempt's commit already landed, and the operation is
+  // stuck — charged, with the module state already saved, and unreachable forever
+  // because every retry re-commits the same reservation.
+  it("completes the operation when the platform reports the reservation already settled", async () => {
+    mocks.begin.mockResolvedValue({ operationId:"op-1",status:"pending",usage:null,reservationId:"reservation-1",errorMessage:null,reused:true });
+    mocks.commit.mockRejectedValue(new PlatformServerRequestError(409,"usage_reservation_expired","本次分析预留已过期，请重新发起。"));
+    const errorSpy = vi.spyOn(console,"error").mockImplementation(()=>{});
+    try {
+      const response = await POST(request(),context);
+      expect(response.status).toBe(200);
+      expect(mocks.commit).toHaveBeenCalledOnce();
+      expect(mocks.markCharged).toHaveBeenCalledOnce();
+      expect(mocks.finish).toHaveBeenCalledOnce();
+      // The reservation is settled: it must not be refunded, and the operation must
+      // not be marked failed.
+      expect(mocks.release).not.toHaveBeenCalled();
+      expect(mocks.fail).not.toHaveBeenCalled();
+      expect(errorSpy.mock.calls.map((call)=>String(call[0])).some((line)=>line.startsWith("[battle-usage]"))).toBe(true);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

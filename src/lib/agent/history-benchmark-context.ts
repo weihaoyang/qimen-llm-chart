@@ -33,6 +33,27 @@ const targetYearFrom = (question: string) => {
 const toGender = (value: string | undefined): Gender =>
   value === "女" || value?.toLowerCase() === "female" ? "female" : "male";
 
+/**
+ * The 流年 of a calendar year is the 干支 year that contains it. Both boundary
+ * conventions this code can use — 立春 (`getYearInGanZhiExact`) and 农历春节
+ * (`getYearInGanZhi`) — switch in late January or early February, so any instant
+ * from March to December identifies that year's 干支 unambiguously. July is used
+ * as a plain mid-year representative.
+ *
+ * Do NOT move this into January: an early-January instant still belongs to the
+ * *previous* 干支 year and would silently shift every 流年 by one.
+ *
+ * Built from local date components on purpose. Every consumer reads the instant
+ * back with the local accessors (`getFullYear` / `getMonth` / `getDate`), so a
+ * `Date.UTC` instant would read back as June 30 on any server west of UTC and
+ * make the emitted `referenceDate` — and therefore the benchmark payload —
+ * depend on where the server happens to run.
+ */
+const BENCHMARK_REFERENCE_MONTH = 6; // July, 0-based
+const BENCHMARK_REFERENCE_DAY = 1;
+const benchmarkReferenceDate = (year: number) =>
+  new Date(year, BENCHMARK_REFERENCE_MONTH, BENCHMARK_REFERENCE_DAY);
+
 const BRANCH_RELATIONS = [
   ["六合", ["子丑", "寅亥", "卯戌", "辰酉", "巳申", "午未"]],
   ["六冲", ["子午", "丑未", "寅申", "卯酉", "辰戌", "巳亥"]],
@@ -81,7 +102,7 @@ export const buildHistoricalBenchmarkContext = ({
     ...(targetYear ? [targetYear] : []),
     ...suppliedCandidateYears.filter((year) => Number.isInteger(year) && year >= 1800 && year <= 2200),
   ])].sort((left, right) => left - right);
-  const referenceDate = targetYear ? new Date(Date.UTC(targetYear, 6, 1)) : undefined;
+  const referenceDate = targetYear ? benchmarkReferenceDate(targetYear) : undefined;
   const bazi = buildBaziChartFromProfile(profile);
   const ziwei = buildZiweiChartFromProfile(profile);
   const baziOptions = referenceDate ? { referenceDate } : undefined;
@@ -90,7 +111,7 @@ export const buildHistoricalBenchmarkContext = ({
   const ziweiText = serializeZiweiToStructuredText(ziwei);
   const ziweiJson = JSON.parse(serializeZiweiToCompactJson(ziwei));
   const timingSlices = candidateYears.map((year) => {
-    const timing = buildBaziRelationSummary(bazi, { referenceDate: new Date(Date.UTC(year, 6, 1)) }).timing;
+    const timing = buildBaziRelationSummary(bazi, { referenceDate: benchmarkReferenceDate(year) }).timing;
     const age = year - birth.year + 1;
     const ziweiDecadal = ziwei.raw.palaces.find((palace) => age >= palace.decadal.range[0] && age <= palace.decadal.range[1]);
     return {

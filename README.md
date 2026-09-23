@@ -83,6 +83,42 @@ npm test
 npm run build
 ```
 
+`npm test` 在 **PGlite**（编译到 WASM 的 Postgres）上跑真实的迁移与真实的
+repository 代码，无需本机数据库。它验的是**语义**：cast 是否写对了列类型、
+`jsonb` / `timestamptz` 存进去的值是否正确、约束是否真的拒绝非法写入。
+
+PGlite 只有一条连接，因此**测不了并发**：`FOR UPDATE` 永不争用。并发不变量
+（claim 的 compare-and-set 只有一个赢家、战局行锁让写者排队）单独放在
+`src/lib/db/concurrency.test.ts`，需要一个真实的多连接服务器：
+
+```bash
+QMDJ_TEST_REAL_DATABASE_URL="postgresql://user@127.0.0.1:5432/db" npm run test:concurrency
+```
+
+⚠️ 该套件会 **drop 并重建 `public` schema**（从迁移文件重放），只能指向一个
+允许被销毁的数据库。未设置该变量时整套跳过，`npm test` 不受影响。
+
+机器上若已装 PostgreSQL，可以用它自己的二进制起一个**一次性集群**，不要指向
+任何已有实例（那个可能有真实数据、也可能需要密码）：
+
+```bash
+export PATH="/c/Program Files/PostgreSQL/17/bin:$PATH"
+PGROOT="$HOME/.workbuddy-ai/tmp/pg17"
+initdb -D "$PGROOT/data" -U qmdj --auth=trust --encoding=UTF8 --locale=C
+printf "listen_addresses = '127.0.0.1'\nport = 55433\n" >> "$PGROOT/data/postgresql.conf"
+postgres -D "$PGROOT/data" -p 55433 -c listen_addresses=127.0.0.1   # 前台跑，别用 pg_ctl（会 detach）
+createdb -h 127.0.0.1 -p 55433 -U qmdj qmdj
+```
+
+然后用 `QMDJ_TEST_REAL_DATABASE_URL="postgresql://qmdj@127.0.0.1:55433/qmdj" npm run test:concurrency`。
+
+生产构建若与本地 `next dev` 预览同时进行，`next build` 会因为抢占 `.next`
+而报 `EPERM`。用独立输出目录避开：
+
+```bash
+NEXT_DIST_DIR=.next-verify npm run build
+```
+
 统一账户、邀请码兑换、游客凭证与 AI 权益链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
 
 ## 许可证

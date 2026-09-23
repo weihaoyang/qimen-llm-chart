@@ -3,8 +3,14 @@ import type { BaziPillarDetail, NormalizedBaziChart } from "./types";
 
 export type BaziSerializationOptions = {
   /**
-   * Keeps the "current" year deterministic in tests and replayed analyses.
-   * The live workbench leaves this unset and uses the browser's current date.
+   * The instant the "current" 流年 / 大运 fields are derived from.
+   *
+   * Leaving it unset falls back to the wall clock, which makes the payload vary
+   * with time — correct for the browser workbench (the user's clock *is* the
+   * answer to "what year is it now"), but a trap on the server: the same chart
+   * then serializes differently on every call, and the value is read back with
+   * the *server's* local accessors. Server-side callers should resolve the
+   * caller's civil date explicitly and pass it in.
    */
   referenceDate?: Date;
 };

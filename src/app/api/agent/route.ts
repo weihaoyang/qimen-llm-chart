@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { noStore } from "@/lib/http";
+import { errorResponse, UserFacingError } from "@/lib/api-error";
 import { requestAgentAnalysis, streamAgentAnalysis } from "@/lib/agent/chat";
 import {
   commitGuestUsage,
@@ -13,12 +14,20 @@ import {
   AGENT_PLAN_CODE,
   KLINE_PLAN_CODE,
 } from "@/lib/platform/server";
+import { settledCommit, type SettledUsage } from "@/lib/platform/settled-commit";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
 const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research"];
 const MAX_HISTORY_MESSAGES = 18;
-const MAX_STRUCTURED_TEXT_LENGTH = 180_000;
-const MAX_JSON_LENGTH = 260_000;
+// These caps exist to bound the prompt — and therefore the token bill — per
+// charged analysis. The workbench only ever sends the *active* chart (a
+// sequence is never posted), and the largest legitimate payload measured is
+// ~15 KB of structured text plus ~24 KB of JSON for a combined three-chart
+// reading. The previous 180 KB / 260 KB limits were ~12x that and allowed a
+// single request to carry ~110k tokens of attacker-controlled context.
+const MAX_STRUCTURED_TEXT_LENGTH = 60_000;
+const MAX_JSON_LENGTH = 80_000;
+const MAX_TOTAL_PAYLOAD_LENGTH = 120_000;
 const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
 const COOKIE_ALIASES: Record<string, string> = {
   qmdj_platform_access: "ssp_access",
@@ -46,16 +55,6 @@ const readCookieValue = (cookieHeader: string | null, name: string) => {
 const isWorkbenchMode = (value: unknown): value is WorkbenchMode =>
   typeof value === "string" && WORKBENCH_MODES.includes(value as WorkbenchMode);
 
-const isPlatformRequestError = (
-  error: unknown,
-): error is { status: number; reasonCode?: string; message: string } =>
-  typeof error === "object" &&
-  error !== null &&
-  "status" in error &&
-  typeof (error as { status?: unknown }).status === "number" &&
-  "message" in error &&
-  typeof (error as { message?: unknown }).message === "string";
-
 export async function POST(request: Request) {
   let reservationId = "";
   let guestToken = "";
@@ -64,6 +63,10 @@ export async function POST(request: Request) {
   let reservationMode: "account" | "guest" = "guest";
   let platformCookieHeader = "";
   let platformCsrfToken = "";
+  // Set once the model has produced output. From that moment the reservation
+  // must never be released: releasing refunds a user who already holds the
+  // analysis, so a platform hiccup would become a free analysis.
+  let delivered = false;
   try {
     accessToken = readBearerToken(request.headers.get("authorization")) ?? "";
     platformCookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
     if (!accessToken && qmdjAccessToken) accessToken = qmdjAccessToken;
     guestToken = readGuestCheckoutToken(request.headers.get("x-guest-checkout-token")) ?? "";
     if (!accessToken && !platformCookieHeader && !guestToken) {
-      return NextResponse.json(
+      return noStore(
         { error: "请先登录并开通 AI 分析，或使用已完成支付的游客凭证。", reasonCode: "analysis_access_required" },
         { status: 401 },
       );
@@ -92,10 +95,10 @@ export async function POST(request: Request) {
     try {
       body = (await request.json()) as typeof body;
     } catch {
-      return NextResponse.json({ error: "请求体格式无效。" }, { status: 400 });
+      return noStore({ error: "请求体格式无效。" }, { status: 400 });
     }
     if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return NextResponse.json({ error: "请求体格式无效。" }, { status: 400 });
+      return noStore({ error: "请求体格式无效。" }, { status: 400 });
     }
 
     const analysisProduct = body.analysisProduct === undefined || body.analysisProduct === "agent"
@@ -104,53 +107,58 @@ export async function POST(request: Request) {
         ? "kline"
         : null;
     if (!analysisProduct) {
-      return NextResponse.json({ error: "无效的分析产品。" }, { status: 400 });
+      return noStore({ error: "无效的分析产品。" }, { status: 400 });
     }
     // Life K lines are derived from Bazi dayun/liunian, while relationship
     // K lines are derived from Qimen sequences. Keep this boundary explicit
     // so the model can never receive the wrong source contract.
     if (analysisProduct === "kline" && body.mode !== "qimen" && body.mode !== "bazi") {
-      return NextResponse.json({ error: "K 线 AI 仅支持八字人生线或奇门感情线。" }, { status: 400 });
+      return noStore({ error: "K 线 AI 仅支持八字人生线或奇门感情线。" }, { status: 400 });
     }
 
     if (!isWorkbenchMode(body.mode)) {
-      return NextResponse.json({ error: "无效的分析模式。" }, { status: 400 });
+      return noStore({ error: "无效的分析模式。" }, { status: 400 });
     }
 
     if (typeof body.structuredText !== "string" || !body.structuredText.trim()) {
-      return NextResponse.json({ error: "缺少结构化文本。" }, { status: 400 });
+      return noStore({ error: "缺少结构化文本。" }, { status: 400 });
     }
     if (body.structuredText.length > MAX_STRUCTURED_TEXT_LENGTH) {
-      return NextResponse.json({ error: "结构化盘面过大，请缩小序列范围后再分析。" }, { status: 413 });
+      return noStore({ error: "结构化盘面过大，请缩小序列范围后再分析。" }, { status: 413 });
     }
 
     if (typeof body.jsonPayload !== "string" || !body.jsonPayload.trim()) {
-      return NextResponse.json({ error: "缺少 JSON 载荷。" }, { status: 400 });
+      return noStore({ error: "缺少 JSON 载荷。" }, { status: 400 });
     }
     if (body.jsonPayload.length > MAX_JSON_LENGTH) {
-      return NextResponse.json({ error: "JSON 盘面过大，请缩小序列范围后再分析。" }, { status: 413 });
+      return noStore({ error: "JSON 盘面过大，请缩小序列范围后再分析。" }, { status: 413 });
+    }
+    // Bound the prompt as a whole, not just each field independently: the two
+    // limits above could otherwise be combined into one oversized request.
+    if (body.structuredText.length + body.jsonPayload.length > MAX_TOTAL_PAYLOAD_LENGTH) {
+      return noStore({ error: "盘面上下文总量过大，请缩小序列范围后再分析。" }, { status: 413 });
     }
     try {
       JSON.parse(body.jsonPayload);
     } catch {
-      return NextResponse.json({ error: "JSON 载荷格式无效，请重新生成盘面。" }, { status: 400 });
+      return noStore({ error: "JSON 载荷格式无效，请重新生成盘面。" }, { status: 400 });
     }
 
     if (body.question !== undefined && (typeof body.question !== "string" || body.question.length > 300)) {
-      return NextResponse.json({ error: "分析问题不能超过 300 字。" }, { status: 400 });
+      return noStore({ error: "分析问题不能超过 300 字。" }, { status: 400 });
     }
 
     if (body.focus !== undefined && (typeof body.focus !== "string" || body.focus.length > 80)) {
-      return NextResponse.json({ error: "分析方向无效。" }, { status: 400 });
+      return noStore({ error: "分析方向无效。" }, { status: 400 });
     }
 
     if (body.researchTool !== undefined && (typeof body.researchTool !== "string" || body.researchTool.length > 40)) {
-      return NextResponse.json({ error: "研究工具无效。" }, { status: 400 });
+      return noStore({ error: "研究工具无效。" }, { status: 400 });
     }
 
     if (body.history !== undefined) {
       if (!Array.isArray(body.history) || body.history.length > MAX_HISTORY_MESSAGES) {
-        return NextResponse.json({ error: "对话上下文过长，请从当前问题重新开始。" }, { status: 400 });
+        return noStore({ error: "对话上下文过长，请从当前问题重新开始。" }, { status: 400 });
       }
       const invalidHistory = body.history.some(
         (item) =>
@@ -161,7 +169,7 @@ export async function POST(request: Request) {
           ((item as { content: string }).content.length > 4000),
       );
       if (invalidHistory) {
-        return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        return noStore({ error: "对话上下文格式无效。" }, { status: 400 });
       }
     }
 
@@ -171,18 +179,18 @@ export async function POST(request: Request) {
     let transportHistory: Array<{ role: "user" | "assistant"; content: string }> | undefined;
     if (body.messages !== undefined) {
       if (!Array.isArray(body.messages) || body.messages.length > MAX_HISTORY_MESSAGES) {
-        return NextResponse.json({ error: "对话上下文过长，请从当前问题重新开始。" }, { status: 400 });
+        return noStore({ error: "对话上下文过长，请从当前问题重新开始。" }, { status: 400 });
       }
       transportHistory = [];
       for (const item of body.messages) {
-        if (!item || typeof item !== "object") return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        if (!item || typeof item !== "object") return noStore({ error: "对话上下文格式无效。" }, { status: 400 });
         const role = (item as { role?: unknown }).role;
-        if (role !== "user" && role !== "assistant") return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        if (role !== "user" && role !== "assistant") return noStore({ error: "对话上下文格式无效。" }, { status: 400 });
         const parts = (item as { parts?: unknown }).parts;
         const content = Array.isArray(parts)
           ? parts.filter((part): part is { type: "text"; text: string } => Boolean(part) && typeof part === "object" && (part as { type?: unknown }).type === "text" && typeof (part as { text?: unknown }).text === "string").map((part) => part.text).join("")
           : typeof (item as { content?: unknown }).content === "string" ? (item as { content: string }).content : "";
-        if (!content || content.length > 4000) return NextResponse.json({ error: "对话上下文格式无效。" }, { status: 400 });
+        if (!content || content.length > 4000) return noStore({ error: "对话上下文格式无效。" }, { status: 400 });
         transportHistory.push({ role, content });
       }
     }
@@ -194,7 +202,7 @@ export async function POST(request: Request) {
       const accountOptions = accessToken ? undefined : { cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken };
       const gate = await fetchPlatformGate(accessToken || null, accountOptions);
       if (!gate.allowed) {
-        return NextResponse.json(
+        return noStore(
           {
             error: gate.message || "当前账户还没有这项 AI 分析权益。",
             reasonCode: gate.reason_code || "entitlement_gate_blocked",
@@ -211,7 +219,7 @@ export async function POST(request: Request) {
     }
     reservationId = reservation.reservation_id;
     if (!reservationId) {
-      throw new Error("无法预留本次分析。请刷新后重试。");
+      throw new UserFacingError("无法预留本次分析。请刷新后重试。");
     }
 
     const normalizedHistory = transportHistory ?? (Array.isArray(body.history)
@@ -234,49 +242,90 @@ export async function POST(request: Request) {
 
     if (request.headers.get("x-agent-stream") === "1" && analysisProduct === "agent") {
       let streamSettled = false;
-      const release = async () => {
+      // One decision point for the whole stream. The previous split between a
+      // `release` callback and a `commit` callback could mark the stream settled
+      // in `release`, notice the analysis had already been delivered, and return
+      // — which left the reservation dangling forever *and* permanently blocked
+      // `commit`, so who paid was decided by platform reconciliation instead of
+      // by us.
+      //
+      // Reading `delivered` and flipping the flag happen in the same synchronous
+      // block (no `await` in between), so the choice cannot be raced: a delivered
+      // analysis is always committed, an undelivered one is always released.
+      const settle = async () => {
         if (streamSettled || !reservationId) return;
+        const deliveredToClient = delivered;
         streamSettled = true;
-        if (reservationMode === "account") {
-          if (accessToken) await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
-          else await releasePlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
-        } else {
-          await releaseGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+        try {
+          if (reservationMode === "account") {
+            if (deliveredToClient) {
+              // A settled reservation is not a failure to retry — see `settled-commit.ts`.
+              await settledCommit("agent", `reservation ${reservationId}`, () => accessToken
+                ? commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode })
+                : commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken }));
+            } else if (accessToken) {
+              await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
+            } else {
+              await releasePlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
+            }
+          } else if (deliveredToClient) {
+            // The guest commit raises the same terminal 409 as the account one.
+            await settledCommit("agent", `reservation ${reservationId}`, () => commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode }));
+          } else {
+            await releaseGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+          }
+        } finally {
+          // Clearing the id in `finally` is what makes this the *only* settle:
+          // a failed commit must not be retried by a later callback (that would
+          // double-charge) and a failed release must not be retried either. Both
+          // are left for platform reconciliation.
+          reservationId = "";
         }
-        reservationId = "";
-      };
-      const commit = async () => {
-        if (streamSettled || !reservationId) return;
-        streamSettled = true;
-        if (reservationMode === "account") {
-          if (accessToken) await commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
-          else await commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
-        } else {
-          await commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
-        }
-        reservationId = "";
       };
       const result = streamAgentAnalysis(analysisPayload, {
         abortSignal: request.signal,
-        onFinish: commit,
-        onError: async () => { await release(); },
-        onAbort: async () => { await release(); },
+        onChunk: () => { delivered = true; },
+        onFinish: settle,
+        onError: async () => { await settle(); },
+        onAbort: async () => { await settle(); },
       });
       return result.toTextStreamResponse({ headers: { "Cache-Control": "no-cache", "X-Accel-Buffering": "no" } });
     }
 
-    const result = await requestAgentAnalysis(analysisPayload);
-
-    const usage = reservationMode === "account"
+    const commitUsage = () => reservationMode === "account"
       ? accessToken
-        ? await commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode })
-        : await commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken })
-      : await commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+        ? commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode })
+        : commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken })
+      : commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+
+    const result = await requestAgentAnalysis(analysisPayload);
+    // The analysis now exists, so the reservation is no longer releasable.
+    delivered = true;
+
+    // A transient commit failure must not be converted into a refund. Retry
+    // briefly, and if it still fails let the error surface while leaving the
+    // reservation in place for platform-side reconciliation.
+    // `SettledUsage` is in the union because a reservation the platform already
+    // settled resolves to a reconciliation marker rather than a usage summary.
+    let usage: Awaited<ReturnType<typeof commitUsage>> | SettledUsage | null = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        // `settledCommit` resolves the platform's terminal 409 instead of throwing,
+        // so an already-settled reservation neither retries three times nor fails.
+        usage = await settledCommit("agent", `reservation ${reservationId}`, commitUsage);
+        break;
+      } catch (error) {
+        if (attempt === 2) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      }
+    }
     reservationId = "";
 
-    return NextResponse.json({ ...result, usage });
+    return noStore({ ...result, usage });
   } catch (error) {
-    if (reservationId) {
+    // Only release when the analysis was never produced. Releasing after
+    // delivery would refund a user who already received the content.
+    if (reservationId && !delivered) {
       if (reservationMode === "account" && (accessToken || platformCookieHeader)) {
         try {
           if (accessToken) {
@@ -295,17 +344,6 @@ export async function POST(request: Request) {
         }
       }
     }
-    if (isPlatformRequestError(error)) {
-      return NextResponse.json(
-        {
-          error: error.message,
-          reasonCode: error.reasonCode ?? "platform_request_failed",
-        },
-        { status: error.status },
-      );
-    }
-
-    const message = error instanceof Error ? error.message : "AI 分析请求失败。";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(error, "AI 分析请求失败。");
   }
 }

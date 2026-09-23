@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createHash } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
+import { LIST_READ_LIMIT } from "@/lib/db/read-limits";
 import type { AccountSubject } from "@/lib/agent/account-subject";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
@@ -243,6 +244,7 @@ export async function claimRealityEchoReward(subject: AccountSubject, battleId: 
  */
 export async function mutateDecisionBoard(subject: AccountSubject, battleId: string, mutation: DecisionBoardMutation): Promise<DecisionBoardMutationResult | null | "forbidden"> {
   return withTransaction(async (client) => {
+    // authz-exempt: the guard must read the role, not require one — it has to answer "forbidden" for a viewer, return "none" for a stranger, and stamp the comment's authorRole. The write check is the `writable` test below, which runs before any statement touches state.
     const access = await client.query<{ role:string }>(
       `SELECT CASE WHEN b.platform_subject_type=$2 AND b.platform_subject_id=$3 THEN 'owner'
              ELSE COALESCE((SELECT c.role FROM battle_collaborators c WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator} LIMIT 1),'none') END AS role
@@ -402,6 +404,7 @@ export async function createAiJob(subject: AccountSubject, battleId: string, kin
 }
 
 export async function getAiJob(subject: AccountSubject, battleId: string, jobId: string) {
+  // authz-exempt: lazy timeout sweep — the write is time-gated (10 minutes) and idempotent, so any reader would produce the same row; requiring contributor would leave a viewer watching a job that never terminates.
   await query(
     `UPDATE battle_ai_jobs j SET status='timed_out',error_code='job_timed_out',error_message='AI 任务超过最大执行时间，请重新发起。',completed_at=now()
        FROM battle_cases b
@@ -447,7 +450,7 @@ export async function failAiJob(subject: AccountSubject, battleId: string, jobId
 
 
 export async function listMemories(subject: AccountSubject) {
-  const result = await query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`SELECT id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at FROM battle_memory_records WHERE platform_subject_type=$1 AND platform_subject_id=$2 AND consent_status <> 'deleted' ORDER BY updated_at DESC`, owner(subject));
+  const result = await query<{ id:string; battle_id:string|null; title:string; memory_json:unknown; source_json:unknown; consent_status:string; created_at:Date; updated_at:Date }>(`SELECT id,battle_id,title,memory_json,source_json,consent_status,created_at,updated_at FROM battle_memory_records WHERE platform_subject_type=$1 AND platform_subject_id=$2 AND consent_status <> 'deleted' ORDER BY updated_at DESC LIMIT ${LIST_READ_LIMIT}`, owner(subject));
   return result.rows.map((row) => ({ id:row.id, battleId:row.battle_id, title:row.title, memory:parse(row.memory_json), source:parse(row.source_json), consentStatus:row.consent_status, createdAt:row.created_at.toISOString(), updatedAt:row.updated_at.toISOString() }));
 }
 
@@ -494,13 +497,20 @@ export async function saveMemory(subject: AccountSubject, input: { id?:string; b
     // one user's memory can never update another user's row.
     let id = input.id;
     const sourceRecordId = typeof source.recordId === "string" ? source.recordId.trim().slice(0, 160) : "";
+    const sourceType = typeof source.type === "string" ? source.type : "";
     if (!id && sourceRecordId) {
+      // The lookup below cannot serialize two concurrent writers by itself:
+      // both would read no row and each insert its own random UUID, producing
+      // duplicate memories for one source record. Take a transaction-scoped
+      // advisory lock keyed on the same tuple the lookup uses, so retries of one
+      // record are serialized while unrelated writes still proceed in parallel.
+      await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-memory:${subject.subjectType}:${subject.subjectId}:${sourceType}:${sourceRecordId}`]);
       const existing = await client.query<{ id:string }>(
         `SELECT id FROM battle_memory_records
           WHERE platform_subject_type=$1 AND platform_subject_id=$2
             AND source_json->>'type'=$3 AND source_json->>'recordId'=$4
           ORDER BY updated_at DESC LIMIT 1`,
-        [...owner(subject), typeof source.type === "string" ? source.type : "", sourceRecordId],
+        [...owner(subject), sourceType, sourceRecordId],
       );
       id = existing.rows[0]?.id;
     }

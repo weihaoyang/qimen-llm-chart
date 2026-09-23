@@ -19,9 +19,21 @@ describe("GET /api/health", () => {
     expect(query).toHaveBeenCalledWith("SELECT 1 AS healthy");
 
     query.mockRejectedValueOnce(new Error("private database detail"));
-    const unavailableResponse = await GET();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const unavailableResponse = await GET();
 
-    expect(unavailableResponse.status).toBe(503);
-    expect(await unavailableResponse.json()).toEqual({ ok: false, service: "qmdj" });
+      expect(unavailableResponse.status).toBe(503);
+      // The cause stays out of the body — this endpoint is unauthenticated, so a
+      // raw database error would leak content — but it must not be lost either. A
+      // probe that reports "not ready" without ever saying why leaves an operator
+      // with 503s and no way to tell an unreachable database from a wedged process.
+      expect(await unavailableResponse.json()).toEqual({ ok: false, service: "qmdj" });
+      const logged = errorSpy.mock.calls.map((call) => call.map(String).join(" "));
+      expect(logged.some((line) => line.includes("[health]"))).toBe(true);
+      expect(logged.some((line) => line.includes("private database detail"))).toBe(true);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

@@ -1,7 +1,26 @@
 import type { BattleConstraint, BattleFact, BattleInput, GravityLine, InventoryItem, Junction, Move, MoveKind, OppositionScan, ResourceSnapshot } from "./types";
 
 const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max, value));
-const daysBetween = (from: Date, to: Date) => Math.max(0, (to.getTime() - from.getTime()) / 86_400_000);
+
+/**
+ * Deadlines are calendar days, but `new Date("2026-10-01")` resolves to UTC
+ * midnight while subtracting two instants leaves a fractional remainder that
+ * depends on the host's UTC offset. That made the 30/14-day urgency thresholds
+ * fire a day early or late and rendered "tomorrow" as 0.42 days. Compare
+ * calendar days instead so the result is offset-independent.
+ */
+const calendarDaysBetween = (from: Date, to: Date) => {
+  const fromDay = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+  const toDay = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  return Math.max(0, Math.round((toDay - fromDay) / 86_400_000));
+};
+
+/** Parses a deadline, returning null for absent or unparseable values. */
+const parseDeadline = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+};
 
 export const classifyRealityInput = (value: string, source: BattleFact["source"] = "user"): BattleFact["kind"] => {
   const normalized = value.trim();
@@ -59,7 +78,8 @@ export const buildDefaultGravityLine = (input: BattleInput, now = new Date()): G
   const hardConstraints = (input.constraints ?? []).filter((constraint) => constraint.hard).map((constraint) => constraint.label).slice(0, 5);
   const resourceSummary = summarizeResources(input.resourceSnapshot ?? {}, input.inventory ?? []);
   const runway = calculateRunwayDays(input.resourceSnapshot);
-  const deadlineDays = input.hardDeadline ? daysBetween(now, new Date(input.hardDeadline)) : null;
+  const deadline = parseDeadline(input.hardDeadline);
+  const deadlineDays = deadline ? calendarDaysBetween(now, deadline) : null;
   const assumptions = [
     "不新增关键资源，不改变外部规则",
     "继续采用当前主路径和现有执行节奏",
@@ -89,13 +109,13 @@ const hasConstraint = (constraints: BattleConstraint[], kinds: BattleConstraint[
 export const detectJunctions = (input: BattleInput, now = new Date()): Junction[] => {
   const constraints = input.constraints ?? [];
   const inventory = input.inventory ?? [];
-  const deadline = input.hardDeadline ? new Date(input.hardDeadline) : null;
+  const deadline = parseDeadline(input.hardDeadline);
   const runway = calculateRunwayDays(input.resourceSnapshot);
   const result: Junction[] = [];
-  if (deadline && Number.isFinite(deadline.getTime())) {
-    const days = daysBetween(now, deadline);
+  if (deadline) {
+    const days = calendarDaysBetween(now, deadline);
     if (days <= 30) {
-      result.push({ id: "deadline", battleId: "", title: "硬期限交叉点", description: `距离必须决策只剩 ${Math.ceil(days)} 天。等待会直接减少可行路径。`, windowStart: now.toISOString(), windowEnd: deadline.toISOString(), halfLifeAt: new Date(now.getTime() + Math.max(0, days * 0.35) * 86_400_000).toISOString(), coreVariable: "在期限前完成一次能改变信息或资源的动作", defaultConsequence: "继续观望将进入更窄的默认路径", urgency: days <= 7 ? 5 : 4, leverage: 4, irreversibility: 4, status: "open", source: { type: "deadline", days } });
+      result.push({ id: "deadline", battleId: "", title: "硬期限交叉点", description: `距离必须决策只剩 ${days} 天。等待会直接减少可行路径。`, windowStart: now.toISOString(), windowEnd: deadline.toISOString(), halfLifeAt: new Date(now.getTime() + Math.max(0, days * 0.35) * 86_400_000).toISOString(), coreVariable: "在期限前完成一次能改变信息或资源的动作", defaultConsequence: "继续观望将进入更窄的默认路径", urgency: days <= 7 ? 5 : 4, leverage: 4, irreversibility: 4, status: "open", source: { type: "deadline", days } });
     }
   }
   if (runway !== null && runway <= 45) {

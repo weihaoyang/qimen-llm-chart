@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { NextResponse } from "next/server";
+import { noStore } from "@/lib/http";
+import { errorResponse } from "@/lib/api-error";
 import { activateResearchRuleRelease } from "@/lib/bazi/research-rule-repository";
 
 const verify = (request: Request, rawBody: string) => {
@@ -14,13 +15,15 @@ const verify = (request: Request, rawBody: string) => {
 
 export async function POST(request: Request, context: { params: Promise<{ ruleHash: string }> }) {
   const rawBody = await request.text();
-  if (!verify(request, rawBody)) return NextResponse.json({ error: "无效的研究规则服务签名。" }, { status: 401 });
+  if (!verify(request, rawBody)) return noStore({ error: "无效的研究规则服务签名。" }, { status: 401 });
   const { ruleHash } = await context.params;
-  if (!/^[a-f0-9]{64}$/.test(ruleHash)) return NextResponse.json({ error: "规则哈希无效。" }, { status: 400 });
+  if (!/^[a-f0-9]{64}$/.test(ruleHash)) return noStore({ error: "规则哈希无效。" }, { status: 400 });
   try {
     const release = await activateResearchRuleRelease(ruleHash);
-    return NextResponse.json({ receipt_contract_version: "qmdj-research-receipt-v1", status: release.status, release });
+    return noStore({ receipt_contract_version: "qmdj-research-receipt-v1", status: release.status, release });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "无法激活研究规则。" }, { status: 409 });
+    // "没有该暂存研究规则。" / "已退役规则不可重新激活。" are deliberate and
+    // still reach the caller; a database failure now does not.
+    return errorResponse(error, "无法激活研究规则。", 409);
   }
 }

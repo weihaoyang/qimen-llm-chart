@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
-import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
+import { errorResponse } from "@/lib/api-error";
+import { noStore } from "@/lib/http";
+import { requireAccountSubject } from "@/lib/agent/account-subject";
 import { asRecord, asText, isUuid } from "@/lib/battle/input";
 import { getWorldPulseProject, saveWorldPulseProject } from "@/lib/scenarios/world-pulse-project-repository";
 
@@ -23,35 +24,33 @@ function validateProject(project: Record<string, unknown>) {
 export async function GET(request: Request, context: Context) {
   try {
     const { id } = await context.params;
-    if (!isUuid(id)) return NextResponse.json({ error: "战局标识无效。" }, { status: 400 });
+    if (!isUuid(id)) return noStore({ error: "战局标识无效。" }, { status: 400 });
     const url = new URL(request.url);
     const projectKey = url.searchParams.get("projectKey") || "default";
-    if (!projectKeyPattern.test(projectKey)) return NextResponse.json({ error: "场景项目标识无效。" }, { status: 400 });
+    if (!projectKeyPattern.test(projectKey)) return noStore({ error: "场景项目标识无效。" }, { status: 400 });
     const result = await getWorldPulseProject(await requireAccountSubject(request), id, projectKey);
-    return result ? NextResponse.json({ project: result.project }) : NextResponse.json({ error: "战局不存在或无权访问。" }, { status: 404 });
+    return result ? noStore({ project: result.project }) : noStore({ error: "战局不存在或无权访问。" }, { status: 404 });
   } catch (error) {
-    return error instanceof AccountSubjectError
-      ? NextResponse.json({ error: error.message }, { status: error.status })
-      : NextResponse.json({ error: "读取世界脉冲场景项目失败。" }, { status: 500 });
+    return errorResponse(error, "读取世界脉冲场景项目失败。");
   }
 }
 
 export async function PUT(request: Request, context: Context) {
   try {
     const { id } = await context.params;
-    if (!isUuid(id)) return NextResponse.json({ error: "战局标识无效。" }, { status: 400 });
+    if (!isUuid(id)) return noStore({ error: "战局标识无效。" }, { status: 400 });
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
     const project = asRecord(body?.project);
     const projectKey = asText(body?.projectKey, 64) || "default";
     const idempotencyKey = asText(body?.idempotencyKey, 160) || asText(request.headers.get("idempotency-key"), 160);
     const expectedVersion = body?.expectedVersion === undefined ? undefined : Number(body.expectedVersion);
     if (!project || !projectKeyPattern.test(projectKey) || !idempotencyKey || (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0))) {
-      return NextResponse.json({ error: "场景项目保存参数无效。" }, { status: 400 });
+      return noStore({ error: "场景项目保存参数无效。" }, { status: 400 });
     }
     const serialized = JSON.stringify(project);
-    if (serialized.length > 1_000_000) return NextResponse.json({ error: "场景项目超过 1MB 上限。", reasonCode: "payload_too_large" }, { status: 413 });
+    if (serialized.length > 1_000_000) return noStore({ error: "场景项目超过 1MB 上限。", reasonCode: "payload_too_large" }, { status: 413 });
     const validationError = validateProject(project);
-    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
+    if (validationError) return noStore({ error: validationError }, { status: 400 });
     const saved = await saveWorldPulseProject(await requireAccountSubject(request), id, {
       projectKey,
       schemaVersion: Number(project.version),
@@ -59,13 +58,11 @@ export async function PUT(request: Request, context: Context) {
       idempotencyKey,
       expectedVersion,
     });
-    if (!saved) return NextResponse.json({ error: "战局不存在或无写入权限。" }, { status: 403 });
-    if (saved === "idempotency_conflict") return NextResponse.json({ error: "幂等键已绑定到不同场景项目。", reasonCode: saved }, { status: 409 });
-    if (saved === "version_conflict") return NextResponse.json({ error: "场景项目已在其他窗口更新，请刷新后重试。", reasonCode: saved }, { status: 409 });
-    return NextResponse.json({ project: saved }, { status: saved.version === 1 && !saved.reused ? 201 : 200 });
+    if (!saved) return noStore({ error: "战局不存在或无写入权限。" }, { status: 403 });
+    if (saved === "idempotency_conflict") return noStore({ error: "幂等键已绑定到不同场景项目。", reasonCode: saved }, { status: 409 });
+    if (saved === "version_conflict") return noStore({ error: "场景项目已在其他窗口更新，请刷新后重试。", reasonCode: saved }, { status: 409 });
+    return noStore({ project: saved }, { status: saved.version === 1 && !saved.reused ? 201 : 200 });
   } catch (error) {
-    return error instanceof AccountSubjectError
-      ? NextResponse.json({ error: error.message }, { status: error.status })
-      : NextResponse.json({ error: "保存世界脉冲场景项目失败。" }, { status: 500 });
+    return errorResponse(error, "保存世界脉冲场景项目失败。");
   }
 }

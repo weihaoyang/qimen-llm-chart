@@ -5,6 +5,25 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    rules: {
+      // A leading underscore is this codebase's marker for "intentionally not
+      // used" (e.g. `_request` on handlers that take no request, or a parameter
+      // kept as part of a contract). Without this, such a parameter only escapes
+      // the default `args: "after-used"` rule when a later parameter happens to
+      // be used, so the same convention warns or not depending on argument
+      // position.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -16,11 +35,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "outputs/**",
     "build/**",
-    // God's Eye View is a separately-built static renderer mounted under
-    // public/. Its minified Vite output is not qmdj source and should not be
-    // parsed by the application lint pass.
-    "gods-eye-view/**",
-    "public/gods-eye-view/**",
     "node_modules/**",
     ".superpowers/**",
     "next-env.d.ts",

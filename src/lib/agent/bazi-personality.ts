@@ -1,4 +1,7 @@
+import { UserFacingError } from "@/lib/user-facing-error";
 import {
+  AGENT_REQUEST_TIMEOUT_MS,
+  BAZI_PERSONALITY_MAX_TOKENS,
   buildAgentMessages,
   extractAssistantText,
   getAgentConfig,
@@ -68,25 +71,27 @@ export const requestBaziPersonalityPrediction = async (
 
   const response = await fetchImpl(endpoint, {
     method: "POST",
+    signal: AbortSignal.timeout(AGENT_REQUEST_TIMEOUT_MS),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${config.apiKey}`,
     },
     body: JSON.stringify({
       model: config.model,
+      max_tokens: BAZI_PERSONALITY_MAX_TOKENS,
       temperature: 0,
       messages,
     }),
   });
 
   if (!response.ok) {
-    throw new Error("八字 Agent 暂时不可用，请稍后再试。");
+    throw new UserFacingError("八字 Agent 暂时不可用，请稍后再试。");
   }
 
   const data = (await response.json()) as ChatCompletionResponse;
   const content = extractAssistantText(data.choices?.[0]?.message?.content);
   if (!content) {
-    throw new Error("八字 Agent 返回成功，但没有可解析的结构化内容。");
+    throw new UserFacingError("八字 Agent 返回成功，但没有可解析的结构化内容。");
   }
 
   return {

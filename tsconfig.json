@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-  "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,8 +22,36 @@
         "name": "next"
       }
     ],
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "*.ts", "*.mts", ".next-zhiji-check/types/**/*.ts", ".next-zhiji-check/dev/types/**/*.ts"],
-  "exclude": ["node_modules", "vendor", "docs"]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "*.ts",
+    "*.mts",
+    ".next-zhiji-check/types/**/*.ts",
+    ".next-zhiji-check/dev/types/**/*.ts",
+    ".next-verify-kline2/types/**/*.ts",
+    ".next-verify-kline2/dev/types/**/*.ts",
+    ".next-verify-kline3/types/**/*.ts",
+    ".next-verify-kline3/dev/types/**/*.ts",
+    ".next-verify-kline4/types/**/*.ts",
+    ".next-verify-kline4/dev/types/**/*.ts",
+    ".next-verify-kline5/types/**/*.ts",
+    ".next-verify-kline5/dev/types/**/*.ts",
+    ".next-verify-kline6/types/**/*.ts",
+    ".next-verify-kline6/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "vendor",
+    "docs"
+  ]
 }

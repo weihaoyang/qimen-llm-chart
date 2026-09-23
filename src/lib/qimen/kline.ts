@@ -34,8 +34,63 @@ export type KlineSeries = {
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
 
+/**
+ * Heuristic weights for the relationship (感情线) score.
+ *
+ * These are product heuristics, not quantities taken from any canonical text —
+ * they were tuned so that a 乙庚 interaction dominates the axis term while
+ * structural background (宫位格局) only modulates it. They are named and grouped
+ * here so that a tuning change is a single reviewable edit instead of a search
+ * for unexplained literals, and so that the relative ordering of the weights is
+ * visible: `samePalace` > `branchPair`/`branchClash` > minor signals.
+ *
+ * `profile.axis` / `profile.context` / `profile.outlet` (see
+ * `relationshipProfiles`) scale these per time scale, so the numbers below are
+ * the "unit" magnitudes before that scaling.
+ */
+const RELATIONSHIP_WEIGHTS = {
+  /** 乙庚同宫 — the two axes of the relationship sit in one palace. */
+  samePalace: 14,
+  /** 乙庚宫地支相合 — the branches of the two palaces combine. */
+  branchPair: 5,
+  /** 乙庚宫地支相冲 — the branches clash. */
+  branchClash: -6,
+  /** 宫位空亡 — the palace is void; current conditions need real-world retesting. */
+  voidness: -4,
+  /** 门迫 — the gate is pressed; advancing costs more. */
+  gatePressure: -3,
+  /** 驿马 — the condition moves faster. */
+  postHorse: 2,
+  /** 五不遇时 — keep room for error correction. */
+  wuBuYuShi: -2,
+  /** 值使宫与乙庚宫同宫 — the outlet *is* the axis palace. */
+  outletSamePalace: 4,
+  /** 值使与乙庚宫的五行关系被折算的系数（出口加权内部的比例）。 */
+  outletRelationFactor: 0.55,
+  /** 值使宫格局对出口可执行性的折算系数。 */
+  outletStructureFactor: 0.6,
+} as const;
+
 const includesAny = (value: unknown, terms: readonly string[]) =>
   typeof value === "string" && terms.some((term) => value.includes(term));
+
+/**
+ * 十干克应 has exactly three relation fields, each an object whose `relation`
+ * ("比和"/"生我"/"克我"/"我生"/"我克"/"无") and free-text `description` carry the
+ * meaning. Reading those two fields explicitly — rather than `JSON.stringify`-ing
+ * the object and substring-searching the result — keeps the signal tied to the
+ * values: a serialized object also carries its keys and `params`, so any future
+ * key or parameter name containing 生/合/克/刑 would silently make every palace
+ * "有生合" regardless of the actual relation.
+ */
+const tenStemRelationText = (palace: NormalizedQimenChart["raw"]["palaces"][number]) => {
+  const response = palace.tenStemResponse;
+  if (!response) return "";
+  return [response.heavenlyToEarthly, response.timeToDay, response.heavenlyToDay]
+    .flatMap((value) => (value ? [value.relation, value.description] : []))
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
+};
 
 const palaceLabel = (chart: NormalizedQimenChart, position: number) => {
   const palace = chart.palaceMap[position];
@@ -95,7 +150,7 @@ const palaceStructureSignal = (palace: NormalizedQimenChart["raw"]["palaces"][nu
   const inauspicious = palace.inauspiciousPatterns?.length ?? 0;
   if (auspicious) { score += Math.min(2, auspicious); reasons.push(`吉格${auspicious}`); }
   if (inauspicious) { score -= Math.min(2, inauspicious); reasons.push(`凶格${inauspicious}`); }
-  const stemResponse = JSON.stringify(palace.tenStemResponse ?? {});
+  const stemResponse = tenStemRelationText(palace);
   if (includesAny(stemResponse, ["生", "合"])) { score += 1; reasons.push("干支关系有生合"); }
   if (includesAny(stemResponse, ["克", "刑"])) { score -= 1; reasons.push("干支关系有克刑"); }
   return { score, reasons };
@@ -119,7 +174,7 @@ const relationshipScore = (chart: NormalizedQimenChart, scale: KlineScale) => {
   } else {
     evidence.push(`乙在${palaceLabel(chart, yi.position)}，庚在${palaceLabel(chart, geng.position)}。`);
     if (yi.position === geng.position) {
-      score += 14 * profile.axis;
+      score += RELATIONSHIP_WEIGHTS.samePalace * profile.axis;
       evidence.push("乙庚同宫，关系主轴出现直接接触。");
     } else {
       const interaction = palaceRelation(yi.position, geng.position);
@@ -131,10 +186,10 @@ const relationshipScore = (chart: NormalizedQimenChart, scale: KlineScale) => {
         const pair = `${yiBranch}${gengBranch}`;
         const reverse = `${gengBranch}${yiBranch}`;
         if (branchPairs.has(pair) || branchPairs.has(reverse)) {
-          score += 5 * profile.axis;
+          score += RELATIONSHIP_WEIGHTS.branchPair * profile.axis;
           evidence.push(`乙庚宫地支${yiBranch}${gengBranch}相合，互动有回旋余地。`);
         } else if (branchClashes.has(pair) || branchClashes.has(reverse)) {
-          score -= 6 * profile.axis;
+          score += RELATIONSHIP_WEIGHTS.branchClash * profile.axis;
           evidence.push(`乙庚宫地支${yiBranch}${gengBranch}相冲，互动节奏易拉扯。`);
         }
       }
@@ -148,11 +203,11 @@ const relationshipScore = (chart: NormalizedQimenChart, scale: KlineScale) => {
         evidence.push(`${role}宫${palace.gate ?? ""}／${palace.star ?? ""}／${palace.deity ?? ""}${local > 0 ? "提供互动支持" : "提示关系摩擦"}。`);
       }
       if (palace.voidness?.hasVoidness) {
-        score -= 4 * profile.axis;
+        score += RELATIONSHIP_WEIGHTS.voidness * profile.axis;
         evidence.push(`${role}宫空亡，眼前条件须以现实回应复核。`);
       }
       if (includesAny(palace.gatePressure, ["门迫", "迫"])) {
-        score -= 3 * profile.axis;
+        score += RELATIONSHIP_WEIGHTS.gatePressure * profile.axis;
         evidence.push(`${role}宫门迫，推进成本上升。`);
       }
       const structure = palaceStructureSignal(palace);
@@ -169,13 +224,13 @@ const relationshipScore = (chart: NormalizedQimenChart, scale: KlineScale) => {
     evidence.push(`值使${chart.raw.zhiShi.gate ?? zhiShi.gate ?? ""}在${palaceLabel(chart, zhiShi.position)}，作为当前互动出口${outlet > 0 ? "可沟通、可推进" : outlet < 0 ? "宜先降速避险" : "偏中性"}。`);
     [yi, geng].filter(Boolean).forEach((palace) => {
       const link = palaceRelation(zhiShi.position, palace!.position);
-      score += link.score * 0.55 * profile.outlet;
+      score += link.score * RELATIONSHIP_WEIGHTS.outletRelationFactor * profile.outlet;
       evidence.push(`值使宫与${palace === yi ? "乙" : "庚"}宫${link.label}。`);
-      if (zhiShi.position === palace!.position) score += 4 * profile.outlet;
+      if (zhiShi.position === palace!.position) score += RELATIONSHIP_WEIGHTS.outletSamePalace * profile.outlet;
     });
     const outletStructure = palaceStructureSignal(zhiShi);
     if (outletStructure.score !== 0) {
-      score += outletStructure.score * 0.6 * profile.outlet;
+      score += outletStructure.score * RELATIONSHIP_WEIGHTS.outletStructureFactor * profile.outlet;
       evidence.push(`值使宫${outletStructure.reasons.join("、")}，影响互动出口的可执行性。`);
     }
   } else {
@@ -188,11 +243,11 @@ const relationshipScore = (chart: NormalizedQimenChart, scale: KlineScale) => {
     evidence.push(`值符在${palaceLabel(chart, zhiFu.position)}，${context > 0 ? "主导背景偏支持" : context < 0 ? "主导背景提示压力" : "主导背景中性"}。`);
   }
   if (yi && geng && (yi.isPostHorse || geng.isPostHorse)) {
-    score += 2 * profile.axis;
+    score += RELATIONSHIP_WEIGHTS.postHorse * profile.axis;
     evidence.push("乙或庚临驿马，关系条件变化加快，宜用现实行动验证。");
   }
   if (chart.raw.specialPatterns?.wuBuYuShi) {
-    score -= 2 * profile.context;
+    score += RELATIONSHIP_WEIGHTS.wuBuYuShi * profile.context;
     evidence.push("见五不遇时，沟通与行动宜预留纠错空间。");
   }
 

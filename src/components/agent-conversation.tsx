@@ -46,7 +46,7 @@ export function AgentConversation(props: InspectorPanelProps) {
     <header className={styles.head}><div><small>知几 / DIALOGUE</small><h3>{props.agentTitle ?? "盘面解读"}</h3></div><span>{props.agentUsageAvailable>0 ? `余 ${props.agentUsageAvailable} 轮` : "未开通"}</span></header>
     <div className={styles.context}><span>◈ {({qimen:"奇门",bazi:"八字",ziwei:"紫微",combined:"三盘联合",research:"术数研究"})[props.mode]}盘面上下文</span><small>{props.structuredText ? "已载入" : "等待排盘"}</small></div>
     <ThreadPrimitive.Viewport className={styles.viewport}>
-      <ThreadPrimitive.If empty><div className={styles.welcome}><span>从你的问题开始。</span><p>告诉我眼下的选择，我们结合盘面逐步核对。</p><div>{props.agentAngles.slice(0,4).map(a=><button key={a.label} onClick={()=>runtime.thread.composer.setText(a.question)}>{a.label} ↗</button>)}</div></div></ThreadPrimitive.If>
+      <ThreadPrimitive.If empty><div className={styles.welcome}><span>从你的问题开始。</span><p>告诉我眼下的选择，我们结合盘面逐步核对。</p><div>{props.agentAngles.slice(0,4).map(a=><button type="button" key={a.label} onClick={()=>runtime.thread.composer.setText(a.question)}>{a.label} ↗</button>)}</div></div></ThreadPrimitive.If>
       <ThreadPrimitive.Messages components={{UserMessage,AssistantMessage}} />
       <ThreadPrimitive.If running><p className={styles.generating} role="status">● 正在生成回答…</p></ThreadPrimitive.If>
       <ThreadPrimitive.ScrollToBottom className={styles.jump}>回到最新 ↓</ThreadPrimitive.ScrollToBottom>

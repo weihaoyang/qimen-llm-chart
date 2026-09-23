@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
-import "../../../shengtian-reference/index.css";
-import { BillingResultView } from "@/shengtian-reference/components/BillingResultView";
+import "@/app/platform-views.css";
+import { BillingResultView } from "@/components/billing-result-view";
 import { isPaipanHost } from "@/lib/product-host";
 import { BillingResultClient } from "./billing-result-client";
 

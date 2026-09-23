@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
 import type { AccountSubject } from "@/lib/agent/account-subject";
-import { SCENARIO_CATALOG_VERSION, type ScenarioSeed } from "./catalog";
+import { SCENARIO_CATALOG_VERSION, getScenario, type ScenarioSeed } from "./catalog";
 import { getOfficialScenario } from "@/lib/catalog/official-repository";
 import { strategyTemplatesForScenario } from "./strategy-templates";
+import { reportSwallowedError } from "@/lib/internal-log";
+import { buildMultiRowInsert } from "@/lib/db/batch";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 
@@ -12,9 +14,35 @@ export async function cloneScenario(subject: AccountSubject, scenario: ScenarioS
     const battleId = randomUUID();
     const hardDeadline = new Date(Date.now() + scenario.hardDeadlineDays * 86_400_000);
     await client.query(`INSERT INTO battle_cases(id,platform_subject_type,platform_subject_id,title,objective,minimum_outcome,ideal_outcome,opponent_summary,hard_deadline,scenario_id,scenario_version,source_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'official_catalog')`, [battleId, ...owner(subject), scenario.title, scenario.objective, scenario.minimumOutcome, scenario.idealOutcome, scenario.opponentSummary, hardDeadline, scenario.id, scenario.version]);
-    for (const fact of scenario.facts) await client.query(`INSERT INTO battle_facts(id,battle_id,kind,content,source,confidence) VALUES($1,$2,$3,$4,'system',$5)`, [randomUUID(), battleId, fact.kind, fact.content, fact.confidence]);
-    for (const constraint of scenario.constraints) await client.query(`INSERT INTO battle_constraints(id,battle_id,kind,label,description,hard,severity,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`, [randomUUID(), battleId, constraint.kind, constraint.label, constraint.description, constraint.hard, constraint.severity, JSON.stringify({ scenarioId: scenario.id, version: scenario.version })]);
-    for (const item of scenario.inventory) await client.query(`INSERT INTO battle_inventory_items(id,battle_id,category,label,description,quantity,unit,evidence_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`, [randomUUID(), battleId, item.category, item.label, item.description, item.quantity ?? null, item.unit ?? null, JSON.stringify({ source: "official_catalog", scenarioId: scenario.id })]);
+    if (scenario.facts.length) {
+      const statement = buildMultiRowInsert(
+        "battle_facts",
+        ["id","battle_id","kind","content","source","confidence"],
+        [null,null,null,null,null,"int"],
+        scenario.facts.map((fact) => [randomUUID(), battleId, fact.kind, fact.content, "system", fact.confidence]),
+      );
+      await client.query(statement.text, statement.values);
+    }
+    if (scenario.constraints.length) {
+      const source = JSON.stringify({ scenarioId: scenario.id, version: scenario.version });
+      const statement = buildMultiRowInsert(
+        "battle_constraints",
+        ["id","battle_id","kind","label","description","hard","severity","source_json"],
+        [null,null,null,null,null,null,"int","jsonb"],
+        scenario.constraints.map((constraint) => [randomUUID(), battleId, constraint.kind, constraint.label, constraint.description, constraint.hard, constraint.severity, source]),
+      );
+      await client.query(statement.text, statement.values);
+    }
+    if (scenario.inventory.length) {
+      const evidence = JSON.stringify({ source: "official_catalog", scenarioId: scenario.id });
+      const statement = buildMultiRowInsert(
+        "battle_inventory_items",
+        ["id","battle_id","category","label","description","quantity","unit","evidence_json"],
+        [null,null,null,null,null,"numeric",null,"jsonb"],
+        scenario.inventory.map((item) => [randomUUID(), battleId, item.category, item.label, item.description, item.quantity ?? null, item.unit ?? null, evidence]),
+      );
+      await client.query(statement.text, statement.values);
+    }
     // Every cloned scenario starts with one explicit, editable decision
     // junction. Without it the copied case looked populated but the first
     // strategy could not be persisted because /moves requires a junction.
@@ -51,3 +79,22 @@ export async function getBattleScenario(subject: AccountSubject, battleId: strin
 }
 
 export async function scenarioById(id: string) { return getOfficialScenario(id); }
+
+/**
+ * Read-only lookup for the two *public* scenario reference endpoints.
+ *
+ * `scenarioById` deliberately stays fail-closed, because cloning and
+ * strategy-template generation write rows derived from the catalog and must not
+ * proceed against a stale seed. These two GET endpoints only render a catalog
+ * page, so a database outage degrades to the bundled seed — the same content
+ * the catalog is seeded from — instead of surfacing an unhandled 500. An
+ * operator-edited catalog still wins whenever the database answers.
+ */
+export async function publicScenarioById(id: string): Promise<ScenarioSeed | null> {
+  try {
+    return await getOfficialScenario(id);
+  } catch (error) {
+    reportSwallowedError("scenarios", `案例目录读取失败（scenarioId=${id}），已回退到内置目录。`, error);
+    return getScenario(id) ?? null;
+  }
+}

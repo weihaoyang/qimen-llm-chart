@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportSwallowedError } from "@/lib/internal-log";
 import { normalizeAdsbLolPointResponse } from "@/lib/scenarios/adsb-lol";
 import { normalizeRadioBrowserStation, radioStationIdValid } from "@/lib/scenarios/radio-browser";
 
@@ -22,10 +23,44 @@ const MILITARY_INSTALLATION_CAP = 700;
 const servedRadioIds = new Set<string>();
 const GBFS_HOSTS = new Set(["gbfs.lyft.com","gbfs.bluebikes.com","gbfs.bcycle.com","gbfs.biketownpdx.com","gbfs.cogobikeshare.com"]);
 let satnogsFallbackPromise: Promise<string | null> | null = null;
-let lastFlightSnapshot: Record<string, unknown> | null = null;
-let lastFlightSnapshotAt = 0;
+// Upstream observation sources are routinely throttled, so a short-lived
+// last-known-good snapshot keeps a momentary failure from emptying the globe.
+// The snapshot must stay bound to the viewport it was observed for and must
+// expire: replaying one region's aircraft for a different region would present
+// fabricated coverage as observed reality, and an unbounded age would let a
+// long-lived instance serve a day-old snapshot as current.
+const SNAPSHOT_MAX_AGE_MS = 5 * 60 * 1000;
+const FLIGHT_SNAPSHOT_MAX_REGIONS = 24;
+const flightSnapshots = new Map<string, { at: number; value: Record<string, unknown> }>();
 let lastMilitarySnapshot: Record<string, unknown> | null = null;
 let lastMilitarySnapshotAt = 0;
+
+// Same grid rounding the upstream request uses, so a snapshot can only ever be
+// replayed for the cell it was actually fetched for.
+const flightSnapshotKey = (latitude: number, longitude: number) =>
+  `${Math.round(latitude * 4) / 4},${Math.round(longitude * 4) / 4}`;
+
+const readFlightSnapshot = (key: string) => {
+  const entry = flightSnapshots.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.at > SNAPSHOT_MAX_AGE_MS) {
+    flightSnapshots.delete(key);
+    return null;
+  }
+  return entry;
+};
+
+const writeFlightSnapshot = (key: string, value: Record<string, unknown>) => {
+  // Re-insert so Map iteration order tracks recency and the least recently
+  // refreshed region is the one evicted.
+  flightSnapshots.delete(key);
+  flightSnapshots.set(key, { at: Date.now(), value });
+  while (flightSnapshots.size > FLIGHT_SNAPSHOT_MAX_REGIONS) {
+    const oldest = flightSnapshots.keys().next().value;
+    if (oldest === undefined) break;
+    flightSnapshots.delete(oldest);
+  }
+};
 
 const jsonError = (status: number, error: string, reasonCode: string) => NextResponse.json({ error, reasonCode }, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -98,7 +133,11 @@ async function proxyEarthquakes() {
         "X-Earthquake-Degraded": "true",
       },
     });
-  } catch {
+  } catch (error) {
+    // `upstream_unavailable` is the honest answer for a relay, but it cannot
+    // distinguish "the upstream is down" from "our normalisation broke" — so the
+    // cause is recorded rather than dropped.
+    reportSwallowedError("relay", "地震观测源不可用，已降级为 503。", error);
     return jsonError(503, "地震观测源暂时不可用。", "upstream_unavailable");
   }
 }
@@ -174,7 +213,8 @@ async function proxyFirms() {
       fires.push({ index: fires.length, lat, lon, frp: Number.isFinite(magnitude) ? magnitude : 0, confidence: null, brightness: 0, acqMs: Number.isFinite(date) ? date : null, satellite: "EONET", sensor: "IRWIN", night: false, eventId: String(event.id ?? ""), title: String(event.title ?? "") });
     }
     return NextResponse.json({ fires, fetchedAt: Date.now(), stale: false, source: "NASA EONET / IRWIN", sourceKind: "open-wildfire-incidents", degraded: true }, { headers: { "Cache-Control": "public, max-age=300", "X-Fire-Source": "nasa-eonet", "X-Fire-Degraded": "true" } });
-  } catch {
+  } catch (error) {
+    reportSwallowedError("relay", "公开野火事件观测源不可用，已降级为 503。", error);
     return jsonError(503, "公开野火事件观测源暂时不可用。", "upstream_unavailable");
   }
 }
@@ -300,10 +340,10 @@ async function proxyGet(path: string[], request: Request) {
   } else if (root === "launches" && rest.length === 0) {
     target = new URL("https://ll.thespacedevs.com/2.3.0/launches/");
     target.searchParams.set("limit", incoming.searchParams.get("limit") ?? "100");
-    // God's Eye View's open-source mission roster intentionally displays the
-    // previous 30 days (it applies its own `net <= now` filter). Requesting
-    // only future launches here made the upstream return data that the client
-    // then discarded, leaving a misleading 0/30D empty state.
+    // The mission roster intentionally displays the previous 30 days and
+    // applies its own `net <= now` filter. Requesting only future launches here
+    // made the upstream return data that the client then discarded, leaving a
+    // misleading 0/30D empty state.
     const now = new Date();
     target.searchParams.set("net__gte", incoming.searchParams.get("net__gte") ?? new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString());
     target.searchParams.set("net__lte", incoming.searchParams.get("net__lte") ?? now.toISOString());
@@ -362,10 +402,11 @@ async function proxyGet(path: string[], request: Request) {
       }
     }
     if (root === "opensky") {
+      const latitude = validCoordinate(incoming.searchParams.get("lat"), -90, 90);
+      const longitude = validCoordinate(incoming.searchParams.get("lon"), -180, 180);
+      const snapshotKey = flightSnapshotKey(latitude ?? 0, longitude ?? 0);
       if (!response.ok) {
         const fallbackTarget = new URL("https://opensky-network.org/api/states/all");
-        const latitude = validCoordinate(incoming.searchParams.get("lat"), -90, 90);
-        const longitude = validCoordinate(incoming.searchParams.get("lon"), -180, 180);
         const delta = 1.25;
         fallbackTarget.searchParams.set("lamin", String(Math.max(-90, (latitude ?? 0) - delta)));
         fallbackTarget.searchParams.set("lamax", String(Math.min(90, (latitude ?? 0) + delta)));
@@ -377,8 +418,7 @@ async function proxyGet(path: string[], request: Request) {
             const fallbackPayload = await readJsonCapped(fallbackResponse) as { states?: unknown; time?: unknown };
             if (Array.isArray(fallbackPayload.states)) {
               const payload = { time: fallbackPayload.time, states: fallbackPayload.states };
-              lastFlightSnapshot = payload;
-              lastFlightSnapshotAt = Date.now();
+              writeFlightSnapshot(snapshotKey, payload);
               return NextResponse.json(payload, { headers: {
                 "Cache-Control":"public, max-age=10", "X-Flight-Source":"OpenSky Network",
                 "X-Flight-Coverage":"2.5° regional observed snapshot", "X-Flight-Degraded":"true",
@@ -389,20 +429,21 @@ async function proxyGet(path: string[], request: Request) {
         } catch { /* return the explicit unavailable state below */ }
         // A data refresh must not erase a previously verified real snapshot
         // merely because both public providers are momentarily throttled.
-        // The stale timestamp is explicit for the UI and downstream consumers.
-        if (lastFlightSnapshot) {
-          return NextResponse.json(lastFlightSnapshot, { headers: {
+        // The stale timestamp is explicit for the UI and downstream consumers,
+        // and the snapshot is scoped to this region only.
+        const cached = readFlightSnapshot(snapshotKey);
+        if (cached) {
+          return NextResponse.json(cached.value, { headers: {
             "Cache-Control":"public, max-age=10", "X-Flight-Source":"adsb.lol / OpenSky cached snapshot",
             "X-Flight-Coverage":`${ADSBLOL_RADIUS_NM}nm regional observed snapshot`, "X-Flight-Degraded":"true",
-            "X-Flight-Stale-At":new Date(lastFlightSnapshotAt).toISOString(),
+            "X-Flight-Stale-At":new Date(cached.at).toISOString(),
             "X-OpenSky-Auth-Mode-Used":"last-known-observed-snapshot", "X-OpenSky-Auth-Reason":"upstream-temporary-unavailable",
           } });
         }
         return jsonError(503, "区域航班观测源暂时不可用。", "upstream_unavailable");
       }
       const payload = normalizeAdsbLolPointResponse(await readJsonCapped(response));
-      lastFlightSnapshot = payload;
-      lastFlightSnapshotAt = Date.now();
+      writeFlightSnapshot(snapshotKey, payload);
       return NextResponse.json(payload, { headers: {
         "Cache-Control":"public, max-age=10",
         "X-Flight-Source":"adsb.lol",
@@ -418,7 +459,9 @@ async function proxyGet(path: string[], request: Request) {
         lastMilitarySnapshotAt = Date.now();
         return NextResponse.json(payload, { headers: { "Cache-Control":"public, max-age=10", "X-Flight-Source":"adsb.lol" } });
       }
-      if (lastMilitarySnapshot) {
+      // The military feed is a global roster rather than a viewport query, so
+      // it does not need region scoping — only an age bound.
+      if (lastMilitarySnapshot && Date.now() - lastMilitarySnapshotAt <= SNAPSHOT_MAX_AGE_MS) {
         return NextResponse.json(lastMilitarySnapshot, { headers: {
           "Cache-Control":"public, max-age=10", "X-Flight-Source":"adsb.lol", "X-Flight-Degraded":"true",
           "X-Flight-Stale-At": new Date(lastMilitarySnapshotAt).toISOString(),
@@ -457,7 +500,8 @@ async function proxyGet(path: string[], request: Request) {
       return NextResponse.json({ status: "partial", retrievedAt: new Date().toISOString(), place: null, weather: { observedAt: current.time ?? null, temperatureC: current.temperature_2m ?? null, apparentTemperatureC: current.apparent_temperature ?? null, precipitationMm: current.precipitation ?? null, cloudCoverPct: current.cloud_cover ?? null, windKph: current.wind_speed_10m ?? null, windDirectionDeg: current.wind_direction_10m ?? null, visibilityM: current.visibility ?? null, weatherCode: current.weather_code ?? null }, articles: [], sources: { headlines: "unavailable", weather: "open-meteo" } }, { status: 200, headers: { "Cache-Control": "public, max-age=60" } });
     }
     return relay(response);
-  } catch {
+  } catch (error) {
+    reportSwallowedError("relay", "观测源不可用，已降级为 503。", error);
     return jsonError(503, "观测源暂时不可用。", "upstream_unavailable");
   }
 }

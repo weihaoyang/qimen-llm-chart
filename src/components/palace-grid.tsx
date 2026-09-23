@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { Position } from "3meta";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 import { PalaceCard } from "./palace-card";
@@ -18,7 +19,7 @@ const TERM_HELP = {
   空亡: "空亡提示该宫之象暂时虚空或受阻，宜结合用神与时令一起判断。",
 } as const;
 
-export function PalaceGrid({
+export const PalaceGrid = memo(function PalaceGrid({
   chart,
   selectedPalace,
   onSelectPalace,
@@ -57,7 +58,7 @@ export function PalaceGrid({
               palace={palace}
               hiddenStem={chart.hiddenStemsByPalace[position]}
               isSelected={selectedPalace === position}
-              onSelect={() => onSelectPalace(position)}
+              onSelect={onSelectPalace}
             />
           );
         })}
@@ -65,4 +66,4 @@ export function PalaceGrid({
       </div>
     </TooltipProvider>
   );
-}
+});

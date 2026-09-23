@@ -1,35 +1,32 @@
-import { NextResponse } from "next/server";
+import { noStore } from "@/lib/http";
 import { requirePlatformServerConfig } from "@/lib/platform/config";
-
-const isToken = (value: unknown): value is string => typeof value === "string" && value.trim().length > 20 && value.length < 4096;
-const cookieValue = (headers: Headers, name: string) => {
-  const values = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [headers.get("set-cookie") ?? ""];
-  return values.find((value) => value.startsWith(`${name}=`))?.split(";", 1)[0]?.slice(name.length + 1) ?? "";
-};
-
-const setBridgeCookies = (response: NextResponse, access: string, refresh: string, csrf: string) => {
-  const common = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
-  response.cookies.set("qmdj_platform_access", access, { ...common, maxAge: 60 * 60 });
-  response.cookies.set("qmdj_platform_refresh", refresh, { ...common, maxAge: 60 * 60 * 24 * 30 });
-  if (csrf) response.cookies.set("qmdj_platform_csrf", csrf, { ...common, httpOnly: false, maxAge: 60 * 60 * 24 * 30 });
-};
+import {
+  PLATFORM_BRIDGE_ACCESS_COOKIE,
+  PLATFORM_BRIDGE_CSRF_COOKIE,
+  PLATFORM_BRIDGE_REFRESH_COOKIE,
+  clearBridgeCookies,
+  isBridgeToken,
+  readRequestCookie,
+  readResponseCookie,
+  setBridgeCookies,
+} from "@/lib/platform/bridge";
 
 export async function PUT(request: Request) {
   let body: { code?: unknown; verifier?: unknown; redirect_uri?: unknown };
-  try { body = (await request.json()) as typeof body; } catch { return NextResponse.json({ error: "登录参数格式无效。" }, { status: 400 }); }
-  if (typeof body.code !== "string" || typeof body.verifier !== "string" || typeof body.redirect_uri !== "string") return NextResponse.json({ error: "登录参数不完整。" }, { status: 400 });
+  try { body = (await request.json()) as typeof body; } catch { return noStore({ error: "登录参数格式无效。" }, { status: 400 }); }
+  if (typeof body.code !== "string" || typeof body.verifier !== "string" || typeof body.redirect_uri !== "string") return noStore({ error: "登录参数不完整。" }, { status: 400 });
   const config = requirePlatformServerConfig(process.env);
   const upstream = await fetch(new URL("/api/v1/oauth/token", config.baseUrl), {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ grant_type: "authorization_code", code: body.code, client_id: config.productCode, redirect_uri: body.redirect_uri, code_verifier: body.verifier }), cache: "no-store",
   });
   const payload = await upstream.json().catch(() => ({}));
-  if (!upstream.ok) return NextResponse.json({ error: payload.message ?? payload.detail?.message ?? "平台登录交换失败。" }, { status: upstream.status });
-  const access = cookieValue(upstream.headers, "ssp_access");
-  const refresh = cookieValue(upstream.headers, "ssp_refresh");
-  const csrf = cookieValue(upstream.headers, "ssp_csrf") || payload.csrf_token || "";
-  if (!isToken(access) || !isToken(refresh)) return NextResponse.json({ error: "平台未下发有效登录会话。" }, { status: 502 });
-  const response = NextResponse.json({ session: payload.session, profile: payload.profile, csrf_token: csrf });
+  if (!upstream.ok) return noStore({ error: payload.message ?? payload.detail?.message ?? "平台登录交换失败。" }, { status: upstream.status });
+  const access = readResponseCookie(upstream.headers, "ssp_access");
+  const refresh = readResponseCookie(upstream.headers, "ssp_refresh");
+  const csrf = readResponseCookie(upstream.headers, "ssp_csrf") || payload.csrf_token || "";
+  if (!isBridgeToken(access) || !isBridgeToken(refresh)) return noStore({ error: "平台未下发有效登录会话。" }, { status: 502 });
+  const response = noStore({ session: payload.session, profile: payload.profile, csrf_token: csrf });
   setBridgeCookies(response, access, refresh, csrf);
   return response;
 }
@@ -39,49 +36,49 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "会话数据格式无效。" }, { status: 400 });
+    return noStore({ error: "会话数据格式无效。" }, { status: 400 });
   }
-  if (!isToken(body.access_token) || !isToken(body.refresh_token)) {
-    return NextResponse.json({ error: "平台会话不完整。" }, { status: 400 });
+  if (!isBridgeToken(body.access_token) || !isBridgeToken(body.refresh_token)) {
+    return noStore({ error: "平台会话不完整。" }, { status: 400 });
   }
 
-  const response = NextResponse.json({ ok: true });
+  const response = noStore({ ok: true });
   const secure = process.env.NODE_ENV === "production";
   const common = { httpOnly: true, secure, sameSite: "lax" as const, path: "/" };
-  response.cookies.set("qmdj_platform_access", body.access_token, { ...common, maxAge: 60 * 60 });
-  response.cookies.set("qmdj_platform_refresh", body.refresh_token, { ...common, maxAge: 60 * 60 * 24 * 30 });
+  response.cookies.set(PLATFORM_BRIDGE_ACCESS_COOKIE, body.access_token, { ...common, maxAge: 60 * 60 });
+  response.cookies.set(PLATFORM_BRIDGE_REFRESH_COOKIE, body.refresh_token, { ...common, maxAge: 60 * 60 * 24 * 30 });
   if (typeof body.csrf_token === "string" && body.csrf_token.length < 4096) {
-    response.cookies.set("qmdj_platform_csrf", body.csrf_token, { ...common, httpOnly: false, maxAge: 60 * 60 * 24 * 30 });
+    response.cookies.set(PLATFORM_BRIDGE_CSRF_COOKIE, body.csrf_token, { ...common, httpOnly: false, maxAge: 60 * 60 * 24 * 30 });
   }
   return response;
 }
 
+/**
+ * Read-only view of the bridge session.
+ *
+ * This handler never rotates, never calls the platform, and never writes a
+ * cookie. It exists so that a caller can cheaply ask "is there a bridge session
+ * here, and what access token does it carry?" without consuming a refresh token.
+ *
+ * Rotation used to live here, which made this a `GET` with a side effect.
+ * Browsers, link prefetchers and intermediary caches are all entitled to issue a
+ * `GET` speculatively, and refresh-token rotation invalidates the previous token
+ * — so a prefetch could log the caller out, or race the real caller and lose.
+ * Rotation now lives in `./refresh/route.ts`, which is `POST`-only.
+ *
+ * The refresh token is deliberately *not* returned: it is httpOnly by design and
+ * `loadPlatformSession` strips tokens out of localStorage on every read, so JS is
+ * not supposed to hold one.
+ */
 export async function GET(request: Request) {
-  const refreshToken = request.headers.get("cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith("qmdj_platform_refresh="))?.slice("qmdj_platform_refresh=".length) ?? "";
-  if (!isToken(refreshToken)) return NextResponse.json({ error: "平台登录已过期。" }, { status: 401 });
-  const config = requirePlatformServerConfig(process.env);
-  const platformResponse = await fetch(new URL("/api/v1/identity/refresh", config.baseUrl), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-    cache: "no-store",
-  });
-  const body = await platformResponse.json().catch(() => ({})) as { session?: unknown; csrf_token?: string };
-  const access = cookieValue(platformResponse.headers, "ssp_access");
-  const refresh = cookieValue(platformResponse.headers, "ssp_refresh") || refreshToken;
-  const csrf = cookieValue(platformResponse.headers, "ssp_csrf") || body.csrf_token || "";
-  if (!platformResponse.ok || !isToken(access) || !isToken(refresh)) {
-    return NextResponse.json({ error: "平台登录已过期。" }, { status: 401 });
-  }
-  const response = NextResponse.json({ session: body.session, csrf_token: csrf });
-  setBridgeCookies(response, access, refresh, csrf);
-  return response;
+  const access = readRequestCookie(request.headers, PLATFORM_BRIDGE_ACCESS_COOKIE);
+  const csrf = readRequestCookie(request.headers, PLATFORM_BRIDGE_CSRF_COOKIE);
+  if (!isBridgeToken(access)) return noStore({ error: "平台登录已过期。" }, { status: 401 });
+  return noStore({ session: { access_token: access, csrf_token: csrf }, csrf_token: csrf });
 }
 
 export async function DELETE() {
-  const response = NextResponse.json({ ok: true });
-  for (const name of ["qmdj_platform_access", "qmdj_platform_refresh", "qmdj_platform_csrf"]) {
-    response.cookies.set(name, "", { httpOnly: name !== "qmdj_platform_csrf", secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
-  }
+  const response = noStore({ ok: true });
+  clearBridgeCookies(response);
   return response;
 }

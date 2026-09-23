@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { AccountSubject } from "@/lib/agent/account-subject";
 import { query, withTransaction } from "@/lib/db/pool";
+import { LIST_READ_LIMIT } from "@/lib/db/read-limits";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
@@ -48,7 +49,7 @@ export async function listWorldPulseCalibrations(subject: AccountSubject, battle
   const result = await query<Row>(
     `SELECT DISTINCT ON (camera_id) camera_id,version,calibration_json,created_at,content_hash
        FROM battle_world_pulse_calibrations WHERE battle_id=$1
-      ORDER BY camera_id,version DESC`, [battleId],
+      ORDER BY camera_id,version DESC LIMIT ${LIST_READ_LIMIT}`, [battleId],
   );
   return result.rows.map(mapRow);
 }

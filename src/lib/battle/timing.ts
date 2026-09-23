@@ -1,3 +1,4 @@
+import { UserFacingError } from "@/lib/user-facing-error";
 import { buildChart } from "@/lib/qimen/chart";
 import { getDefaultChartInput } from "@/lib/qimen/defaults";
 
@@ -34,7 +35,7 @@ export function buildBattleTiming(now: Date, timeZone: string): BattleTimingResu
   try {
     new Intl.DateTimeFormat("en-CA", { timeZone }).format(now);
   } catch {
-    throw new Error("时区无效。");
+    throw new UserFacingError("时区无效。");
   }
   const input = getDefaultChartInput(now, timeZone);
   const chart = buildChart(input);

@@ -4,7 +4,7 @@ vi.stubGlobal("fetch", vi.fn());
 
 import { GET, POST } from "./route";
 
-describe("God's Eye View observation proxy", () => {
+describe("same-origin observation proxy", () => {
   beforeEach(() => vi.mocked(fetch).mockReset());
   it("serves keyless NASA EONET wildfire incidents through the FIRMS contract", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ events:[{ id:"EONET_1", title:"Test fire", geometry:[{ date:"2026-09-01T00:00:00Z", type:"Point", coordinates:[121.5,31.2], magnitudeValue:42 }] }] }), { status:200 }));
@@ -67,6 +67,42 @@ describe("God's Eye View observation proxy", () => {
     expect(response.headers.get("x-flight-source")).toBe("OpenSky Network");
     expect(response.headers.get("x-flight-degraded")).toBe("true");
     await expect(response.json()).resolves.toMatchObject({ time:1_700_000_001, states:[["abc123","TEST1",null,1_700_000_000,1_700_000_000,121.5,31.2]] });
+  });
+
+  it("still serves the same region's last-known-good snapshot when both providers fail", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ now:1_700_000_010, ac:[{ hex:"bbbbbb", flight:"REGIONC", lat:10, lon:20, alt_baro:9000 }] }), { status:200 }));
+    const observed = await GET(new Request("http://local/api/opensky?lat=10&lon=20"), { params:Promise.resolve({ path:["opensky"] }) });
+    expect(observed.status).toBe(200);
+    expect(observed.headers.get("x-flight-source")).toBe("adsb.lol");
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response("rate limited", { status:429 }))
+      .mockResolvedValueOnce(new Response("upstream down", { status:503 }));
+    const degraded = await GET(new Request("http://local/api/opensky?lat=10&lon=20"), { params:Promise.resolve({ path:["opensky"] }) });
+    expect(degraded.status).toBe(200);
+    expect(degraded.headers.get("x-flight-degraded")).toBe("true");
+    expect(degraded.headers.get("x-flight-stale-at")).toBeTruthy();
+    const payload = await degraded.json() as { states: unknown[][] };
+    expect(payload.states).toHaveLength(1);
+    expect(payload.states[0].slice(0, 2)).toEqual(["bbbbbb", "REGIONC"]);
+  });
+
+  it("never replays one region's flight snapshot for a different region", async () => {
+    // Region A observes successfully and becomes a cached snapshot.
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ now:1_700_000_020, ac:[{ hex:"aaaaaa", flight:"REGIONA", lat:31.2, lon:121.5, alt_baro:10000 }] }), { status:200 }));
+    const regionA = await GET(new Request("http://local/api/opensky?lat=31.2&lon=121.5"), { params:Promise.resolve({ path:["opensky"] }) });
+    expect(regionA.status).toBe(200);
+    expect(regionA.headers.get("x-flight-source")).toBe("adsb.lol");
+
+    // Region B has both providers down. It must report unavailable rather than
+    // receive region A's aircraft as if they had been observed over region B.
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response("rate limited", { status:429 }))
+      .mockResolvedValueOnce(new Response("upstream down", { status:503 }));
+    const regionB = await GET(new Request("http://local/api/opensky?lat=48.8&lon=2.3"), { params:Promise.resolve({ path:["opensky"] }) });
+    expect(regionB.status).toBe(503);
+    expect(regionB.headers.get("x-flight-degraded")).toBeNull();
+    expect(regionB.headers.get("x-flight-stale-at")).toBeNull();
   });
 
   it("advertises keyless traffic simulation without pretending TomTom is live", async () => {

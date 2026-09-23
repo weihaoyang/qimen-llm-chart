@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
+import { LIST_READ_LIMIT } from "@/lib/db/read-limits";
 import type { AccountSubject } from "@/lib/agent/account-subject";
 
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
@@ -15,14 +16,38 @@ export type InterviewTurnInput = {
   clientMessageId?: string;
 };
 
-const accessPredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3)
+/**
+ * Read access: the owner, or any active collaborator whatever their role.
+ *
+ * `viewer` is a real role with a deliberately reduced view (see
+ * `redactViewerModule`), so it must keep read access.
+ */
+const readAccessPredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3)
   OR EXISTS (SELECT 1 FROM battle_collaborators c
              WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3
                AND ${activeCollaborator})`;
 
+/**
+ * Write access: the owner, or a *contributing* collaborator.
+ *
+ * Appending a turn writes into the battle's record and bumps
+ * `battle_cases.updated_at`, so it is canonical state — a viewer must not reach
+ * it, and an advisor submits opinions through the advice surface instead.
+ *
+ * Both callers today (`ai/[kind]/handler.ts`) run `createAiJob` — which already
+ * requires contributor — before calling in, so the weaker form was masked. That
+ * is exactly why the check belongs here: a guard that holds only because of what
+ * its callers did earlier stops holding the moment a second caller appears, and
+ * nothing in the signature says which form this function needs.
+ */
+const writeAccessPredicate = `(b.platform_subject_type=$2 AND b.platform_subject_id=$3)
+  OR EXISTS (SELECT 1 FROM battle_collaborators c
+             WHERE c.battle_id=b.id AND c.subject_type=$2 AND c.subject_id=$3
+               AND ${activeCollaborator} AND c.role='contributor')`;
+
 export async function appendInterviewTurn(subject: AccountSubject, battleId: string, input: InterviewTurnInput) {
   return withTransaction(async (client) => {
-    const access = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${accessPredicate}) FOR UPDATE`, [battleId, ...owner(subject)]);
+    const access = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writeAccessPredicate}) FOR UPDATE`, [battleId, ...owner(subject)]);
     if (!access.rowCount) return null;
     await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`battle-interview:${battleId}`]);
 
@@ -65,8 +90,8 @@ export async function listInterviewTurns(subject: AccountSubject, battleId: stri
   const result = await query<{ id:string; sequence_no:number; role:string; content:string; structured_json:unknown; extraction_status:string; client_message_id:string|null; created_at:Date }>(
     `SELECT t.id,t.sequence_no,t.role,t.content,t.structured_json,t.extraction_status,t.client_message_id,t.created_at
        FROM battle_interview_turns t JOIN battle_cases b ON b.id=t.battle_id
-      WHERE t.battle_id=$1 AND (${accessPredicate})
-      ORDER BY t.sequence_no`,
+      WHERE t.battle_id=$1 AND (${readAccessPredicate})
+      ORDER BY t.sequence_no LIMIT ${LIST_READ_LIMIT}`,
     [battleId, ...owner(subject)],
   );
   return result.rows.map(map);

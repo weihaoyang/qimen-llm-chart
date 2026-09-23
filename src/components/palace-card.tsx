@@ -1,14 +1,27 @@
-import type { Palace } from "3meta";
+import { memo } from "react";
+import type { Palace, Position } from "3meta";
 import { cn } from "@/lib/utils";
 
 type PalaceCardProps = {
   palace: Palace;
   hiddenStem?: string;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (position: Position) => void;
 };
 
-export function PalaceCard({
+/**
+ * Nine of these render per chart, and the parameters drawer re-renders the whole
+ * shell on every keystroke.
+ *
+ * The callback takes the position rather than being a per-card closure: with
+ * `onSelect={() => onSelectPalace(position)}` the prop changed identity on every
+ * parent render, so `memo` would compare unequal every time and never skip
+ * anything. Taking the position from `palace` means the only props are the
+ * palace object, two primitives, and the parent's `setSelectedPalace` setter,
+ * which React keeps stable — so a keystroke that does not change the chart now
+ * skips all nine cards.
+ */
+export const PalaceCard = memo(function PalaceCard({
   palace,
   hiddenStem,
   isSelected,
@@ -33,7 +46,7 @@ export function PalaceCard({
         palace.isPostHorse && "is-posthorse",
         palace.voidness.hasVoidness && "has-voidness",
       )}
-      onClick={onSelect}
+      onClick={() => onSelect(palace.position)}
     >
       <div className="palace-card__topline">
         <div className="palace-card__header">
@@ -90,4 +103,4 @@ export function PalaceCard({
 
     </button>
   );
-}
+});

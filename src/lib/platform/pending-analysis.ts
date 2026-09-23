@@ -66,6 +66,21 @@ const accountStorageFor = () => (typeof window === "undefined" ? null : window.l
  */
 const storageFor = (mode: CheckoutMode = "guest") => mode === "account" ? accountStorageFor() : sessionStorageFor();
 
+/**
+ * Whether a record carries a checkout token, i.e. a scoped credential.
+ *
+ * The store is then chosen by *this* rather than by `checkoutMode` alone, so
+ * "credentials never reach long-lived localStorage" is structural instead of a
+ * convention every call site has to remember. Today `checkoutMode` and the token
+ * are set together and consistently (`app-shell.tsx` writes `""` for account and
+ * a real token for guest), but a future caller that mislabels the mode would
+ * otherwise leak a token into localStorage with nothing to stop it.
+ */
+const carriesCredential = (value: unknown) => {
+  const token = (value as { checkoutToken?: unknown } | null)?.checkoutToken;
+  return typeof token === "string" && token.length > 0;
+};
+
 const readFrom = <T>(key: string, mode: CheckoutMode): T | null => {
   try {
     const raw = storageFor(mode)?.getItem(key);
@@ -76,12 +91,14 @@ const readFrom = <T>(key: string, mode: CheckoutMode): T | null => {
 };
 
 const writeTo = (key: string, value: unknown, mode: CheckoutMode) => {
+  const credential = carriesCredential(value);
   try {
-    storageFor(mode)?.setItem(key, JSON.stringify(value));
+    (credential ? sessionStorageFor() : storageFor(mode))?.setItem(key, JSON.stringify(value));
   } catch {
     // An account recovery contains no guest credential, so a same-tab session
     // fallback is safe when localStorage is unavailable (private mode/quota).
-    if (mode === "account") {
+    // A credential-bearing record is already session-only and has no fallback.
+    if (mode === "account" && !credential) {
       try {
         sessionStorageFor()?.setItem(key, JSON.stringify(value));
       } catch {

@@ -1,6 +1,6 @@
 /**
  * Product routing is deliberately host-based instead of CSS or client state.
- * This keeps the two public products separate while they share one deployment
+ * The 知几 workbench is served from its own hosts while sharing one deployment
  * and the Consumer Platform account/payment boundary.
  */
 export const PAIPAN_HOSTS = new Set([

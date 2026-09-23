@@ -56,7 +56,11 @@ export const buildVerificationData = ({ profile, qimen, bazi, ziwei }: { profile
       field: "参考引擎",
       primary: qimen.engine,
       reference: "taibu-core/qimen",
-      status: usesAlternateMethod ? "unavailable" : "unavailable",
+      // Always unavailable here: the reference engine is computed asynchronously
+      // and merged in by the caller, so this row is a placeholder in both
+      // branches. The previous ternary returned "unavailable" either way, which
+      // read as if the two cases differed.
+      status: "unavailable",
       note: usesAlternateMethod ? "当前盘使用拆补/茅山口径，参考引擎只用于默认转盘；等待单独核验。" : "参考引擎为异步计算，盘面生成后补充局数、遁 type、值符值使比较。",
     });
   }

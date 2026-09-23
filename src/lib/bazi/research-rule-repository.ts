@@ -1,7 +1,9 @@
 import { withTransaction } from "@/lib/db/pool";
+import { UserFacingError } from "@/lib/user-facing-error";
 import {
   type ResearchReleaseBundle,
   type ResearchRuleDefinition,
+  ResearchRuleValidationError,
   researchRuleHash,
   validateResearchRuleDefinition,
 } from "./research-rules";
@@ -35,10 +37,25 @@ const releaseColumns = "rule_hash,experiment_id,base_prediction_version,rule_def
 const releaseQuery = `SELECT ${releaseColumns} FROM bazi_research_rule_releases`;
 
 export const stageResearchRuleRelease = async (bundle: ResearchReleaseBundle) => {
-  const definition = validateResearchRuleDefinition(bundle.rule_definition);
+  // This is the one place the validator sees a caller-supplied definition, so it
+  // is also the only place a validation failure is the caller's fault. The
+  // sentence names the offending field, and that is the only thing that tells
+  // the research pipeline what to fix — hence the re-marking. Anything else the
+  // validator can throw is a bug here, not a bad request, so it is re-thrown
+  // untouched and stays behind the route's fallback.
+  let definition: ResearchRuleDefinition;
+  try {
+    definition = validateResearchRuleDefinition(bundle.rule_definition);
+  } catch (error) {
+    if (!(error instanceof ResearchRuleValidationError)) throw error;
+    throw new UserFacingError(error.message);
+  }
   const expectedHash = researchRuleHash(bundle.base_prediction_version, definition);
   if (bundle.release_contract_version !== "bazi-research-release-v1" || bundle.rule_hash !== expectedHash || !bundle.experiment_id || bundle.experiment_id.length > 64) {
-    throw new Error("研究发布 bundle 不完整或哈希不一致。");
+    // Written for the calling pipeline: it needs to know *why* its bundle was
+    // rejected. Marked explicitly so the route can forward this sentence while
+    // still collapsing a raw database failure to a generic message.
+    throw new UserFacingError("研究发布 bundle 不完整或哈希不一致。");
   }
   return withTransaction(async (client) => {
     const existing = await client.query<ReleaseRow>(`${releaseQuery} WHERE rule_hash=$1 FOR UPDATE`, [bundle.rule_hash]);
@@ -50,8 +67,8 @@ export const stageResearchRuleRelease = async (bundle: ResearchReleaseBundle) =>
 
 export const activateResearchRuleRelease = async (ruleHash: string) => withTransaction(async (client) => {
   const candidate = await client.query<ReleaseRow>(`${releaseQuery} WHERE rule_hash=$1 FOR UPDATE`, [ruleHash]);
-  if (!candidate.rows[0]) throw new Error("没有该暂存研究规则。");
-  if (candidate.rows[0].status === "retired") throw new Error("已退役规则不可重新激活。");
+  if (!candidate.rows[0]) throw new UserFacingError("没有该暂存研究规则。");
+  if (candidate.rows[0].status === "retired") throw new UserFacingError("已退役规则不可重新激活。");
   await client.query("UPDATE bazi_research_rule_releases SET status='superseded' WHERE status='active'");
   const active = await client.query<ReleaseRow>("UPDATE bazi_research_rule_releases SET status='active',activated_at=now() WHERE rule_hash=$1 RETURNING rule_hash,experiment_id,base_prediction_version,rule_definition_json,status,activated_at,created_at", [ruleHash]);
   return mapRelease(active.rows[0]);

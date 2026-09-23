@@ -1,15 +1,17 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import { buildContentSecurityPolicy } from "./src/lib/security-headers";
 
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
-  // The bundled God's Eye renderer is served at the same origin and embedded
-  // by its qmdj route; keep framing restricted to this origin.
+  // Same-origin framing stays restricted to this origin: the world-pulse
+  // panels embed first-party views, and no third-party page should be able to
+  // frame the product.
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
-  { key: "Content-Security-Policy", value: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https://singseq.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.singseq.com https://consumer-api.singularitysequence.com https:; frame-src 'self';" },
+  { key: "Content-Security-Policy", value: buildContentSecurityPolicy(process.env.NODE_ENV !== "production") },
 ];
 
 const nextConfig: NextConfig = {
@@ -30,6 +32,11 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   async headers() {
+    // NOTE: config headers OVERRIDE headers set by a route handler (verified
+    // against this Next.js version). A blanket `/api/:path*` no-store rule
+    // would therefore silently clobber the deliberately public caching on the
+    // observation proxy and the public catalogs. Per-account responses instead
+    // declare `Cache-Control: no-store` in the route itself.
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
 };

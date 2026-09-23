@@ -1,12 +1,11 @@
 # 世界脉搏上线能力矩阵
 
-核对日期：2026-08-30。这里记录的是 qmdj 商业发布的实际能力，不沿用上游 GEV README 的“配置后可用”宣传口径。
+核对日期：2026-09-18。这里记录的是 qmdj 商业发布的实际能力，不沿用上游 GEV README 的“配置后可用”宣传口径。
 
 ## 已接通并验证
 
 | 能力 | 生产契约 | 当前状态 |
 | --- | --- | --- |
-| Cesium 地球与 OSM fallback | `/gods-eye-view/cesium/*` | 本地 production HTTP 与浏览器渲染通过 |
 | 区域民航、军机、轨迹、机型/航线 | adsb.lol + adsbdb 服务端代理 | 真实上游与本地 HTTP 通过；民航明确为 250nm 区域快照 |
 | 卫星与发射任务 | CelesTrak、Launch Library 2 | same-origin 代理已接 |
 | 地震、道路与路线 | USGS、OSM Overpass、OSRM | 实时/有界查询；不开放任意上游地址 |
@@ -21,7 +20,8 @@
 
 | 能力 | 当前状态 | 上线表现 |
 | --- | --- | --- |
-| Google Photorealistic 3D / Places | 未配置商业 key | 自动使用 OSM globe；Places 标记 unavailable |
+| Cesium 地球与 OSM fallback | 已于 2026-09-18 移除 | 本仓库不再提供 3D 地球视图；相关路由与静态资源已删除，见下方「已移除」 |
+| Google Photorealistic 3D / Places | 未配置商业 key | 标记 unavailable |
 | TomTom 实时路况 | 未配置商业 key | `/api/tomtom/status` 返回 simulation；不宣称实时 |
 | NASA FIRMS | 未配置 `FIRMS_MAP_KEY` | 返回 `503/no_key`，图层显示 KEY REQUIRED |
 | AIS 船舶 | 未配置 `AISSTREAM_API_KEY` | 返回 503/unconfigured，不生成船舶 |
@@ -34,10 +34,16 @@
 - 不分发 TeleGeography 海底电缆 CC BY-NC-SA 数据或图层。
 - 不调用 OpenSky 非商业接口；民航使用 adsb.lol ODbL 区域源。
 - 不调用 Google News RSS；区域简报当前只使用许可兼容的天气/公开源。
-- GEV MIT 许可文本随静态发布物保留在 `THIRD_PARTY_NOTICES.txt`。
+- GEV MIT 许可文本原先随 `public/gods-eye-view/` 静态发布物分发；该发布物已于 2026-09-18 整体移除，因此本仓库不再分发 GEV 构建产物，也不再需要随包保留其许可文本。
+
+## 已移除
+
+| 能力 | 移除日期 | 原因 |
+| --- | --- | --- |
+| `/gods-eye-view` 路由与 `public/gods-eye-view/` 静态发布物 | 2026-09-18 | 该路由不在 `routes-manifest` 中（无页面引用），`src/shengtian-reference/` 为无引用副本；421 个文件 / 31MB 的第三方构建产物随包分发，既扩大攻击面也污染 lint 与构建。服务端 `/api/[...path]` 观测代理与 battle-scoped 观察/校准/场景仓库保留不变。 |
 
 ## 生产阻断
 
 - 线上仍是 `2d2149f / 20260825-1415-ai-sdk-chat-scroll`，没有本矩阵中的静态资源和 API。
 - 生产 `shengtian_banzi` 数据库尚无 `schema_migrations`、`battle_cases`；切新包前必须备份并执行 001–029。
-- 迁移后必须完成登录、clone、AI reserve/commit/release、支付结果恢复、世界脉搏静态资源和跨账户隔离冒烟。
+- 迁移后必须完成登录、clone、AI reserve/commit/release、支付结果恢复、观测代理与跨账户隔离冒烟。

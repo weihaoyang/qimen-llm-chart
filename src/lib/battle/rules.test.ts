@@ -47,4 +47,25 @@ describe("battle deterministic rules", () => {
     expect(junctions.length).toBeGreaterThan(1);
     expect(junctions.flatMap((junction) => buildMoveTemplates(input, gravity, junction)).filter((move) => move.kind === "probe")).toHaveLength(junctions.length);
   });
+
+  it("counts deadline days by calendar day rather than by fractional instant", () => {
+    const input: BattleInput = { objective: "守住现金", hardDeadline: "2026-10-19T23:00:00.000Z", facts: [], constraints: [], inventory: [] };
+    // The instant gap is 30 days 1 hour, but the calendar gap is exactly 30
+    // days, so the 30-day window must still be open. Subtracting instants
+    // pushed this just over the threshold.
+    const junctions = detectJunctions(input, new Date("2026-09-19T22:00:00.000Z"));
+    const deadlineJunction = junctions.find((junction) => junction.id === "deadline");
+    expect(deadlineJunction).toBeDefined();
+    expect(deadlineJunction?.description).toContain("只剩 30 天");
+    // Two more calendar days (31 total) close the window.
+    expect(detectJunctions(input, new Date("2026-09-18T22:00:00.000Z")).some((junction) => junction.id === "deadline")).toBe(false);
+  });
+
+  it("treats an unparseable deadline as absent instead of producing NaN", () => {
+    const input: BattleInput = { objective: "守住现金", hardDeadline: "not-a-date", facts: [], constraints: [], inventory: [] };
+    const gravity = buildDefaultGravityLine(input, new Date("2026-09-19T00:00:00.000Z"));
+    expect(gravity.confidence).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(gravity.confidence)).toBe(true);
+    expect(detectJunctions(input, new Date("2026-09-19T00:00:00.000Z")).some((junction) => junction.id === "deadline")).toBe(false);
+  });
 });

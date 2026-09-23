@@ -86,7 +86,8 @@ Record only decisions that affect boundaries, data contracts, dependencies, depl
 - 决策：民航快照沿用 GEV 的 OpenSky-compatible JSON 契约，但 qmdj 服务端固定从 adsb.lol 的 250 海里区域接口获取并转换；军机与轨迹同样通过 adsb.lol 服务端代理。浏览器不直连上游，也不调用 OpenSky 非商业接口。
 - 原因：GEV 源代码是 MIT，但 TeleGeography 与 OpenSky 默认数据条款不能直接用于本产品商业上线；删除能力或伪造数据都不满足世界脉搏功能目标。
 - 代价：民航视图明确是当前镜头周围的区域观测，不宣称全球完整快照；更完整覆盖需要另行采购许可兼容的数据源。
-- Evidence: `public/gods-eye-view/THIRD_PARTY_NOTICES.txt`, `src/lib/scenarios/world-pulse-static-release.test.ts`, `src/lib/scenarios/adsb-lol.ts`, `src/app/api/[...path]/route.ts`。
+- Evidence: `src/lib/scenarios/adsb-lol.ts`, `src/app/api/[...path]/route.ts`, `src/lib/scenarios/world-pulse-repository.ts`。
+- 后续（2026-09-18）：`public/gods-eye-view/THIRD_PARTY_NOTICES.txt` 与 `src/lib/scenarios/world-pulse-static-release.test.ts` 随该静态发布物一并删除；本决策的服务端代理约束仍然有效，其证据改为上面三个仍在仓库中的文件。
 
 ## 2026-09-16 · CAPTCHA 与 OTP 始终由统一身份平台负责
 

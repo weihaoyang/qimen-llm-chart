@@ -11,10 +11,6 @@ const getPublicPlatformConfig = () => {
   };
 };
 
-export function AppShellEntry() {
-  return <AppShell platformConfig={getPublicPlatformConfig()} />;
-}
-
 export function ChartWorkbenchEntry() {
-  return <AppShell product="chart" platformConfig={getPublicPlatformConfig()} />;
+  return <AppShell platformConfig={getPublicPlatformConfig()} />;
 }

@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { Solar } from "lunar-typescript";
+import { HYDRATION_SAFE_DATE } from "@/lib/hydration-clock";
 import type { NormalizedBaziChart } from "@/lib/bazi/types";
 import type { FiveElement, TenGodGroup } from "@/lib/bazi/relations";
 import {
@@ -15,6 +16,13 @@ import {
 
 type BaziPanelProps = {
   chart: NormalizedBaziChart | null;
+  /**
+   * The resolved clock, supplied by the parent so the whole page shares one
+   * answer to "which day is it". Defaults to the hydration-safe instant: reading
+   * `new Date()` here would emit one year/month during the server render and
+   * another in the browser, which React reports as a hydration mismatch.
+   */
+  now?: Date;
 };
 
 type CorePillar = {
@@ -146,7 +154,7 @@ const buildElementCounts = (chart: NormalizedBaziChart) => {
   return FIVE_ELEMENTS.map((element) => ({ element, count: counts.get(element) ?? 0 }));
 };
 
-export function BaziPanel({ chart }: BaziPanelProps) {
+export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) {
   const [selectedDaYunIndex, setSelectedDaYunIndex] = useState(0);
   const [selectedLiuNianYear, setSelectedLiuNianYear] = useState<number | null>(null);
   const [selectedLiuYueMonth, setSelectedLiuYueMonth] = useState<number | null>(null);
@@ -172,12 +180,15 @@ export function BaziPanel({ chart }: BaziPanelProps) {
         (_, index) => selectedDaYun.startYear + index,
       )
     : [];
-  const currentYear = new Date().getFullYear();
+  // Read the clock once. Two separate `new Date()` calls could straddle a
+  // month or year boundary and leave `currentYear` and `currentMonth`
+  // describing different instants.
+  const currentYear = now.getFullYear();
   const activeLiuNianYear = availableLiuNianYears.includes(selectedLiuNianYear ?? currentYear)
     ? (selectedLiuNianYear ?? currentYear)
     : (availableLiuNianYears[0] ?? currentYear);
   const activeLiuNian = getLiuNianGanZhi(activeLiuNianYear);
-  const currentMonth = new Date().getMonth() + 1;
+  const currentMonth = now.getMonth() + 1;
   const activeLiuYueMonth = selectedLiuYueMonth ?? (activeLiuNianYear === currentYear ? currentMonth : 1);
   const activeLiuYue = getLiuYueGanZhi(activeLiuNianYear, activeLiuYueMonth);
   const dayunPillar: CorePillar = selectedDaYun

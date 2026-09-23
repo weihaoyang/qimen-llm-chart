@@ -47,4 +47,35 @@ describe("buildHistoricalBenchmarkContext", () => {
     expect(context.targetYear).toBeNull();
     expect(context.structuredText).toContain("不得补造流年结论");
   });
+
+  it("pins the reference instant to a mid-year date that survives the local round-trip", () => {
+    // The 流年 of a calendar year is identified from a mid-year instant: both the
+    // 立春 and the 农历春节 boundary fall in January/February, so an early-year
+    // instant would belong to the previous 干支 year. July must also read back as
+    // July on every server time zone — the payload is compared across runs, so a
+    // `Date.UTC` instant (which reads back as June 30 west of UTC) would make it
+    // time-zone dependent.
+    const context = buildHistoricalBenchmarkContext({
+      birth: { year: 1974, month: 4, day: 28, hour: 16, minute: 40, gender: "男" },
+      question: "此命 1996 年发生何事？",
+    });
+    const payload = JSON.parse(context.jsonPayload);
+
+    expect(payload.bazi.relations.timing.referenceDate).toBe("1996-07-01");
+    expect(context.structuredText).toContain("流年: 1996 丙子");
+  });
+
+  it("gives every candidate year its own mid-year reference instant", () => {
+    const context = buildHistoricalBenchmarkContext({
+      birth: { year: 1974, month: 4, day: 28, hour: 16, minute: 40, gender: "男" },
+      question: "何年应事？",
+      candidateYears: [1996, 2001, 2008],
+    });
+    const payload = JSON.parse(context.jsonPayload);
+
+    expect(payload.timingSlices.map((slice: { liuNian: { calendarYear: number } }) => slice.liuNian.calendarYear))
+      .toEqual([1996, 2001, 2008]);
+    expect(payload.timingSlices.map((slice: { liuNian: { ganZhi: string } }) => slice.liuNian.ganZhi))
+      .toEqual(["丙子", "辛巳", "戊子"]);
+  });
 });

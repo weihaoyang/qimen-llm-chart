@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { NextResponse } from "next/server";
+import { noStore } from "@/lib/http";
+import { errorResponse, UserFacingError } from "@/lib/api-error";
+import { createBoundedTtlCache } from "@/lib/bounded-ttl-cache";
 import { requestBaziPersonalityPrediction } from "@/lib/agent/bazi-personality";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import {
@@ -7,9 +9,11 @@ import {
   serializeBaziToStructuredText,
 } from "@/lib/bazi/serializer";
 import { normalizeProfileInput, type ProfileInput } from "@/lib/profile";
+import { formatDateTimeInZone } from "@/lib/qimen/timezone";
 import { buildResearchFeatureSnapshot } from "@/lib/bazi/research-feature-snapshot";
 import { getActiveResearchRuleRelease } from "@/lib/bazi/research-rule-repository";
 import { applyResearchRules } from "@/lib/bazi/research-rules";
+import { reportSwallowedError } from "@/lib/internal-log";
 
 const MAX_CLOCK_SKEW_SECONDS = 300;
 const BAZI_TRAIT_IDS = [
@@ -83,7 +87,14 @@ const FOLLOW_STRUCTURE_ALIASES: Record<string, string> = {
   "争议": "disputed",
 };
 const PREDICTION_CACHE_TTL_MS = 10 * 60 * 1000;
-const predictionCache = new Map<string, { expiresAt: number; value: Record<string, unknown> }>();
+// A process-lifetime Map is only safe when it is bounded. Without a cap a
+// long-lived instance accumulates one entry per distinct chart forever, even
+// though every entry past its TTL is dead weight.
+const PREDICTION_CACHE_MAX_ENTRIES = 200;
+const predictionCache = createBoundedTtlCache<string, Record<string, unknown>>({
+  ttlMs: PREDICTION_CACHE_TTL_MS,
+  maxEntries: PREDICTION_CACHE_MAX_ENTRIES,
+});
 const predictionCacheEnabled = process.env.NODE_ENV === "production";
 const REQUEST_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 120;
@@ -91,6 +102,13 @@ const BASE_PREDICTION_VERSION = "bazi-v3-ziping-luming-rules";
 let requestWindowStartedAt = Date.now();
 let requestCountInWindow = 0;
 
+/**
+ * A shared, process-wide budget whose only purpose is to protect the upstream
+ * model provider. A cache hit never reaches that provider, so it must not
+ * consume a slot — otherwise a burst of identical charts could be rejected
+ * with 429 while performing no upstream work at all. Callers therefore invoke
+ * this immediately before the provider request, not on entry.
+ */
 const consumeRequestSlot = () => {
   const now = Date.now();
   if (now - requestWindowStartedAt >= REQUEST_WINDOW_MS) {
@@ -112,16 +130,34 @@ type BaziPredictionBody = {
 };
 
 const jsonError = (error: string, status: number) =>
-  NextResponse.json({ error }, { status });
+  noStore({ error }, { status });
+
+/**
+ * The civil date of `instant` in `timeZone`, as a `Date` whose *local* components
+ * carry that civil date.
+ *
+ * `buildTimingSummary` reads the reference instant back with the local accessors
+ * (`getFullYear` / `getMonth` / `getDate`), so a real instant would be re-read in
+ * the server's zone and silently report yesterday for users west of it. Anchoring
+ * at 12:00 avoids the daylight-saving edge where a zone has no midnight.
+ */
+const civilDateInZone = (instant: Date, timeZone: string) => {
+  const [datePart] = formatDateTimeInZone(instant, timeZone).split(" ");
+  const [year, month, day] = datePart.split("-").map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
+
+const formatCivilDate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 const parseEvidence = (value: unknown, field: string, minimum = 0) => {
-  if (!Array.isArray(value)) throw new Error(`Agent 返回的${field}不符合结构化契约。`);
+  if (!Array.isArray(value)) throw new UserFacingError(`Agent 返回的${field}不符合结构化契约。`);
   const evidence = value
     .filter((item): item is string => typeof item === "string")
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 8);
-  if (evidence.length < minimum) throw new Error(`Agent 返回的${field}不符合结构化契约。`);
+  if (evidence.length < minimum) throw new UserFacingError(`Agent 返回的${field}不符合结构化契约。`);
   return evidence;
 };
 
@@ -132,7 +168,7 @@ const parseBoundedInteger = (value: unknown, field: string) => {
       ? Number(value)
       : Number.NaN;
   if (!Number.isFinite(numeric) || numeric < 0 || numeric > 100) {
-    throw new Error(`Agent 返回的${field}不符合结构化契约。`);
+    throw new UserFacingError(`Agent 返回的${field}不符合结构化契约。`);
   }
   return Math.round(numeric);
 };
@@ -159,7 +195,7 @@ const resolveAxisScore = (
   if (high !== undefined) return parseBoundedInteger(unwrapAxisScore(high), " MBTI 四维");
   const low = normalized[lowLetter.toLowerCase()];
   if (low !== undefined) return 100 - parseBoundedInteger(unwrapAxisScore(low), " MBTI 四维");
-  throw new Error("Agent 返回的 MBTI 四维不符合结构化契约。");
+  throw new UserFacingError("Agent 返回的 MBTI 四维不符合结构化契约。");
 };
 
 const verifyInternalSignature = (request: Request, rawBody: string) => {
@@ -188,7 +224,7 @@ const parsePredictionJson = (content: string) => {
   const parsed = JSON.parse(normalized) as Record<string, unknown>;
   const rawMbtiAxes = parsed.mbti_axes;
   if (!rawMbtiAxes || typeof rawMbtiAxes !== "object") {
-    throw new Error("Agent 没有返回 MBTI 四维预测。");
+    throw new UserFacingError("Agent 没有返回 MBTI 四维预测。");
   }
   const mbtiAxes = Object.fromEntries(
     MBTI_AXIS_IDS.map((axis) => {
@@ -198,7 +234,7 @@ const parsePredictionJson = (content: string) => {
   const mbtiCode = MBTI_AXIS_IDS.map((axis) => mbtiDirectionForScore(axis, mbtiAxes[axis])).join("");
   const rawDiagnosis = parsed.chart_diagnosis;
   if (!rawDiagnosis || typeof rawDiagnosis !== "object") {
-    throw new Error("Agent 没有返回命局结构诊断。");
+    throw new UserFacingError("Agent 没有返回命局结构诊断。");
   }
   const diagnosis = rawDiagnosis as Record<string, unknown>;
   const rawDayMasterStrength = String(diagnosis.day_master_strength ?? "").trim();
@@ -207,7 +243,7 @@ const parsePredictionJson = (content: string) => {
   const followStructure = FOLLOW_STRUCTURE_ALIASES[rawFollowStructure] ?? rawFollowStructure;
   const structure = String(diagnosis.structure ?? "").trim();
   if (!DAY_MASTER_STRENGTHS.has(dayMasterStrength) || !FOLLOW_STRUCTURES.has(followStructure) || !structure) {
-    throw new Error("Agent 返回的命局结构诊断不符合契约。");
+    throw new UserFacingError("Agent 返回的命局结构诊断不符合契约。");
   }
   const chartDiagnosis = {
     day_master_strength: dayMasterStrength,
@@ -219,15 +255,15 @@ const parsePredictionJson = (content: string) => {
   };
   const rawAxisEvidence = parsed.mbti_axis_evidence;
   if (!rawAxisEvidence || typeof rawAxisEvidence !== "object") {
-    throw new Error("Agent 没有返回 MBTI 四维证据。");
+    throw new UserFacingError("Agent 没有返回 MBTI 四维证据。");
   }
   const mbtiAxisEvidence = Object.fromEntries(
     MBTI_AXIS_IDS.map((axis) => {
       const item = (rawAxisEvidence as Record<string, unknown>)[axis];
-      if (!item || typeof item !== "object") throw new Error("Agent 返回的 MBTI 四维证据不符合契约。");
+      if (!item || typeof item !== "object") throw new UserFacingError("Agent 返回的 MBTI 四维证据不符合契约。");
       const record = item as Record<string, unknown>;
       const expectedDirection = mbtiDirectionForScore(axis, mbtiAxes[axis]);
-      if (record.direction !== expectedDirection) throw new Error("Agent 返回的 MBTI 四维证据方向不一致。");
+      if (record.direction !== expectedDirection) throw new UserFacingError("Agent 返回的 MBTI 四维证据方向不一致。");
       return [axis, {
         direction: expectedDirection,
         confidence: parseConfidence(record.confidence, "MBTI 轴置信度"),
@@ -238,7 +274,7 @@ const parsePredictionJson = (content: string) => {
   );
   const rawScores = parsed.trait_scores;
   if (!rawScores || typeof rawScores !== "object") {
-    throw new Error("Agent 没有返回五维性格分数。");
+    throw new UserFacingError("Agent 没有返回五维性格分数。");
   }
   const traitScores = Object.fromEntries(
     BAZI_TRAIT_IDS.map((trait) => {
@@ -264,7 +300,7 @@ const parsePredictionJson = (content: string) => {
         item.reason.length > 0,
     );
   const narrative = typeof parsed.narrative === "string" ? parsed.narrative.trim() : "";
-  if (!narrative) throw new Error("Agent 没有返回性格预测叙事。");
+  if (!narrative) throw new UserFacingError("Agent 没有返回性格预测叙事。");
   return {
     mbti_code: mbtiCode,
     mbti_axes: mbtiAxes,
@@ -286,7 +322,6 @@ export async function POST(request: Request) {
   const signature = verifyInternalSignature(request, rawBody);
   if (signature === "missing-secret") return jsonError("八字 Agent 内部接口未配置密钥。", 503);
   if (!signature) return jsonError("无效的八字 Agent 内部签名。", 401);
-  if (!consumeRequestSlot()) return jsonError("八字 Agent 请求过于频繁，请稍后再试。", 429);
 
   let body: BaziPredictionBody;
   try {
@@ -300,7 +335,16 @@ export async function POST(request: Request) {
   const timezone = typeof body.timezone === "string" ? body.timezone.trim() : "";
   const gender = body.gender === "male" || body.gender === "female" ? body.gender : null;
   const timeBasis = body.time_basis === "true-solar" ? "true-solar" : "civil";
-  const longitude = body.longitude === undefined ? undefined : Number(body.longitude);
+  // `Number("")` is 0, and 0 is a valid longitude, so an empty or non-numeric
+  // string used to be accepted as the Greenwich meridian. Only a real number or
+  // a non-empty numeric string is a longitude.
+  const longitude = body.longitude === undefined
+    ? undefined
+    : typeof body.longitude === "number"
+      ? body.longitude
+      : typeof body.longitude === "string" && body.longitude.trim() !== "" && Number.isFinite(Number(body.longitude))
+        ? Number(body.longitude)
+        : Number.NaN;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || !/^\d{2}:\d{2}$/.test(birthTime) || !timezone || !gender) {
     return jsonError("出生日期、分钟级时间、时区和命理排盘性别口径均为必填。", 400);
   }
@@ -332,19 +376,37 @@ export async function POST(request: Request) {
     let activeRelease = null;
     try {
       activeRelease = await getActiveResearchRuleRelease();
-    } catch {
+    } catch (releaseError) {
+      // A missing rule release only degrades the prompt, so it must not fail the
+      // prediction — but a silently dropped release would look like a content
+      // change, not an outage, so it is reported.
+      reportSwallowedError("bazi-personality", "读取生效中的研究规则版本失败，本次预测将不带规则版本上下文。", releaseError);
       activeRelease = null;
     }
+    // The serialized payload embeds the *current* 流年 and 大运, so the same chart
+    // serializes differently at different times. Resolve that instant once, here,
+    // rather than letting the serializer fall back to its own hidden `new Date()`.
+    //
+    // It is resolved in the *user's* time zone because a 流年 is defined against a
+    // civil date: reading the server's clock would report the previous 流年 for a
+    // few hours around 立春 / 春节 for every user in another zone.
+    const referenceDate = civilDateInZone(new Date(), timezone);
+    const referenceDay = formatCivilDate(referenceDate);
     const cacheKey = createHmac("sha256", process.env.BAZI_AGENT_INTERNAL_SECRET ?? "")
       .update(JSON.stringify({ birthDate, birthTime, timezone, gender, timeBasis, longitude, researchRuleHash: activeRelease?.ruleHash ?? "" }))
       .digest("hex");
-    const cached = predictionCacheEnabled ? predictionCache.get(cacheKey) : undefined;
-    if (cached && cached.expiresAt > Date.now()) {
-      return NextResponse.json({ ...cached.value, cache_hit: true });
+    // The chart fingerprint stays time-independent (clients compare it), but the
+    // cache entry must not: a prediction generated while the payload said 丙午
+    // must never be replayed after the payload would say 丁未.
+    const cacheEntryKey = `${cacheKey}:${referenceDay}`;
+    const cached = predictionCacheEnabled ? predictionCache.get(cacheEntryKey) : undefined;
+    if (cached) {
+      return noStore({ ...cached, cache_hit: true });
     }
+    if (!consumeRequestSlot()) return jsonError("八字 Agent 请求过于频繁，请稍后再试。", 429);
     const analysis = await requestBaziPersonalityPrediction({
-      structuredText: serializeBaziToStructuredText(chart),
-      jsonPayload: serializeBaziToCompactJson(chart),
+      structuredText: serializeBaziToStructuredText(chart, { referenceDate }),
+      jsonPayload: serializeBaziToCompactJson(chart, { referenceDate }),
     });
     const prediction = parsePredictionJson(analysis.content);
     const auditedDiagnosis = {
@@ -410,10 +472,11 @@ export async function POST(request: Request) {
       prompt_version: "bazi-personality-v4-ziping-luming-rules",
       cache_hit: false,
     };
-    if (predictionCacheEnabled) predictionCache.set(cacheKey, { expiresAt: Date.now() + PREDICTION_CACHE_TTL_MS, value: response });
-    return NextResponse.json(response);
+    if (predictionCacheEnabled) predictionCache.set(cacheEntryKey, response);
+    return noStore(response);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "八字 Agent 生成失败。";
-    return jsonError(message, 502);
+    // Provider contract violations above carry deliberate 502 diagnostics; any
+    // other failure (provider transport, database) stays behind the fallback.
+    return errorResponse(error, "八字 Agent 生成失败。", 502);
   }
 }

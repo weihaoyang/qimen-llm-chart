@@ -11,6 +11,7 @@ const {
   releaseGuestUsageMock,
   releasePlatformUsageMock,
   requestAgentAnalysisMock,
+  streamAgentAnalysisMock,
   agentPlanCode,
   klinePlanCode,
 } = vi.hoisted(() => ({
@@ -24,11 +25,19 @@ const {
   releaseGuestUsageMock: vi.fn(),
   releasePlatformUsageMock: vi.fn(),
   requestAgentAnalysisMock: vi.fn(),
+  streamAgentAnalysisMock: vi.fn(),
   agentPlanCode: "shengtian-banzi-analysis-10",
   klinePlanCode: "shengtian-banzi-kline-precise-1",
 }));
 
-vi.mock("@/lib/platform/server", () => ({
+// `PlatformServerRequestError` is passed through from the real module rather than
+// stubbed: `settledCommit` distinguishes a reservation the platform already settled
+// (a terminal 409) from a transient failure with `instanceof`, so a mock that omits
+// the class makes the route throw "no such export" instead of exercising the branch.
+vi.mock("@/lib/platform/server", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/platform/server")>("@/lib/platform/server");
+  return {
+  PlatformServerRequestError: actual.PlatformServerRequestError,
   readGuestCheckoutToken: readGuestCheckoutTokenMock,
   readBearerToken: readBearerTokenMock,
   fetchPlatformGate: fetchPlatformGateMock,
@@ -40,13 +49,17 @@ vi.mock("@/lib/platform/server", () => ({
   releasePlatformUsage: releasePlatformUsageMock,
   AGENT_PLAN_CODE: agentPlanCode,
   KLINE_PLAN_CODE: klinePlanCode,
-}));
+  };
+});
 
 vi.mock("@/lib/agent/chat", () => ({
   requestAgentAnalysis: requestAgentAnalysisMock,
+  streamAgentAnalysis: streamAgentAnalysisMock,
 }));
 
 import { POST } from "./route";
+import { PlatformServerRequestError } from "@/lib/platform/server";
+import { UserFacingError } from "@/lib/user-facing-error";
 
 const validRequest = () =>
   new Request("http://localhost/api/agent", {
@@ -75,6 +88,7 @@ describe("POST /api/agent", () => {
     releaseGuestUsageMock.mockReset();
     releasePlatformUsageMock.mockReset();
     requestAgentAnalysisMock.mockReset();
+    streamAgentAnalysisMock.mockReset();
   });
 
   it("returns 402 when the checkout token is missing", async () => {
@@ -131,6 +145,35 @@ describe("POST /api/agent", () => {
     expect(reserveGuestUsageMock).toHaveBeenCalledWith("token-1", { planCode: agentPlanCode });
     expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
     expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  // The platform's commit is a compare-and-set, so a credit the earlier attempt
+  // already consumed answers a terminal 409 — not a retryable failure. Treating it
+  // as retryable meant the analysis had already been produced (`delivered` is set
+  // before the commit runs) yet the response was an error, so a user who *had* been
+  // charged could never open what they paid for, and every retry reproduced the 409.
+  it("delivers the analysis when the platform reports the reservation already settled", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    requestAgentAnalysisMock.mockResolvedValue({ content: "分析完成", model: "mock-model" });
+    commitGuestUsageMock.mockRejectedValue(new PlatformServerRequestError(409, "usage_reservation_expired", "本次分析预留已过期，请重新发起。"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const response = await POST(validRequest());
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        content: "分析完成",
+        model: "mock-model",
+        usage: { reconciled: "already_settled", reason_code: "usage_reservation_expired" },
+      });
+      // Terminal means terminal: not retried, and a settled reservation is never
+      // refunded.
+      expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
+      expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it("checks the platform gate and charges an authenticated account", async () => {
@@ -253,7 +296,9 @@ describe("POST /api/agent", () => {
   it("releases the reserved credit when the model fails", async () => {
     readGuestCheckoutTokenMock.mockReturnValue("token-1");
     reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
-    requestAgentAnalysisMock.mockRejectedValue(new Error("分析服务暂时不可用，请稍后再试。"));
+    // `requestAgentAnalysis` marks its deliberate messages as user-facing; the
+    // route must forward them verbatim.
+    requestAgentAnalysisMock.mockRejectedValue(new UserFacingError("分析服务暂时不可用，请稍后再试。"));
     releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
 
     const response = await POST(validRequest());
@@ -262,5 +307,161 @@ describe("POST /api/agent", () => {
     await expect(response.json()).resolves.toEqual({ error: "分析服务暂时不可用，请稍后再试。" });
     expect(releaseGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
     expect(commitGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  it("never echoes an internal failure to the browser", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    requestAgentAnalysisMock.mockRejectedValue(
+      new Error('relation "agent_usage_ledger" does not exist (SQLSTATE 42P01) at 127.0.0.1:5432'),
+    );
+    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+
+    const response = await POST(validRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: "AI 分析请求失败。" });
+    // The reservation still has to be returned when nothing was delivered.
+    expect(releaseGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+  });
+
+  it("does not echo an unconfigured-provider message", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    requestAgentAnalysisMock.mockRejectedValue(
+      new Error("未配置 OPENAI_API_KEY、AI_API_KEY、GEMINI_API_KEY 或 GOOGLE_GENERATIVE_AI_API_KEY。"),
+    );
+    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "AI 分析请求失败。" });
+  });
+});
+
+describe("POST /api/agent (streaming settle)", () => {
+  type StreamCallbacks = {
+    onChunk: () => void;
+    onFinish: () => Promise<void> | void;
+    onError: () => Promise<void> | void;
+    onAbort: () => Promise<void> | void;
+  };
+
+  const streamRequest = () =>
+    new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "X-Guest-Checkout-Token": "token-1", "x-agent-stream": "1" },
+      body: JSON.stringify({ mode: "qimen", structuredText: "structured", jsonPayload: "{}" }),
+    });
+
+  const startStream = async () => {
+    let callbacks: StreamCallbacks | null = null;
+    streamAgentAnalysisMock.mockImplementation((_payload: unknown, options: StreamCallbacks) => {
+      callbacks = options;
+      return { toTextStreamResponse: () => new Response("stream") };
+    });
+
+    const response = await POST(streamRequest());
+    expect(response.status).toBe(200);
+    if (!callbacks) throw new Error("streamAgentAnalysis was not called");
+    return callbacks as StreamCallbacks;
+  };
+
+  beforeEach(() => {
+    readGuestCheckoutTokenMock.mockReset();
+    readBearerTokenMock.mockReset();
+    readBearerTokenMock.mockReturnValue(null);
+    reserveGuestUsageMock.mockReset();
+    commitGuestUsageMock.mockReset();
+    releaseGuestUsageMock.mockReset();
+    streamAgentAnalysisMock.mockReset();
+  });
+
+  it("commits a delivered analysis even when the client aborts before finish", async () => {
+    // The abort arrives after text reached the client but before `onFinish`
+    // settles. The old split callbacks marked the stream settled in `release`,
+    // noticed the delivery, and returned — leaving the reservation dangling and
+    // `commit` permanently blocked, so the platform decided whether it was paid.
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitGuestUsageMock.mockResolvedValue({ available: 0, reserved: 0, consumed: 1 });
+
+    const callbacks = await startStream();
+    callbacks.onChunk();
+    await callbacks.onAbort();
+    await callbacks.onFinish();
+
+    expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
+    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: "shengtian-banzi-analysis-10" });
+    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  it("releases the reservation when the client aborts before any text", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+
+    const callbacks = await startStream();
+    await callbacks.onAbort();
+    await callbacks.onFinish();
+
+    expect(releaseGuestUsageMock).toHaveBeenCalledTimes(1);
+    expect(commitGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  it("settles exactly once no matter how many callbacks fire", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitGuestUsageMock.mockResolvedValue({ available: 0, reserved: 0, consumed: 1 });
+
+    const callbacks = await startStream();
+    callbacks.onChunk();
+    await callbacks.onFinish();
+    await callbacks.onAbort();
+    await callbacks.onError();
+
+    expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
+    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  it("does not retry a failed commit, which would double-charge", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitGuestUsageMock.mockRejectedValue(new Error("network lost after commit"));
+
+    const callbacks = await startStream();
+    callbacks.onChunk();
+    await expect(callbacks.onFinish()).rejects.toThrow("network lost after commit");
+    // A later callback must not pick the same reservation up again.
+    await callbacks.onAbort();
+
+    expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
+    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+  });
+
+  // The same defect on the streaming path. The text is already on the wire when the
+  // commit runs, so a terminal 409 must not surface as a stream error after the user
+  // has the analysis: the reservation is settled, nothing needs retrying, and the
+  // settlement must not be mistaken for a reason to refund.
+  it("does not raise a stream error when the platform reports the reservation already settled", async () => {
+    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitGuestUsageMock.mockRejectedValue(new PlatformServerRequestError(409, "usage_reservation_expired", "本次分析预留已过期，请重新发起。"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const callbacks = await startStream();
+      callbacks.onChunk();
+
+      await expect(callbacks.onFinish()).resolves.toBeUndefined();
+      // A later callback must not pick the same reservation up again.
+      await callbacks.onAbort();
+
+      expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
+      expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

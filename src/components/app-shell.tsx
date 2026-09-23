@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
 import {
+  HYDRATION_SAFE_DATE,
+  HYDRATION_SAFE_TIME_ZONE,
+  useResolvedClock,
+} from "@/lib/hydration-clock";
+import {
   AGENT_ANALYSIS_ANGLES,
   AGENT_FOLLOW_UP_QUESTIONS,
   AGENT_INTERVIEW_START_LABEL,
@@ -91,9 +96,7 @@ import { InspectorPanel } from "./inspector-panel";
 import { PalaceGrid } from "./palace-grid";
 import { SummaryStrip } from "./summary-strip";
 import { KlinePanel } from "./kline-panel";
-import { ObservationJournal } from "./observation-journal";
 import { ClassicObservatoryPanel } from "./classic-observatory-panel";
-import { DecisionTreePanel } from "./decision-tree-panel";
 import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
 import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
@@ -282,9 +285,6 @@ const buildWorkbenchCharts = (
   };
 };
 
-const HYDRATION_SAFE_DATE = new Date("2000-01-01T12:00:00.000Z");
-const HYDRATION_SAFE_TIME_ZONE = "Asia/Shanghai";
-
 const getInitialState = (now = HYDRATION_SAFE_DATE, timeZone = HYDRATION_SAFE_TIME_ZONE) => {
   const defaultInput = getDefaultProfileInput(now, timeZone);
   const defaultQimenSettings = defaultInput.qimenSettings ?? DEFAULT_QIMEN_SETTINGS;
@@ -359,20 +359,28 @@ const syncSequenceWindowToStart = (sequence: ChartSequenceInput, startDatetime: 
   return { ...sequence, startDatetime, endDatetime: nextEnd };
 };
 
-type ProductSurface = "shengtian" | "chart";
-
 type AppShellProps = {
-  product?: ProductSurface;
   platformConfig: PlatformClientConfig;
 };
 
-export function AppShell({ product = "shengtian", platformConfig }: AppShellProps) {
+/**
+ * What the K-line series memos return when nothing can render them.
+ *
+ * A stable module-level constant rather than a fresh object per render, so a
+ * panel that does receive it never sees a changed identity. The shape matches
+ * the "sequence too short to chart" result `buildQimenKline` already produces.
+ */
+const EMPTY_RELATIONSHIP_KLINES = {
+  "double-hour": buildQimenKline([], "relationship"),
+  day: buildQimenKline([], "relationship"),
+  month: buildQimenKline([], "relationship"),
+  year: buildQimenKline([], "relationship"),
+};
+
+export function AppShell({ platformConfig }: AppShellProps) {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
-  const [klineWorkspaceOpen, setKlineWorkspaceOpen] = useState(false);
   const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
-  const [decisionWorkspaceOpen, setDecisionWorkspaceOpen] = useState(false);
-  const [agentWorkspaceOpen, setAgentWorkspaceOpen] = useState(product === "shengtian");
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
   const [partnerFormState, setPartnerFormState] = useState<ProfileInput>(() => ({
     ...initialState.defaultInput,
@@ -448,9 +456,15 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
   // The Battle Domain uses the same paid Agent entitlement as the chart
   // workbench. A guest checkout token must be forwarded explicitly; login is
   // only required for persistence, not for consuming a paid guest turn.
+  const clock = useResolvedClock();
+  // Replace the hydration-safe defaults with the visitor's real clock and time
+  // zone exactly once. The initial `useState` seeds above run with the fixed
+  // instant so the server HTML and the first client render agree; this effect is
+  // the single swap, and it only fires once `clock.resolved` flips — hence the
+  // `clock` dependency rather than an empty array.
   useEffect(() => {
-    const resolvedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const currentState = getInitialState(new Date(), resolvedTimeZone);
+    if (!clock.resolved) return;
+    const currentState = getInitialState(clock.now, clock.timeZone);
     setFormState(currentState.defaultInput);
     setPartnerFormState({
       ...currentState.defaultInput,
@@ -464,7 +478,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     setZiweiChart(currentState.ziweiChart);
     setError(currentState.error);
     setSelectedPalace(currentState.qimenChart?.raw.palaces[0]?.position ?? null);
-  }, []);
+  }, [clock]);
 
   const partnerNormalizedProfile = useMemo(() => {
     try { return normalizeProfileInput(partnerFormState); } catch { return null; }
@@ -473,7 +487,14 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
   const compatibility = useMemo(() => baziChart && partnerBaziChart ? buildBaziCompatibility(baziChart, partnerBaziChart) : null, [baziChart, partnerBaziChart]);
 
   const activeQimenChart = sequence[selectedSequenceIndex]?.chart ?? qimenChart;
+  // Four 20-chart 奇门 sequences, measured at ~33 ms on this machine. The only
+  // consumer is the `research` mode panel, so on the default load — mode
+  // `qimen` — the whole thing is built and thrown away, and then built again
+  // when the mount effect swaps in the real clock. Build it only when something
+  // can actually render it.
+  const klineSeriesVisible = mode === "research";
   const relationshipKlines = useMemo(() => {
+    if (!klineSeriesVisible) return EMPTY_RELATIONSHIP_KLINES;
     const start = formState.datetime;
     const zone = formState.timeZone;
     try {
@@ -484,14 +505,9 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
         year: buildQimenKline(buildChartSequenceByCount(start, zone, "year", 20, qimenSettings), "relationship", "year"),
       };
     } catch {
-      return {
-        "double-hour": buildQimenKline([], "relationship"),
-        day: buildQimenKline([], "relationship"),
-        month: buildQimenKline([], "relationship"),
-        year: buildQimenKline([], "relationship"),
-      };
+      return EMPTY_RELATIONSHIP_KLINES;
     }
-  }, [formState.datetime, formState.timeZone, qimenSettings]);
+  }, [klineSeriesVisible, formState.datetime, formState.timeZone, qimenSettings]);
   const relationshipKline = relationshipKlines["double-hour"];
   const activeModeMeta = MODE_META[mode];
   useEffect(() => {
@@ -624,12 +640,17 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
         bazi: baziChart,
         ziwei: ziweiChart,
       });
-      verification.rows = [
+      // Build a new array instead of assigning to `verification.rows`. The
+      // builder returns a fresh object today, so the assignment happens to be
+      // harmless — but a memo result is the memo's value, and the moment the
+      // builder caches, or a second memo shares the object, the mutation would
+      // leak into an unrelated render.
+      const rows: VerificationRow[] = [
         ...verification.rows.filter((item) => item.system !== "奇门" || item.field !== "参考引擎"),
         ...qimenVerificationRows,
       ];
       if (qimenChart && qimenVerificationRows.length === 0) {
-        verification.rows.push({
+        rows.push({
           system: "奇门",
           field: "参考引擎",
           primary: qimenChart.engine,
@@ -640,7 +661,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
       }
       return {
         trend: buildLifeTrendData(normalizedProfile),
-        verification,
+        verification: { ...verification, rows },
         daliuren: buildDaliurenResearch(normalizedProfile),
         taiyi: buildTaiyiResearch(normalizedProfile),
       };
@@ -888,61 +909,14 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     setSelectedPalace(nextChart?.raw.palaces[0]?.position ?? null);
   };
 
-  const handleQimenSettingsChange = (nextSettings: QimenSettings) => {
-    setQimenSettings(nextSettings);
-    setCopyState("idle");
-
-    try {
-      const nextSequence =
-        sequence.length > 0 ? buildChartSequence(sequenceFormState, nextSettings) : [];
-
-      applyWorkbenchCharts(formState, nextSettings, {
-        nextSequence,
-        nextSelectedSequenceIndex: selectedSequenceIndex,
-      });
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "更新排盘口径失败。");
-      setSequence([]);
-      setSelectedSequenceIndex(0);
-    }
-  };
+  // 排盘口径（用局法/节气/遁type/局数/年分界）不在这里直接重排：
+  // 调整盘面是一个草稿面板（打开时快照、取消时回滚、点「应用并重新排盘」才生效），
+  // 所以 ChartForm 只回写 setQimenSettings，重排统一走 handleGenerate / handleGenerateSequence。
 
   const handleModeChange = (nextMode: WorkbenchMode) => {
     setMode(nextMode);
-    setKlineWorkspaceOpen(false);
-    setClassicWorkspace(null);
-    setDecisionWorkspaceOpen(false);
-    setAgentWorkspaceOpen(false);
-    setParametersOpen(false);
-  };
-
-  const handleKlineWorkspaceOpen = () => {
-    setKlineWorkspaceOpen(true);
-    setClassicWorkspace(null);
-    setDecisionWorkspaceOpen(false);
-    setAgentWorkspaceOpen(false);
-    setParametersOpen(false);
-  };
-
-  const handleDecisionWorkspaceOpen = () => {
-    setDecisionWorkspaceOpen(true);
-    setKlineWorkspaceOpen(false);
-    setClassicWorkspace(null);
-    setAgentWorkspaceOpen(false);
-    setParametersOpen(false);
-  };
-
-  const handleAgentWorkspaceOpen = () => {
-    setAgentWorkspaceOpen(true);
-    setDecisionWorkspaceOpen(false);
-    setKlineWorkspaceOpen(false);
     setClassicWorkspace(null);
     setParametersOpen(false);
-    setAgentState((current) => {
-      const currentMode = current[mode];
-      if (currentMode.conversation.length > 0 || (currentMode.question.trim() && currentMode.question !== DEFAULT_AGENT_QUESTIONS[mode])) return current;
-      return { ...current, [mode]: { ...currentMode, question: "", focus: "按主题分析" } };
-    });
   };
 
   const handleClassicWorkspaceOpen = (kind: "daliuren" | "taiyi") => {
@@ -952,9 +926,6 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     setMode("research");
     setResearchTool(kind);
     setClassicWorkspace(kind);
-    setKlineWorkspaceOpen(false);
-    setDecisionWorkspaceOpen(false);
-    setAgentWorkspaceOpen(false);
     setParametersOpen(false);
   };
 
@@ -1000,12 +971,26 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     window.setTimeout(() => setAgentResultCopied(false), 1800);
   };
 
+  // Entitlement truth belongs to the platform, never to local storage.
+  //
+  // An account state carries a `usageAvailable` that was restored from local
+  // storage, so it must not decide the account path: only the live
+  // `platformWorkspace.usage` may. Reading the cached count here would let a
+  // stale "9 次" from a previous session re-enable the analysis entry after the
+  // platform has already exhausted (or revoked) the entitlement, and the user
+  // would only find out from a server-side gate error mid-conversation.
+  //
+  // Guests are different: the platform exposes reserve/commit/release for a
+  // guest checkout token but no read-only balance endpoint, so the cached count
+  // stays a hint for them. That is safe because every turn re-reserves against
+  // the platform, so a stale hint can send a guest into a conversation that
+  // fails — it can never hand out a free analysis.
   const canUseAgentState = (state: AgentModeState) =>
-    state.usageAvailable > 0 && (
-      state.authMode === "account"
-        ? platformWorkspace.status === "authenticated" && Boolean(platformWorkspace.session)
-        : Boolean(state.checkoutToken)
-    );
+    state.authMode === "account"
+      ? platformWorkspace.status === "authenticated"
+        && Boolean(platformWorkspace.session)
+        && (platformWorkspace.usage?.available ?? 0) > 0
+      : state.usageAvailable > 0 && Boolean(state.checkoutToken);
 
   // The account balance is the authoritative source after login/redeem. An
   // active guest session can be restored from local storage at the same time
@@ -1194,7 +1179,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
           productCode: platformConfig.productCode,
           checkoutToken: "",
           checkoutMode: "account",
-          returnPath: product === "chart" ? "/paipan" : "/",
+          returnPath: "/paipan",
         });
         window.location.assign(checkout.providerCheckoutUrl);
         return;
@@ -1212,7 +1197,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
         productCode: platformConfig.productCode,
         checkoutToken: checkout.checkout_token,
         checkoutMode: "guest",
-        returnPath: product === "chart" ? "/paipan" : "/",
+        returnPath: "/paipan",
       });
       if (!payment.provider_checkout_url) throw new Error("平台没有返回收银台地址，未继续发起支付。");
       window.location.href = payment.provider_checkout_url;
@@ -1390,7 +1375,22 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     }
   };
 
+  // `popCompletedPaidAnalysis` below is a destructive read, so this effect is not
+  // idempotent — and React double-invokes mount effects in development, which is
+  // exactly the shape a remount has too. On the second run the completed record is
+  // gone, so the effect falls through to the session restore and rebuilds the mode
+  // state from a snapshot that has no `model` (the session deliberately stores
+  // messages, not the model label): the paid turn keeps its content but silently
+  // loses which model produced it, and a stale session can pull the workspace back
+  // to another mode. The work is genuinely once-per-page-load, so latch it.
+  //
+  // The latch cannot make a *remount* behave like the first run — by then the
+  // record really is consumed — so the destructive read itself stays a known
+  // limitation of the storage API rather than something this effect can repair.
+  const consumedCompletedAnalysis = useRef(false);
   useEffect(() => {
+    if (consumedCompletedAnalysis.current) return;
+    consumedCompletedAnalysis.current = true;
     const savedKline = loadKlineAiResult();
     if (savedKline?.content) {
       setKlineAiContent(savedKline.content);
@@ -1442,6 +1442,19 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     });
   }, []);
 
+  // `agentStreamConfig` is rebuilt on every render, but the `onFinish` callback it
+  // hands out is captured by the stream when the request starts and may run
+  // seconds later, after any number of renders. Reading `agentState` or
+  // `streamSharedState` from that closure writes a state object derived from a
+  // stale snapshot, reverting whatever changed meanwhile — for instance a second
+  // turn that finished first and already decremented the usage counters. The ref
+  // is kept current on every commit so `onFinish` can read the latest state
+  // without depending on the render it was created in.
+  const latestAgentState = useRef(agentState);
+  useEffect(() => {
+    latestAgentState.current = agentState;
+  }, [agentState]);
+
   const streamSharedState = getAccountAgentState(agentState[mode])
     ?? (canUseAgentState(agentState[mode])
       ? agentState[mode]
@@ -1464,13 +1477,21 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     onStart: () => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: true, error: null } })),
     onFinish: (messages: AgentConversationMessage[], completed = true) => {
       const assistant = messages.filter((message) => message.role === "assistant").at(-1)?.content ?? "";
-      const nextAvailable = Math.max(streamSharedState.usageAvailable - (completed ? 1 : 0), 0);
-      const nextConsumed = streamSharedState.usageConsumed + (completed ? 1 : 0);
+      const delta = completed ? 1 : 0;
+      const latest = latestAgentState.current;
+      const previous = latest[mode];
+      // Re-resolve the shared state from the latest snapshot for the same reason.
+      const latestShared = getAccountAgentState(previous)
+        ?? (canUseAgentState(previous)
+          ? previous
+          : Object.values(latest).find((state) => canUseAgentState(state)) ?? previous);
+      const nextAvailable = Math.max(previous.usageAvailable - delta, 0);
+      const nextConsumed = previous.usageConsumed + delta;
       const nextState = {
-        ...agentState[mode],
-        authMode: streamSharedState.authMode,
-        checkoutToken: streamSharedState.checkoutToken,
-        orderId: streamSharedState.orderId,
+        ...previous,
+        authMode: latestShared.authMode,
+        checkoutToken: latestShared.checkoutToken,
+        orderId: latestShared.orderId,
         question: "",
         content: assistant,
         loading: false,
@@ -1478,8 +1499,8 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
         conversation: messages,
         usageAvailable: nextAvailable,
         usageConsumed: nextConsumed,
-        sessionStructuredText: agentState[mode].sessionStructuredText || structuredText,
-        sessionJsonPayload: agentState[mode].sessionJsonPayload || jsonPayload,
+        sessionStructuredText: previous.sessionStructuredText || structuredText,
+        sessionJsonPayload: previous.sessionJsonPayload || jsonPayload,
       };
       setAgentState((current) => ({ ...current, [mode]: nextState }));
       saveActiveAgentSession({ orderId: nextState.orderId, checkoutToken: nextState.checkoutToken, checkoutMode: nextState.authMode, mode, focus: nextState.focus, structuredText: nextState.sessionStructuredText, jsonPayload: nextState.sessionJsonPayload, messages, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
@@ -1488,11 +1509,15 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     onError: (message: string) => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: false, error: message } })),
   } : undefined;
 
+  // The counter next to the analysis entry has to agree with the gate above it.
+  // For an authenticated account the live platform balance wins over the cached
+  // count, otherwise the panel advertises turns the platform has already spent.
+  const displayedUsage = platformWorkspace.status === "authenticated" && platformWorkspace.usage
+    ? { usageAvailable: platformWorkspace.usage.available, usageConsumed: platformWorkspace.usage.consumed }
+    : Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState[mode];
+
   const agentInspector = (
     <InspectorPanel
-      surface={product === "chart" ? "chart" : "shengtian"}
-      hideTechnicalTabs
-      hideObservatoryHeader={product === "shengtian" && agentWorkspaceOpen}
       agentTitle={classicWorkspace === "daliuren" ? "大六壬 Agent 分析" : classicWorkspace === "taiyi" ? "太乙 Agent 分析" : "AI 分析"}
       agentAngles={AGENT_ANALYSIS_ANGLES[mode]}
       agentError={agentState[mode].error}
@@ -1502,8 +1527,8 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
       agentModel={agentState[mode].model}
       agentQuestion={agentState[mode].question}
       isInterviewZeroState={agentState[mode].focus === "人生议题访谈" && !agentState[mode].question.trim() && agentState[mode].conversation.length === 0}
-      agentUsageAvailable={(Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState[mode]).usageAvailable}
-      agentUsageConsumed={(Object.values(agentState).find((state) => canUseAgentState(state)) ?? agentState[mode]).usageConsumed}
+      agentUsageAvailable={displayedUsage.usageAvailable}
+      agentUsageConsumed={displayedUsage.usageConsumed}
       agentPurchaseLabel={(() => {
         const plan = platformWorkspace.plans.find((item) => item.plan_code === AGENT_PLAN_CODE);
         return plan ? `${plan.title} · ¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
@@ -1609,7 +1634,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
           </>
         ) : null}
 
-        {mode === "bazi" ? <><BaziPanel chart={baziChart} /><BaziCompatibilityPanel value={compatibility} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} /></> : null}
+        {mode === "bazi" ? <><BaziPanel chart={baziChart} now={clock.now} /><BaziCompatibilityPanel value={compatibility} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} /></> : null}
 
         {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
 
@@ -1623,6 +1648,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
             aiError={klineAiError}
             loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
             onAnalyze={handleKlineAnalyze}
+            now={clock.resolved ? clock.now : undefined}
             aiPriceLabel={(() => {
               const plan = platformWorkspace.plans.find((item) => item.plan_code === KLINE_PLAN_CODE);
               return plan ? `¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
@@ -1640,7 +1666,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
       {/* The split only moves the life-decision control room to Shengtian.
           The chart product keeps the original per-chart Agent analysis beside
           Qimen/Bazi/Ziwei, including single-chart and sequence evidence. */}
-      {(product === "chart" || product === "shengtian") && mode !== "combined" && !(product === "chart" && chartAnalysisOpen) ? agentInspector : null}
+      {mode !== "combined" && !chartAnalysisOpen ? agentInspector : null}
 
       {mode !== "research" ? null : <div className="research-sidebar-note">研究工具与 Agent 已在同一工作区显示；选择工具后，Agent 会收到对应的结构化文本和 JSON。</div>}
     </aside>
@@ -1822,8 +1848,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
     </button>
   );
 
-  const chartAnalysisOverlay = product === "chart"
-    && chartAnalysisOpen
+  const chartAnalysisOverlay = chartAnalysisOpen
     && typeof document !== "undefined"
     ? createPortal(
       <div className="product-chart chart-analysis-portal">
@@ -1853,25 +1878,19 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
   // Keep a stable DOM anchor for chart integrations and smoke tests even while
   // the analysis drawer is closed. The interactive dialog remains portalized
   // and is mounted only on demand.
-  const chartAnalysisAnchor = product === "chart" && !chartAnalysisOpen
+  const chartAnalysisAnchor = !chartAnalysisOpen
     ? <div data-layout="chart-analysis-drawer" aria-hidden="true" hidden />
     : null;
 
   return (
-    <div className={`page-shell product-${product}${agentWorkspaceOpen ? " is-agent-workspace" : ""}`} data-mode={mode}>
-      {!(product === "shengtian" && agentWorkspaceOpen) ? <header className="observatory-hero">
+    <div className="page-shell product-chart" data-mode={mode}>
+      <header className="observatory-hero">
         <div className="observatory-hero__copy">
-          <span className="workspace-kicker">{product === "shengtian" ? "胜天半子" : "知几 · 术数"}</span>
-          <h1>{product === "shengtian" ? "胜天半子" : "知几"}</h1>
-          {product === "shengtian" ? (
-            <>
-              <span className="observatory-hero__workspace">{agentWorkspaceOpen ? "人生决策控制室" : decisionWorkspaceOpen ? "关键决策树" : klineWorkspaceOpen ? "K 线观测" : classicWorkspace === "daliuren" ? "大六壬观测" : classicWorkspace === "taiyi" ? "太乙神数观测" : activeModeMeta.title}</span>
-              <p className="observatory-hero__manifesto" aria-label="产品说明"><strong>命盘写下边界，选择决定路径。</strong><span>从前重构代码，现在重构命运。</span></p>
-            </>
-          ) : null}
+          <span className="workspace-kicker">知几 · 术数</span>
+          <h1>知几</h1>
         </div>
 
-        <ModeTabs mode={mode} onChange={handleModeChange} product={product} klineActive={klineWorkspaceOpen} onKlineSelect={handleKlineWorkspaceOpen} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} decisionActive={decisionWorkspaceOpen} onDecisionSelect={handleDecisionWorkspaceOpen} agentActive={agentWorkspaceOpen} onAgentSelect={handleAgentWorkspaceOpen} />
+        <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
 
         <div className="platform-account" aria-label="平台账户与 AI 权益">
           {platformWorkspace.status === "checking" ? (
@@ -1904,7 +1923,7 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
           )}
         </div>
 
-        {mode !== "research" && !klineWorkspaceOpen && !classicWorkspace && !decisionWorkspaceOpen && !agentWorkspaceOpen ? (
+        {mode !== "research" && !classicWorkspace ? (
           <button
             className="hero-action"
             type="button"
@@ -1918,7 +1937,8 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
         ) : null}
 
         {mode !== "research" && parametersOpen ? createPortal(
-          <div className={parameterStyles.overlay} onClick={event => { if(event.target === event.currentTarget) cancelParameters(); }}>
+          <div className={parameterStyles.overlay}>
+            <button type="button" tabIndex={-1} aria-label="关闭调整盘面" className={parameterStyles.backdrop} onClick={cancelParameters} />
             <section ref={parametersPopoverRef} id="chart-parameters-popover" className={parameterStyles.panel} role="dialog" aria-modal="true" aria-label="调整盘面" onKeyDown={event => {
               if(event.key === "Escape") {event.stopPropagation();cancelParameters();}
               if(event.key === "Tab" && event.currentTarget.contains(event.target as Node)) {
@@ -1928,9 +1948,9 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
                 else if(!event.shiftKey && document.activeElement === last) {event.preventDefault();first?.focus();}
               }
             }}>
-              <header className={parameterStyles.head}><div><small>CHART / PARAMETERS</small><h2>调整盘面</h2></div><button autoFocus aria-label="关闭调整盘面" onClick={cancelParameters}>关闭 ×</button></header>
+              <header className={parameterStyles.head}><div><small>CHART / PARAMETERS</small><h2>调整盘面</h2></div><button type="button" autoFocus aria-label="关闭调整盘面" onClick={cancelParameters}>关闭 ×</button></header>
               <div className={parameterStyles.body}><h3>{activeModeMeta.title} · 排盘资料</h3><p>修改后点击“应用并重新排盘”；取消会恢复打开前的设置。</p>{mode === "combined" ? <p>当前三盘仍共用一组时间资料。独立出生时间与问事起局时间尚未接入，请勿视为不同时间分别起盘。</p> : null}{chartModeControls}{chartParametersForm}{error ? <p role="alert" className={parameterStyles.error}>{error}</p> : null}</div>
-              <footer className={parameterStyles.foot}><button onClick={cancelParameters}>取消</button><button onClick={() => {if(mode === "qimen" && quickChartMode === "series") handleGenerateSequence(sequenceFormState); else handleGenerate(formState);}}>应用并重新排盘 ↗</button></footer>
+              <footer className={parameterStyles.foot}><button type="button" onClick={cancelParameters}>取消</button><button type="button" onClick={() => {if(mode === "qimen" && quickChartMode === "series") handleGenerateSequence(sequenceFormState); else handleGenerate(formState);}}>应用并重新排盘 ↗</button></footer>
             </section>
           </div>, document.body
         ) : null}
@@ -1941,41 +1961,19 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
           ) : null}
         </div>
 
-      </header> : null}
+      </header>
 
       <div style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
         <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
       </div>
       {error ? <p className="error-banner">{error}</p> : null}
 
-      {product === "shengtian" && decisionWorkspaceOpen ? (
-        <DecisionTreePanel life={lifeKline} relationshipScales={relationshipKlines} />
-      ) : classicWorkspace ? (
+      {classicWorkspace ? (
         <main className="analysis-layout analysis-layout--classic" aria-label={classicWorkspace === "daliuren" ? "大六壬观测" : "太乙神数观测"}>
           <ClassicObservatoryPanel kind={classicWorkspace} value={researchData?.[classicWorkspace] ?? null} />
           <aside className="classic-agent-rail agent-surface-host" aria-label={`${classicWorkspace === "daliuren" ? "大六壬" : "太乙神数"} Agent 分析`}>
             {agentInspector}
           </aside>
-        </main>
-      ) : product === "shengtian" && klineWorkspaceOpen ? (
-        <main className="analysis-layout analysis-layout--kline" aria-label="K 线观测">
-          <section className="kline-workspace">
-            <KlinePanel
-              life={lifeKline}
-              relationship={relationshipKline}
-              relationshipScales={relationshipKlines}
-              aiContent={klineAiContent}
-              aiKind={klineAiKind}
-              aiError={klineAiError}
-              loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
-              onAnalyze={handleKlineAnalyze}
-              aiPriceLabel={(() => {
-                const plan = platformWorkspace.plans.find((item) => item.plan_code === KLINE_PLAN_CODE);
-                return plan ? `¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
-              })()}
-            />
-            <ObservationJournal />
-          </section>
         </main>
       ) : mode === "combined" ? (
         <CombinedMap qimen={qimenChart} bazi={baziChart} ziwei={ziweiChart}
@@ -1985,11 +1983,11 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
           <main
             id="qimen-workbench-layout"
             className="analysis-layout analysis-panel-group paipan-workspace"
-            aria-label={product === "chart" ? "排盘主盘与智能分析分栏" : "主盘与智能分析分栏"}
+            aria-label="排盘主盘与智能分析分栏"
           >
             <section id="qimen-chart" className="analysis-panel">
               {workbenchCanvas}
-              {product === "chart" ? chartAnalysisToggle : null}
+              {chartAnalysisToggle}
             </section>
             <div id="qimen-workbench-separator" className="analysis-panel-divider" aria-hidden="true">
               <span className="analysis-panel-divider__grip" aria-hidden="true">
@@ -2006,17 +2004,10 @@ export function AppShell({ product = "shengtian", platformConfig }: AppShellProp
       )}
 
       <footer className="qmdj-footer">
-        {product === "chart" ? (
-          <div className="qmdj-footer__compact">
-            <span>知几</span><span>© 2026 知几排盘</span>
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026026686号-1</a>
-          </div>
-        ) : (
-          <>
-            <div className="qmdj-footer__brand"><span>胜天半子</span><p>以身入局，落下你选择的一子。</p></div>
-            <div className="qmdj-footer__meta"><span>© 2026 胜天半子</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026026686号-1</a></div>
-          </>
-        )}
+        <div className="qmdj-footer__compact">
+          <span>知几</span><span>© 2026 知几排盘</span>
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026026686号-1</a>
+        </div>
       </footer>
 
     </div>

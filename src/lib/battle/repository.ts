@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
 import type { AccountSubject } from "@/lib/agent/account-subject";
+import { buildMultiRowInsert, orderRowsByKey } from "@/lib/db/batch";
+import { stripReservedJobId } from "./input";
+import { UserFacingError } from "@/lib/user-facing-error";
 import type { Battle, BattleConstraint, BattleFact, GravityLine, InventoryItem, Junction, Move, ResourceSnapshot } from "./types";
 
 type Json = Record<string, unknown>;
@@ -28,17 +31,47 @@ const mapBattle = (row: CaseRow): Battle => ({ id:row.id, title:row.title, objec
 const mapFact = (row: FactRow): BattleFact => ({ id:row.id, battleId:row.battle_id, kind:row.kind, content:row.content, source:row.source, confidence:row.confidence, occurredAt:iso(row.occurred_at), verifiedAt:iso(row.verified_at), createdAt:row.created_at.toISOString() });
 const mapConstraint = (row: ConstraintRow): BattleConstraint => ({ id:row.id, battleId:row.battle_id, kind:row.kind, label:row.label, description:row.description, hard:row.hard, severity:row.severity, threshold:asRecord(row.threshold_json), source:asRecord(row.source_json) });
 const mapInventory = (row: InventoryRow): InventoryItem => ({ id:row.id, battleId:row.battle_id, category:row.category, label:row.label, description:row.description, quantity:row.quantity === null ? null : Number(row.quantity), unit:row.unit, availability:row.availability, expiresAt:iso(row.expires_at), cost:asRecord(row.cost_json), evidence:asRecord(row.evidence_json) });
+/**
+ * The AI job that produced an inventory item, or `null` for user-authored cards.
+ *
+ * This identifies a **job**, not an item: every card from one model response
+ * carries the same id. It is an idempotency key, so it must be compared for
+ * equality only — never used to tell two cards of the same job apart.
+ */
+const inventoryJobId = (evidence: Record<string, unknown> | undefined) =>
+  evidence && typeof evidence === "object" && typeof evidence.jobId === "string" ? evidence.jobId : null;
 const mapGravity = (row: GravityRow): GravityLine => ({ version:row.version, summary:row.summary, assumptions:asStrings(row.assumptions_json), expectedOutcome:row.expected_outcome, resourceCost:asRecord(row.resource_cost_json), failureReasons:asStrings(row.failure_reasons_json), confidence:row.confidence, source:asRecord(row.source_json) });
 const mapJunction = (row: JunctionRow): Junction => ({ id:row.id, battleId:row.battle_id, title:row.title, description:row.description, windowStart:iso(row.window_start), windowEnd:iso(row.window_end), halfLifeAt:iso(row.half_life_at), coreVariable:row.core_variable, defaultConsequence:row.default_consequence, urgency:row.urgency, leverage:row.leverage, irreversibility:row.irreversibility, status:row.status, source:asRecord(row.source_json) });
 const mapMove = (row: MoveRow): Move => ({ id:row.id, battleId:row.battle_id, junctionId:row.junction_id, version:row.version, kind:row.kind, title:row.title, keyVariable:row.key_variable, rationale:row.rationale, actions:Array.isArray(row.action_json) ? row.action_json.filter((item): item is Move["actions"][number] => Boolean(item && typeof item === "object")) : [], cost:asRecord(row.cost_json), upside:asRecord(row.upside_json), failureCost:asRecord(row.failure_cost_json), validation:asRecord(row.validation_json), stop:asRecord(row.stop_json), assumptions:asStrings(row.assumptions_json), source:asRecord(row.source_json), state:row.state });
 
 export const isBattleId = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
+// Shared by the two branches of `listBattles`. Both must project the same list in
+// the same order, because `UNION ALL` takes its column names from the first.
+const battleListColumns = "c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type";
+
 export const listBattles = async (subject: AccountSubject) => {
   // Archived battles remain visible so the owner can explicitly restore them
   // from War Rooms. Hiding them here made the existing “取消归档” action
   // unreachable and turned a reversible state into an apparent deletion.
-  const result = await query<CaseRow>(`SELECT c.id,c.title,c.objective,c.minimum_outcome,c.ideal_outcome,c.opponent_summary,c.status,c.hard_deadline,c.created_at,c.updated_at,c.scenario_id,c.scenario_version,c.source_type,CASE WHEN c.platform_subject_type=$1 AND c.platform_subject_id=$2 THEN 'owner' ELSE (SELECT bc.role FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator} LIMIT 1) END AS access_role FROM battle_cases c WHERE ((c.platform_subject_type=$1 AND c.platform_subject_id=$2) OR EXISTS (SELECT 1 FROM battle_collaborators bc WHERE bc.battle_id=c.id AND bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator})) ORDER BY c.updated_at DESC LIMIT 100`, ownership(subject));
+  //
+  // The owner branch and the collaborator branch are written separately rather
+  // than as a single `... OR EXISTS (...)`. That disjunction is what no index can
+  // serve: `battle_cases_owner_updated_idx` is keyed on
+  // (platform_subject_type, platform_subject_id, updated_at DESC), and no scan of
+  // it can also produce rows matched only through `battle_collaborators`. The
+  // planner abandoned the index and sequentially scanned every battle in the
+  // system, running the correlated subquery once per row. Measured against 20k
+  // battles: `Rows Removed by Filter: 19931`, subplan executed 19931 times, 49.7ms.
+  // Split, the owner branch is an index scan and the whole query runs in 0.7ms.
+  // The gap is not a constant — the old plan's cost was proportional to every
+  // battle in the system rather than to the caller's.
+  //
+  // `UNION ALL` is safe because the collaborator branch excludes battles the
+  // subject already owns, so no row can arrive from both. Without that exclusion,
+  // an owner who is also recorded as a collaborator on their own battle would see
+  // it twice.
+  const result = await query<CaseRow>(`SELECT u.id,u.title,u.objective,u.minimum_outcome,u.ideal_outcome,u.opponent_summary,u.status,u.hard_deadline,u.created_at,u.updated_at,u.scenario_id,u.scenario_version,u.source_type,u.access_role FROM (SELECT ${battleListColumns},'owner' AS access_role FROM battle_cases c WHERE c.platform_subject_type=$1 AND c.platform_subject_id=$2 UNION ALL SELECT ${battleListColumns},bc.role AS access_role FROM battle_cases c JOIN battle_collaborators bc ON bc.battle_id=c.id WHERE bc.subject_type=$1 AND bc.subject_id=$2 AND ${activeCollaborator} AND NOT (c.platform_subject_type=$1 AND c.platform_subject_id=$2)) u ORDER BY u.updated_at DESC LIMIT 100`, ownership(subject));
   return result.rows.map(mapBattle);
 };
 
@@ -95,10 +128,16 @@ export const addBattleFacts = async (subject: AccountSubject, battleId: string, 
   const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const facts: BattleFact[] = [];
-  for (const item of input) {
-    const id = randomUUID();
-    const row = await client.query<FactRow>(`INSERT INTO battle_facts(id,battle_id,kind,content,source,confidence,occurred_at,verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,battle_id,kind,content,source,confidence,occurred_at,verified_at,created_at`, [id,battleId,item.kind,item.content,item.source,item.confidence,item.occurredAt,item.verifiedAt]);
-    facts.push(mapFact(row.rows[0]));
+  if (input.length) {
+    const ids = input.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_facts",
+      ["id","battle_id","kind","content","source","confidence","occurred_at","verified_at"],
+      [null,null,null,null,null,"int","timestamptz","timestamptz"],
+      input.map((item, index) => [ids[index], battleId, item.kind, item.content, item.source, item.confidence, item.occurredAt, item.verifiedAt]),
+    );
+    const rows = await client.query<FactRow>(`${statement.text} RETURNING id,battle_id,kind,content,source,confidence,occurred_at,verified_at,created_at`, statement.values);
+    facts.push(...orderRowsByKey(rows.rows.map(mapFact), ids, (fact) => fact.id, "写入战局事实"));
   }
   await client.query(`UPDATE battle_cases SET updated_at=now(),status=CASE WHEN status='intake' THEN 'active' ELSE status END WHERE id=$1`, [battleId]);
   return facts;
@@ -115,10 +154,16 @@ export const replaceBattleConstraints = async (subject: AccountSubject, battleId
   if (!owner.rowCount) return null;
   await client.query(`DELETE FROM battle_constraints WHERE battle_id=$1`, [battleId]);
   const constraints: BattleConstraint[] = [];
-  for (const item of input) {
-    const id = randomUUID();
-    const row = await client.query<ConstraintRow>(`INSERT INTO battle_constraints(id,battle_id,kind,label,description,hard,severity,threshold_json,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb) RETURNING id,battle_id,kind,label,description,hard,severity,threshold_json,source_json`, [id,battleId,item.kind,item.label,item.description,item.hard,item.severity,JSON.stringify(item.threshold),JSON.stringify(item.source)]);
-    constraints.push(mapConstraint(row.rows[0]));
+  if (input.length) {
+    const ids = input.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_constraints",
+      ["id","battle_id","kind","label","description","hard","severity","threshold_json","source_json"],
+      [null,null,null,null,null,null,"int","jsonb","jsonb"],
+      input.map((item, index) => [ids[index], battleId, item.kind, item.label, item.description, item.hard, item.severity, JSON.stringify(item.threshold), JSON.stringify(item.source)]),
+    );
+    const rows = await client.query<ConstraintRow>(`${statement.text} RETURNING id,battle_id,kind,label,description,hard,severity,threshold_json,source_json`, statement.values);
+    constraints.push(...orderRowsByKey(rows.rows.map(mapConstraint), ids, (item) => item.id, "写入战局约束"));
   }
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
   return constraints;
@@ -150,20 +195,25 @@ export const confirmInterviewExtraction = async (
   const appliedKeys = asStrings(markerState.keys);
   const reused = appliedKeys.includes(confirmationKey);
   if (!reused) {
-    for (const item of factsInput) {
-      const id = randomUUID();
-      await client.query<FactRow>(
-        `INSERT INTO battle_facts(id,battle_id,kind,content,source,confidence,occurred_at,verified_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [id,battleId,item.kind,item.content,item.source,item.confidence,item.occurredAt,item.verifiedAt],
+    if (factsInput.length) {
+      const statement = buildMultiRowInsert(
+        "battle_facts",
+        ["id","battle_id","kind","content","source","confidence","occurred_at","verified_at"],
+        [null,null,null,null,null,"int","timestamptz","timestamptz"],
+        factsInput.map((item) => [randomUUID(), battleId, item.kind, item.content, item.source, item.confidence, item.occurredAt, item.verifiedAt]),
       );
+      await client.query(statement.text, statement.values);
     }
     // Confirmed interview constraints are appended. Existing constraints may
     // come from the official scenario or another interview and must survive.
-    for (const item of constraintsInput) {
-      await client.query(
-        `INSERT INTO battle_constraints(id,battle_id,kind,label,description,hard,severity,threshold_json,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`,
-        [randomUUID(),battleId,item.kind,item.label,item.description,item.hard,item.severity,JSON.stringify(item.threshold),JSON.stringify({ ...item.source, interviewConfirmationKey: confirmationKey })],
+    if (constraintsInput.length) {
+      const statement = buildMultiRowInsert(
+        "battle_constraints",
+        ["id","battle_id","kind","label","description","hard","severity","threshold_json","source_json"],
+        [null,null,null,null,null,null,"int","jsonb","jsonb"],
+        constraintsInput.map((item) => [randomUUID(), battleId, item.kind, item.label, item.description, item.hard, item.severity, JSON.stringify(item.threshold), JSON.stringify({ ...item.source, interviewConfirmationKey: confirmationKey })]),
       );
+      await client.query(statement.text, statement.values);
     }
     const nextKeys = [...appliedKeys, confirmationKey].slice(-200);
     const nextVersion = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_module_states WHERE battle_id=$1 AND module_id='interview-confirmations'`, [battleId])).rows[0].version;
@@ -190,14 +240,21 @@ export const listInventory = async (subject: AccountSubject, battleId: string) =
   return result.rows.map(mapInventory);
 };
 
-export type InventoryWrite = Omit<InventoryItem, "battleId"> & { id?: string };
+/**
+ * A card on its way in. `id` is optional — omitting it means "create" — so it has
+ * to be removed from `InventoryItem` before being re-added as optional:
+ * `Omit<InventoryItem, "battleId"> & { id?: string }` leaves `id` *required*,
+ * because an intersection is only optional where every member says so. The route
+ * had to cast around that to pass `id: undefined` for a new card.
+ */
+export type InventoryWrite = Omit<InventoryItem, "battleId" | "id"> & { id?: string };
 
 export const replaceInventory = async (subject: AccountSubject, battleId: string, input: InventoryWrite[]) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
   const requestedIds = input.map((item) => item.id).filter((id): id is string => typeof id === "string");
   if (new Set(requestedIds).size !== requestedIds.length) {
-    throw Object.assign(new Error("底牌标识重复。"), { code: "inventory_duplicate_id" });
+    throw new UserFacingError("底牌标识重复。", { status: 400, reasonCode: "inventory_duplicate_id" });
   }
   if (requestedIds.length) {
     const existing = await client.query<{ id:string; battle_id:string }>(
@@ -205,29 +262,33 @@ export const replaceInventory = async (subject: AccountSubject, battleId: string
       [requestedIds],
     );
     const foreign = existing.rows.find((row) => row.battle_id !== battleId);
-    if (foreign) throw Object.assign(new Error("底牌不属于当前战局。"), { code: "inventory_scope_mismatch" });
+    if (foreign) throw new UserFacingError("底牌不属于当前战局。", { status: 409, reasonCode: "inventory_scope_mismatch" });
   }
-  const retainedIds: string[] = [];
-  const items: InventoryItem[] = [];
-  for (const item of input) {
-    const id = item.id ?? randomUUID();
-    retainedIds.push(id);
-    const row = await client.query<InventoryRow>(
-      `INSERT INTO battle_inventory_items(id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb)
-       ON CONFLICT (id) DO UPDATE SET category=EXCLUDED.category,label=EXCLUDED.label,description=EXCLUDED.description,
-         quantity=EXCLUDED.quantity,unit=EXCLUDED.unit,availability=EXCLUDED.availability,expires_at=EXCLUDED.expires_at,
-         cost_json=EXCLUDED.cost_json,evidence_json=EXCLUDED.evidence_json
-       RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`,
-      [id,battleId,item.category,item.label,item.description,item.quantity,item.unit,item.availability,item.expiresAt,JSON.stringify(item.cost),JSON.stringify(item.evidence)],
+  const ids = input.map((item) => item.id ?? randomUUID());
+  let items: InventoryItem[] = [];
+  if (input.length) {
+    // `evidence.jobId` is server-reserved: `appendInventory` reads it back to
+    // decide whether a job's cards were already applied, so a client that wrote
+    // one here could suppress a later job's insert (or forge AI provenance).
+    // The AI path builds `evidence` itself, so stripping only affects this one.
+    const statement = buildMultiRowInsert(
+      "battle_inventory_items",
+      ["id","battle_id","category","label","description","quantity","unit","availability","expires_at","cost_json","evidence_json"],
+      [null,null,null,null,null,"numeric",null,null,"timestamptz","jsonb","jsonb"],
+      input.map((item, index) => [ids[index], battleId, item.category, item.label, item.description, item.quantity, item.unit, item.availability, item.expiresAt, JSON.stringify(item.cost), JSON.stringify(stripReservedJobId(item.evidence))]),
     );
-    items.push(mapInventory(row.rows[0]));
+    // `battle_id` is deliberately absent from the SET list: every supplied id was
+    // just proven to belong to this battle, so re-assigning it could only be a
+    // no-op — or, if that proof were ever wrong, a cross-battle move.
+    const rows = await client.query<InventoryRow>(
+      `${statement.text} ON CONFLICT (id) DO UPDATE SET category=EXCLUDED.category,label=EXCLUDED.label,description=EXCLUDED.description,quantity=EXCLUDED.quantity,unit=EXCLUDED.unit,availability=EXCLUDED.availability,expires_at=EXCLUDED.expires_at,cost_json=EXCLUDED.cost_json,evidence_json=EXCLUDED.evidence_json RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`,
+      statement.values,
+    );
+    items = orderRowsByKey(rows.rows.map(mapInventory), ids, (item) => item.id, "保存战局底牌");
   }
-  if (retainedIds.length) {
-    await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1 AND NOT (id = ANY($2::uuid[]))`, [battleId, retainedIds]);
-  } else {
-    await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1`, [battleId]);
-  }
+  // `id = ANY('{}')` is false for every row, so an empty request deletes the whole
+  // inventory without needing the separate branch the per-row loop used.
+  await client.query(`DELETE FROM battle_inventory_items WHERE battle_id=$1 AND NOT (id = ANY($2::uuid[]))`, [battleId, ids]);
   // Remove references to cards that are no longer part of this inventory.
   // Strategy source is JSON by design, so clean only the known card-id field.
   await client.query(
@@ -237,29 +298,75 @@ export const replaceInventory = async (subject: AccountSubject, battleId: string
                  FROM jsonb_array_elements_text(source_json->'assignedCardIds') AS cards(card_id)
                  WHERE card_id = ANY($2::text[])), '[]'::jsonb), true)
      WHERE battle_id=$1 AND source_json ? 'assignedCardIds' AND jsonb_typeof(source_json->'assignedCardIds')='array'`,
-    [battleId, retainedIds],
+    [battleId, ids],
   );
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
   return items;
 });
 
-/** Append generated or user-provided inventory without deleting existing cards.
- * A job id in evidence_json is treated as an idempotency key for AI retries. */
+/**
+ * Append generated or user-provided inventory without deleting existing cards.
+ *
+ * `jobId` in `evidence_json` is an idempotency key for AI retries, and it names a
+ * *job* rather than an item — every card of one model response carries the same
+ * id, and a job's cards are written inside this one transaction. So "this job id
+ * is already stored" means the whole job was applied, and its rows are reused.
+ *
+ * The previous per-item `... LIMIT 1` lookup asked that question once per card and
+ * answered it with the *first* card every time, which silently collapsed a
+ * multi-card job into a single inventory item: three generated cards produced one
+ * row. One lookup for the whole batch both fixes that and removes the per-card
+ * round trip.
+ *
+ * Cards with no job id are always appended.
+ */
 export const appendInventory = async (subject: AccountSubject, battleId: string, input: Array<Omit<InventoryItem, "id"|"battleId">>) => withTransaction(async (client) => {
   const owner = await client.query(`SELECT b.id FROM battle_cases b WHERE b.id=$1 AND (${writableBattlePredicate}) FOR UPDATE`, [battleId, ...ownership(subject)]);
   if (!owner.rowCount) return null;
-  const items: InventoryItem[] = [];
-  for (const item of input) {
-    const jobId = item.evidence && typeof item.evidence === 'object' && typeof (item.evidence as Record<string, unknown>).jobId === 'string' ? (item.evidence as Record<string, unknown>).jobId : null;
-    if (jobId) {
-      const existing = await client.query<InventoryRow>(`SELECT id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json FROM battle_inventory_items WHERE battle_id=$1 AND evidence_json->>'jobId'=$2 LIMIT 1`, [battleId, jobId]);
-      if (existing.rows[0]) { items.push(mapInventory(existing.rows[0])); continue; }
+  const jobIds = [...new Set(input.flatMap((item) => { const jobId = inventoryJobId(item.evidence); return jobId ? [jobId] : []; }))];
+  // job id -> the rows that job already stored, in insertion order.
+  const applied = new Map<string, InventoryItem[]>();
+  if (jobIds.length) {
+    const existing = await client.query<InventoryRow>(`SELECT id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json FROM battle_inventory_items WHERE battle_id=$1 AND evidence_json->>'jobId' = ANY($2::text[]) ORDER BY created_at,id`, [battleId, jobIds]);
+    for (const row of existing.rows) {
+      const jobId = inventoryJobId(asRecord(row.evidence_json));
+      if (!jobId) continue;
+      const bucket = applied.get(jobId);
+      if (bucket) bucket.push(mapInventory(row));
+      else applied.set(jobId, [mapInventory(row)]);
     }
-    const id = randomUUID();
-    const row = await client.query<InventoryRow>(`INSERT INTO battle_inventory_items(id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb) RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`, [id,battleId,item.category,item.label,item.description,item.quantity,item.unit,item.availability,item.expiresAt,JSON.stringify(item.cost),JSON.stringify(item.evidence)]);
-    items.push(mapInventory(row.rows[0]));
+  }
+  const fresh = input.filter((item) => { const jobId = inventoryJobId(item.evidence); return !jobId || !applied.has(jobId); });
+  const inserted: InventoryItem[] = [];
+  if (fresh.length) {
+    const ids = fresh.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_inventory_items",
+      ["id","battle_id","category","label","description","quantity","unit","availability","expires_at","cost_json","evidence_json"],
+      [null,null,null,null,null,"numeric",null,null,"timestamptz","jsonb","jsonb"],
+      fresh.map((item, index) => [ids[index], battleId, item.category, item.label, item.description, item.quantity, item.unit, item.availability, item.expiresAt, JSON.stringify(item.cost), JSON.stringify(item.evidence)]),
+    );
+    const rows = await client.query<InventoryRow>(`${statement.text} RETURNING id,battle_id,category,label,description,quantity,unit,availability,expires_at,cost_json,evidence_json`, statement.values);
+    inserted.push(...orderRowsByKey(rows.rows.map(mapInventory), ids, (item) => item.id, "写入战局底牌"));
   }
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
+  // Walk the request in order. A job that was already applied contributes its
+  // stored rows once, at the first card that names it; everything else takes the
+  // row just written for it.
+  const items: InventoryItem[] = [];
+  const reported = new Set<string>();
+  let next = 0;
+  for (const item of input) {
+    const jobId = inventoryJobId(item.evidence);
+    const stored = jobId ? applied.get(jobId) : undefined;
+    if (stored) {
+      if (reported.has(jobId!)) continue;
+      reported.add(jobId!);
+      items.push(...stored);
+      continue;
+    }
+    items.push(inserted[next++]);
+  }
   return items;
 });
 
@@ -298,10 +405,16 @@ export const replaceJunctions = async (subject: AccountSubject, battleId: string
   if (!owner.rowCount) return null;
   await client.query(`DELETE FROM battle_junctions WHERE battle_id=$1 AND status='open'`, [battleId]);
   const junctions: Junction[] = [];
-  for (const item of input) {
-    const id = randomUUID();
-    const row = await client.query<JunctionRow>(`INSERT INTO battle_junctions(id,battle_id,title,description,window_start,window_end,half_life_at,core_variable,default_consequence,urgency,leverage,irreversibility,status,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb) RETURNING id,battle_id,title,description,window_start,window_end,half_life_at,core_variable,default_consequence,urgency,leverage,irreversibility,status,source_json`, [id,battleId,item.title,item.description,item.windowStart,item.windowEnd,item.halfLifeAt,item.coreVariable,item.defaultConsequence,item.urgency,item.leverage,item.irreversibility,item.status,JSON.stringify(item.source)]);
-    junctions.push(mapJunction(row.rows[0]));
+  if (input.length) {
+    const ids = input.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_junctions",
+      ["id","battle_id","title","description","window_start","window_end","half_life_at","core_variable","default_consequence","urgency","leverage","irreversibility","status","source_json"],
+      [null,null,null,null,"timestamptz","timestamptz","timestamptz",null,null,"int","int","int",null,"jsonb"],
+      input.map((item, index) => [ids[index], battleId, item.title, item.description, item.windowStart, item.windowEnd, item.halfLifeAt, item.coreVariable, item.defaultConsequence, item.urgency, item.leverage, item.irreversibility, item.status, JSON.stringify(item.source)]),
+    );
+    const rows = await client.query<JunctionRow>(`${statement.text} RETURNING id,battle_id,title,description,window_start,window_end,half_life_at,core_variable,default_consequence,urgency,leverage,irreversibility,status,source_json`, statement.values);
+    junctions.push(...orderRowsByKey(rows.rows.map(mapJunction), ids, (item) => item.id, "写入决策节点"));
   }
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
   return junctions;
@@ -318,10 +431,16 @@ export const saveMoveSet = async (subject: AccountSubject, battleId: string, jun
   if (!owner.rowCount) return null;
   const version = (await client.query<{ version:number }>(`SELECT COALESCE(MAX(version),0)+1 AS version FROM battle_moves WHERE battle_id=$1`, [battleId])).rows[0].version;
   const saved: Move[] = [];
-  for (const move of moves) {
-    const id = randomUUID();
-    const row = await client.query<MoveRow>(`INSERT INTO battle_moves(id,battle_id,junction_id,version,kind,title,key_variable,rationale,action_json,cost_json,upside_json,failure_cost_json,validation_json,stop_json,assumptions_json,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11::jsonb,$12::jsonb,$13::jsonb,$14::jsonb,$15::jsonb,$16::jsonb) RETURNING id,battle_id,junction_id,version,kind,title,key_variable,rationale,action_json,cost_json,upside_json,failure_cost_json,validation_json,stop_json,assumptions_json,source_json,state`, [id,battleId,junctionId,version,move.kind,move.title,move.keyVariable,move.rationale,JSON.stringify(move.actions),JSON.stringify(move.cost),JSON.stringify(move.upside),JSON.stringify(move.failureCost),JSON.stringify(move.validation),JSON.stringify(move.stop),JSON.stringify(move.assumptions),JSON.stringify(move.source)]);
-    saved.push(mapMove(row.rows[0]));
+  if (moves.length) {
+    const ids = moves.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_moves",
+      ["id","battle_id","junction_id","version","kind","title","key_variable","rationale","action_json","cost_json","upside_json","failure_cost_json","validation_json","stop_json","assumptions_json","source_json"],
+      [null,null,"uuid","int",null,null,null,null,"jsonb","jsonb","jsonb","jsonb","jsonb","jsonb","jsonb","jsonb"],
+      moves.map((move, index) => [ids[index], battleId, junctionId, version, move.kind, move.title, move.keyVariable, move.rationale, JSON.stringify(move.actions), JSON.stringify(move.cost), JSON.stringify(move.upside), JSON.stringify(move.failureCost), JSON.stringify(move.validation), JSON.stringify(move.stop), JSON.stringify(move.assumptions), JSON.stringify(move.source)]),
+    );
+    const rows = await client.query<MoveRow>(`${statement.text} RETURNING id,battle_id,junction_id,version,kind,title,key_variable,rationale,action_json,cost_json,upside_json,failure_cost_json,validation_json,stop_json,assumptions_json,source_json,state`, statement.values);
+    saved.push(...orderRowsByKey(rows.rows.map(mapMove), ids, (item) => item.id, "写入战局动作"));
   }
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
   return saved;
@@ -443,16 +562,31 @@ export const saveExecutionPlan = async (subject: AccountSubject, battleId: strin
   await client.query(`DELETE FROM battle_move_actions WHERE move_id=$1`, [moveId]);
   await client.query(`DELETE FROM battle_breakers WHERE move_id=$1`, [moveId]);
   const savedActions = [];
-  for (const [index,item] of actions.entries()) {
-    const id = randomUUID();
-    const row = await client.query<{ id:string; sequence_no:number; status:string }>(`INSERT INTO battle_move_actions(id,move_id,sequence_no,title,description,owner,due_at,success_signal,failure_signal) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,sequence_no,status`, [id,moveId,index+1,item.title,item.description,item.owner,item.dueAt,item.successSignal,item.failureSignal]);
-    savedActions.push({ ...item, id:row.rows[0].id, sequenceNo:row.rows[0].sequence_no, status:row.rows[0].status });
+  if (actions.length) {
+    const ids = actions.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_move_actions",
+      ["id","move_id","sequence_no","title","description","owner","due_at","success_signal","failure_signal"],
+      [null,"uuid","int",null,null,null,"timestamptz",null,null],
+      actions.map((item, index) => [ids[index], moveId, index + 1, item.title, item.description, item.owner, item.dueAt, item.successSignal, item.failureSignal]),
+    );
+    const rows = await client.query<{ id:string; sequence_no:number; status:string }>(`${statement.text} RETURNING id,sequence_no,status`, statement.values);
+    // `sequence_no` is the request position, so zipping the re-ordered rows back
+    // onto the input keeps the response in request order.
+    savedActions.push(...orderRowsByKey(rows.rows, ids, (row) => row.id, "写入落子行动")
+      .map((row, index) => ({ ...actions[index], id:row.id, sequenceNo:row.sequence_no, status:row.status })));
   }
   const savedBreakers = [];
-  for (const item of breakers) {
-    const id = randomUUID();
-    await client.query(`INSERT INTO battle_breakers(id,move_id,kind,label,threshold_json,action_on_trigger,enabled) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7)`, [id,moveId,item.kind,item.label,JSON.stringify(item.threshold),item.actionOnTrigger,item.enabled]);
-    savedBreakers.push({ ...item, id, moveId, triggeredAt:null });
+  if (breakers.length) {
+    const ids = breakers.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "battle_breakers",
+      ["id","move_id","kind","label","threshold_json","action_on_trigger","enabled"],
+      [null,"uuid",null,null,"jsonb",null,null],
+      breakers.map((item, index) => [ids[index], moveId, item.kind, item.label, JSON.stringify(item.threshold), item.actionOnTrigger, item.enabled]),
+    );
+    await client.query(statement.text, statement.values);
+    savedBreakers.push(...breakers.map((item, index) => ({ ...item, id:ids[index], moveId, triggeredAt:null })));
   }
   await client.query(`UPDATE battle_moves SET state='executing' WHERE id=$1` , [moveId]);
   await client.query(`UPDATE battle_cases SET status='committed',updated_at=now() WHERE id=$1`, [battleId]);

@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { query, withTransaction } from "@/lib/db/pool";
+import { LIST_READ_LIMIT } from "@/lib/db/read-limits";
+import { buildMultiRowInsert } from "@/lib/db/batch";
 import type { AccountSubject } from "./account-subject";
 
 export type AgentCase = {
@@ -47,7 +49,7 @@ export const deleteCase = async (subject: AccountSubject, id: string) => {
 };
 
 export const listTurns = async (subject: AccountSubject, caseId: string) => {
-  const result = await query<{ id:string; sequence_no:number; role:"user"|"assistant"; content:string; phase:string; created_at:Date }>(`SELECT t.id,t.sequence_no,t.role,t.content,t.phase,t.created_at FROM agent_interview_turns t JOIN agent_cases c ON c.id=t.case_id WHERE t.case_id=$1 AND c.platform_subject_type=$2 AND c.platform_subject_id=$3 AND c.deleted_at IS NULL ORDER BY t.sequence_no`, [caseId, ...ownership(subject)]);
+  const result = await query<{ id:string; sequence_no:number; role:"user"|"assistant"; content:string; phase:string; created_at:Date }>(`SELECT t.id,t.sequence_no,t.role,t.content,t.phase,t.created_at FROM agent_interview_turns t JOIN agent_cases c ON c.id=t.case_id WHERE t.case_id=$1 AND c.platform_subject_type=$2 AND c.platform_subject_id=$3 AND c.deleted_at IS NULL ORDER BY t.sequence_no LIMIT ${LIST_READ_LIMIT}`, [caseId, ...ownership(subject)]);
   return result.rows.map((row) => ({ id: row.id, sequenceNo: row.sequence_no, role: row.role, content: row.content, phase: row.phase, createdAt: row.created_at.toISOString() }));
 };
 
@@ -82,10 +84,17 @@ export const saveTreeVersion = async (subject: AccountSubject, caseId: string, i
   const treeId = randomUUID();
   await client.query(`INSERT INTO agent_decision_tree_versions(id,case_id,version,root_json,generated_from_turn_id) VALUES($1,$2,$3,$4::jsonb,$5)`, [treeId,caseId,version,JSON.stringify(input.root),input.generatedFromTurnId ?? null]);
   const branches: Array<{ id: string; key: string }> = [];
-  for (const branch of input.branches ?? []) {
-    const id = randomUUID();
-    await client.query(`INSERT INTO agent_decision_branches(id,tree_version_id,branch_key,title,assumptions_json,first_action,cost,risks_json,validation_date,stop_condition) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8::jsonb,$9,$10)`, [id,treeId,branch.key,branch.title,JSON.stringify(branch.assumptions ?? []),branch.firstAction ?? "",branch.cost ?? "",JSON.stringify(branch.risks ?? []),branch.validationDate ?? null,branch.stopCondition ?? ""]);
-    branches.push({ id, key: branch.key });
+  const branchInput = input.branches ?? [];
+  if (branchInput.length) {
+    const ids = branchInput.map(() => randomUUID());
+    const statement = buildMultiRowInsert(
+      "agent_decision_branches",
+      ["id","tree_version_id","branch_key","title","assumptions_json","first_action","cost","risks_json","validation_date","stop_condition"],
+      [null,null,null,null,"jsonb",null,null,"jsonb","timestamptz",null],
+      branchInput.map((branch, index) => [ids[index], treeId, branch.key, branch.title, JSON.stringify(branch.assumptions ?? []), branch.firstAction ?? "", branch.cost ?? "", JSON.stringify(branch.risks ?? []), branch.validationDate ?? null, branch.stopCondition ?? ""]),
+    );
+    await client.query(statement.text, statement.values);
+    branchInput.forEach((branch, index) => branches.push({ id: ids[index], key: branch.key }));
   }
   return { id: treeId, version, branches };
 });

@@ -127,14 +127,58 @@ export const buildChartSequence = (
     chart: buildChart(nextInput),
   }));
 
+const lastDayOfMonth = (year: number, monthIndex: number) =>
+  new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+
+/**
+ * Step by whole months without letting the day overflow into the next month.
+ *
+ * `setUTCMonth` rolls out-of-range days forward, so a monthly sequence started
+ * on the 31st silently skips months: 2026-01-31 +1 month becomes 2026-03-03,
+ * and February never appears. Clamp to the last valid day of the target month
+ * instead.
+ */
+const addMonthsClamped = (date: Date, months: number) => {
+  const day = date.getUTCDate();
+  // Date.UTC normalizes out-of-range month indices, so this rolls the year too.
+  const target = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + months,
+    1,
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+  ));
+  target.setUTCDate(Math.min(day, lastDayOfMonth(target.getUTCFullYear(), target.getUTCMonth())));
+  return target;
+};
+
+/** Same overflow problem as `addMonthsClamped`, for 02-29 stepping a year. */
+const addYearsClamped = (date: Date, years: number) => {
+  const day = date.getUTCDate();
+  const target = new Date(Date.UTC(
+    date.getUTCFullYear() + years,
+    date.getUTCMonth(),
+    1,
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+  ));
+  target.setUTCDate(Math.min(day, lastDayOfMonth(target.getUTCFullYear(), target.getUTCMonth())));
+  return target;
+};
+
 function addCalendarStep(datetime: string, step: SequenceStep, count: number) {
   const parts = parseDateTimeParts(datetime);
   const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute));
-  if (step === "double-hour") date.setUTCHours(date.getUTCHours() + count * 2);
-  else if (step === "day") date.setUTCDate(date.getUTCDate() + count);
-  else if (step === "month") date.setUTCMonth(date.getUTCMonth() + count);
-  else date.setUTCFullYear(date.getUTCFullYear() + count);
-  return fromUtcMillis(date.getTime());
+  if (step === "double-hour") {
+    date.setUTCHours(date.getUTCHours() + count * 2);
+    return fromUtcMillis(date.getTime());
+  }
+  if (step === "day") {
+    date.setUTCDate(date.getUTCDate() + count);
+    return fromUtcMillis(date.getTime());
+  }
+  if (step === "month") return fromUtcMillis(addMonthsClamped(date, count).getTime());
+  return fromUtcMillis(addYearsClamped(date, count).getTime());
 }
 
 export const buildChartSequenceByCount = (

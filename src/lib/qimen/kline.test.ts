@@ -71,4 +71,73 @@ describe("buildQimenKline", () => {
     expect(new Set(scores).size).toBeGreaterThan(1);
     expect(buildQimenKline(sequence, "relationship", "month")).toEqual(buildQimenKline(sequence, "relationship", "month"));
   });
+
+  // `palaceStructureSignal` used to `JSON.stringify` the whole 十干克应 object and
+  // substring-search it for 生/合/克/刑. A serialized object also carries its keys
+  // and `params`, so any of those containing one of the four characters flipped
+  // the signal on regardless of the actual relation. These two cases pin the
+  // signal to `relation`/`description` only.
+  describe("十干克应 生克判定", () => {
+    const neutralPalace = (position: number, stem: string, tenStemResponse: unknown) => ({
+      position,
+      trigram: "震",
+      heavenlyStem: stem,
+      earthlyStem: "丙",
+      earthBranch: "卯",
+      gate: "开门",
+      star: "天辅",
+      deity: "六合",
+      isZhiFu: false,
+      isZhiShi: false,
+      isPostHorse: false,
+      voidness: { hasVoidness: false },
+      gatePressure: "无",
+      // Neutral 旺衰/格局 so the only possible reason is the 十干克应 one.
+      status: { gate: "", star: "" },
+      tenStemResponse,
+    });
+    const evidenceFor = (palaces: unknown[]) => {
+      const relationshipChart = chart({
+        zhiFu: { position: 6, star: "天心" },
+        zhiShi: { position: 3, gate: "开门" },
+        palaces,
+      });
+      const sequence = [0, 1].map((index) => ({ index, input: { datetime: `2026-08-0${index + 1}T10:00`, timeZone: "Asia/Shanghai" }, chart: relationshipChart })) as ChartSequenceItem[];
+      return buildQimenKline(sequence, "relationship", "double-hour").points[0].evidence.join("\n");
+    };
+
+    it("不被键名/params 里的生合克刑字样误触发", () => {
+      const decoy = {
+        heavenlyToEarthly: { relation: "无", params: { 生合: true } },
+        timeToDay: { relation: "无", params: { 克刑: true } },
+        heavenlyToDay: { relation: "无" },
+      };
+      const evidence = evidenceFor([
+        neutralPalace(3, "乙", decoy),
+        neutralPalace(6, "庚", decoy),
+      ]);
+      expect(evidence).not.toContain("干支关系有生合");
+      expect(evidence).not.toContain("干支关系有克刑");
+    });
+
+    it("description 里的字样仍然计入", () => {
+      const described = {
+        heavenlyToEarthly: { relation: "无", description: "有合意，可生发" },
+        timeToDay: { relation: "无" },
+        heavenlyToDay: { relation: "无" },
+      };
+      expect(evidenceFor([neutralPalace(3, "乙", described), neutralPalace(6, "庚", described)]))
+        .toContain("干支关系有生合");
+    });
+
+    it("relation 命中时才给出对应理由", () => {
+      const generating = {
+        heavenlyToEarthly: { relation: "生我" },
+        timeToDay: { relation: "无" },
+        heavenlyToDay: { relation: "无" },
+      };
+      expect(evidenceFor([neutralPalace(3, "乙", generating), neutralPalace(6, "庚", generating)]))
+        .toContain("干支关系有生合");
+    });
+  });
 });

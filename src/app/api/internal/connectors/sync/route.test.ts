@@ -19,4 +19,22 @@ describe("internal connector sync route", () => {
     expect(response.status).toBe(201);
     expect(recordSync).toHaveBeenCalledWith(expect.objectContaining({ idempotencyKey:"sync-1", provider:"calendar" }));
   });
+  it("records an internal failure instead of answering it silently", async () => {
+    recordSync.mockRejectedValue(new Error("connection terminated unexpectedly"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const response = await POST(new Request("http://local/api/internal/connectors/sync", { method:"POST", headers:{ "x-qmdj-connector-secret":"test-secret" }, body:JSON.stringify(body) }));
+      expect(response.status).toBe(500);
+      // The cause stays out of the body...
+      await expect(response.json()).resolves.toEqual({ error:"写入连接器同步记录失败。" });
+      // ...and is not lost either. A bare `catch {` used to answer 500 here with
+      // nothing recorded anywhere, so the connector's operator had no way to tell
+      // a rejected write from a database that was simply down.
+      const logged = errorSpy.mock.calls.map((call) => call.map(String).join(" "));
+      expect(logged.some((line) => line.includes("[api]"))).toBe(true);
+      expect(logged.some((line) => line.includes("connection terminated unexpectedly"))).toBe(true);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
 });

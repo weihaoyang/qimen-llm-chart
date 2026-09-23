@@ -27,6 +27,15 @@ const templates: readonly ScenarioStrategyTemplate[] = [
   { id:"SCORCHED_EARTH", name:"焦土对冲", codeName:"Scorched Earth · 利益捆绑与战略威慑", coreIdea:"当独立存活概率过低时，以严格保密的资产合作或并购通道交换时间、现金和团队连续性。", primaryLever:"将可转移资产和团队能力与可信战略方的利益绑定，换取过桥支持。", resourceList:["启动保密的战略投资或资产合作通道", "整理核心资产与协同价值清单", "明确对外沟通与数据保密边界"], sacrificeList:["让渡部分控制权或品牌独立性", "接受时间紧迫下的估值折扣", "从独立运营转向合作方体系"], successSignal:"战略方在限定时间内出具可执行的意向和过桥支持，或客户因此重新评估换商风险。", initialFirstStep:"与潜在战略方进行保密沟通，并交付经过权限控制的资产与协同清单。", survivalProbability:82, coreAssetProtectionRate:92, estimatedCashAt30Days:320000, estimatedCashAt60Days:600000, ghostTimeline:[{day:0,cashRunwayDays:59,survivalProb:50,customerTrust:45,eventLabel:"战略通道开启"},{day:7,cashRunwayDays:55,survivalProb:68,customerTrust:60,eventLabel:"意向沟通",isPivotalPoint:true,pivotalRiskDescription:"尽调泄漏会造成团队动荡，必须验证保密与过桥承诺。"},{day:20,cashRunwayDays:95,survivalProb:78,customerTrust:75,eventLabel:"过桥条件确认"},{day:45,cashRunwayDays:180,survivalProb:82,customerTrust:85,eventLabel:"合作或资产安排完成"},{day:60,cashRunwayDays:365,survivalProb:90,customerTrust:92,eventLabel:"团队连续性恢复"}], criticalWindow:"未来 10 天，在现金跑道耗尽前确认可执行的过桥条件。", leadingIndicators:["战略方是否签署保密协议并启动尽调", "意向是否含不可撤销的过桥支持", "客户是否因战略动向重新评估"], abortCriteria:"若尽调周期过长且没有过桥支持，立即叫停，防止核心资产被无偿套取。" },
 ];
 
+/**
+ * Strategy templates for a scenario.
+ *
+ * The scenario is currently *not* a selector: every official scenario is served
+ * the same three templates. The parameter is kept (and named `_scenario`) so the
+ * call sites already read as "templates for this scenario" and splitting the set
+ * per scenario later is a change confined to this file — but until that happens
+ * the returned array must not be read as scenario-specific content.
+ */
 export function strategyTemplatesForScenario(_scenario: Pick<ScenarioSeed, "id">): readonly ScenarioStrategyTemplate[] {
   return templates;
 }

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
-import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
+import { noStore } from "@/lib/http";
+import { errorResponse } from "@/lib/api-error";
+import { requireAccountSubject } from "@/lib/agent/account-subject";
 import { fetchPlatformUsage, readBearerToken, readCookieValue, readPlatformCookieHeader, AGENT_PLAN_CODE } from "@/lib/platform/server";
 
 export async function GET(request: Request) {
@@ -11,10 +12,8 @@ export async function GET(request: Request) {
     const usage = accessToken
       ? await fetchPlatformUsage(accessToken, { planCode: AGENT_PLAN_CODE })
       : await fetchPlatformUsage(null, { planCode: AGENT_PLAN_CODE, cookieHeader, csrfToken });
-    return NextResponse.json({ usage });
+    return noStore({ usage });
   } catch (error) {
-    return error instanceof AccountSubjectError
-      ? NextResponse.json({ error: error.message }, { status: error.status })
-      : NextResponse.json({ error: error instanceof Error ? error.message : "读取平台权益失败。" }, { status: 502 });
+    return errorResponse(error, "读取平台权益失败。", 502);
   }
 }

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { AccountSubject } from "@/lib/agent/account-subject";
 import { hashSnapshot } from "@/lib/battle/product-state";
 import { query, withTransaction } from "@/lib/db/pool";
+import { LIST_READ_LIMIT } from "@/lib/db/read-limits";
 
 const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
@@ -59,7 +60,7 @@ export async function listWorldPulseObservations(subject: AccountSubject, battle
       WHERE o.battle_id=$1 AND ((b.platform_subject_type=$2 AND b.platform_subject_id=$3)
         OR EXISTS (SELECT 1 FROM battle_collaborators c WHERE c.battle_id=b.id
           AND c.subject_type=$2 AND c.subject_id=$3 AND ${activeCollaborator}))
-      ORDER BY o.observed_at DESC,o.created_at DESC`,
+      ORDER BY o.observed_at DESC,o.created_at DESC LIMIT ${LIST_READ_LIMIT}`,
     [battleId, ...owner(subject)],
   );
   return result.rows.map(mapRow);

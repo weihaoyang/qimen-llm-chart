@@ -1,8 +1,8 @@
 "use client";
 
-import "../../../shengtian-reference/index.css";
+import "@/app/platform-views.css";
 
-import { PlatformCallbackView } from "@/shengtian-reference/components/PlatformCallbackView";
+import { PlatformCallbackView } from "@/components/platform-callback-view";
 
 export default function PlatformCallbackPage() {
   return <PlatformCallbackView />;

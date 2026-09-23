@@ -311,7 +311,12 @@ export const restorePlatformAccessState = async (
   session: PlatformSession,
 ): Promise<PlatformAccessState> => {
   if (!session.access_token || !session.refresh_token) {
-    const bridge = await fetch("/api/platform/session", { cache: "no-store" });
+    // `loadPlatformSession` strips both tokens out of localStorage on every read,
+    // so after a reload the only usable access token lives in the httpOnly bridge
+    // cookie. Recovering it requires rotating the refresh token, which is a
+    // state change — hence the explicit `POST` to a dedicated path rather than a
+    // `GET` that a prefetch could have triggered.
+    const bridge = await fetch("/api/platform/session/refresh", { method: "POST", cache: "no-store" });
     const body = await bridge.json().catch(() => ({})) as { session?: PlatformSession; error?: string };
     if (!bridge.ok || !body.session) throw new Error(body.error ?? "平台登录已过期，请重新登录。");
     session = { ...session, ...body.session };

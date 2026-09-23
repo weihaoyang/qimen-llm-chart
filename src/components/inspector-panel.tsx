@@ -4,11 +4,6 @@ import type { Position } from "3meta";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 import { AgentConversation } from "./agent-conversation";
 export type InspectorPanelProps = {
-  surface?: "chart" | "shengtian";
-  /** Product Agent view hides engineering inputs; the model still receives them. */
-  hideTechnicalTabs?: boolean;
-  /** Agent-first product shell owns the interview framing and hides the internal research-room header. */
-  hideObservatoryHeader?: boolean;
   agentTitle?: string;
   agentAngles: readonly AgentAnalysisAngle[];
   mode: WorkbenchMode;

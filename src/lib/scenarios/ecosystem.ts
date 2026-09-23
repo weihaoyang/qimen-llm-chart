@@ -1,4 +1,37 @@
-import type { DeepArchiveItem, WorldPulseEvent } from "@/shengtian-reference/types";
+/**
+ * Product-owned catalog shapes. These previously came from the
+ * `shengtian-reference` bundle; they live here now that the retired bundle is
+ * gone, so the official catalog no longer depends on dead UI code.
+ */
+export type WorldPulseEvent = {
+  id: string;
+  code: string;
+  title: string;
+  region: string;
+  lat: number;
+  lng: number;
+  riddleDescription: string;
+  severity: "GLOBAL_CRITICAL" | "FINANCIAL_SINGULARITY" | "TECH_COLLAPSE";
+  equityCostToIntervene: number;
+  activeObservers: number;
+  status: "ACTIVE" | "RESOLVING" | "COLLAPSED";
+  expiresInMins: number;
+};
+
+export type DeepArchiveItem = {
+  id: string;
+  codeName: string;
+  historicEventTitle: string;
+  year: string;
+  location: string;
+  summary: string;
+  keyDilemma: string;
+  finalRippleSequence: string[];
+  historicalSigilName: string;
+  historicalAlphaRate: number;
+  isUnlocked: boolean;
+  unlockCostEquity: number;
+};
 
 export type CatalogPulseEvent = WorldPulseEvent & {
   sectors: string[];

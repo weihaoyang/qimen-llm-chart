@@ -2,11 +2,28 @@ import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { query, withTransaction } from "@/lib/db/pool";
 import type { AccountSubject } from "@/lib/agent/account-subject";
+import { stripReservedJobId, stripReservedReviewKeys } from "./input";
+import { buildMultiRowInsert, orderRowsByKey } from "@/lib/db/batch";
 import { getBattle, isBattleOwner } from "./repository";
+import { UserFacingError } from "@/lib/user-facing-error";
 import type { BattleAdvice, BattleAttachment, BattleReview, Collaborator, CollaboratorRole, Opportunity, ResourceAllocation, PlaybookEntry, CalibrationEvent, StrategyProfile, TimelineEdge, TimelineNode, TimelineRelation, TruthStatus, TimelineNodeKind, AdviceAdoption, AdviceStatus } from "./types";
 
 type Json = Record<string, unknown>;
-export class BattleIntegrityError extends Error { constructor(message: string) { super(message); this.name = "BattleIntegrityError"; } }
+/**
+ * A write rejected because the payload contradicts the stored battle — an edge
+ * pointing at another battle's node, a duplicate id inside one list, a
+ * self-referencing edge.
+ *
+ * These messages are written for the user and the status is a property of the
+ * failure, not of the route that surfaced it, so it extends `UserFacingError`
+ * with an explicit 400 and the shared mapper needs no per-route branch.
+ */
+export class BattleIntegrityError extends UserFacingError {
+  constructor(message: string) {
+    super(message, { status: 400 });
+    this.name = "BattleIntegrityError";
+  }
+}
 const owner = (subject: AccountSubject) => [subject.subjectType, subject.subjectId];
 const activeCollaborator = "c.status='active' AND (c.expires_at IS NULL OR c.expires_at>now())";
 // Canonical battle state is writable by the owner and contributors only.
@@ -24,6 +41,30 @@ const ownerBattleForClient = async (client: PoolClient, subject: AccountSubject,
   const result = await client.query(`SELECT 1 FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3`, [battleId, ...owner(subject)]);
   return Boolean(result.rowCount);
 };
+/**
+ * The tables a scoped reference is allowed to point at.
+ *
+ * The earlier version built this map inline and widened it with
+ * `as Record<string, string>`, which erased the key set: the lookup's result was
+ * typed `string | undefined`, so the interpolated table name below was no longer
+ * provably a fixed identifier and only the `if (!table)` guard stood between
+ * caller input and the SQL text. With literal keys and a narrowing predicate, the
+ * name can only ever be one of these six values.
+ */
+const SCOPED_TARGET_TABLES = {
+  fact: "battle_facts",
+  junction: "battle_junctions",
+  move: "battle_moves",
+  commitment: "battle_commitments",
+  review: "battle_reviews",
+  node: "battle_timeline_nodes",
+} as const satisfies Record<string, string>;
+
+type ScopedTargetType = keyof typeof SCOPED_TARGET_TABLES;
+
+const isScopedTargetType = (value: string): value is ScopedTargetType =>
+  Object.prototype.hasOwnProperty.call(SCOPED_TARGET_TABLES, value);
+
 const targetExists = async (client: PoolClient, battleId: string, targetType: string, targetId: string | null) => {
   if (targetType === "battle") return targetId === null || targetId === battleId;
   if (!targetId) return false;
@@ -31,8 +72,8 @@ const targetExists = async (client: PoolClient, battleId: string, targetType: st
     const result = await client.query(`SELECT 1 FROM battle_move_actions a JOIN battle_moves m ON m.id=a.move_id WHERE a.id=$1 AND m.battle_id=$2`, [targetId, battleId]);
     return Boolean(result.rowCount);
   }
-  const table = ({ fact: "battle_facts", junction: "battle_junctions", move: "battle_moves", commitment: "battle_commitments", review: "battle_reviews", node: "battle_timeline_nodes" } as Record<string,string>)[targetType];
-  if (!table) return false;
+  if (!isScopedTargetType(targetType)) return false;
+  const table = SCOPED_TARGET_TABLES[targetType];
   const result = await client.query(`SELECT 1 FROM ${table} WHERE id=$1 AND battle_id=$2`, [targetId, battleId]);
   return Boolean(result.rowCount);
 };
@@ -59,7 +100,11 @@ type ReviewRow = { id:string; battle_id:string; commitment_id:string|null; outco
 const mapNode = (r: NodeRow): TimelineNode => ({ id:r.id, battleId:r.battle_id, kind:r.kind, title:r.title, description:r.description, startsAt:iso(r.starts_at), endsAt:iso(r.ends_at), truthStatus:r.truth_status, importance:r.importance, source:record(r.source_json) });
 const mapEdge = (r: EdgeRow): TimelineEdge => ({ id:r.id, battleId:r.battle_id, fromNodeId:r.from_node_id, toNodeId:r.to_node_id, relation:r.relation, confidence:r.confidence, evidence:record(r.evidence_json) });
 const mapOpportunity = (r: OpportunityRow): Opportunity => ({ id:r.id, battleId:r.battle_id, title:r.title, description:r.description, source:record(r.source_json), opensAt:iso(r.opens_at), bestActionAt:iso(r.best_action_at), closesAt:iso(r.closes_at), decay:record(r.decay_json), status:r.status });
-const mapReview = (r: ReviewRow): BattleReview => ({ id:r.id, battleId:r.battle_id, commitmentId:r.commitment_id, outcome:r.outcome, facts:r.facts, whatChanged:r.what_changed, diagnosis:record(r.diagnosis_json), nextAdjustment:r.next_adjustment, reviewedAt:r.reviewed_at.toISOString() });
+// `_idempotencyKey` is server-reserved bookkeeping that lives inside the
+// diagnosis JSON for backward compatibility (see migration 011). It is never
+// user diagnosis data, so it must not travel back to a client: a client that
+// can read the key can also replay or occupy it.
+const mapReview = (r: ReviewRow): BattleReview => ({ id:r.id, battleId:r.battle_id, commitmentId:r.commitment_id, outcome:r.outcome, facts:r.facts, whatChanged:r.what_changed, diagnosis:stripReservedReviewKeys(r.diagnosis_json), nextAdjustment:r.next_adjustment, reviewedAt:r.reviewed_at.toISOString() });
 
 export const listTimeline = async (subject: AccountSubject, battleId: string) => {
   if (!await accessible(subject, battleId)) return null;
@@ -70,25 +115,60 @@ export const listTimeline = async (subject: AccountSubject, battleId: string) =>
   return { nodes:nodes.rows.map(mapNode), edges:edges.rows.map(mapEdge) };
 };
 
+const NODE_COLUMNS = ["id","battle_id","kind","title","description","starts_at","ends_at","truth_status","importance","source_json"] as const;
+const NODE_CASTS = [null,null,null,null,null,"timestamptz","timestamptz",null,"int","jsonb"] as const;
+const EDGE_COLUMNS = ["id","battle_id","from_node_id","to_node_id","relation","confidence","evidence_json"] as const;
+const EDGE_CASTS = [null,null,"uuid","uuid",null,"int","jsonb"] as const;
+const OPPORTUNITY_COLUMNS = ["id","battle_id","title","description","source_json","opens_at","best_action_at","closes_at","decay_json","status"] as const;
+const OPPORTUNITY_CASTS = ["uuid",null,null,null,"jsonb","timestamptz","timestamptz","timestamptz","jsonb",null] as const;
+
+/**
+ * One statement for every node instead of one per node. The ids are generated
+ * here so the returned rows can be re-ordered back into the caller's order.
+ */
+const insertTimelineNodes = async (client: PoolClient, battleId: string, nodes: Array<Omit<TimelineNode,"id"|"battleId">>) => {
+  const ids = nodes.map(() => randomUUID());
+  const statement = buildMultiRowInsert(
+    "battle_timeline_nodes",
+    NODE_COLUMNS,
+    NODE_CASTS,
+    nodes.map((item, index) => [ids[index], battleId, item.kind, item.title, item.description, item.startsAt, item.endsAt, item.truthStatus, item.importance, JSON.stringify(item.source)]),
+  );
+  const result = await client.query<NodeRow>(`${statement.text} RETURNING ${NODE_COLUMNS.join(",")}`, statement.values);
+  return orderRowsByKey(result.rows.map(mapNode), ids, (node) => node.id, "写入时间线节点");
+};
+
+const insertTimelineEdges = async (client: PoolClient, battleId: string, edges: Array<Omit<TimelineEdge,"id"|"battleId">>) => {
+  const ids = edges.map(() => randomUUID());
+  const statement = buildMultiRowInsert(
+    "battle_timeline_edges",
+    EDGE_COLUMNS,
+    EDGE_CASTS,
+    edges.map((item, index) => [ids[index], battleId, item.fromNodeId, item.toNodeId, item.relation, item.confidence, JSON.stringify(item.evidence)]),
+  );
+  const result = await client.query<EdgeRow>(`${statement.text} RETURNING ${EDGE_COLUMNS.join(",")}`, statement.values);
+  return orderRowsByKey(result.rows.map(mapEdge), ids, (edge) => edge.id, "写入时间线连线");
+};
+
 export const addTimeline = async (subject: AccountSubject, battleId: string, nodes: Array<Omit<TimelineNode,"id"|"battleId">>, edges: Array<Omit<TimelineEdge,"id"|"battleId">>) => withTransaction(async (client) => {
   const check = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...owner(subject)]);
   if (!check.rowCount) return null;
-  for (const edge of edges) {
-    const endpoints = await client.query<{count:string}>(`SELECT COUNT(*)::text AS count FROM battle_timeline_nodes WHERE battle_id=$1 AND id IN ($2,$3)`, [battleId, edge.fromNodeId, edge.toNodeId]);
-    if (Number(endpoints.rows[0]?.count ?? 0) !== 2) throw new BattleIntegrityError("时间线连线只能连接当前战局的节点。");
+  // One query for every endpoint instead of a `COUNT(*)` per edge. The old loop
+  // also relied on `id IN ($2,$3)` returning 2 to detect a bad edge, which made
+  // the self-loop case (both endpoints equal) fall out as a side effect of
+  // counting rows rather than distinct ids. Both rules are now stated directly.
+  //
+  // Note this runs *before* the node inserts, so an edge can only reference
+  // nodes that already existed — a node created in the same request is not yet
+  // an allowed endpoint. That is the pre-existing contract, preserved here.
+  const endpointIds = [...new Set(edges.flatMap((edge) => [edge.fromNodeId, edge.toNodeId]))];
+  if (endpointIds.length) {
+    const found = await client.query<{ id: string }>(`SELECT id FROM battle_timeline_nodes WHERE battle_id=$1 AND id = ANY($2::uuid[])`, [battleId, endpointIds]);
+    if (found.rowCount !== endpointIds.length) throw new BattleIntegrityError("时间线连线只能连接当前战局的节点。");
   }
-  const savedNodes: TimelineNode[] = [];
-  for (const item of nodes) {
-    const id = randomUUID();
-    const row = await client.query<NodeRow>(`INSERT INTO battle_timeline_nodes(id,battle_id,kind,title,description,starts_at,ends_at,truth_status,importance,source_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) RETURNING id,battle_id,kind,title,description,starts_at,ends_at,truth_status,importance,source_json`, [id,battleId,item.kind,item.title,item.description,item.startsAt,item.endsAt,item.truthStatus,item.importance,JSON.stringify(item.source)]);
-    savedNodes.push(mapNode(row.rows[0]));
-  }
-  const savedEdges: TimelineEdge[] = [];
-  for (const item of edges) {
-    const id = randomUUID();
-    const row = await client.query<EdgeRow>(`INSERT INTO battle_timeline_edges(id,battle_id,from_node_id,to_node_id,relation,confidence,evidence_json) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb) RETURNING id,battle_id,from_node_id,to_node_id,relation,confidence,evidence_json`, [id,battleId,item.fromNodeId,item.toNodeId,item.relation,item.confidence,JSON.stringify(item.evidence)]);
-    savedEdges.push(mapEdge(row.rows[0]));
-  }
+  if (edges.some((edge) => edge.fromNodeId === edge.toNodeId)) throw new BattleIntegrityError("时间线连线不能指向自身。");
+  const savedNodes = nodes.length ? await insertTimelineNodes(client, battleId, nodes) : [];
+  const savedEdges = edges.length ? await insertTimelineEdges(client, battleId, edges) : [];
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
   return { nodes:savedNodes, edges:savedEdges };
 });
@@ -102,19 +182,43 @@ export const listOpportunities = async (subject: AccountSubject, battleId: strin
 export const replaceOpportunities = async (subject: AccountSubject, battleId: string, items: Array<Omit<Opportunity,"id"|"battleId"> & { id?: string }>) => withTransaction(async (client) => {
   const check = await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`, [battleId, ...owner(subject)]);
   if (!check.rowCount) return null;
-  const ids = items.flatMap((item) => item.id ? [item.id] : []);
-  await client.query(`DELETE FROM battle_opportunities WHERE battle_id=$1 AND status IN ('open','watching') AND NOT (id = ANY($2::uuid[]))`, [battleId, ids]);
-  const saved: Opportunity[] = [];
-  for (const item of items) {
-    const id = item.id ?? randomUUID();
-    const row = item.id
-      ? await client.query<OpportunityRow>(`UPDATE battle_opportunities SET title=$3,description=$4,source_json=$5::jsonb,opens_at=$6,best_action_at=$7,closes_at=$8,decay_json=$9::jsonb,status=$10 WHERE id=$1 AND battle_id=$2 RETURNING id,battle_id,title,description,source_json,opens_at,best_action_at,closes_at,decay_json,status`, [id,battleId,item.title,item.description,JSON.stringify(item.source),item.opensAt,item.bestActionAt,item.closesAt,JSON.stringify(item.decay),item.status])
-      : await client.query<OpportunityRow>(`INSERT INTO battle_opportunities(id,battle_id,title,description,source_json,opens_at,best_action_at,closes_at,decay_json,status) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9::jsonb,$10) RETURNING id,battle_id,title,description,source_json,opens_at,best_action_at,closes_at,decay_json,status`, [id,battleId,item.title,item.description,JSON.stringify(item.source),item.opensAt,item.bestActionAt,item.closesAt,JSON.stringify(item.decay),item.status]);
-    if (!row.rows[0]) throw new BattleIntegrityError("机会标识不属于当前战局。");
-    saved.push(mapOpportunity(row.rows[0]));
+  // A repeated id cannot be expressed as a single multi-row write: Postgres
+  // rejects "ON CONFLICT DO UPDATE" touching the same row twice in one command.
+  // The per-row loop silently applied both updates in order, which returned two
+  // entries for one row and made the response length lie about the stored set.
+  const suppliedIds = [...new Set(items.flatMap((item) => item.id ? [item.id] : []))];
+  if (suppliedIds.length !== items.filter((item) => item.id).length) {
+    throw new BattleIntegrityError("机会列表中存在重复标识。");
   }
+  await client.query(`DELETE FROM battle_opportunities WHERE battle_id=$1 AND status IN ('open','watching') AND NOT (id = ANY($2::uuid[]))`, [battleId, suppliedIds]);
+  // Validate every supplied id in one query instead of inferring it from a
+  // zero-row UPDATE per item. The write below conflicts on the primary key, so
+  // without this an id belonging to *another* battle would move that battle's
+  // row into this one; the old per-row `AND battle_id=$2` made that impossible.
+  if (suppliedIds.length) {
+    const existing = await client.query<{ id: string }>(`SELECT id FROM battle_opportunities WHERE battle_id=$1 AND id = ANY($2::uuid[])`, [battleId, suppliedIds]);
+    if (existing.rowCount !== suppliedIds.length) throw new BattleIntegrityError("机会标识不属于当前战局。");
+  }
+  if (!items.length) {
+    await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
+    return [];
+  }
+  const ids = items.map((item) => item.id ?? randomUUID());
+  const statement = buildMultiRowInsert(
+    "battle_opportunities",
+    OPPORTUNITY_COLUMNS,
+    OPPORTUNITY_CASTS,
+    items.map((item, index) => [ids[index], battleId, item.title, item.description, JSON.stringify(item.source), item.opensAt, item.bestActionAt, item.closesAt, JSON.stringify(item.decay), item.status]),
+  );
+  // `battle_id` is deliberately absent from the SET list: every supplied id was
+  // just proven to belong to this battle, so re-assigning it could only be a
+  // no-op — or, if that proof were ever wrong, a cross-battle move.
+  const result = await client.query<OpportunityRow>(
+    `${statement.text} ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title,description=EXCLUDED.description,source_json=EXCLUDED.source_json,opens_at=EXCLUDED.opens_at,best_action_at=EXCLUDED.best_action_at,closes_at=EXCLUDED.closes_at,decay_json=EXCLUDED.decay_json,status=EXCLUDED.status RETURNING ${OPPORTUNITY_COLUMNS.join(",")}`,
+    statement.values,
+  );
   await client.query(`UPDATE battle_cases SET updated_at=now() WHERE id=$1`, [battleId]);
-  return saved;
+  return orderRowsByKey(result.rows.map(mapOpportunity), ids, (item) => item.id, "保存机会");
 });
 
 export const listReviews = async (subject: AccountSubject, battleId: string) => {
@@ -138,7 +242,14 @@ export const createReview = async (subject: AccountSubject, battleId: string, in
     if (!commitment.rowCount) return null;
   }
   const id = randomUUID();
-  const diagnosis = idempotencyKey ? { ...input.diagnosis, _idempotencyKey:idempotencyKey } : input.diagnosis;
+  // Strip any client-supplied `_idempotencyKey` before merging. The payload
+  // path bypasses the pre-check above (which only runs when an explicit key is
+  // supplied), so an unvalidated client value would otherwise be written
+  // verbatim, hit the partial unique index from migration 011 as an uncaught
+  // 23505, and allow a client to pre-occupy the slot a later server-generated
+  // key (for example `ai-job:<uuid>`) needs.
+  const clientDiagnosis = stripReservedReviewKeys(input.diagnosis);
+  const diagnosis = idempotencyKey ? { ...clientDiagnosis, _idempotencyKey:idempotencyKey } : clientDiagnosis;
   const row = await client.query<ReviewRow>(`INSERT INTO battle_reviews(id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8) RETURNING id,battle_id,commitment_id,outcome,facts,what_changed,diagnosis_json,next_adjustment,reviewed_at`, [id,battleId,input.commitmentId,input.outcome,input.facts,input.whatChanged,JSON.stringify(diagnosis),input.nextAdjustment]);
   // A confirmed DNA reflection gets its own indexed row.  The module snapshot
   // remains the UI projection, while this table is the durable account-wide
@@ -258,6 +369,27 @@ export const listDecisionDna = async (subject: AccountSubject) => {
   }).slice(0, 500);
 };
 
+/**
+ * Every archive id this account has unlocked, across all of its battles.
+ * Unlocks live in the battle-scoped module snapshot, so an account-wide answer
+ * has to fold the latest `deep-archives` state of each battle the account owns.
+ */
+export const listUnlockedArchiveIds = async (subject: AccountSubject): Promise<Set<string>> => {
+  const result = await query<{ unlocked_ids: unknown }>(
+    `SELECT s.state_json->'unlockedIds' AS unlocked_ids
+       FROM battle_module_states s JOIN battle_cases b ON b.id=s.battle_id
+      WHERE b.platform_subject_type=$1 AND b.platform_subject_id=$2 AND s.module_id='deep-archives'
+        AND s.version=(SELECT MAX(latest.version) FROM battle_module_states latest WHERE latest.battle_id=s.battle_id AND latest.module_id=s.module_id)`,
+    owner(subject),
+  );
+  const ids = new Set<string>();
+  for (const row of result.rows) {
+    if (!Array.isArray(row.unlocked_ids)) continue;
+    for (const value of row.unlocked_ids) if (typeof value === "string") ids.add(value);
+  }
+  return ids;
+};
+
 export const getArchonProgress = async (subject: AccountSubject) => {
   const result = await query<{ reviewed_battles:string; committed_battles:string; collaboration_battles:string; archive_unlocks:string }>(
     `SELECT
@@ -307,8 +439,11 @@ export const listCollaborators = async (subject:AccountSubject,battleId:string) 
   const result = await query<CollaboratorRow>(`SELECT ${collaboratorSelect} FROM battle_collaborators WHERE battle_id=$1 AND (expires_at IS NULL OR expires_at>now()) ORDER BY created_at`,[battleId]);
   return result.rows.map(mapCollaborator);
 };
+// authz-exempt: owner-only — the FOR UPDATE above filters on platform_subject_id, which is stricter than contributor.
 export const upsertCollaborator = async (subject:AccountSubject,battleId:string,input:{subjectType:string;subjectId:string;role:CollaboratorRole;permissions:Json}) => withTransaction(async(client)=>{const check=await client.query(`SELECT id FROM battle_cases WHERE id=$1 AND platform_subject_type=$2 AND platform_subject_id=$3 FOR UPDATE`,[battleId,...owner(subject)]);if(!check.rowCount)return null;const row=await client.query<CollaboratorRow>(`INSERT INTO battle_collaborators(id,battle_id,subject_type,subject_id,role,status,permissions_json,invited_by_type,invited_by_id,expires_at) VALUES($1,$2,$3,$4,$5,'invited',$6::jsonb,$7,$8,now()+interval '7 days') ON CONFLICT(battle_id,subject_type,subject_id) DO UPDATE SET role=EXCLUDED.role,status='invited',permissions_json=EXCLUDED.permissions_json,expires_at=now()+interval '7 days',updated_at=now() RETURNING ${collaboratorSelect}`,[randomUUID(),battleId,input.subjectType,input.subjectId,input.role,JSON.stringify(input.permissions),subject.subjectType,subject.subjectId]);return mapCollaborator(row.rows[0]);});
+// authz-exempt: owner-only — guarded by owned() above; only the owner manages the roster.
 export const setCollaboratorStatus = async (subject:AccountSubject,battleId:string,collaboratorId:string,status:Collaborator["status"]) => { if(!await owned(subject,battleId))return null; const result=await query<CollaboratorRow>(`UPDATE battle_collaborators SET status=$3,updated_at=now() WHERE id=$1 AND battle_id=$2 RETURNING ${collaboratorSelect}`,[collaboratorId,battleId,status]);return result.rows[0]?mapCollaborator(result.rows[0]):undefined; };
+// authz-exempt: self-accept — the row must match the caller's own subject, and an invitee is not yet a collaborator.
 export const acceptCollaboratorInvitation = async (subject:AccountSubject,battleId:string,collaboratorId:string) => { const result=await query<CollaboratorRow>(`UPDATE battle_collaborators SET status='active',updated_at=now() WHERE id=$1 AND battle_id=$2 AND subject_type=$3 AND subject_id=$4 AND status='invited' AND expires_at>now() RETURNING ${collaboratorSelect}`,[collaboratorId,battleId,...owner(subject)]); return result.rows[0]?mapCollaborator(result.rows[0]):null; };
 
 type InvitationRow = CollaboratorRow & { battle_title:string; invited_by_type:string; invited_by_id:string };
@@ -318,6 +453,7 @@ export const listPendingInvitations = async (subject:AccountSubject) => {
 };
 export const respondToInvitation = async (subject:AccountSubject,collaboratorId:string,action:"accept"|"decline") => {
   const status = action === "accept" ? "active" : "revoked";
+  // authz-exempt: self-respond — same as acceptCollaboratorInvitation: the caller acts on their own invitation.
   const result = await query<CollaboratorRow>(`UPDATE battle_collaborators SET status=$4,updated_at=now() WHERE id=$1 AND subject_type=$2 AND subject_id=$3 AND status='invited' AND expires_at>now() RETURNING ${collaboratorSelect}`,[collaboratorId,...owner(subject),status]);
   return result.rows[0] ? mapCollaborator(result.rows[0]) : null;
 };
@@ -348,7 +484,19 @@ export const listAdvice = async (subject:AccountSubject,battleId:string) => {
   return result.rows.map(mapAdvice);
 };
 
-export const createAdvice = async (subject:AccountSubject,battleId:string,input:Pick<BattleAdvice,"targetType"|"targetId"|"opinion"|"rationale"|"uncertainty"|"source"> & { idempotencyKey?: string }) => {
+export const createAdvice = async (
+  subject: AccountSubject,
+  battleId: string,
+  input: Pick<BattleAdvice, "targetType" | "targetId" | "opinion" | "rationale" | "uncertainty" | "source"> & { idempotencyKey?: string },
+  /**
+   * The AI job this advice belongs to, supplied by the server.
+   *
+   * Deliberately a parameter rather than `input.source.jobId`: `source` is client
+   * data on the advice route, and this id decides whether the row is deduped (or
+   * silently dropped by the unique index). See `stripReservedJobId`.
+   */
+  trustedJobId?: string | null,
+) => {
   const access = await getBattleAccess(subject,battleId);
   if (!access || !["owner","advisor","contributor"].includes(access.role)) return null;
   return withTransaction(async (client) => {
@@ -361,20 +509,19 @@ export const createAdvice = async (subject:AccountSubject,battleId:string,input:
       const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND author_subject_type=$2 AND author_subject_id=$3 AND idempotency_key=$4 LIMIT 1`, [battleId, subject.subjectType, subject.subjectId, idempotencyKey]);
       if (existing.rows[0]) return mapAdvice(existing.rows[0]);
     }
+    const sourceJobId = trustedJobId?.trim() || null;
     // AI jobs may be retried after a successful platform charge. Reuse the
     // previously persisted advice by job id so recovery never duplicates it.
-    const sourceJobId = typeof input.source.jobId === "string" ? input.source.jobId : null;
     if (sourceJobId) {
       const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND source_json->>'jobId'=$2 LIMIT 1`, [battleId, sourceJobId]);
       if (existing.rows[0]) return mapAdvice(existing.rows[0]);
     }
     const id = randomUUID();
-    const source = {...input.source,layer:"advisor_opinion",author:{subjectType:subject.subjectType,subjectId:subject.subjectId}};
+    const source = {...stripReservedJobId(input.source), ...(sourceJobId ? { jobId: sourceJobId } : {}), layer:"advisor_opinion",author:{subjectType:subject.subjectType,subjectId:subject.subjectId}};
     const result = await client.query<AdviceRow>(`INSERT INTO battle_advice(id,battle_id,author_subject_type,author_subject_id,target_type,target_id,opinion,rationale,uncertainty,source_json,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11) ON CONFLICT DO NOTHING RETURNING ${adviceSelect}`,[id,battleId,...owner(subject),input.targetType,input.targetId,input.opinion,input.rationale,input.uncertainty,JSON.stringify(source),idempotencyKey]);
     if (result.rows[0]) return mapAdvice(result.rows[0]);
-    const jobId = typeof input.source.jobId === "string" ? input.source.jobId : null;
-    if (!jobId) return null;
-    const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND source_json->>'jobId'=$2 LIMIT 1`,[battleId,jobId]);
+    if (!sourceJobId) return null;
+    const existing = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND source_json->>'jobId'=$2 LIMIT 1`,[battleId,sourceJobId]);
     if (existing.rows[0]) return mapAdvice(existing.rows[0]);
     if (idempotencyKey) {
       const retried = await client.query<AdviceRow>(`SELECT ${adviceSelect} FROM battle_advice WHERE battle_id=$1 AND author_subject_type=$2 AND author_subject_id=$3 AND idempotency_key=$4 LIMIT 1`, [battleId, subject.subjectType, subject.subjectId, idempotencyKey]);

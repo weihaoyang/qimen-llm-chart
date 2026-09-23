@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
-import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
+import { noStore } from "@/lib/http";
+import { errorResponse, internalErrorReason, UserFacingError } from "@/lib/api-error";
+import { reportSwallowedError } from "@/lib/internal-log";
+import { requireAccountSubject } from "@/lib/agent/account-subject";
 import { loadBattleInput } from "@/lib/battle/service";
 import { claimAiJobCommit, createAiJob, failAiJob, finishAiJob, getAiJob, startAiJob, hashSnapshot, listActiveMemorySummaries, markAiJobCharged, setAiJobReservation } from "@/lib/battle/product-state";
 import { requestAgentAnalysis } from "@/lib/agent/chat";
 import { isUuid, asText } from "@/lib/battle/input";
 import { readBearerToken, readCookieValue, readPlatformCookieHeader, fetchPlatformGate, reservePlatformUsage, commitPlatformUsage, releasePlatformUsage, AGENT_PLAN_CODE } from "@/lib/platform/server";
+import { settledCommit } from "@/lib/platform/settled-commit";
 import { appendInventory } from "@/lib/battle/repository";
 import { createAdvice, createReview } from "@/lib/battle/extended-repository";
 import { parseBattleAiJson, validateBattleAiResult, type BattleAiKind } from "@/lib/battle/ai-contract";
@@ -24,21 +27,21 @@ export async function handleAiPost(request: Request, context: { params: Promise<
   try {
     const { id, kind: routeKind } = await context.params;
     const rawKind = forcedKind ?? routeKind ?? "";
-    if (!isUuid(id) || !kinds.has(rawKind)) return NextResponse.json({ error:"AI 能力标识无效。" }, { status:400 });
+    if (!isUuid(id) || !kinds.has(rawKind)) return noStore({ error:"AI 能力标识无效。" }, { status:400 });
     const kind = normalizeKind(rawKind);
     const subject = await requireAccountSubject(request);
     jobSubject = subject;
     const loaded = await loadBattleInput(subject, id);
-    if (!loaded) return NextResponse.json({ error:"战局不存在。" }, { status:404 });
+    if (!loaded) return noStore({ error:"战局不存在。" }, { status:404 });
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
     const authorizedMemories = await listActiveMemorySummaries(subject);
     const input = { battle: loaded.battle, input: loaded.input, authorizedMemories, request: body ?? {} };
     const idempotencyKey = asText(body?.idempotencyKey, 160) || `auto:${kind}:${hashSnapshot(input)}`;
     const created = await createAiJob(subject, id, kind, idempotencyKey, input, "battle-v1");
-    if (!created) return NextResponse.json({ error:"战局无权访问。" }, { status:403 });
+    if (!created) return noStore({ error:"战局无权访问。" }, { status:403 });
     jobId = created.jobId;
     runToken = created.runToken;
-    if (created.status === "conflict") return NextResponse.json({ error:"幂等键已绑定到不同的 AI 输入快照。",reasonCode:"idempotency_conflict" },{ status:409 });
+    if (created.status === "conflict") return noStore({ error:"幂等键已绑定到不同的 AI 输入快照。",reasonCode:"idempotency_conflict" },{ status:409 });
     const interviewQuestion = kind === "interview" ? asText(body?.question, 12000) : null;
     let interviewMessageId: string | undefined;
     if (kind === "interview" && interviewQuestion) {
@@ -60,9 +63,9 @@ export async function handleAiPost(request: Request, context: { params: Promise<
         });
         interviewMessageId = restoredTurn?.id;
       }
-      return NextResponse.json({ job:await getAiJob(subject,id,created.jobId),usage:created.usage,reused:true, ...(interviewMessageId ? { interviewMessageId } : {}) });
+      return noStore({ job:await getAiJob(subject,id,created.jobId),usage:created.usage,reused:true, ...(interviewMessageId ? { interviewMessageId } : {}) });
     }
-    if (created.reused && !["committing","charged"].includes(created.status)) return NextResponse.json({ job:await getAiJob(subject,id,created.jobId),reused:true });
+    if (created.reused && !["committing","charged"].includes(created.status)) return noStore({ job:await getAiJob(subject,id,created.jobId),reused:true });
     const accessToken = readBearerToken(request.headers.get("authorization"));
     const cookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
     const csrfToken = readCookieValue(request.headers.get("cookie"), "ssp_csrf");
@@ -73,32 +76,32 @@ export async function handleAiPost(request: Request, context: { params: Promise<
       structured = created.result as Record<string, unknown>;
       jobCharged = true;
     } else if (created.status === "committing") {
-      if (!created.reservationId || !created.result || typeof created.result !== "object" || Array.isArray(created.result)) throw new Error("AI 任务恢复快照不完整，已停止重试以避免重复扣费。");
+      if (!created.reservationId || !created.result || typeof created.result !== "object" || Array.isArray(created.result)) throw new UserFacingError("AI 任务恢复快照不完整，已停止重试以避免重复扣费。");
       structured = created.result as Record<string, unknown>;
       reservationId = created.reservationId;
       commitAttempted = true;
-      usage = accessToken ? await commitPlatformUsage(accessToken,reservationId,platformOptions) : await commitPlatformUsage(null,reservationId,platformOptions);
-      if (!await markAiJobCharged(subject,id,created.jobId,runToken,usage)) throw new Error("权益已确认，但 AI 恢复记录写入失败，请使用相同请求重试。");
+      usage = await settledCommit("battle-ai", `reservation ${reservationId}`, () => accessToken ? commitPlatformUsage(accessToken, reservationId, platformOptions) : commitPlatformUsage(null, reservationId, platformOptions));
+      if (!await markAiJobCharged(subject,id,created.jobId,runToken,usage)) throw new UserFacingError("权益已确认，但 AI 恢复记录写入失败，请使用相同请求重试。");
       jobCharged = true;
       reservationId = "";
     } else {
-      if (!await startAiJob(subject,id,created.jobId,runToken)) throw new Error("AI 任务无法取得执行锁，请稍后重试。");
+      if (!await startAiJob(subject,id,created.jobId,runToken)) throw new UserFacingError("AI 任务无法取得执行锁，请稍后重试。");
       const gate = await fetchPlatformGate(accessToken, accessToken ? undefined : { cookieHeader, csrfToken });
-      if (!gate.allowed) { await failAiJob(subject,id,created.jobId,runToken,"entitlement_gate_blocked",gate.message || "当前账户没有推演权益。"); return NextResponse.json({ error:gate.message || "当前账户没有推演权益。", reasonCode:gate.reason_code }, { status:402 }); }
+      if (!gate.allowed) { await failAiJob(subject,id,created.jobId,runToken,"entitlement_gate_blocked",gate.message || "当前账户没有推演权益。"); return noStore({ error:gate.message || "当前账户没有推演权益。", reasonCode:gate.reason_code }, { status:402 }); }
       const reservation = accessToken ? await reservePlatformUsage(accessToken,platformOptions) : await reservePlatformUsage(null,platformOptions);
       reservationId = reservation.reservation_id;
-      if (!reservationId) throw new Error("平台没有返回权益预留号。");
-      if (!await setAiJobReservation(subject,id,created.jobId,runToken,reservationId)) throw new Error("AI 权益预留恢复记录写入失败。");
+      if (!reservationId) throw new UserFacingError("平台没有返回权益预留号。");
+      if (!await setAiJobReservation(subject,id,created.jobId,runToken,reservationId)) throw new UserFacingError("AI 权益预留恢复记录写入失败。");
       const question = asText(body?.question, 6000) || `请完成 ${kind} 模式的结构化现实推演。只返回合法 JSON，字段应包含 summary、facts、risks、actions、verificationSignals、stopConditions。`;
       const result = await requestAgentAnalysis({ mode:"research", researchTool:"battle", focus:kind, question, structuredText:JSON.stringify(input), jsonPayload:JSON.stringify(input), analysisProduct:"agent" });
       const parsedStructured = parseBattleAiJson(result.content);
       const schemaError = validateBattleAiResult(kind as BattleAiKind, parsedStructured);
       if (schemaError) throw new Error(schemaError);
       structured = parsedStructured as Record<string, unknown>;
-      if (!await claimAiJobCommit(subject,id,created.jobId,runToken,structured,result.model)) throw new Error("AI 任务已超时或被终止，未应用模型结果。");
+      if (!await claimAiJobCommit(subject,id,created.jobId,runToken,structured,result.model)) throw new UserFacingError("AI 任务已超时或被终止，未应用模型结果。");
       commitAttempted = true;
-      usage = accessToken ? await commitPlatformUsage(accessToken,reservationId,platformOptions) : await commitPlatformUsage(null,reservationId,platformOptions);
-      if (!await markAiJobCharged(subject,id,created.jobId,runToken,usage)) throw new Error("权益已确认，但 AI 恢复记录写入失败，请使用相同请求重试。");
+      usage = await settledCommit("battle-ai", `reservation ${reservationId}`, () => accessToken ? commitPlatformUsage(accessToken, reservationId, platformOptions) : commitPlatformUsage(null, reservationId, platformOptions));
+      if (!await markAiJobCharged(subject,id,created.jobId,runToken,usage)) throw new UserFacingError("权益已确认，但 AI 恢复记录写入失败，请使用相同请求重试。");
       jobCharged = true;
       reservationId = "";
     }
@@ -123,17 +126,37 @@ export async function handleAiPost(request: Request, context: { params: Promise<
     }
     if (kind === "red_team" || kind === "breakthrough") {
       const opinion = String(structured.critique ?? structured.summary ?? structured.analysis ?? "AI 已完成结构化推演，请人工审查。");
-      await createAdvice(subject, id, { targetType: "battle", targetId: null, opinion, rationale: JSON.stringify(structured).slice(0, 12000), uncertainty: "AI 输出必须由用户确认后才进入事实或行动。", source: { jobId: created.jobId, kind } });
+      await createAdvice(subject, id, { targetType: "battle", targetId: null, opinion, rationale: JSON.stringify(structured).slice(0, 12000), uncertainty: "AI 输出必须由用户确认后才进入事实或行动。", source: { kind } }, created.jobId);
     }
     if (kind === "review") {
       await createReview(subject, id, { commitmentId: null, outcome: String(structured.summary), facts: String(structured.facts), whatChanged: String(structured.whatChanged), diagnosis: (structured.diagnosis && typeof structured.diagnosis === "object" && !Array.isArray(structured.diagnosis)) ? structured.diagnosis as Record<string, unknown> : {}, nextAdjustment: String(structured.nextAdjustment) }, `ai-job:${created.jobId}`);
     }
     const finished = await finishAiJob(subject,id,created.jobId,runToken);
-    if (!finished) throw new Error("AI 任务已超时或不再处于可提交状态，未扣减本次权益。");
-    return NextResponse.json({ job: await getAiJob(subject,id,created.jobId), usage, ...(interviewMessageId ? { interviewMessageId } : {}) });
+    if (!finished) throw new UserFacingError("AI 任务已超时或不再处于可提交状态，未扣减本次权益。");
+    return noStore({ job: await getAiJob(subject,id,created.jobId), usage, ...(interviewMessageId ? { interviewMessageId } : {}) });
   } catch (error) {
-    if (reservationId && !commitAttempted) { try { const token=readBearerToken(request.headers.get("authorization")); const cookieHeader=readPlatformCookieHeader(request.headers.get("cookie")); const csrfToken=readCookieValue(request.headers.get("cookie"),"ssp_csrf"); if (token) await releasePlatformUsage(token,reservationId,{planCode:AGENT_PLAN_CODE}); else await releasePlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken}); } catch {} }
-    if (jobSubject && jobId && runToken && !commitAttempted && !jobCharged) { try { await failAiJob(jobSubject,(await context.params).id,jobId,runToken,"ai_request_failed",error instanceof Error ? error.message : "AI 推演失败。"); } catch {} }
-    return error instanceof AccountSubjectError ? NextResponse.json({error:error.message},{status:error.status}) : NextResponse.json({error:error instanceof Error ? error.message : "AI 推演失败。"},{status:500});
+    // The request has already failed, so neither cleanup may replace that error
+    // — each one swallows its own failure. But neither may be silent either: an
+    // unreleased reservation is a real cost the user paid for nothing, and a job
+    // left in `running` is invisible from every other surface.
+    if (reservationId && !commitAttempted) {
+      try {
+        const token = readBearerToken(request.headers.get("authorization"));
+        const cookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
+        const csrfToken = readCookieValue(request.headers.get("cookie"), "ssp_csrf");
+        if (token) await releasePlatformUsage(token, reservationId, { planCode: AGENT_PLAN_CODE });
+        else await releasePlatformUsage(null, reservationId, { planCode: AGENT_PLAN_CODE, cookieHeader, csrfToken });
+      } catch (releaseError) {
+        reportSwallowedError("battle-ai", `释放平台用量预留失败（reservation=${reservationId}），该次预留可能未退回。`, releaseError);
+      }
+    }
+    if (jobSubject && jobId && runToken && !commitAttempted && !jobCharged) {
+      try {
+        await failAiJob(jobSubject, (await context.params).id, jobId, runToken, "ai_request_failed", internalErrorReason(error, "AI 推演失败。"));
+      } catch (failError) {
+        reportSwallowedError("battle-ai", `标记 AI 任务失败时出错（job=${jobId}），该任务可能停留在 running。`, failError);
+      }
+    }
+    return errorResponse(error, "AI 推演失败。", 500);
   }
 }

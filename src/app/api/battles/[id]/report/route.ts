@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { AccountSubjectError, requireAccountSubject } from "@/lib/agent/account-subject";
+import { errorResponse } from "@/lib/api-error";
+import { noStore } from "@/lib/http";
+import { requireAccountSubject } from "@/lib/agent/account-subject";
 import { isUuid } from "@/lib/battle/input";
 import { getActiveCommitment, getBattle, getExecutionPlan, getLatestGravityLine, listBattleConstraints, listBattleFacts, listInventory, listJunctions, listMoves } from "@/lib/battle/repository";
 import { listAdvice, listAttachments, listOpportunities, listReviews, listTimeline } from "@/lib/battle/extended-repository";
@@ -9,10 +11,10 @@ type Context={params:Promise<{id:string}>};
 export async function GET(request:Request,context:Context){
   try{
     const id=(await context.params).id;
-    if(!isUuid(id))return NextResponse.json({error:"战局标识无效。"},{status:400});
+    if(!isUuid(id))return noStore({error:"战局标识无效。"},{status:400});
     const subject=await requireAccountSubject(request);
     const battle=await getBattle(subject,id);
-    if(!battle)return NextResponse.json({error:"战局不存在。"},{status:404});
+    if(!battle)return noStore({error:"战局不存在。"},{status:404});
     const [facts,constraints,inventory,gravity,junctions,moves,commitment,timeline,opportunities,reviews,advice,attachments]=await Promise.all([
       listBattleFacts(subject,id),listBattleConstraints(subject,id),listInventory(subject,id),getLatestGravityLine(subject,id),listJunctions(subject,id),listMoves(subject,id),getActiveCommitment(subject,id),listTimeline(subject,id),listOpportunities(subject,id),listReviews(subject,id),listAdvice(subject,id),listAttachments(subject,id),
     ]);
@@ -36,8 +38,8 @@ export async function GET(request:Request,context:Context){
         `\n## 证据引用\n${(attachments??[]).map((x)=>`- ${x.filename}：${x.storageKey}（${x.mediaType}，${x.byteSize} bytes${x.checksum?`，校验 ${x.checksum}`:""}）`).join("\n")||"- 暂无"}`,
         `\n## 冷酷复盘与校准\n${(reviews??[]).map((x)=>`- ${x.outcome}\n  - 改变的事实：${x.facts}\n  - 下一调整：${x.nextAdjustment}\n  - 诊断：${json(x.diagnosis)}`).join("\n")||"- 尚未复盘"}`,
       ].join("\n");
-      return new NextResponse(text,{headers:{"Content-Type":"text/markdown; charset=utf-8","Content-Disposition":`attachment; filename="battle-${id}.md"`}});
+      return new NextResponse(text,{headers:{"Content-Type":"text/markdown; charset=utf-8","Content-Disposition":`attachment; filename="battle-${id}.md"`,"Cache-Control":"no-store"}});
     }
-    return NextResponse.json(report);
-  }catch(error){return error instanceof AccountSubjectError?NextResponse.json({error:error.message},{status:error.status}):NextResponse.json({error:"导出战局报告失败。"},{status:500});}
+    return noStore(report);
+  }catch(error){return errorResponse(error, "导出战局报告失败。");}
 }

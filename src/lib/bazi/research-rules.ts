@@ -35,6 +35,27 @@ export type ResearchReleaseBundle = {
   published_at_iso: string;
 };
 
+/**
+ * A definition that fails validation is the caller's fault — but this validator
+ * has three callers and only one of them receives a definition off the wire.
+ * `stageResearchRuleRelease` validates a submitted bundle; `mapRelease` and
+ * `applyResearchRules` validate a row read back from
+ * `bazi_research_rule_releases`, where the same failure means our own stored
+ * data is corrupt. Reporting *that* as a bad request would blame the caller for
+ * our damage, and it would skip the internal log.
+ *
+ * A dedicated class keeps the two apart without duplicating the rules: the
+ * staging boundary converts it into a `UserFacingError` so the sentence reaches
+ * the research pipeline, and every other caller lets it fall through to the
+ * generic response and the swallowed-error log.
+ */
+export class ResearchRuleValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ResearchRuleValidationError";
+  }
+}
+
 const allowedOperators = new Set<ResearchCondition["op"]>(["equals", "in", "gte", "lte", "truthy"]);
 const allowedFields = new Set([
   "chart.day_master_strength", "chart.follow_structure", "chart.diagnosis_confidence",
@@ -50,7 +71,7 @@ const allowedFieldPrefixes = [
 const canonicalJson = (value: unknown): string => {
   if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  if (!value || typeof value !== "object") throw new Error("研究规则包含不支持的数据类型。");
+  if (!value || typeof value !== "object") throw new ResearchRuleValidationError("研究规则包含不支持的数据类型。");
   const source = value as Record<string, unknown>;
   return `{${Object.keys(source).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(source[key])}`).join(",")}}`;
 };
@@ -63,50 +84,50 @@ const isJson = (value: unknown): value is Json => value === null || typeof value
   && (Array.isArray(value) ? value.length <= 32 : true);
 
 const normalizeRuleValue = (value: unknown, depth = 0): Json => {
-  if (depth > 3) throw new Error("规则条件值嵌套过深。");
+  if (depth > 3) throw new ResearchRuleValidationError("规则条件值嵌套过深。");
   if (value === null || typeof value === "boolean" || typeof value === "string" || typeof value === "number") {
     if (typeof value === "string") return value.slice(0, 160);
-    if (typeof value === "number" && !Number.isFinite(value)) throw new Error("规则条件数值无效。");
-    if (typeof value === "number" && Math.abs(value) > 10000) throw new Error("规则条件数值超出范围。");
+    if (typeof value === "number" && !Number.isFinite(value)) throw new ResearchRuleValidationError("规则条件数值无效。");
+    if (typeof value === "number" && Math.abs(value) > 10000) throw new ResearchRuleValidationError("规则条件数值超出范围。");
     return typeof value === "number" ? (Number.isInteger(value) ? value : Number(value.toFixed(8))) : value;
   }
   if (Array.isArray(value) && value.length <= 32 && value.every(isJson)) return value.map((item) => normalizeRuleValue(item, depth + 1));
-  throw new Error("规则条件值必须是有限的 JSON 标量或标量数组。");
+  throw new ResearchRuleValidationError("规则条件值必须是有限的 JSON 标量或标量数组。");
 };
 
 export const validateResearchRuleDefinition = (value: unknown): ResearchRuleDefinition => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("研究规则必须是对象。");
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ResearchRuleValidationError("研究规则必须是对象。");
   const input = value as Record<string, unknown>;
   if (input.dsl_version !== BAZI_RESEARCH_DSL_VERSION || !Array.isArray(input.rules) || input.rules.length < 1 || input.rules.length > 20) {
-    throw new Error("研究规则必须使用 bazi-axis-rule-v1，且含 1–20 条子规则。");
+    throw new ResearchRuleValidationError("研究规则必须使用 bazi-axis-rule-v1，且含 1–20 条子规则。");
   }
   const ids = new Set<string>();
   const rules = input.rules.map((rawRule, index): ResearchRule => {
-    if (!rawRule || typeof rawRule !== "object" || Array.isArray(rawRule)) throw new Error("子规则格式无效。");
+    if (!rawRule || typeof rawRule !== "object" || Array.isArray(rawRule)) throw new ResearchRuleValidationError("子规则格式无效。");
     const rule = rawRule as Record<string, unknown>;
     const id = String(rule.id ?? `rule-${index + 1}`).trim();
-    if (!id || id.length > 64 || ids.has(id)) throw new Error("子规则 ID 必须唯一且不超过 64 个字符。");
+    if (!id || id.length > 64 || ids.has(id)) throw new ResearchRuleValidationError("子规则 ID 必须唯一且不超过 64 个字符。");
     ids.add(id);
     if (!Array.isArray(rule.all) || !rule.all.length || rule.all.length > 8 || !rule.adjustments || typeof rule.adjustments !== "object" || Array.isArray(rule.adjustments)) {
-      throw new Error("每条子规则必须包含 all 条件和 adjustments 调整。");
+      throw new ResearchRuleValidationError("每条子规则必须包含 all 条件和 adjustments 调整。");
     }
     const all = rule.all.map((rawCondition): ResearchCondition => {
-      if (!rawCondition || typeof rawCondition !== "object" || Array.isArray(rawCondition)) throw new Error("规则条件格式无效。");
+      if (!rawCondition || typeof rawCondition !== "object" || Array.isArray(rawCondition)) throw new ResearchRuleValidationError("规则条件格式无效。");
       const condition = rawCondition as Record<string, unknown>;
       const field = String(condition.field ?? "").trim();
       const op = String(condition.op ?? "") as ResearchCondition["op"];
-      if (!allowedFields.has(field) && !allowedFieldPrefixes.some((prefix) => field.startsWith(prefix))) throw new Error("规则只能读取已批准的去标识化特征。");
-      if (!allowedOperators.has(op) || (op !== "truthy" && !isJson(condition.value))) throw new Error("规则条件不安全或不受支持。");
+      if (!allowedFields.has(field) && !allowedFieldPrefixes.some((prefix) => field.startsWith(prefix))) throw new ResearchRuleValidationError("规则只能读取已批准的去标识化特征。");
+      if (!allowedOperators.has(op) || (op !== "truthy" && !isJson(condition.value))) throw new ResearchRuleValidationError("规则条件不安全或不受支持。");
       return { field, op, value: op === "truthy" ? null : normalizeRuleValue(condition.value) };
     });
     const adjustments: Partial<Record<Axis, number>> = {};
     for (const [axis, rawDelta] of Object.entries(rule.adjustments as Record<string, unknown>)) {
       if (!(RESEARCH_AXES as readonly string[]).includes(axis) || typeof rawDelta !== "number" || !Number.isInteger(rawDelta) || rawDelta < -30 || rawDelta > 30) {
-        throw new Error("每轴调整只能是 -30 到 30 的整数。");
+        throw new ResearchRuleValidationError("每轴调整只能是 -30 到 30 的整数。");
       }
       adjustments[axis as Axis] = rawDelta;
     }
-    if (!Object.keys(adjustments).length) throw new Error("每条子规则至少需要一个轴调整。");
+    if (!Object.keys(adjustments).length) throw new ResearchRuleValidationError("每条子规则至少需要一个轴调整。");
     return { id, all, adjustments };
   });
   return { dsl_version: BAZI_RESEARCH_DSL_VERSION, rules };

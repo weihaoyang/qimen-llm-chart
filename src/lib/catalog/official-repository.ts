@@ -9,7 +9,8 @@ import {
   WORLD_PULSE_TICKER,
 } from "@/lib/scenarios/ecosystem";
 import { OFFICIAL_TEMPLATE_CATALOG } from "@/lib/scenarios/marketplace";
-import { AI_PERSONA_CONFIGS } from "@/shengtian-reference/data/presets";
+import { AI_PERSONA_CONFIGS } from "@/lib/catalog/personas";
+import { reportSwallowedError } from "@/lib/internal-log";
 
 export const OFFICIAL_CATALOG_TYPES = {
   scenario: "scenario",
@@ -44,7 +45,19 @@ const builtInEntries = (): SeedEntry[] => [
   ...OFFICIAL_TEMPLATE_CATALOG.map((template) => ({ catalogType:OFFICIAL_CATALOG_TYPES.skillTemplate, entryId:template.id, version:1, payload:template })),
 ];
 
-let seeded = false;
+/**
+ * The in-flight or completed seed attempt.
+ *
+ * A boolean "already seeded" flag would let every concurrent cold-start request
+ * start its own seed transaction. They would queue on the advisory lock and each
+ * re-issue every `INSERT ... ON CONFLICT DO NOTHING`, while every read path —
+ * which awaits this function — sat blocked behind that queue. Memoizing the
+ * *promise* collapses the whole burst into one transaction.
+ *
+ * It is cleared on failure, so a process that booted against an unreachable
+ * database retries on the next request instead of staying unseeded forever.
+ */
+let seedAttempt: Promise<void> | null = null;
 
 /**
  * Copy the versioned built-in release bundle into PostgreSQL once per server
@@ -52,21 +65,53 @@ let seeded = false;
  * a version bump, which prevents an application deploy from silently rewriting
  * what an existing user cloned.
  */
-export async function ensureOfficialCatalogSeeded() {
-  if (seeded) return;
-  await withTransaction(async (client) => {
-    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended('official-catalog-seed', 0))`);
-    for (const entry of builtInEntries()) {
-      await client.query(
-        `INSERT INTO official_catalog_entries(catalog_type,entry_id,version,payload_json,content_hash)
-         VALUES($1,$2,$3,$4::jsonb,$5)
-         ON CONFLICT (catalog_type,entry_id,version) DO NOTHING`,
-        [entry.catalogType, entry.entryId, entry.version, JSON.stringify(entry.payload), hashPayload(entry.payload)],
-      );
-    }
-  });
-  seeded = true;
+export async function ensureOfficialCatalogSeeded(): Promise<void> {
+  if (!seedAttempt) {
+    seedAttempt = (async () => {
+      await withTransaction(async (client) => {
+        await client.query(`SELECT pg_advisory_xact_lock(hashtextextended('official-catalog-seed', 0))`);
+        for (const entry of builtInEntries()) {
+          await client.query(
+            `INSERT INTO official_catalog_entries(catalog_type,entry_id,version,payload_json,content_hash)
+             VALUES($1,$2,$3,$4::jsonb,$5)
+             ON CONFLICT (catalog_type,entry_id,version) DO NOTHING`,
+            [entry.catalogType, entry.entryId, entry.version, JSON.stringify(entry.payload), hashPayload(entry.payload)],
+          );
+        }
+      });
+    })();
+  }
+
+  const attempt = seedAttempt;
+  try {
+    await attempt;
+  } catch (error) {
+    // Only clear our own attempt. A later caller may already have started a fresh
+    // one, and clobbering that would drop an in-flight transaction.
+    if (seedAttempt === attempt) seedAttempt = null;
+    throw error;
+  }
 }
+
+/**
+ * `payload_json` is `jsonb`, and a `jsonb` column can hold a scalar
+ * (`"text"`, `3`, `null`). The `as T` cast this replaces compiled for every
+ * shape, so a scalar payload reached the callers typed as a catalog entry and
+ * surfaced as a property access on a string rather than as a readable failure.
+ *
+ * A payload that is not a container is corruption, not user data: the catalog is
+ * written only by `ensureOfficialCatalogSeeded`. Throwing keeps it fail-closed,
+ * and every read path already handles it — the two public reference routes fall
+ * back to the bundled catalog, and the authenticated catalog routes answer with
+ * a controlled 500.
+ */
+const catalogPayload = <T>(value: unknown, context: string): T => {
+  if (value === null || typeof value !== "object") {
+    reportSwallowedError("catalog", `官方目录 payload_json 不是对象或数组（${context}）。`, value);
+    throw new Error("官方目录数据损坏。");
+  }
+  return value as T;
+};
 
 export async function listOfficialCatalog<T>(catalogType: CatalogType): Promise<Array<{ id:string; version:number; payload:T }>> {
   await ensureOfficialCatalogSeeded();
@@ -77,7 +122,7 @@ export async function listOfficialCatalog<T>(catalogType: CatalogType): Promise<
       ORDER BY entry_id`,
     [catalogType],
   );
-  return result.rows.map((row) => ({ id:row.entry_id, version:row.version, payload:row.payload_json as T }));
+  return result.rows.map((row) => ({ id:row.entry_id, version:row.version, payload:catalogPayload<T>(row.payload_json, `${catalogType}/${row.entry_id}`) }));
 }
 
 export async function getOfficialCatalogEntry<T>(catalogType: CatalogType, entryId: string): Promise<{ id:string; version:number; payload:T } | null> {
@@ -90,7 +135,7 @@ export async function getOfficialCatalogEntry<T>(catalogType: CatalogType, entry
     [catalogType, entryId],
   );
   const row = result.rows[0];
-  return row ? { id:row.entry_id, version:row.version, payload:row.payload_json as T } : null;
+  return row ? { id:row.entry_id, version:row.version, payload:catalogPayload<T>(row.payload_json, `${catalogType}/${row.entry_id}`) } : null;
 }
 
 export async function listOfficialScenarios(): Promise<ScenarioSeed[]> {
