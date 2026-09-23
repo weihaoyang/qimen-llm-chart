@@ -159,7 +159,7 @@ export const createAccountCheckout = async (
     payment_channel: paymentChannel,
     payment_scene: paymentScene,
     return_url: typeof returnUrl === "function" ? returnUrl(orderId) : returnUrl,
-  }) as { provider_checkout_url?: unknown; checkout_url?: unknown; url?: unknown };
+  } as { order_id: string; product_code: string; payment_channel: string; payment_scene: "web" | "wap"; return_url: string }) as { provider_checkout_url?: unknown; checkout_url?: unknown; url?: unknown };
   const providerCheckoutUrl = asProviderCheckoutUrl(paymentResponse);
   if (!providerCheckoutUrl) throw new Error("平台没有返回收银台地址，未继续发起支付。");
   return { orderId, checkoutToken: "", checkoutMode: "account", providerCheckoutUrl };
