@@ -12,18 +12,31 @@ import {
   parseChoiceDecision,
   requestAgentAnalysis,
   requestBaziPersonalityPrediction,
+  createAgentEventStreamResponse,
 } from "./chat";
 
 describe("agent chat helpers", () => {
+  it("keeps tool payloads out of tool_result while exposing chart updates", async () => {
+    async function* parts() {
+      yield { type: "tool-call", toolName: "calibrate_birth_time", input: { date: "1990-01-01" } };
+      yield { type: "tool-result", toolName: "calibrate_birth_time", output: { kind: "birth-time-calibration", evidence: "已确认事实", instruction: "继续追问", candidates: [{ time: "子时", structuredText: "盘面", jsonPayload: "{}" }] } };
+    }
+    const response = createAgentEventStreamResponse({ fullStream: parts() });
+    const events = (await response.text()).trim().split("\n").map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(events.some((event) => event.type === "tool_result" && !Object.prototype.hasOwnProperty.call(event, "output"))).toBe(true);
+    expect(events.find((event) => event.type === "chart_update")).toMatchObject({ mode: "bazi", summary: "候选时辰盘已生成，等待逐轮核验。" });
+  });
+
   it("starts the dedicated workspace in single-question interview mode", () => {
     expect(AGENT_INTERVIEW_START_QUESTION).toContain("每次只问我一个最关键的问题");
     expect(AGENT_INTERVIEW_START_QUESTION).toContain("事实、约束、选项、代价、行动");
   });
 
   it("offers focused analysis angles for every workbench mode", () => {
-    expect(Object.values(AGENT_ANALYSIS_ANGLES)).toHaveLength(5);
+    expect(Object.values(AGENT_ANALYSIS_ANGLES)).toHaveLength(8);
     for (const [mode, angles] of Object.entries(AGENT_ANALYSIS_ANGLES)) {
-      expect(angles).toHaveLength(mode === "research" ? 5 : mode === "qimen" ? 9 : 6);
+      const expectedLength = mode === "research" ? 5 : mode === "qimen" ? 9 : mode === "astro" || mode === "human-design" || mode === "tarot" ? 2 : 6;
+      expect(angles).toHaveLength(expectedLength);
       expect(angles.every((angle) => angle.label && angle.question)).toBe(true);
     }
 

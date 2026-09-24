@@ -5,7 +5,14 @@ import { BAZI_SYSTEM_PROMPT } from "./bazi-guidance";
 import { formatAgentSkillsPrompt, selectAgentSkills } from "./skills";
 import { isolateUntrustedPayload, UNTRUSTED_PAYLOAD_PROTOCOL } from "./prompt-isolation";
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamText } from "ai";
+import { jsonSchema, stepCountIs, streamText, tool } from "ai";
+import { normalizeProfileInput, type ProfileInput } from "@/lib/profile";
+import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
+import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib/bazi/serializer";
+import { buildQimenChartFromProfile } from "@/lib/qimen/chart";
+import { serializeChartToCompactJson, serializeChartToStructuredText } from "@/lib/qimen/serializer";
+import { buildZiweiChartFromProfile } from "@/lib/ziwei/chart";
+import { serializeZiweiToCompactJson, serializeZiweiToStructuredText } from "@/lib/ziwei/serializer";
 
 /**
  * Upper bound for a single non-streaming model call. The streaming workbench
@@ -23,6 +30,7 @@ export const BAZI_PERSONALITY_MAX_TOKENS = 4_000;
 
 export type AgentRequestPayload = {
   mode: WorkbenchMode;
+  conversationMode?: AgentConversationMode;
   question?: string;
   focus?: string;
   researchTool?: string;
@@ -42,6 +50,146 @@ export type AgentConversationMessage = {
   role: "user" | "assistant";
   content: string;
 };
+
+export type AgentConversationMode = "free" | "interview" | "calibration" | "recalculate";
+export type AgentToolEvent = Extract<AgentStreamEvent, { type: "tool_start" | "tool_result" | "chart_update" }>;
+export type AgentChartUpdate = Extract<AgentStreamEvent, { type: "chart_update" }>;
+export type AgentStreamEvent =
+  | { type: "message_start"; id: string }
+  | { type: "text_delta"; text: string }
+  | { type: "tool_start"; toolName: string; inputSummary?: string; input?: unknown }
+  | { type: "tool_result"; toolName: string; inputSummary?: string; status: "success" | "error"; summary: string }
+  | { type: "chart_update"; mode: "qimen" | "bazi" | "ziwei"; structuredText: string; jsonPayload: string; summary: string; profile?: ProfileInput; calibration?: { candidates: Array<{ time: string; structuredText: string; jsonPayload: string; profile?: ProfileInput }>; evidence: string; instruction: string } }
+  | { type: "message_done" }
+  | { type: "error"; message: string };
+
+const eventLine = (event: AgentStreamEvent) => `${JSON.stringify(event)}\n`;
+const summarizeToolInput = (input: unknown) => {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return "参数已校验";
+  const entries = Object.entries(input as Record<string, unknown>).filter(([, value]) => value !== undefined && value !== "");
+  return entries.slice(0, 6).map(([key, value]) => `${key}=${Array.isArray(value) ? value.join("、") : String(value)}`).join(" · ").slice(0, 280) || "参数已校验";
+};
+
+/** Convert AI SDK fullStream parts to the small protocol consumed by the workbench. */
+export const createAgentEventStreamResponse = (result: { fullStream: AsyncIterable<unknown> }) => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const id = crypto.randomUUID();
+      controller.enqueue(encoder.encode(eventLine({ type: "message_start", id })));
+      try {
+        for await (const raw of result.fullStream) {
+          const part = raw as Record<string, unknown>;
+          if (part.type === "text-delta" && typeof part.textDelta === "string") {
+            controller.enqueue(encoder.encode(eventLine({ type: "text_delta", text: part.textDelta })));
+          } else if (part.type === "tool-call") {
+            controller.enqueue(encoder.encode(eventLine({ type: "tool_start", toolName: String(part.toolName ?? "tool"), inputSummary: summarizeToolInput(part.input) })));
+          } else if (part.type === "tool-result") {
+            const output = part.output;
+            const toolName = String(part.toolName ?? "tool");
+            const isCalibration = toolName === "calibrate_birth_time" && output && typeof output === "object" && "candidates" in output;
+            const summary = isCalibration ? "候选时辰盘已生成，等待逐轮核验。" : "新盘已生成并可注入当前工作台。";
+            // Keep large chart payloads in chart_update. tool_result is a small
+            // status event that can be rendered safely in the conversation.
+            controller.enqueue(encoder.encode(eventLine({ type: "tool_result", toolName, inputSummary: summarizeToolInput(part.input), status: "success", summary })));
+            if (output && typeof output === "object" && "structuredText" in output && "jsonPayload" in output) {
+              const chart = output as { mode?: "qimen" | "bazi" | "ziwei"; structuredText: string; jsonPayload: string; profile?: ProfileInput };
+              if (chart.mode && typeof chart.structuredText === "string" && typeof chart.jsonPayload === "string") {
+                controller.enqueue(encoder.encode(eventLine({ type: "chart_update", mode: chart.mode, structuredText: chart.structuredText, jsonPayload: chart.jsonPayload, summary, profile: chart.profile })));
+              }
+            } else if (isCalibration) {
+              const calibration = output as { candidates: Array<{ time?: unknown; structuredText?: unknown; jsonPayload?: unknown; profile?: ProfileInput }>; evidence?: unknown; instruction?: unknown };
+              const candidates = calibration.candidates.filter((candidate) => typeof candidate.time === "string" && typeof candidate.structuredText === "string" && typeof candidate.jsonPayload === "string").map((candidate) => ({ time: candidate.time as string, structuredText: candidate.structuredText as string, jsonPayload: candidate.jsonPayload as string, profile: candidate.profile }));
+              const first = candidates[0];
+              if (first) controller.enqueue(encoder.encode(eventLine({ type: "chart_update", mode: "bazi", structuredText: first.structuredText, jsonPayload: first.jsonPayload, summary, profile: first.profile, calibration: { candidates, evidence: typeof calibration.evidence === "string" ? calibration.evidence : "", instruction: typeof calibration.instruction === "string" ? calibration.instruction : "" } })));
+            }
+          } else if (part.type === "tool-error") {
+            const toolName = String(part.toolName ?? "tool");
+            const message = part.error instanceof Error ? part.error.message : typeof part.error === "string" ? part.error : "工具执行失败。";
+            controller.enqueue(encoder.encode(eventLine({ type: "tool_result", toolName, inputSummary: summarizeToolInput(part.input), status: "error", summary: message })));
+            controller.enqueue(encoder.encode(eventLine({ type: "error", message })));
+          } else if (part.type === "error") {
+            controller.enqueue(encoder.encode(eventLine({ type: "error", message: part.error instanceof Error ? part.error.message : "工具执行失败。" })));
+          }
+        }
+        controller.enqueue(encoder.encode(eventLine({ type: "message_done" })));
+        controller.close();
+      } catch (error) {
+        controller.enqueue(encoder.encode(eventLine({ type: "error", message: error instanceof Error ? error.message : "对话流中断。" })));
+        controller.error(error);
+      }
+    },
+  });
+  return new Response(stream, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache", "X-Accel-Buffering": "no" } });
+};
+
+const chartToolInputSchema = jsonSchema({
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    mode: { type: "string", enum: ["qimen", "bazi", "ziwei"] },
+    datetime: { type: "string", description: "当地墙钟时间，格式 YYYY-MM-DDTHH:mm" },
+    timeZone: { type: "string" },
+    gender: { type: "string", enum: ["male", "female"] },
+    timeBasis: { type: "string", enum: ["civil", "true-solar"] },
+  },
+  required: ["mode", "datetime", "timeZone", "gender"],
+} as const);
+
+const birthTimeCalibrationSchema = jsonSchema({
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    date: { type: "string", description: "公历日期 YYYY-MM-DD" },
+    candidateTimes: { type: "array", minItems: 2, maxItems: 4, items: { type: "string", pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$" } },
+    timeZone: { type: "string" },
+    gender: { type: "string", enum: ["male", "female"] },
+    evidence: { type: "string", description: "用户已经明确确认的前事、性格或时间线事实；没有就留空" },
+  },
+  required: ["date", "candidateTimes", "timeZone", "gender"],
+} as const);
+
+const createChartTool = () => tool({
+  description: "根据用户已经确认的出生资料重新排盘。缺少日期、时辰、性别或时区时必须先追问，不能猜测。工具结果会作为本轮后续分析的结构化上下文。",
+  inputSchema: chartToolInputSchema,
+  execute: async (rawInput) => {
+    const input = rawInput as { mode: "qimen" | "bazi" | "ziwei"; datetime: string; timeZone: string; gender: "male" | "female"; timeBasis?: "civil" | "true-solar" };
+    const profile: ProfileInput = { calendarMode: "solar", datetime: input.datetime, timeZone: input.timeZone, gender: input.gender, timeBasis: input.timeBasis ?? "civil" };
+    const normalized = normalizeProfileInput(profile);
+    if (input.mode === "bazi") {
+      const chart = buildBaziChartFromProfile(normalized);
+      return { mode: "bazi", profile, structuredText: serializeBaziToStructuredText(chart), jsonPayload: serializeBaziToCompactJson(chart) };
+    }
+    if (input.mode === "ziwei") {
+      const chart = buildZiweiChartFromProfile(normalized);
+      return { mode: "ziwei", profile, structuredText: serializeZiweiToStructuredText(chart), jsonPayload: serializeZiweiToCompactJson(chart) };
+    }
+    const chart = buildQimenChartFromProfile(normalized);
+    return { mode: "qimen", profile, structuredText: serializeChartToStructuredText(chart), jsonPayload: serializeChartToCompactJson(chart) };
+  },
+});
+
+const createBirthTimeCalibrationTool = () => tool({
+  description: "校准八字出生时辰：对多个候选时辰分别起盘，比较时柱、十神、格局、运年触发和性格取象，再返回下一轮应该向用户核实的一个问题。候选时辰必须来自用户给出的范围，不能自行补猜。",
+  inputSchema: birthTimeCalibrationSchema,
+  execute: async (rawInput) => {
+    const input = rawInput as { date: string; candidateTimes: string[]; timeZone: string; gender: "male" | "female"; evidence?: string };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || input.candidateTimes.length < 2 || input.candidateTimes.length > 4) throw new Error("校时需要 2 至 4 个候选时辰和有效日期。");
+    const candidates = [...new Set(input.candidateTimes)].filter((time) => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(time));
+    if (candidates.length < 2) throw new Error("候选时辰格式无效。");
+    const charts = candidates.map((time) => {
+      const profile: ProfileInput = { calendarMode: "solar", datetime: `${input.date}T${time.padStart(5, "0")}`, timeZone: input.timeZone, gender: input.gender, timeBasis: "civil" };
+      const chart = buildBaziChartFromProfile(normalizeProfileInput(profile));
+      return { time, profile, structuredText: serializeBaziToStructuredText(chart).slice(0, 14000), jsonPayload: serializeBaziToCompactJson(chart).slice(0, 18000) };
+    });
+    return {
+      kind: "birth-time-calibration",
+      instruction: "请基于以下候选盘，结合用户已确认事实继续只问一个最能区分候选的前事或性格问题。不能把候选排序写成已确定时辰。",
+      evidence: input.evidence?.trim() || "尚无已确认事实，请先询问一个可核验的前事或稳定性格特征。",
+      candidates: charts,
+    };
+  },
+});
 
 export type AgentAnalysisAngle = {
   label: string;
@@ -85,6 +233,9 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   ziwei: "请基于当前紫微盘，概括命宫、身宫、主星组合、四化与需要重点关注的宫位联动。",
   combined: "请联合奇门、八字、紫微三盘，整理共振点、差异点与需要人工继续判断的部分。",
   research: "请基于当前研究工具的结构化材料，说明最重要的证据、算法边界和下一步可以核验的现实信息。",
+  astro: "请基于当前研究性近似星盘说明太阳、月亮、上升与行星落点；区分计算字段与象征性解释，并说明精度边界。",
+  "human-design": "请基于当前人类图结构说明类型、策略、权威、人生角色和中心状态；明确当前数据仅为研究性 MVP，不将其作为心理诊断。",
+  tarot: "请基于当前三张塔罗牌解释主题、阻力和下一步，作为反思提示而非确定预测，并提出可验证的现实行动。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -298,6 +449,18 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
       evidence: ["当前工具的核心字段", "可比与不可比的时间尺度", "下一步人工核验路径"],
     },
   ],
+  astro: [
+    { label: "三大核心", question: "请解释太阳、月亮、上升三个落点各自代表的象征��题，并区分计算字段与解释。", description: "按字段逐项说明，不将象征解释当作事实。", evidence: ["太阳星座与宫位", "月亮星座与宫位", "上升点"] },
+    { label: "行星落点", question: "请整理行星落点的主题，并标明本星盘是平均轨道近似、有哪些精度限制。", description: "按结构化落点整理主题与误差边界。", evidence: ["行星星座", "行星宫位", "计算口径"] },
+  ],
+  "human-design": [
+    { label: "类型与策略", question: "请说明当前人类图的类型、策略、权威与人生角色，并提醒当前 MVP 计算的限制。", description: "只解释载荷字段，不进行心理或医学诊断。", evidence: ["类型", "策略与权威", "人生角色"] },
+    { label: "中心结构", question: "请逐项解释定义中心和开放中心的象征含义，区分数据与解释。", description: "围绕中心结构提供反思角度。", evidence: ["中心定义状态", "中心闸门", "MVP 限制"] },
+  ],
+  tarot: [
+    { label: "三张牌解读", question: "请按当前主题、阻力、下一步解读这三张牌，作为反思提示，不做确定预测。", description: "从牌面关键词整理问题与下一步行动。", evidence: ["当前主题牌", "阻力牌", "下一步牌"] },
+    { label: "现实行动", question: "结合下一步牌提出一个低风险、可观察、可复盘的现实行动。", description: "将象征主题转换为可核验的行动。", evidence: ["牌面方向", "牌义关键词", "现实反馈"] },
+  ],
 };
 
 /**
@@ -334,6 +497,9 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
     "如果只核验一个关键字段，应该先检查哪一项输入？",
     "请指出当前研究结果最容易被什么现实材料推翻。",
   ],
+  astro: ["请把星盘计算字段与象征解��分开列出。", "哪些解释最需要用现实经历核对？"],
+  "human-design": ["请分别解释类型、策略和权威，不把它们当作固定人格结论。", "中心状态可以转成什么具体观察问题？"],
+  tarot: ["请把牌面提示转成一个本周可验证的小行动。", "当前解读可能被什么现实信息推翻？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -347,6 +513,9 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   ziwei: "紫微斗数",
   combined: "三盘联合",
   research: "术数研究",
+  astro: "西方占星星盘",
+  "human-design": "人类图",
+  tarot: "塔罗牌",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -376,6 +545,8 @@ const BASE_SYSTEM_PROMPT = [
   "严格区分‘盘面事实’、‘传统理论推断’和‘待验证假设’。信息不足时直接写‘材料不足以支持该结论’。",
   "不得输出确定性的灾祸、死亡、疾病、违法、投资收益或替代专业医疗/法律/财务意见的结论。",
   "使用简体中文，语气克制、具体、可复核；不要用玄断、恐吓或夸大权威的表达。",
+  "你可以调用 calculate_chart 工具重新排盘。只有用户明确提供并确认了日期、出生时辰、性别和时区后才能调用；如果时辰不完整，先只追问时辰，不得猜测。工具返回的 structuredText 和 JSON 是新的唯一盘面上下文，调用后再继续回答。",
+  "当用户要求校时、无法确定出生时辰，或希望用前事/性格反推时辰时，可以调用 calibrate_birth_time。先让用户提供公历日期、性别、时区和 2 至 4 个候选时辰；工具会分别起盘。工具返回后每轮只问一个能区分候选的可核验问题，记录用户回答，再进行下一轮校时。只有证据逐步收敛后才能给出‘暂定候选’，不得声称科学确定或凭性格标签直接定盘。",
 ].join("\n");
 
 const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
@@ -412,6 +583,9 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "外部参考引擎输出属于核验材料，不得绕过当前产品的结构化上下文或平台 Gate。",
     "建议结构：## 当前工具 / ## 结构事实 / ## 证据与差异 / ## 边界 / ## 下一步核验。",
   ].join("\n"),
+  astro: ["【星盘研究边界】当前载荷中的平均轨道落点为研究性近似，不得宣称专业历表级精度。把计算字段、占星象征解释与待验证假设分开；不要作健康、财务或命运确定性判断。"].join("\n"),
+  "human-design": ["【人类图研究边界】当前 MVP 的类型、中心和闸门为结构化探索数据，不是完整的天文推导或认证人类图计算。不得将其作为医学、心理诊断或固定人格结论。"].join("\n"),
+  tarot: ["【塔罗反思边界】牌面是用于整理问题的象征性提示，不是未来事实或概率预测。建议应低风险、可验证，并鼓励用户结合真实信息决策。"].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -456,6 +630,9 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   ziwei: "仅围绕命身宫、相关宫位、主辅星、四化及载荷中实际给出的运限/流年字段取证。不得将本命静态星曜直接等同于具体事件。",
   combined: "先分别核对八字、紫微、奇门中实际存在的同层级字段；只有同一议题、同一时间层级的独立证据才能合并为选择依据。",
   research: "先识别材料所属工具与时间尺度，只引用实际存在的计算字段、规则证据或外部核验结果。",
+  astro: "只引用载荷中实际出现的太阳、月亮、上升和行星落点；明确近似算法限制，不把象征解释当作现实证据。",
+  "human-design": "只引用载荷中的类型、策略、权威、人生角色和中心，不将其扩展为心理诊断或客观人格结论。",
+  tarot: "只引用本次抽出的牌、方向和关键词；不得声称预测确定事件，行动建议应低风险且可以复盘。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [
@@ -579,6 +756,7 @@ export const buildAgentMessages = ({
   focus,
   researchTool,
   analysisProduct,
+  conversationMode,
   outputContract,
   history,
   structuredText,
@@ -613,6 +791,7 @@ export const buildAgentMessages = ({
     : [`专精方向：${focus?.trim() || "按用户问题综合取证"}`];
   const contextContent = [
     `当前模式：${modeLabel}`,
+    `Agent 工作流：${conversationMode === "interview" ? "人生议题访谈，每轮只问一个可回答的问题" : conversationMode === "calibration" ? "出生时辰校准，维护候选时辰并逐轮核验" : conversationMode === "recalculate" ? "重新排盘，资料确认后才调用排盘工具" : "自由对话，可在资料完整时主动调用工具"}`,
     ...focusContent,
     ...(baziClassicsContext ? ["", "原始古籍摘录上下文：", baziClassicsContext] : []),
     "",
@@ -719,6 +898,8 @@ export const streamAgentAnalysis = (
     messages: buildAgentMessages(payload),
     maxOutputTokens: isChoiceContract ? 900 : payload.analysisProduct === "kline" ? 3800 : 2600,
     temperature: isChoiceContract ? 0 : 0.4,
+    tools: { calculate_chart: createChartTool(), calibrate_birth_time: createBirthTimeCalibrationTool() },
+    stopWhen: stepCountIs(3),
     providerOptions: isChoiceContract ? { openai: { response_format: { type: "json_object" } } } : undefined,
     // Lets the caller learn that output has started reaching the client, which
     // decides whether an abort may still release the usage reservation.

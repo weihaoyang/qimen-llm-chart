@@ -19,6 +19,9 @@ const MODE_OPTIONS: Array<{
   { value: "ziwei", label: "紫微" },
   { value: "combined", label: "三盘联合" },
   { value: "research", label: "人生 K 线" },
+  { value: "astro", label: "星盘" },
+  { value: "human-design", label: "人类图" },
+  { value: "tarot", label: "塔罗牌" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

@@ -19,6 +19,10 @@ import {
   AGENT_INTERVIEW_START_QUESTION,
   DEFAULT_AGENT_QUESTIONS,
   type AgentConversationMessage,
+  type AgentConversationMode,
+  type AgentStreamEvent,
+  type AgentChartUpdate,
+  type AgentToolEvent,
 } from "@/lib/agent/chat";
 import { selectBaziClassicsContext } from "@/lib/agent/bazi-classics";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib/bazi/serializer";
@@ -102,8 +106,18 @@ import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
 import { ZiweiPanel } from "./ziwei-panel";
 import { CombinedMap } from "./combined-map";
+import { DivinationPanel } from "./divination-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
+import { buildAstroChart } from "@/lib/astro/chart";
+import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "@/lib/astro/serializer";
+import type { AstroChart } from "@/lib/astro/types";
+import { buildHumanDesignChart } from "@/lib/human-design/chart";
+import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
+import type { HumanDesignChart } from "@/lib/human-design/types";
+import { buildTarotReading } from "@/lib/tarot/reading";
+import { serializeTarotToCompactJson, serializeTarotToStructuredText } from "@/lib/tarot/serializer";
+import type { TarotReading } from "@/lib/tarot/types";
 
 type AgentModeState = {
   question: string;
@@ -223,6 +237,21 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     sessionJsonPayload: "",
     authMode: "guest",
   },
+  astro: {
+    question: DEFAULT_AGENT_QUESTIONS.astro,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
+  "human-design": {
+    question: DEFAULT_AGENT_QUESTIONS["human-design"],
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
+  tarot: {
+    question: DEFAULT_AGENT_QUESTIONS.tarot,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -265,6 +294,9 @@ const MODE_META: Record<
     title: "术数研究",
     description: "趋势 / 核验 / 六壬 / 太乙",
   },
+  astro: { label: "西方星盘", title: "星盘", description: "太阳 / 月亮 / 上升 / 行星" },
+  "human-design": { label: "人类图结构", title: "人类图", description: "类型 / 权威 / 中心 / 闸门" },
+  tarot: { label: "塔罗三张牌", title: "塔罗牌", description: "主题 / 阻力 / 下一步" },
 };
 
 const buildWorkbenchCharts = (
@@ -382,6 +414,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
   const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
+  const [birthProfiles, setBirthProfiles] = useState<Array<{ id: string; name: string; profile: ProfileInput }>>(() => {
+    if (typeof window === "undefined") return [];
+    try { const value = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]"); return Array.isArray(value) ? value : []; } catch { return []; }
+  });
+  const [birthLibraryOpen, setBirthLibraryOpen] = useState(false);
+  const [birthName, setBirthName] = useState("");
+  const [chartHistory, setChartHistory] = useState<Array<{ id: string; mode: WorkbenchMode; profile: ProfileInput; createdAt: number }>>(() => {
+    if (typeof window === "undefined") return [];
+    try { const value = JSON.parse(localStorage.getItem("qmdj-chart-history") || "[]"); return Array.isArray(value) ? value : []; } catch { return []; }
+  });
   const [partnerFormState, setPartnerFormState] = useState<ProfileInput>(() => ({
     ...initialState.defaultInput,
     datetime: initialState.defaultInput.datetime,
@@ -413,6 +455,19 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [] });
+  const saveBirthProfile = () => {
+    const name = birthName.trim();
+    if (!name) return;
+    const next = [{ id: crypto.randomUUID(), name, profile: formState }, ...birthProfiles.filter((item) => item.name !== name)].slice(0, 50);
+    setBirthProfiles(next); setBirthName("");
+    try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
+  };
+  const deleteBirthProfile = (id: string) => {
+    const next = birthProfiles.filter((item) => item.id !== id); setBirthProfiles(next);
+    try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
+  };
   const [agentResultCopied, setAgentResultCopied] = useState(false);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
   const [parametersOpen, setParametersOpen] = useState(false);
@@ -449,6 +504,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [klineAiError, setKlineAiError] = useState<string | null>(null);
   const [klineAiLoading, setKlineAiLoading] = useState(false);
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
+  const [baziPairOpen, setBaziPairOpen] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
   const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
@@ -630,6 +686,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
     () => (ziweiChart ? serializeZiweiToStructuredText(ziweiChart) : ""),
     [ziweiChart],
   );
+  const astroChart = useMemo<AstroChart>(() => buildAstroChart(normalizedProfile), [normalizedProfile]);
+  const humanDesignChart = useMemo<HumanDesignChart>(() => buildHumanDesignChart(normalizedProfile), [normalizedProfile]);
+  const tarotReading = useMemo<TarotReading>(() => buildTarotReading(normalizedProfile), [normalizedProfile]);
+  const astroStructuredText = useMemo(() => serializeAstroToStructuredText(astroChart), [astroChart]);
+  const humanDesignStructuredText = useMemo(() => serializeHumanDesignToStructuredText(humanDesignChart), [humanDesignChart]);
+  const tarotStructuredText = useMemo(() => serializeTarotToStructuredText(tarotReading), [tarotReading]);
 
   const researchData = useMemo<ResearchWorkspaceData | null>(() => {
     try {
@@ -754,6 +816,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
         });
       case "research":
         return researchContext.text;
+      case "astro":
+        return astroStructuredText;
+      case "human-design":
+        return humanDesignStructuredText;
+      case "tarot":
+        return tarotStructuredText;
     }
   }, [
     mode,
@@ -765,6 +833,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
     baziStructuredText,
     ziweiStructuredText,
     researchContext.text,
+    astroStructuredText,
+    humanDesignStructuredText,
+    tarotStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -803,8 +874,14 @@ export function AppShell({ platformConfig }: AppShellProps) {
         });
       case "research":
         return researchContext.json;
+      case "astro":
+        return serializeAstroToCompactJson(astroChart);
+      case "human-design":
+        return serializeHumanDesignToCompactJson(humanDesignChart);
+      case "tarot":
+        return serializeTarotToCompactJson(tarotReading);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -853,6 +930,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
       ziwei: { ...current.ziwei, content: "", model: null, error: null, loading: false },
       combined: { ...current.combined, content: "", model: null, error: null, loading: false },
       research: { ...current.research, content: "", model: null, error: null, loading: false },
+      astro: { ...current.astro, content: "", model: null, error: null, loading: false },
+      "human-design": { ...current["human-design"], content: "", model: null, error: null, loading: false },
+      tarot: { ...current.tarot, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
   };
@@ -869,6 +949,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
     try {
       applyWorkbenchCharts(nextInput, qimenSettings);
+      const nextHistory = [{ id: crypto.randomUUID(), mode, profile: nextInput, createdAt: Date.now() }, ...chartHistory].slice(0, 50);
+      setChartHistory(nextHistory);
+      try { localStorage.setItem("qmdj-chart-history", JSON.stringify(nextHistory)); } catch { /* optional */ }
       setParametersOpen(false);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "生成排盘失败。");
@@ -1454,6 +1537,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   // is kept current on every commit so `onFinish` can read the latest state
   // without depending on the render it was created in.
   const latestAgentState = useRef(agentState);
+  const previousChartContext = useRef<{ profile: ProfileInput; structuredText: string; jsonPayload: string } | null>(null);
   useEffect(() => {
     latestAgentState.current = agentState;
   }, [agentState]);
@@ -1510,6 +1594,25 @@ export function AppShell({ platformConfig }: AppShellProps) {
       setPlatformWorkspace((current) => ({ ...current, usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextConsumed } : current.usage }));
     },
     onError: (message: string) => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: false, error: message } })),
+    onToolEvent: (_event: AgentStreamEvent) => undefined,
+    onChartContextUpdate: (event: AgentChartUpdate) => {
+      if (event.mode !== mode) {
+        setAgentState((current) => ({ ...current, [mode]: { ...current[mode], error: `Agent 生成了${event.mode === "qimen" ? "奇门" : event.mode === "bazi" ? "八字" : "紫微"}盘，请切换到对应盘面查看。` } }));
+        return;
+      }
+      previousChartContext.current = { profile: formState, structuredText, jsonPayload };
+      setAgentState((current) => ({ ...current, [mode]: { ...current[mode], sessionStructuredText: event.structuredText, sessionJsonPayload: event.jsonPayload, error: null } }));
+      if (event.profile) {
+        setFormState(event.profile);
+        void handleGenerate(event.profile);
+      }
+    },
+    onRestoreChartContext: () => {
+      const previous = previousChartContext.current;
+      if (!previous) return;
+      setFormState(previous.profile);
+      void handleGenerate(previous.profile);
+    },
   } : undefined;
 
   // The counter next to the analysis entry has to agree with the gate above it.
@@ -1543,6 +1646,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       copyState={copyState}
       literatureContext={agentLiteratureContext}
       jsonPayload={jsonPayload}
+      onRecalculate={(datetime) => handleGenerate({ ...formState, datetime })}
       mode={mode}
       onAgentAnalyze={handleAgentAnalyze}
       onCopyResult={handleCopyAgentResult}
@@ -1552,6 +1656,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
       selectedPalace={mode === "qimen" ? selectedPalace : null}
       structuredText={structuredText}
       agentStreamConfig={agentStreamConfig}
+      conversationMode={conversationModes[mode]}
+      onConversationModeChange={(nextMode) => setConversationModes((current) => ({ ...current, [mode]: nextMode }))}
+      toolEvents={agentToolEvents[mode]}
+      activeAgentCaseId={null}
+      onToolEvent={(event) => { setAgentToolEvents((current) => ({ ...current, [mode]: [...current[mode], event].slice(-8) })); if (event.type === "tool_result" && event.status === "error") setAgentState((current) => ({ ...current, [mode]: { ...current[mode], error: event.summary } })); }}
+      onChartContextUpdate={(event) => agentStreamConfig?.onChartContextUpdate?.(event)}
     />
   );
 
@@ -1637,9 +1747,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
           </>
         ) : null}
 
-        {mode === "bazi" ? <><BaziPanel chart={baziChart} now={clock.now} /><BaziCompatibilityPanel value={compatibility} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} /></> : null}
+        {mode === "bazi" ? <>
+          {!baziPairOpen ? <BaziPanel chart={baziChart} now={clock.now} /> : null}
+          <BaziCompatibilityPanel value={compatibility} chart={baziChart} partnerChart={partnerBaziChart} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} open={baziPairOpen} onOpenChange={setBaziPairOpen} />
+        </> : null}
 
         {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
+
+        {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} /> : null}
+        {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} /> : null}
+        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} /> : null}
 
         {mode === "research" ? (
           <KlinePanel
@@ -1895,6 +2012,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
         <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
 
+        <div className="observatory-hero__materials">
+          <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
+        </div>
+
         <div className="platform-account" aria-label="平台账户与 AI 权益">
           {platformWorkspace.status === "checking" ? (
             <span className="platform-account__status">正在读取账户…</span>
@@ -1938,6 +2059,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
             调整盘面
           </button>
         ) : null}
+        {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
+          <button type="button" className="hero-action" onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
+          {birthLibraryOpen ? <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
+            <strong>姓名与生日库</strong>
+            <div className="birth-library-save"><input value={birthName} onChange={(event) => setBirthName(event.target.value)} placeholder="姓名" aria-label="姓名" /><button type="button" onClick={saveBirthProfile}>保存当前</button></div>
+            {birthProfiles.map((item) => <div className="birth-library-item" key={item.id}><button type="button" onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button><button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button></div>)}
+            {chartHistory.length ? <><strong className="birth-library-history-title">历史排盘</strong>{chartHistory.slice(0, 8).map((item) => <button type="button" className="birth-library-history" key={item.id} onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.mode} · {new Date(item.createdAt).toLocaleString("zh-CN")}</button>)}</> : null}
+            {!birthProfiles.length && !chartHistory.length ? <small>暂无保存档案</small> : null}
+          </div> : null}
+        </div> : null}
 
         {mode !== "research" && parametersOpen ? createPortal(
           <div className={parameterStyles.overlay}>
@@ -1966,9 +2097,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
       </header>
 
-      <div className="chart-materials-entry" style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
-        <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
-      </div>
       {error ? <p className="error-banner">{error}</p> : null}
 
       {classicWorkspace ? (

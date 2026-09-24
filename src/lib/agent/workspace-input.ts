@@ -1,4 +1,4 @@
-export const AGENT_WORKBENCH_MODES = ["qimen", "bazi", "ziwei", "combined", "research"] as const;
+export const AGENT_WORKBENCH_MODES = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot"] as const;
 export const AGENT_INTERVIEW_PHASES = ["issue", "facts", "constraints", "options", "costs", "action"] as const;
 
 export const isAgentWorkspaceId = (value: unknown): value is string =>

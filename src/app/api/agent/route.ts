@@ -1,6 +1,6 @@
 import { noStore } from "@/lib/http";
 import { errorResponse, UserFacingError } from "@/lib/api-error";
-import { requestAgentAnalysis, streamAgentAnalysis } from "@/lib/agent/chat";
+import { createAgentEventStreamResponse, requestAgentAnalysis, streamAgentAnalysis } from "@/lib/agent/chat";
 import {
   commitGuestUsage,
   commitPlatformUsage,
@@ -17,7 +17,7 @@ import {
 import { settledCommit, type SettledUsage } from "@/lib/platform/settled-commit";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
-const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research"];
+const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot"];
 const MAX_HISTORY_MESSAGES = 18;
 // These caps exist to bound the prompt — and therefore the token bill — per
 // charged analysis. The workbench only ever sends the *active* chart (a
@@ -91,6 +91,7 @@ export async function POST(request: Request) {
       structuredText?: unknown;
       jsonPayload?: unknown;
       analysisProduct?: unknown;
+      conversationMode?: unknown;
     };
     try {
       body = (await request.json()) as typeof body;
@@ -109,6 +110,10 @@ export async function POST(request: Request) {
     if (!analysisProduct) {
       return noStore({ error: "无效的分析产品。" }, { status: 400 });
     }
+    const conversationMode = body.conversationMode === undefined || ["free", "interview", "calibration", "recalculate"].includes(String(body.conversationMode))
+      ? body.conversationMode as "free" | "interview" | "calibration" | "recalculate" | undefined
+      : null;
+    if (conversationMode === null) return noStore({ error: "Agent 工作模式无效。" }, { status: 400 });
     // Life K lines are derived from Bazi dayun/liunian, while relationship
     // K lines are derived from Qimen sequences. Keep this boundary explicit
     // so the model can never receive the wrong source contract.
@@ -144,8 +149,8 @@ export async function POST(request: Request) {
       return noStore({ error: "JSON 载荷格式无效，请重新生成盘面。" }, { status: 400 });
     }
 
-    if (body.question !== undefined && (typeof body.question !== "string" || body.question.length > 300)) {
-      return noStore({ error: "分析问题不能超过 300 字。" }, { status: 400 });
+    if (body.question !== undefined && (typeof body.question !== "string" || body.question.length > 2000)) {
+      return noStore({ error: "分析问题不能超过 2000 字。" }, { status: 400 });
     }
 
     if (body.focus !== undefined && (typeof body.focus !== "string" || body.focus.length > 80)) {
@@ -238,6 +243,7 @@ export async function POST(request: Request) {
       structuredText: body.structuredText,
       jsonPayload: body.jsonPayload,
       analysisProduct,
+      conversationMode,
     } as const;
 
     if (request.headers.get("x-agent-stream") === "1" && analysisProduct === "agent") {
@@ -289,7 +295,7 @@ export async function POST(request: Request) {
         onError: async () => { await settle(); },
         onAbort: async () => { await settle(); },
       });
-      return result.toTextStreamResponse({ headers: { "Cache-Control": "no-cache", "X-Accel-Buffering": "no" } });
+      return createAgentEventStreamResponse(result as { fullStream: AsyncIterable<unknown> });
     }
 
     const commitUsage = () => reservationMode === "account"
