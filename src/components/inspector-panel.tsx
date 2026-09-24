@@ -1,5 +1,5 @@
 "use client";
-import type { AgentAnalysisAngle, AgentConversationMessage } from "@/lib/agent/chat";
+import type { AgentAnalysisAngle, AgentConversationMessage, AgentConversationMode, AgentStreamEvent, AgentToolEvent, AgentChartUpdate } from "@/lib/agent/chat";
 import type { Position } from "3meta";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 import { AgentConversation } from "./agent-conversation";
@@ -31,6 +31,7 @@ export type InspectorPanelProps = {
   onCopyText: () => Promise<void>;
   onCopyJson: () => Promise<void>;
   selectedPalace?: Position | null;
+  onRecalculate?: (datetime: string) => void;
   agentStreamConfig?: {
     chatId: string;
     requestBody: Record<string, unknown>;
@@ -38,7 +39,16 @@ export type InspectorPanelProps = {
     onStart: () => void;
     onFinish: (messages: AgentConversationMessage[], completed?: boolean) => void;
     onError: (message: string) => void;
+    onToolEvent?: (event: AgentStreamEvent) => void;
+    onChartContextUpdate?: (event: Extract<AgentStreamEvent, { type: "chart_update" }>) => void;
+    onRestoreChartContext?: () => void;
   };
+  conversationMode?: AgentConversationMode;
+  onConversationModeChange?: (mode: AgentConversationMode) => void;
+  toolEvents?: readonly AgentToolEvent[];
+  activeAgentCaseId?: string | null;
+  onToolEvent?: (event: AgentToolEvent) => void;
+  onChartContextUpdate?: (event: AgentChartUpdate) => void;
 };
 
 

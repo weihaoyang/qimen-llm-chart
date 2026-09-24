@@ -191,6 +191,64 @@
   box-shadow: 5px 5px #171714;
 }
 
+/* Sequence inputs live outside the main field grid. Keep each label and
+   control in its own track so the label can never overlap the preceding row. */
+.body :global(.command-bar__section--sequence) {
+  display: block !important;
+  margin-top: 18px !important;
+  padding-top: 2px !important;
+}
+
+.body :global(.sequence-controls) {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.body :global(.sequence-controls .control-field) {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  gap: 7px !important;
+}
+
+.body :global(.sequence-controls .control-field > span) {
+  display: block !important;
+  min-height: 14px !important;
+  color: #171714 !important;
+  font: 900 11px/1.2 ui-monospace, monospace !important;
+  white-space: nowrap;
+}
+
+.body :global(.sequence-controls .control-field__input-wrap) {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 46px !important;
+}
+
+.body :global(.sequence-controls .control-field__input-wrap input),
+.body :global(.sequence-controls .control-input),
+.body :global(.sequence-controls .control-select) {
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+}
+
+.body :global(.sequence-controls .command-button) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .body :global(.sequence-controls) {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .body :global(.sequence-controls .command-button) {
+    grid-column: auto;
+  }
+}
+
 .body :global(.sidebar-quick-controls__heading) {
   color: #fffdf8;
 }

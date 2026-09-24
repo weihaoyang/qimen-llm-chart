@@ -32,6 +32,11 @@ export function ZiweiPanel({ value }: ZiweiPanelProps) {
   // horoscope inputs after mount instead; the library treats both as optional,
   // so the first paint simply renders without the 流年 layer.
   const [now, setNow] = useState<Date | null>(null);
+  // The metadata chips are secondary reading, not the chart. On phones they
+  // leave the flow and open from this disclosure button so the astrolabe keeps
+  // the whole screen; above the phone breakpoint the button is `display: none`
+  // and the chip row renders exactly as before.
+  const [metaOpen, setMetaOpen] = useState(false);
   useEffect(() => {
     // One-shot mount read of a client-only value. The rule's rationale (a state
     // update cascading into another render pass) does not apply: this runs once
@@ -75,7 +80,22 @@ export function ZiweiPanel({ value }: ZiweiPanelProps) {
 
   return (
     <div className="ziwei-panel">
-      <div className="ziwei-panel__meta">
+      <button
+        type="button"
+        className="ziwei-panel__meta-toggle"
+        aria-expanded={metaOpen}
+        aria-controls="ziwei-panel-meta"
+        onClick={() => setMetaOpen((open) => !open)}
+      >
+        <span>盘面信息</span>
+        <b aria-hidden="true">{metaOpen ? "▾" : "▸"}
+        </b>
+      </button>
+
+      <div
+        className={`ziwei-panel__meta${metaOpen ? " is-open" : ""}`}
+        id="ziwei-panel-meta"
+      >
         <div className="ziwei-meta-chip">
           <span>历法</span>
           <strong>{value.calendarMode === "lunar" ? "农历" : "公历"}</strong>

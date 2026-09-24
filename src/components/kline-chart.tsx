@@ -274,6 +274,16 @@ export function KLineChart({
                 fillOpacity={index % 2 === 0 ? 0.14 : 0.08}
                 stroke="none"
                 ifOverflow="hidden"
+                label={{
+                  // DaYun name on its own band ("丙戌（1996 起）"), so the
+                  // segmentation reads off the plot instead of only out of
+                  // the evidence list below it.
+                  value: band.label,
+                  position: "insideTop",
+                  fill: KLINE_PALETTE.ink,
+                  fontSize: 9,
+                  fontWeight: 800,
+                }}
               />
             ))}
 
@@ -284,9 +294,9 @@ export function KLineChart({
               type="number"
               domain={["dataMin", "dataMax"]}
               tickCount={compact ? 3 : 6}
-              tick={{ fontSize: 11, fill: KLINE_PALETTE.muted }}
+              tick={{ fontSize: 10, fill: KLINE_PALETTE.slate, fontWeight: 800 }}
               tickLine={false}
-              axisLine={{ stroke: KLINE_PALETTE.grid }}
+              axisLine={{ stroke: KLINE_PALETTE.ink, strokeWidth: 1.5 }}
               tickFormatter={(value: number) => rows.find((row) => row.x === value)?.xLabel ?? String(value)}
               allowDecimals={false}
             />
@@ -294,7 +304,7 @@ export function KLineChart({
             <YAxis
               domain={[0, 100]}
               ticks={compact ? [] : Y_TICKS}
-              tick={{ fontSize: 11, fill: KLINE_PALETTE.muted }}
+              tick={{ fontSize: 10, fill: KLINE_PALETTE.slate, fontWeight: 800 }}
               tickLine={false}
               axisLine={false}
               width={compact ? 26 : 34}

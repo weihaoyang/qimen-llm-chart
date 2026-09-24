@@ -38,6 +38,21 @@
   border: 1px solid #171717;
   white-space: nowrap;
 }
+.headActions { display:flex; align-items:center; gap:8px; }
+.headActions button { padding:4px 8px; }
+.syncStatus { color:#625e54; font-size:10px; white-space:nowrap; }
+.history { border-bottom:1px solid #c7c0ae; background:#f8f3e7; padding:8px 12px; max-height:180px; overflow:auto; }
+.historyHead { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.historyHead button,.historyItem { padding:5px 8px; }
+.historyRow { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:center; margin-top:4px; }
+.historyCurrent { background:#f5ce42; }
+.historyItem { display:flex; width:100%; justify-content:space-between; gap:8px; text-align:left; }
+.historyActions { display:flex; gap:3px; }
+.historyActions button { padding:4px 5px; font-size:10px; background:#fffdf7; }
+.historyItem small,.historyEmpty { color:#625e54; font-size:10px; }
+.tools { display:flex; align-items:center; gap:6px; padding:7px 12px; border-bottom:1px solid #d0c8b6; background:#fffaf0; font-size:11px; }
+.tools input { min-width:0; flex:1; border:1px solid #171717; padding:4px; font:inherit; }
+.tools button { padding:5px 8px; background:#f5c82d; }
 
 .context {
   display: flex;
@@ -52,6 +67,17 @@
 .context small {
   color: #626054;
 }
+
+.modeRail { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid #c7c0ae; background: #fffaf0; overflow-x: auto; }
+.modeRail button { padding: 5px 9px; white-space: nowrap; }
+.modeRail .modeActive { background: #f5c82d; box-shadow: 2px 2px 0 #171717; }
+.toolStatus { margin: 4px 0 12px; padding: 7px 9px; color: #735421; background: #fff5c7; border-left: 3px solid #f5c82d; font-size: 12px; }
+.toolCards { display: grid; gap: 5px; padding: 7px 12px; border-bottom: 1px solid #c7c0ae; background: #f8f3e7; }
+.toolCard { display: grid; gap: 1px; padding: 6px 8px; border: 1px solid #c7c0ae; background: #fffdf7; font-size: 11px; }
+.toolCard span { color: #625e54; }
+.toolCard small { color:#625e54; font-size:10px; }
+.toolCardActions { display:flex; gap:6px; margin-top:5px; }
+.toolCardActions button { padding:4px 6px; font-size:10px; }
 
 .viewport {
   flex: 1;
@@ -162,6 +188,28 @@
   flex-shrink: 0;
 }
 
+.quickPrompts {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.quickPrompts button {
+  flex: 0 0 auto;
+  max-width: 220px;
+  padding: 5px 8px;
+  color: #625e54;
+  background: #fffaf0;
+  border-color: #c7c0ae;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .input {
   display: block;
   width: 100%;
@@ -231,7 +279,8 @@
     max-height: none;
   }
   .viewport {
-    max-height: 55dvh;
+    max-height: none;
+    min-height: 220px;
   }
   .head {
     padding: 12px;
@@ -241,5 +290,11 @@
   }
   .composerFoot small {
     font-size: 9px;
+  }
+  .quickPrompts {
+    padding-inline: 8px;
+  }
+  .quickPrompts button {
+    max-width: 180px;
   }
 }

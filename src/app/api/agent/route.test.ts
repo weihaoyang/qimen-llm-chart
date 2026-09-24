@@ -12,6 +12,7 @@ const {
   releasePlatformUsageMock,
   requestAgentAnalysisMock,
   streamAgentAnalysisMock,
+  createAgentEventStreamResponseMock,
   agentPlanCode,
   klinePlanCode,
 } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ const {
   releasePlatformUsageMock: vi.fn(),
   requestAgentAnalysisMock: vi.fn(),
   streamAgentAnalysisMock: vi.fn(),
+  createAgentEventStreamResponseMock: vi.fn(() => new Response("stream-events", { headers: { "Content-Type": "application/x-ndjson" } })),
   agentPlanCode: "shengtian-banzi-analysis-10",
   klinePlanCode: "shengtian-banzi-kline-precise-1",
 }));
@@ -55,6 +57,7 @@ vi.mock("@/lib/platform/server", async () => {
 vi.mock("@/lib/agent/chat", () => ({
   requestAgentAnalysis: requestAgentAnalysisMock,
   streamAgentAnalysis: streamAgentAnalysisMock,
+  createAgentEventStreamResponse: createAgentEventStreamResponseMock,
 }));
 
 import { POST } from "./route";
@@ -237,7 +240,7 @@ describe("POST /api/agent", () => {
       headers: { "X-Guest-Checkout-Token": "token-1" },
       body: JSON.stringify({
         mode: "qimen",
-        question: "问".repeat(301),
+        question: "问".repeat(2001),
         structuredText: "structured",
         jsonPayload: "{}",
       }),
@@ -246,7 +249,7 @@ describe("POST /api/agent", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: "分析问题不能超过 300 字。" });
+    await expect(response.json()).resolves.toEqual({ error: "分析问题不能超过 2000 字。" });
     expect(reserveGuestUsageMock).not.toHaveBeenCalled();
   });
 

@@ -12,7 +12,7 @@ if (requestedFiles.length === 0) {
 }
 
 const sourceExtensions = new Set([".js", ".jsx", ".mjs", ".ts", ".tsx"]);
-const excludedDirectories = new Set([".git", ".next", "node_modules", "outputs", "vendor"]);
+const excludedDirectories = new Set([".git", ".next", "node_modules", "outputs"]);
 const sourceChunks = [];
 
 function collectSources(directory) {
@@ -32,6 +32,20 @@ function collectSources(directory) {
 collectSources(path.join(projectRoot, "src"));
 const sourceText = sourceChunks.join("\n");
 
+const modeOwners = new Map([
+  ["bazi.css", "bazi"],
+  ["research.css", "research"],
+  ["classic.css", "research"],
+  ["ziwei.css", "ziwei"],
+  ["qimen-workbench.css", "qimen"],
+]);
+const modeClassPatterns = [
+  ["bazi", /\.bazi-[\w-]+/],
+  ["research", /\.(?:kline|classic-observatory|combined-agent)-[\w-]+|\.kline-panel\b/],
+  ["ziwei", /\.(?:ziwei|iztro|izpalace)[\w-]*/],
+  ["qimen", /\.(?:palace-grid|palace-card|summary-strip|summary-chip|qimen-board-layout|palace-grid-shell)(?:[\w-]*)/],
+];
+
 const exactRuntimeClasses = new Set([
   "basic-info",
   "center-button",
@@ -43,6 +57,11 @@ const exactRuntimeClasses = new Set([
   "surrounded-palace",
   "today",
 ]);
+const exactRuntimeSelectors = new Set([
+  ".agent-thread__message--user",
+  ".agent-thread__message--assistant",
+  ".agent-thread__message--tool",
+]);
 const runtimePrefixes = [
   "agent-thread__message--",
   "ant-",
@@ -52,6 +71,7 @@ const runtimePrefixes = [
   "product-",
   "radix-",
   "rc-",
+  "recharts-",
   "react-",
   "semi-",
   "status-",
@@ -70,6 +90,7 @@ function selectorIsReachable(selector) {
   // evaluating their nested selector lists requires a selector parser, and a
   // false positive here is more expensive than leaving one rule in place.
   if (/:\s*(?:has|is|not|where)\(/.test(selector)) return true;
+  if (exactRuntimeSelectors.has(selector)) return true;
   const classes = [...selector.matchAll(/\.(-?[_a-zA-Z]+[_a-zA-Z0-9-]*)/g)].map((match) => match[1]);
   return classes.length === 0 || classes.every(isKnownClass);
 }
@@ -77,6 +98,23 @@ function selectorIsReachable(selector) {
 for (const requestedFile of requestedFiles) {
   const absolutePath = path.resolve(projectRoot, requestedFile);
   const root = postcss.parse(fs.readFileSync(absolutePath, "utf8"), { from: absolutePath });
+  const owner = modeOwners.get(path.basename(absolutePath));
+  const ownershipErrors = [];
+  root.walkRules((rule) => {
+    for (const selector of rule.selectors) {
+      if (owner && !selector.includes(`[data-mode="${owner}"]`)) {
+        ownershipErrors.push(`${rule.source.start.line}: missing [data-mode="${owner}"]`);
+      }
+      for (const [mode, pattern] of modeClassPatterns) {
+        if (pattern.test(selector) && mode !== owner) {
+          ownershipErrors.push(`${rule.source.start.line}: ${mode} selector outside ${mode} stylesheet`);
+        }
+      }
+    }
+  });
+  if (ownershipErrors.length) {
+    throw new Error(`${requestedFile} violates chart style ownership:\n${ownershipErrors.join("\n")}`);
+  }
   let removedRules = 0;
   let removedSelectors = 0;
 

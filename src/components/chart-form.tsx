@@ -91,6 +91,34 @@ function DateTimeWheels({
   </div>;
 }
 
+function LunarDateTimeWheels({
+  value,
+  onChange,
+}: {
+  value: NonNullable<ProfileInput["lunar"]>;
+  onChange: (value: NonNullable<ProfileInput["lunar"]>) => void;
+}) {
+  const wheel = (label: string, key: "year" | "month" | "day" | "hour" | "minute", values: number[], suffix: string) => (
+    <label className="datetime-wheel">
+      <span>{label}</span>
+      <select value={String(value[key] ?? 0)} onChange={(event) => onChange({ ...value, [key]: Number(event.target.value) })} aria-label={label}>
+        {values.map((item) => <option key={item} value={item}>{item}{suffix}</option>)}
+      </select>
+    </label>
+  );
+  return <div className="datetime-wheels lunar-datetime-wheels" aria-label="滚轮调整农历日期时间">
+    {wheel("农历年", "year", Array.from({ length: 201 }, (_, index) => 1900 + index), "年")}
+    {wheel("农历月", "month", Array.from({ length: 12 }, (_, index) => index + 1), "月")}
+    {wheel("农历日", "day", Array.from({ length: 30 }, (_, index) => index + 1), "日")}
+    {wheel("农历时", "hour", Array.from({ length: 24 }, (_, index) => index), "时")}
+    {wheel("农历分", "minute", Array.from({ length: 12 }, (_, index) => index * 5), "分")}
+    <div className="datetime-wheel datetime-wheel--check">
+      <span>月份</span>
+      <label className="checkbox-field"><input checked={Boolean(value.isLeapMonth)} type="checkbox" onChange={(event) => onChange({ ...value, isLeapMonth: event.target.checked })} /><span>闰月</span></label>
+    </div>
+  </div>;
+}
+
 type ChartFormProps = {
   value: ProfileInput;
   qimenSettings: QimenSettings;
@@ -200,114 +228,7 @@ export function ChartForm({
                   <DateTimeStepper onShift={shiftSolarDateTime} />
                 </label>
               ) : (
-                <div className="lunar-input-grid">
-                  <label className="control-field">
-                    <span>农历年</span>
-                    <Input
-                      className="control-input"
-                      type="number"
-                      value={String(fallbackLunar.year)}
-                      onChange={(event) =>
-                        onValueChange({
-                          ...value,
-                          lunar: {
-                            ...fallbackLunar,
-                            year: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="control-field">
-                    <span>农历月</span>
-                    <Input
-                      className="control-input"
-                      type="number"
-                      value={String(fallbackLunar.month)}
-                      onChange={(event) =>
-                        onValueChange({
-                          ...value,
-                          lunar: {
-                            ...fallbackLunar,
-                            month: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="control-field">
-                    <span>农历日</span>
-                    <Input
-                      className="control-input"
-                      type="number"
-                      value={String(fallbackLunar.day)}
-                      onChange={(event) =>
-                        onValueChange({
-                          ...value,
-                          lunar: {
-                            ...fallbackLunar,
-                            day: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="control-field">
-                    <span>农历时</span>
-                    <Input
-                      className="control-input"
-                      type="number"
-                      value={String(fallbackLunar.hour ?? 0)}
-                      onChange={(event) =>
-                        onValueChange({
-                          ...value,
-                          lunar: {
-                            ...fallbackLunar,
-                            hour: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="control-field">
-                    <span>农历分</span>
-                    <Input
-                      className="control-input"
-                      type="number"
-                      value={String(fallbackLunar.minute ?? 0)}
-                      onChange={(event) =>
-                        onValueChange({
-                          ...value,
-                          lunar: {
-                            ...fallbackLunar,
-                            minute: Number(event.target.value),
-                          },
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="checkbox-field">
-                    <input
-                      checked={Boolean(fallbackLunar.isLeapMonth)}
-                      type="checkbox"
-                      onChange={(event) =>
-                        onValueChange({
-                          ...value,
-                          lunar: {
-                            ...fallbackLunar,
-                            isLeapMonth: event.target.checked,
-                          },
-                        })
-                      }
-                    />
-                    <span>闰月</span>
-                  </label>
-                </div>
+                <LunarDateTimeWheels value={fallbackLunar} onChange={(lunar) => onValueChange({ ...value, lunar })} />
               )}
             </>
           ) : null}

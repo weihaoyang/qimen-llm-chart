@@ -1,0 +1,25 @@
+{
+  "format": "singseq-ai-product-manifest-v1",
+  "product_code": "shengtian-banzi",
+  "access_scope": "shengtian-banzi-core",
+  "capabilities": {
+    "agent": {
+      "plan_code": "shengtian-banzi-analysis-10",
+      "usage_unit": "analysis_turn",
+      "provider_route": "/api/agent",
+      "gate_required": true,
+      "token_metering": "provider_usage_when_available"
+    },
+    "kline": {
+      "plan_code": "shengtian-banzi-kline-precise-1",
+      "usage_unit": "analysis_turn",
+      "provider_route": "/api/agent",
+      "gate_required": true,
+      "token_metering": "provider_usage_when_available"
+    }
+  },
+  "lifecycle": ["gate", "reserve", "provider", "commit_or_release", "audit"],
+  "payment_owned_by": "consumer-platform",
+  "identity_owned_by": "consumer-platform",
+  "entitlement_owned_by": "consumer-platform"
+}

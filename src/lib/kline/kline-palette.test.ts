@@ -19,12 +19,14 @@ import { KLINE_PALETTE, KLINE_PALETTE_LOCAL } from "./kline-palette";
  * declares` branch instead. Both directions are covered.
  */
 
-const cssPath = fileURLToPath(new URL("../../app/paipan/paipan.css", import.meta.url));
-const css = readFileSync(cssPath, "utf8");
+const tokensCssPath = fileURLToPath(new URL("../../app/paipan/paipan.css", import.meta.url));
+const chartCssPath = fileURLToPath(new URL("../../app/paipan/research.css", import.meta.url));
+const tokensCss = readFileSync(tokensCssPath, "utf8");
+const chartCss = readFileSync(chartCssPath, "utf8");
 
 /** `--paipan-ink: #121214;` → `#121214` */
 const customProperty = (name: string) => {
-  const match = css.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{3,8})`));
+  const match = tokensCss.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{3,8})`));
   if (!match) throw new Error(`paipan.css no longer declares --${name}`);
   return match[1].toLowerCase();
 };
@@ -32,7 +34,7 @@ const customProperty = (name: string) => {
 /** The `fill`/`color`/`stroke` a named selector sets, e.g. `fill` of `.kline-chart__candle.is-down .kline-chart__body`. */
 const declarationIn = (selector: string, property: string) => {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const rule = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
+  const rule = chartCss.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
   if (!rule) throw new Error(`paipan.css no longer has a rule for ${selector}`);
   const match = rule[1].match(new RegExp(`${property}:\\s*(#[0-9a-fA-F]{3,8})`));
   if (!match) throw new Error(`${selector} no longer sets ${property}`);
@@ -51,13 +53,13 @@ const MIRRORED_TOKENS = {
   slateLight: "paipan-slate-light",
 } as const;
 
-/** Palette keys backed by a plain rule in `paipan.css`, as `[selector, property]`. */
+/** Palette keys backed by a plain rule in `research.css`, as `[selector, property]`. */
 const MIRRORED_RULES = {
   fall: [".kline-chart__candle.is-down .kline-chart__body", "fill"],
   muted: [".kline-hud__reason", "color"],
 } as const;
 
-describe("kline palette mirrors paipan.css", () => {
+describe("kline palette mirrors its theme and shared tokens", () => {
   const tokenBacked: Array<[keyof typeof KLINE_PALETTE, string]> = [
     ...Object.entries(MIRRORED_TOKENS).map(
       ([key, token]) => [key as keyof typeof KLINE_PALETTE, customProperty(token)] as [keyof typeof KLINE_PALETTE, string],
@@ -92,13 +94,13 @@ describe("kline palette mirrors paipan.css", () => {
     //
     // There are no duplicates today; this keeps it that way.
     const repeated = Object.values(MIRRORED_TOKENS).filter(
-      (token) => (css.match(new RegExp(`--${token}\\s*:`, "g"))?.length ?? 0) !== 1,
+      (token) => (tokensCss.match(new RegExp(`--${token}\\s*:`, "g"))?.length ?? 0) !== 1,
     );
     expect(repeated).toEqual([]);
   });
 
   it("fails loudly when the stylesheet moves, rather than silently checking nothing", () => {
-    expect(css.length).toBeGreaterThan(1000);
+    expect(chartCss.length).toBeGreaterThan(1000);
     expect(() => customProperty("paipan-does-not-exist")).toThrow(/no longer declares/);
   });
 });
