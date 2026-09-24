@@ -1,0 +1,920 @@
+/* K-line is a first-class workbench, not an unstyled SVG fallback.  Keep the
+  Chinese market convention invariant: red means close >= open; green means
+  close < open.  Scope every rule to the chart product so shengtian keeps its
+  own product surface. */
+
+.product-chart[data-mode="research"] .kline-panel {
+  margin: 0;
+  padding: 16px;
+  border: 3px solid var(--paipan-ink);
+  background: var(--paipan-paper);
+  box-shadow: 7px 7px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__header, body .product-chart[data-mode="research"] .kline-panel__ai {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__eyebrow {
+  color: var(--paipan-red);
+  font: 800 11px/1.2 var(--mono-font);
+  letter-spacing: .1em;
+}
+
+body .product-chart[data-mode="research"] .kline-panel h2 {
+  margin: 5px 0 4px;
+  color: var(--paipan-ink);
+  font-size: clamp(22px, 2.4vw, 31px);
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__header p,
+body .product-chart[data-mode="research"] .kline-panel__ai span,
+body .product-chart[data-mode="research"] .kline-panel__disclaimer {
+  margin: 0;
+  color: #655d53;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai small {
+  color: var(--paipan-red);
+  font: 800 10px/1.35 var(--mono-font);
+  letter-spacing: .025em;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__switch, body .product-chart[data-mode="research"] .kline-panel__scales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__switch button, body .product-chart[data-mode="research"] .kline-panel__scales button {
+  border: 2px solid var(--paipan-ink);
+  border-radius: 0;
+  background: #fffdf7;
+  color: var(--paipan-ink);
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__switch button.is-active,
+body .product-chart[data-mode="research"] .kline-panel__scales button.is-active {
+  background: var(--paipan-yellow);
+  box-shadow: 3px 3px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scales {
+  margin-top: 11px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-top: 13px;
+}
+
+/* The score is the panel's headline number: a yellow sticker, not bare type. */
+
+body .product-chart[data-mode="research"] .kline-panel__stats > strong {
+  border: 2px solid var(--paipan-ink);
+  background: var(--paipan-yellow);
+  padding: 3px 8px;
+  color: var(--paipan-ink);
+  font: 950 30px/.9 var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__stats > span, body .product-chart[data-mode="research"] .kline-panel__stats > small {
+  color: #655d53;
+  font: 800 11px/1.2 var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__stats em {
+  border: 2px solid var(--paipan-ink);
+  padding: 4px 7px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__stats em.is-up {
+  background: var(--paipan-red);
+  color: #fffaf0;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__stats em.is-down {
+  background: #196b58;
+  color: #fffaf0;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__stats em.is-flat {
+  background: var(--paipan-ground);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__plot-wrap {
+  position: relative;
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink);
+  background: #fff;
+  box-shadow: 5px 5px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-card .kline-chart__frame {
+  margin-top: 7px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__markers {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 2px solid var(--paipan-ink);
+  background: #f7ecd0;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__markers-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__markers-head strong {
+  font-size: 15px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__markers-head span {
+  color: var(--paipan-violet);
+  font: 800 10px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row {
+  display: grid;
+  grid-template-columns: 52px 130px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 2px solid var(--paipan-ink);
+  background: #fffdf7;
+  padding: 7px 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row:hover {
+  background: #fff6dc;
+  transform: translateX(2px);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row b {
+  font: 950 11px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row.is-rise b {
+  color: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row.is-turn-up b {
+  color: #9a6b00;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row.is-turn-down b {
+  color: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row span {
+  font: 800 11px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__marker-row em {
+  color: #655d53;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-card {
+  min-width: 0;
+  border: 2px solid var(--paipan-ink);
+  background: #fff;
+  padding: 8px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-card.is-selected {
+  background: #fffdf5;
+  box-shadow: 4px 4px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-card-head strong {
+  font-size: 16px;
+  letter-spacing: .02em;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__scale-card-head span {
+  color: #655d53;
+  font: 11px var(--mono-font);
+  white-space: nowrap;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__detail {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 11px;
+  border: 2px solid var(--paipan-ink);
+  background: var(--paipan-yellow);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__detail > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__detail span {
+  font-size: 12px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__detail p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ohlc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ohlc span {
+  border: 1.5px solid var(--paipan-ink);
+  background: #fffaf0;
+  padding: 3px 6px;
+  font-weight: 800;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__evidence span {
+  border: 1.5px solid var(--paipan-ink);
+  background: #fffaf0;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__keypoints {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__keypoints > strong {
+  color: var(--paipan-violet);
+  font: 900 11px var(--mono-font);
+  letter-spacing: .08em;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__keypoints button {
+  display: grid;
+  grid-template-columns: 1.3fr .35fr 1fr;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid var(--paipan-ink);
+  border-radius: 0;
+  background: #fffdf7;
+  padding: 7px 8px;
+  color: var(--paipan-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__keypoints button:hover {
+  background: var(--paipan-yellow);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__keypoints button b {
+  color: var(--paipan-red);
+  font-family: var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__keypoints button em {
+  color: #655d53;
+  font-size: 11px;
+  font-style: normal;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 2px solid var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai > div {
+  display: grid;
+  gap: 2px;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai > div > strong {
+  color: var(--paipan-ink);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+/* The gate is the product's loudest CTA: yellow plaque with a hard shadow,
+   pressed state included — same physics as the hero actions. */
+
+body .product-chart[data-mode="research"] .kline-panel__ai-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid var(--paipan-ink);
+  border-radius: 0;
+  background: var(--paipan-yellow);
+  color: var(--paipan-ink);
+  box-shadow: 4px 4px 0 var(--paipan-ink);
+  padding: 9px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__error {
+  margin: 9px 0 0;
+  color: #b32316;
+  font-weight: 800;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__disclaimer {
+  margin: 11px 0 0;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__empty {
+  margin-top: 12px;
+  padding: 18px;
+  border: 2px dashed var(--paipan-ink);
+  color: #655d53;
+}
+
+@media (max-width: 680px) {
+  body .product-chart[data-mode="research"] .kline-panel {
+    padding: 11px;
+    box-shadow: 4px 4px 0 var(--paipan-ink);
+  }
+  body .product-chart[data-mode="research"] .kline-panel__header, body .product-chart[data-mode="research"] .kline-panel__ai {
+    flex-direction: column;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__switch, body .product-chart[data-mode="research"] .kline-panel__scales {
+    width: 100%;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__switch button, body .product-chart[data-mode="research"] .kline-panel__scales button {
+    flex: 1 1 auto;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__stats > strong {
+    font-size: 24px;
+    padding: 2px 7px;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__plot-wrap {
+    margin-top: 8px;
+    box-shadow: 3px 3px 0 var(--paipan-ink);
+  }
+  body .product-chart[data-mode="research"] .kline-panel__scale-grid {
+    grid-template-columns: 1fr;
+  }
+  body .product-chart[data-mode="research"] .kline-hud {
+    position: static;
+    width: auto;
+    margin-top: 8px;
+    box-shadow: none;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__keypoints button {
+    grid-template-columns: 1fr .35fr;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__keypoints button em {
+    grid-column: 1 / -1;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__marker-row {
+    grid-template-columns: 48px 1fr;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__marker-row em {
+    grid-column: 1 / -1;
+  }
+  body .product-chart[data-mode="research"] .kline-panel__ai-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* AI reports extend the deterministic rule chart; they never replace the
+  underlying OHLC points or their evidence. */
+
+body .product-chart[data-mode="research"] .kline-panel__ai-report {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink);
+  background: var(--paipan-paper);
+  box-shadow: var(--paipan-shadow-lg);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-report > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-yellow);
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-report > div > span {
+  color: var(--paipan-violet);
+  font: 900 10px/1 ui-monospace, monospace;
+  letter-spacing: .08em;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-report > div > strong {
+  color: var(--paipan-ink);
+  font: 950 14px/1 ui-sans-serif, system-ui, sans-serif;
+}
+
+body .product-chart[data-mode="research"] .kline-panel__ai-report .kline-panel__ai-result {
+  margin: 0;
+  padding: 0 12px 12px;
+  white-space: pre-wrap;
+  color: var(--paipan-ink);
+  font: 700 13px/1.65 ui-sans-serif, system-ui, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+  K-line chart (Recharts)
+  --------------------------------------------------------------------------
+  Ported from miounet11/life-kline (Apache-2.0), restyled onto the workbench
+  tokens.  Everything this stylesheet can reach is painted here; the elements
+  Recharts builds internally (grid, axis, brush track, reference fills) cannot
+  take a class and get their colours from src/lib/kline/kline-palette.ts, which
+  a guard test keeps pinned to the tokens above.
+  -------------------------------------------------------------------------- */
+
+body .product-chart[data-mode="research"] .kline-chart__frame {
+  width: 100%;
+}
+
+/* Brush: the library paints the slide with the stroke colour at 0.2 alpha and
+   leaves the travellers to its defaults. Override both onto the workbench
+   language — a yellow window on an ink track. */
+
+body .product-chart[data-mode="research"] .kline-chart__frame .recharts-brush-slide {
+  fill: var(--paipan-accent);
+  fill-opacity: .3;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__frame .recharts-brush-traveller rect {
+  fill: var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-chart__empty {
+  padding: 26px;
+  border: 2px dashed var(--paipan-ink);
+  color: #655d53;
+  text-align: center;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__wick {
+  stroke: var(--paipan-ink);
+  stroke-width: 2;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__body {
+  stroke: var(--paipan-ink);
+  stroke-width: 2;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__candle.is-up .kline-chart__body {
+  fill: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-chart__candle.is-down .kline-chart__body {
+  fill: #196b58;
+}
+
+/* Peak/trough captions sit on top of candles and reference bands: a paper
+   halo keeps them legible without stealing the semantic hue. */
+
+body .product-chart[data-mode="research"] .kline-chart__extreme text {
+  font: 950 10px var(--mono-font);
+  paint-order: stroke;
+  stroke: #fffdf7;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__extreme.is-peak path {
+  fill: var(--paipan-yellow);
+  stroke: var(--paipan-ink);
+  stroke-width: 1;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__extreme.is-peak text {
+  fill: #9a6b00;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__extreme.is-trough path {
+  fill: #fff;
+  stroke: var(--paipan-ink);
+  stroke-width: 1;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__extreme.is-trough text {
+  fill: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-chart__today {
+  fill: var(--paipan-ink);
+  font: 950 11px var(--mono-font);
+  paint-order: stroke;
+  stroke: #fffdf7;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+body .product-chart[data-mode="research"] .kline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+body .product-chart[data-mode="research"] .kline-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid var(--paipan-ink);
+  background: #fffdf7;
+  padding: 3px 7px;
+  color: var(--paipan-ink);
+  font: 800 10px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-legend li::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--paipan-ink);
+  background: var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-legend li.is-up::before {
+  background: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-legend li.is-down::before {
+  background: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-legend li.is-ma5::before {
+  height: 3px;
+  border: none;
+  background: var(--paipan-ink);
+}
+
+body .product-chart[data-mode="research"] .kline-legend li.is-ma10::before {
+  height: 3px;
+  border: none;
+  background: repeating-linear-gradient(90deg, var(--paipan-violet) 0 4px, transparent 4px 7px);
+}
+
+body .product-chart[data-mode="research"] .kline-legend li.is-peak::before {
+  border-radius: 50%;
+  background: var(--paipan-yellow);
+}
+
+body .product-chart[data-mode="research"] .kline-legend li.is-trough::before {
+  background: #fff;
+}
+
+/* Heads-up readout: floats over the plot so it never covers the candles it describes. */
+
+body .product-chart[data-mode="research"] .kline-hud {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: min(268px, 62%);
+  border: 2px solid var(--paipan-ink);
+  background: rgb(255 253 247 / 96%);
+  box-shadow: 4px 4px 0 var(--paipan-ink);
+  padding: 8px 9px;
+  pointer-events: none;
+}
+
+/* The float HUD is hover-only, so it is rendered from `hovered` alone; the block
+  layout is the relationship grid's persistent readout. */
+
+body .product-chart[data-mode="research"] .kline-hud.is-block {
+  position: static;
+  width: auto;
+  margin-top: 10px;
+  box-shadow: none;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__head strong {
+  font-size: 13px;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid var(--paipan-ink);
+  padding: 2px 5px;
+  font: 900 10px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__badge.is-up {
+  background: var(--paipan-red);
+  color: #fffaf0;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__badge.is-down {
+  background: #196b58;
+  color: #fffaf0;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__dayun {
+  margin: 4px 0 0;
+  color: var(--paipan-violet);
+  font: 800 11px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+  margin: 7px 0 0;
+  padding: 5px 0;
+  border-top: 1px solid var(--paipan-slate-light);
+  border-bottom: 1px solid var(--paipan-slate-light);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__grid div {
+  text-align: center;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__grid dt {
+  color: #655d53;
+  font-size: 10px;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__grid dd {
+  margin: 0;
+  font: 900 12px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__grid dd.is-up {
+  color: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__grid dd.is-down {
+  color: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font: 800 11px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__score svg {
+  color: var(--paipan-slate-light);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__score svg.is-bright {
+  color: var(--paipan-yellow);
+  fill: var(--paipan-yellow);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__score em {
+  color: var(--paipan-violet);
+  font-style: normal;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__relation {
+  margin: 4px 0 0;
+  font: 900 10px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__relation.is-above {
+  color: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-hud__relation.is-below {
+  color: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-hud__reason {
+  margin: 5px 0 0;
+  color: #655d53;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* The chart's accessible twin: the plot is unlabelled SVG, this table is not. */
+
+/* The data table's min-content (~9 mono columns) must not size the research
+   grid column: on a phone that inflated the whole panel past the viewport.
+   Pin the column to the available width; the table scrolls inside instead. */
+body .product-chart[data-mode="research"] .canvas-panel[data-mode="research"] .canvas-panel__content {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body .product-chart[data-mode="research"] .kline-table {
+  margin-top: 12px;
+  border: 2px solid var(--paipan-ink);
+  background: #fffdf7;
+}
+
+body .product-chart[data-mode="research"] .kline-table__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 2px solid var(--paipan-ink);
+  padding: 8px 9px;
+}
+
+body .product-chart[data-mode="research"] .kline-table__head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+body .product-chart[data-mode="research"] .kline-table__head strong {
+  font-size: 15px;
+}
+
+body .product-chart[data-mode="research"] .kline-table__head span {
+  color: #655d53;
+  font: 800 11px var(--mono-font);
+}
+
+body .product-chart[data-mode="research"] .kline-table__head button, body .product-chart[data-mode="research"] .kline-table__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 2px solid var(--paipan-ink);
+  border-radius: 0;
+  background: #fff;
+  color: var(--paipan-ink);
+  padding: 5px 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+body .product-chart[data-mode="research"] .kline-table__head button:hover, body .product-chart[data-mode="research"] .kline-table__toggle:hover {
+  background: var(--paipan-yellow);
+}
+
+body .product-chart[data-mode="research"] .kline-table__scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+
+body .product-chart[data-mode="research"] .kline-table__caption {
+  padding: 7px 9px;
+  color: #655d53;
+  font-size: 11px;
+  text-align: left;
+}
+
+body .product-chart[data-mode="research"] .kline-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+body .product-chart[data-mode="research"] .kline-table th, body .product-chart[data-mode="research"] .kline-table td {
+  border-top: 1px solid var(--paipan-ink);
+  padding: 6px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+
+body .product-chart[data-mode="research"] .kline-table thead th {
+  border-top: none;
+  border-bottom: 2px solid var(--paipan-ink);
+  color: var(--paipan-ink);
+  font: 900 11px var(--mono-font);
+  white-space: nowrap;
+}
+
+body .product-chart[data-mode="research"] .kline-table tbody th {
+  font-weight: 800;
+}
+
+body .product-chart[data-mode="research"] .kline-table tbody tr.is-up th {
+  color: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-table tbody tr.is-down th {
+  color: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-table__ohlc {
+  font-family: var(--mono-font);
+  white-space: nowrap;
+}
+
+body .product-chart[data-mode="research"] .kline-table__score {
+  font-family: var(--mono-font);
+  font-weight: 900;
+}
+
+body .product-chart[data-mode="research"] .kline-table__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid currentColor;
+  padding: 1px 5px;
+  font: 900 11px var(--mono-font);
+  white-space: nowrap;
+}
+
+body .product-chart[data-mode="research"] .kline-table__trend.is-up {
+  color: var(--paipan-red);
+}
+
+body .product-chart[data-mode="research"] .kline-table__trend.is-down {
+  color: #196b58;
+}
+
+body .product-chart[data-mode="research"] .kline-table__toggle {
+  width: 100%;
+  justify-content: center;
+  border: none;
+  border-top: 2px solid var(--paipan-ink);
+  padding: 8px;
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="research"] .kline-panel {
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
+  }
+  body .product-chart[data-mode="research"] :is(.classic-observatory, .combined-agent-surface, .kline-panel) {
+    box-shadow: var(--paipan-shadow) !important;
+  }
+}

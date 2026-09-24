@@ -1,0 +1,1070 @@
+/* --------------------------------------------------------------------------
+  紫微斗数 (Ziwei Doushu): Disciplined Neo-Brutalist Architecture
+  -------------------------------------------------------------------------- */
+
+.product-chart[data-mode="ziwei"] .ziwei-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Disclosure for the metadata chips. Inert on desktop (the chip row below is
+  the desktop UI); the phone block flips it to a full-width button. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__meta-toggle {
+  display: none;
+}
+
+/* Meta chips */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-meta-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-meta-chip span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-meta-chip strong {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Astrolabe canvas frame */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  padding: 8px !important;
+  position: relative;
+}
+
+/* Astrolabe theme variables */
+
+/* One palette for the whole astrolabe: paper/ink, one loud red for the main
+  stars, slate for everything secondary. Every iztro rainbow variable (purple
+  花星, green 吉星, blue 运限, amber 衰旺) collapses onto that axis, so the
+  colours the library paints through `var(--iztro-*)` — star types, 长生/岁前
+  side lists, 运限 layers, gender glyphs, self-mutagen rules — can no longer
+  drift back into the multi-hue default theme. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe-theme-default {
+  --iztro-color-major: var(--paipan-red);
+  --iztro-color-minor: var(--paipan-ink);
+  --iztro-color-adjective: var(--paipan-slate);
+  --iztro-color-brightness: var(--paipan-slate);
+  --iztro-color-horoscope: var(--paipan-red);
+  --iztro-color-mutagen: var(--paipan-ink);
+  --iztro-color-palace: var(--paipan-ink);
+  --iztro-color-tianma: var(--paipan-ink);
+  --iztro-color-line: var(--paipan-ink);
+  --iztro-color-text: var(--paipan-slate);
+  --iztro-color-border: var(--paipan-ink);
+  /* Focus stays the yellow accent; red marks the 忌 rule only. */
+  --iztro-color-focus: var(--paipan-red);
+  --iztro-color-quan: var(--paipan-ink);
+  --iztro-color-tough: var(--paipan-slate);
+  --iztro-color-awesome: var(--paipan-ink);
+  --iztro-color-active: var(--paipan-ink);
+  --iztro-color-happy: var(--paipan-slate);
+  --iztro-color-nice: var(--paipan-ink);
+  --iztro-color-decorator-1: var(--paipan-slate);
+  --iztro-color-decorator-2: var(--paipan-slate);
+  --iztro-star-font-size-big: 13.5px;
+  --iztro-star-font-size-small: 11px;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe {
+  gap: 6px !important;
+  padding: 0 !important;
+}
+
+/* Palace cards: one hard 2px cage each, square corners, no per-cell shadow —
+  twelve offset shadows read as noise; the grid itself is the statement, the
+  way the qimen palace grid works. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 6px 7px !important;
+  transition: background 0.12s ease, box-shadow 0.12s ease !important;
+}
+
+/* Focused palace: solar warm highlight, NO dark-blue radial gradient! */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace.focused-palace {
+  background: #fffde6 !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: inset 0 0 0 2px var(--paipan-accent), 3px 3px 0 var(--paipan-ink) !important;
+}
+
+/* Opposite and surrounded palaces */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace.opposite-palace,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace.surrounded-palace {
+  background: var(--paipan-ground) !important;
+  border-style: dashed !important;
+}
+
+/* Star hierarchy: 主星 red, 吉星 ink, 煞星/桃花/杂曜 slate. The previous
+   sheet gave each iztro star type its own hue (green 辅星, indigo 杂曜,
+   amber 衰旺) — the rainbow is what made the cells read as clip art next to
+   the workbench's ink-on-paper cards. `.iztro-star-minor` keeps a rule
+   because the renderer's type name and the stylesheet's have disagreed
+   before; covering both costs one selector. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major {
+  color: var(--paipan-red) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 13.5px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft, .iztro-star-helper, .iztro-star-lucun, .iztro-star-tianma, .iztro-star-minor) {
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 900 !important;
+  font-size: 11.5px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough, .iztro-star-flower, .iztro-star-adjective) {
+  color: var(--paipan-slate) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 800 !important;
+  font-size: 10.5px !important;
+}
+
+/* Footer furniture: 长生/博士/岁前/将前 lists stay quiet, the 大限 range is
+   the one ink value in the middle column. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-palace-lft24, .iztro-palace-rgt24) {
+  color: var(--paipan-slate) !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-scope-age {
+  color: var(--paipan-slate) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9.5px !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-scope-decadal {
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9.5px !important;
+  font-weight: 950 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-brightness {
+  font-style: normal !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  color: var(--paipan-slate) !important;
+  opacity: 1 !important;
+}
+
+/* Mutagen stamps (四化印章). One stamp for all of them: the glyph 禄/权/科/忌
+   already says which mutagen it is, so a four-colour pastel set only added
+   noise. `.mutagen-N` counts 禄权科忌 on a natal stamp but 运限层级 on a
+   horoscope stamp — colouring by N would label two different axes with the
+   same hues anyway. Yellow paper, ink rule, done. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-mutagen {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 950 !important;
+  font-size: 9px !important;
+  padding: 0 3px !important;
+  border-radius: 0 !important;
+  line-height: 1.35 !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  margin-left: 2px !important;
+}
+
+/* Palace Footer: a hard ink rule, not a whisper of dashed grey. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-footer {
+  border-top: 2px solid var(--paipan-ink) !important;
+  padding-top: 4px !important;
+  margin-top: 4px !important;
+}
+
+/* The palace name is the cell's loudest label: an inverted ink stamp. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name {
+  display: inline-block !important;
+  background: var(--paipan-ink) !important;
+  color: var(--paipan-paper) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 12.5px !important;
+  letter-spacing: 0 !important;
+  padding: 1px 7px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name-taichi {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  font-weight: 950 !important;
+  padding: 0 3px !important;
+}
+
+/* 大限/流年/流月/流日/流时 palace-position chips: outlined at rest, stamped
+   with the yellow accent while that layer is expanded. They double as the
+   toggles for those layers, so the resting state stays visible — never
+   hidden — and wraps instead of spilling past the cell at narrow widths. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate {
+  gap: 4px !important;
+  flex-wrap: wrap !important;
+  white-space: normal !important;
+  height: auto !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-slate) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  line-height: 1.5 !important;
+  padding: 0 4px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate :is(.iztro-palace-decadal-active, .iztro-palace-yearly-active, .iztro-palace-monthly-active, .iztro-palace-daily-active, .iztro-palace-hourly-active) {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 950 !important;
+}
+
+/* 运限宫名 chips render only while a layer is expanded; same outlined-stamp
+   language as the toggles above. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name {
+  gap: 3px !important;
+  flex-wrap: wrap !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span {
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9.5px !important;
+  font-weight: 950 !important;
+  padding: 0 3px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz span {
+  font-family: var(--paipan-font-mono) !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Center Palace & High-Contrast Manifest (Fix white-on-white text!) */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace {
+  background: var(--paipan-paper) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: 2.5px 2.5px 0 var(--paipan-ink) !important;
+}
+
+/* Center-manifest titles: full ink bars, the way the qimen cards head their
+  sections. The library draws a dashed hairline; the workbench draws a block. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .center-title {
+  background: var(--paipan-ink) !important;
+  color: var(--paipan-paper) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.12em !important;
+  text-align: left !important;
+  border-bottom: none !important;
+  padding: 4px 8px !important;
+  margin: 8px 8px 5px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace ul.basic-info {
+  margin: 6px 8px !important;
+  column-gap: 12px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item {
+  line-height: 1.6 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item label {
+  color: var(--paipan-slate) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-weight: 850 !important;
+  font-size: 11px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item span {
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-weight: 950 !important;
+  font-size: 11.5px !important;
+}
+
+/* Horoscope / Timeline buttons in Center Palace: Tactile physical buttons */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons {
+  margin: 10px 10px 6px !important;
+  gap: 6px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons .center-button,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .solar-horoscope .today {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons .center-button:not(.disabled):hover,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .solar-horoscope .today:hover {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-copyright {
+  color: var(--paipan-slate) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+}
+
+/* The 命宫 direction the library draws through the center: keep it as a faint
+  annotation (the canvas already draws at alpha .5) so it never competes with
+  the manifest text it crosses. Stroke CSS doesn't reach the canvas bitmap —
+  scoped clicks fall back to ink, the default soul line stays red. */
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas #palace-line {
+  stroke: var(--paipan-red) !important;
+  opacity: .5 !important;
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas::-webkit-scrollbar {
+    height: 4px;
+  }
+}
+
+/* Fit the square to the actual desktop work area. A width-driven square can
+   be wider than the space below the masthead, which hides its bottom row. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] .canvas-panel__content {
+    display: flex !important;
+    min-height: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    box-sizing: border-box !important;
+    width: min(100%, calc(100dvh - 260px)) !important;
+    max-width: calc(100dvh - 260px) !important;
+    height: min(calc(100dvh - 260px), 100%) !important;
+    max-height: calc(100dvh - 260px) !important;
+    aspect-ratio: 1 / 1 !important;
+    align-self: center !important;
+    flex: 0 0 auto !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major {
+    font-size: 17px !important;
+    line-height: 1.2 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft, .iztro-star-helper, .iztro-star-lucun, .iztro-star-tianma, .iztro-star-minor) {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough, .iztro-star-flower, .iztro-star-adjective) {
+    font-size: 12.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name {
+    font-size: 15px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz span {
+    font-size: 13px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span,
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span {
+    font-size: 12px !important;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 721px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    width: min(100%, calc(100dvh - 220px)) !important;
+    max-width: calc(100dvh - 220px) !important;
+    height: min(calc(100dvh - 220px), 100%) !important;
+    max-height: calc(100dvh - 220px) !important;
+  }
+}
+
+/* 4K reading scale: the height-bounded square leaves generous room in each
+   palace, so use that space for legible chart content instead of enlarging
+   empty padding. */
+@media (min-width: 2560px) and (min-height: 1440px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    width: min(100%, calc(100dvh - 300px)) !important;
+    max-width: calc(100dvh - 300px) !important;
+    height: min(calc(100dvh - 300px), 100%) !important;
+    max-height: calc(100dvh - 300px) !important;
+    padding: 14px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe {
+    gap: 10px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+    padding: 12px 14px !important;
+    grid-template-rows: minmax(0, 1fr) auto auto minmax(50px, auto) !important;
+    gap: 6px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major {
+    font-size: 23px !important;
+    line-height: 1.25 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft, .iztro-star-helper, .iztro-star-lucun, .iztro-star-tianma, .iztro-star-minor) {
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough, .iztro-star-flower, .iztro-star-adjective) {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name {
+    font-size: 22px !important;
+    padding: 4px 10px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz span {
+    font-size: 19px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span,
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span {
+    font-size: 17px !important;
+    line-height: 1.45 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-scope-decadal {
+    font-size: 17px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas::-webkit-scrollbar-thumb {
+    background: var(--paipan-slate);
+    border-radius: 2px;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas::-webkit-scrollbar-track {
+    background: var(--paipan-paper);
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-paper) !important;
+    color: var(--paipan-ink) !important;
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
+    font-family: var(--paipan-font) !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.06em !important;
+    cursor: pointer !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta-toggle b {
+    font-size: 13px !important;
+    font-weight: 950 !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta[role="alert"] {
+    display: grid !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta.is-open {
+    display: grid !important;
+    position: absolute !important;
+    top: 42px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 40 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 7px !important;
+    background: var(--paipan-paper) !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 0 !important;
+    box-shadow: 6px 6px 0 var(--paipan-ink) !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta.is-open .ziwei-meta-chip {
+    padding: 6px 8px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__meta.is-open .ziwei-meta-chip strong {
+    font-size: 11.5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    height: auto !important;
+    aspect-ratio: auto !important;
+    overflow: visible !important;
+    padding: 5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas #palace-line {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe {
+    gap: 4px !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+    min-width: 0 !important;
+    padding: 4px 5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace {
+    min-width: 0 !important;
+    padding: 4px 5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+    grid-template-rows: auto auto auto auto !important;
+    grid-template-areas:
+      "major adj"
+      "minor adj"
+      "fate fate"
+      "ft ft" !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft, .iztro-star-helper, .iztro-star-lucun, .iztro-star-tianma, .iztro-star-minor) {
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough, .iztro-star-flower, .iztro-star-adjective) {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-adj {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-content: flex-start !important;
+    justify-content: flex-end !important;
+    gap: 1px 4px !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-adj > div {
+    display: contents !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-adj .iztro-star-brightness {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-horo-star {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-mutagen {
+    font-size: 8px !important;
+    padding: 0 2px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name {
+    font-size: 11.5px !important;
+    padding: 0 5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-lft24 {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-rgt24 {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-copyright {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    padding-top: 3px !important;
+    margin-top: 3px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-scope {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-scope-age {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-scope-decadal {
+    font-size: 8.5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate {
+    min-height: 0 !important;
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span {
+    font-size: 8.5px !important;
+    padding: 0 3px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span {
+    font-size: 8.5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz {
+    text-align: right !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz span {
+    font-size: 9.5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .center-title {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    padding: 2px 5px !important;
+    margin: 2px 4px 1px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace ul.basic-info {
+    grid-template-columns: minmax(0, 1fr) !important;
+    row-gap: 0 !important;
+    column-gap: 8px !important;
+    margin: 2px 4px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item {
+    display: flex !important;
+    align-items: baseline;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item label {
+    flex: 0 0 auto !important;
+    font-size: 9.5px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item span {
+    min-width: 0 !important;
+    margin-left: auto !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons {
+    margin: 3px 4px 2px !important;
+    gap: 2px !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons .center-button {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    padding: 2px 3px !important;
+    white-space: nowrap !important;
+    box-shadow: 1.5px 1.5px 0 var(--paipan-ink) !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons .center-horo-hour {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    padding: 2px 3px !important;
+    white-space: nowrap !important;
+    box-shadow: 1.5px 1.5px 0 var(--paipan-ink) !important;
+  }
+}
+
+@media (max-width: 720px) {
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .solar-horoscope .today {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    padding: 2px 3px !important;
+    white-space: nowrap !important;
+    box-shadow: 1.5px 1.5px 0 var(--paipan-ink) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: auto !important;
+    overflow: visible !important;
+  }
+}
+
+/* Final chart geometry and reading hierarchy. The vendor grid uses fractional
+   rows, so its height otherwise follows the workbench track and becomes a
+   rectangle. Keep the astrolabe itself square at every viewport and let each
+   palace use the same five information bands: stars, auxiliary data, fate,
+   and the footer manifest. */
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 10px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(4, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  align-content: stretch !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 7px 8px !important;
+  grid-template-rows: minmax(0, 1fr) auto auto minmax(34px, auto) !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 3px !important;
+  overflow: hidden !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-major,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-minor,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-adj,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-horo-star {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-major {
+  padding: 2px 4px !important;
+  border-left: 3px solid var(--paipan-red) !important;
+  background: #fff7f2 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-minor {
+  padding: 2px 4px !important;
+  border-left: 3px solid var(--paipan-accent) !important;
+  background: #fffdf0 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-adj {
+  gap: 2px !important;
+  line-height: 1.2 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-horo-star {
+  border-top: 1px solid #c8c1b4 !important;
+  padding-top: 3px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major {
+  font-size: 15px !important;
+  line-height: 1.25 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft, .iztro-star-helper, .iztro-star-lucun, .iztro-star-tianma, .iztro-star-minor) {
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough, .iztro-star-flower, .iztro-star-adjective) {
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-footer {
+  min-width: 0 !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  align-items: end !important;
+  gap: 3px !important;
+  padding-top: 5px !important;
+  margin-top: 2px !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name {
+  max-width: 100% !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  padding: 2px 7px !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz span {
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span,
+body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    aspect-ratio: 1 / 1 !important;
+    padding: 6px !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe {
+    gap: 4px !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+    padding: 4px 5px !important;
+    gap: 2px !important;
+    grid-template-rows: minmax(0, 1fr) auto auto minmax(27px, auto) !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major {
+    font-size: 13px !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft, .iztro-star-helper, .iztro-star-lucun, .iztro-star-tianma, .iztro-star-minor) {
+    font-size: 11px !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough, .iztro-star-flower, .iztro-star-adjective) {
+    font-size: 10px !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name {
+    font-size: 12px !important;
+    padding: 1px 4px !important;
+  }
+
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span,
+  body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span {
+    font-size: 9px !important;
+  }
+}

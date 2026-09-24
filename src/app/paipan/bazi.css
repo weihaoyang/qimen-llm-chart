@@ -1,0 +1,1171 @@
+/* --------------------------------------------------------------------------
+  八字排盘 (BaZi): Disciplined Neo-Brutalist Architecture
+  -------------------------------------------------------------------------- */
+
+.product-chart[data-mode="bazi"] .bazi-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel__overview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel__overview .panel-heading {
+  display: none !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-relation-scale,
+body .product-chart[data-mode="bazi"] .bazi-ten-god-meter,
+body .product-chart[data-mode="bazi"] .bazi-element-meter {
+  display: none !important;
+}
+
+/* Headband manifest card */
+
+body .product-chart[data-mode="bazi"] .bazi-headband {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__block {
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__block--hero {
+  gap: 0;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-main span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-main strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 2.3rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  color: var(--paipan-ink) !important;
+  letter-spacing: -0.04em !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-main em {
+  font-style: normal !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  padding: 2px 8px !important;
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: 1px 1px 0 var(--paipan-ink) !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 10px;
+  border-left: 1.5px dashed #d4d4d8;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-calendar-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-calendar-row small {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  min-width: 24px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__hero-calendar-row strong {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__block--ledger {
+  gap: 2px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__block--ledger > span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__block--ledger strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  line-height: 1.25 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-headband__block--ledger em {
+  font-style: normal !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: var(--paipan-slate) !important;
+}
+
+/* Six Pillars Reading Workspace */
+
+body .product-chart[data-mode="bazi"] .bazi-traditional-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-traditional-board__header {
+  display: none !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-reading-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-single-workspace,
+body .product-chart[data-mode="bazi"] .bazi-pair-workspace {
+  min-width: 0;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-pair-workspace {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-pair-workspace__person {
+  min-width: 0;
+}
+
+/* Six Pillars Table */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+  background: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row {
+  display: grid;
+  grid-template-columns: 46px repeat(6, minmax(0, 1fr));
+  gap: 2px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row > * {
+  display: grid;
+  min-width: 0;
+  min-height: 30px;
+  place-items: center;
+  padding: 4px 5px;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  text-align: center;
+}
+
+/* Left spine label */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row > span {
+  background: #18181b !important;
+  color: #ffffff !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Column head */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--head > strong {
+  align-content: center;
+  gap: 2px;
+  min-height: 48px;
+  font-family: var(--paipan-font) !important;
+  font-size: 1.25rem !important;
+  font-weight: 950 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--head small {
+  font-family: var(--paipan-font-mono) !important;
+  color: var(--paipan-slate) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+}
+
+/* Day Master column head highlight */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--head .is-day-master {
+  background: #fff9db !important;
+  border-top: none !important;
+  box-shadow: inset 0 3px 0 var(--paipan-accent) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--head .is-day-master small {
+  color: #854d0e !important;
+  font-weight: 950 !important;
+}
+
+/* Timing columns head (大运/流年) */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--head .is-timing {
+  background: #fafaf9 !important;
+}
+
+/* Ten God badges row */
+
+body .product-chart[data-mode="bazi"] .bazi-ten-god-badge {
+  display: inline-block !important;
+  padding: 2px 5px !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 10.5px !important;
+  font-weight: 900 !important;
+  box-shadow: 1px 1px 0 var(--paipan-ink) !important;
+  line-height: 1.1 !important;
+}
+
+/* TianGan and DiZhi Glyphs: Heavy modern sans-serif */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong {
+  min-height: 56px;
+  font-family: var(--paipan-font) !important;
+  font-size: 2.2rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
+}
+
+/* High-contrast jewel tones for Five Elements */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong[data-element="木"] {
+  color: #047857 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong[data-element="火"] {
+  color: #dc2626 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong[data-element="土"] {
+  color: #b45309 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong[data-element="金"] {
+  color: #334155 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong[data-element="水"] {
+  color: #1d4ed8 !important;
+}
+
+/* Day Master glyph cell */
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong.is-day-master {
+  background: #fff9db !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--timing small {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--nayin small {
+  font-family: var(--paipan-font) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--shensha > div {
+  display: flex;
+  min-height: 54px;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px 4px;
+  padding: 5px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--shensha > div small {
+  display: inline-block;
+  padding: 1px 4px;
+  border: 1px solid #d4d4d8;
+  border-radius: 2px;
+  background: var(--paipan-ground);
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
+}
+
+/* Timing Rail Console */
+
+body .product-chart[data-mode="bazi"] .bazi-timing-rail {
+  display: grid;
+  grid-template-rows: auto repeat(3, minmax(0, 1fr)) auto;
+  min-height: 0;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-ground);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-rail__head strong {
+  font-family: var(--paipan-font);
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--paipan-ink);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-rail__head span {
+  font-family: var(--paipan-font-mono);
+  font-size: 10.5px;
+  font-weight: 850;
+  color: var(--paipan-slate);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  min-height: 64px;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track > span {
+  display: grid;
+  place-items: center;
+  border-right: 2px solid var(--paipan-ink);
+  background: var(--paipan-ink);
+  color: var(--paipan-accent);
+  font-family: var(--paipan-font-mono);
+  font-size: 11px;
+  font-weight: 950;
+  writing-mode: horizontal-tb !important;
+  letter-spacing: 0.05em;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track > div {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--paipan-slate) var(--paipan-paper);
+  padding: 4px;
+  align-items: center;
+  gap: 4px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track button {
+  display: grid;
+  min-width: 62px;
+  flex: 0 0 auto;
+  align-content: center;
+  gap: 2px;
+  padding: 5px 6px;
+  border: 1.5px solid var(--paipan-ink);
+  border-radius: 3px;
+  color: var(--paipan-ink);
+  background: var(--paipan-ground);
+  box-shadow: 1.5px 1.5px 0 var(--paipan-ink);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track button:hover {
+  background: var(--paipan-paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--paipan-ink);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track button.is-active {
+  background: var(--paipan-accent) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+  transform: none !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track button small {
+  color: var(--paipan-slate);
+  font-family: var(--paipan-font-mono);
+  font-size: 9.5px;
+  font-weight: 850;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track button strong {
+  font-family: var(--paipan-font);
+  font-size: 1.15rem;
+  font-weight: 950;
+  line-height: 1;
+  color: var(--paipan-ink);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track button em {
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track--month button {
+  min-width: 50px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-track--month button strong {
+  font-size: 1rem;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-timing-rail > p {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--paipan-ground);
+  border-top: 2px solid var(--paipan-ink);
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font-mono);
+  font-size: 11.5px;
+  font-weight: 850;
+}
+
+/* BaZi Details & Collapsible */
+
+body .product-chart[data-mode="bazi"] .bazi-details {
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-details > summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font);
+  font-size: 12px;
+  font-weight: 900;
+  background: var(--paipan-ground);
+  border-bottom: 1px solid #e4e4e7;
+}
+
+/* BaZi Detailed Quad-Pillar Matrix (Inside details summary) */
+
+body .product-chart[data-mode="bazi"] .bazi-traditional-board__viewport {
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--paipan-slate) var(--paipan-ground);
+  padding: 8px !important;
+  background: var(--paipan-ground) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table {
+  display: grid !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  min-width: 720px;
+  overflow: hidden;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__row {
+  display: grid !important;
+  grid-template-columns: 84px repeat(4, minmax(0, 1fr)) !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__label {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__row--head .bazi-table__label {
+  background: var(--paipan-ink) !important;
+  color: #ffffff !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__cell {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  padding: 8px 10px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__cell--head {
+  background: var(--paipan-ground) !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__cell--head span {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__cell--head strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 1.25rem !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Day master header column highlight */
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-table__row--head .bazi-table__cell:nth-child(4) {
+  background: #fff9db !important;
+  border-top: 3px solid var(--paipan-accent) !important;
+  box-shadow: inset 0 0 0 1px var(--paipan-accent);
+}
+
+/* Glyph cell */
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  padding: 10px 14px !important;
+  gap: 8px !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell--day-master {
+  background: #fff9db !important;
+  box-shadow: inset 0 0 0 1.5px var(--paipan-accent) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell__glyph {
+  font-family: var(--paipan-font) !important;
+  font-size: 2.2rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+/* Five elements jewel colors for table glyphs */
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell[data-element="木"] .bazi-glyph-cell__glyph {
+  color: #047857 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell[data-element="火"] .bazi-glyph-cell__glyph {
+  color: #dc2626 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell[data-element="土"] .bazi-glyph-cell__glyph {
+  color: #b45309 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell[data-element="金"] .bazi-glyph-cell__glyph {
+  color: #334155 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell[data-element="水"] .bazi-glyph-cell__glyph {
+  color: #1d4ed8 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-glyph-cell__meta {
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-slate) !important;
+}
+
+/* Plain cell & stack cell */
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-plain-cell {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 6px 8px !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 3px 8px !important;
+  background: var(--paipan-ground) !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 2px !important;
+  font-size: 11px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item strong {
+  font-family: var(--paipan-font) !important;
+  font-weight: 950 !important;
+  font-size: 13px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item[data-element="木"] strong {
+  color: #047857 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item[data-element="火"] strong {
+  color: #dc2626 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item[data-element="土"] strong {
+  color: #b45309 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item[data-element="金"] strong {
+  color: #334155 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-panel .bazi-stack-cell__item[data-element="水"] strong {
+  color: #1d4ed8 !important;
+}
+
+/* Support panel & table */
+
+body .product-chart[data-mode="bazi"] .bazi-support-panel {
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  padding: 10px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-support-panel__header h2 {
+  font-family: var(--paipan-font) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  margin-bottom: 8px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-support-table {
+  display: grid !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  /* The six-column ink row is wider than a phone panel (min-content ~617px);
+    scroll it inside this surface like the other Bazi tables instead of
+    clipping the right-hand columns dead. Desktop panels fit the table, so
+    no scrollbar appears there and the look is unchanged. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-support-table__row {
+  display: grid !important;
+  grid-template-columns: 58px 70px minmax(118px, 1fr) minmax(118px, 1fr) minmax(96px, 0.9fr) minmax(144px, 1.15fr) !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-support-table__row--head > span {
+  background: var(--paipan-ink) !important;
+  color: #ffffff !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  padding: 6px 4px !important;
+  display: grid;
+  place-items: center;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-support-table__label,
+body .product-chart[data-mode="bazi"] .bazi-support-table__pillar,
+body .product-chart[data-mode="bazi"] .bazi-support-table__token,
+body .product-chart[data-mode="bazi"] .bazi-support-table__meta {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-support-table__pillar strong {
+  font-family: var(--paipan-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+}
+
+/* Yun panel & table */
+
+body .product-chart[data-mode="bazi"] .bazi-yun-panel {
+  margin-top: 10px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  padding: 10px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-panel .panel-heading h2 {
+  font-family: var(--paipan-font) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+  margin-bottom: 8px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-summary {
+  display: flex !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-summary span {
+  background: var(--paipan-ground) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  padding: 3px 8px !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-table {
+  display: grid !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  overflow-x: auto;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-table__row {
+  display: grid !important;
+  grid-template-columns: 40px 60px minmax(136px, 1.05fr) minmax(136px, 1.05fr) 88px 112px minmax(116px, 0.95fr) !important;
+  gap: 1.5px !important;
+  background: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-table__row--head > span {
+  background: var(--paipan-ink) !important;
+  color: #ffffff !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  padding: 6px 4px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-table__row > span,
+body .product-chart[data-mode="bazi"] .bazi-yun-table__pillar,
+body .product-chart[data-mode="bazi"] .bazi-yun-table__stack {
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-yun-table__pillar {
+  font-family: var(--paipan-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 950 !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure {
+  margin-top: 8px;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  overflow: hidden !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure > summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  background: var(--paipan-ground);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure > summary strong {
+  color: var(--paipan-ink);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure > summary span {
+  color: var(--paipan-slate);
+  font-family: var(--paipan-font-mono);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure > summary::after {
+  content: "+";
+  color: var(--paipan-ink);
+  font: 950 18px/1 var(--paipan-font-mono);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure[open] > summary {
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-accent);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure[open] > summary::after {
+  content: "−";
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure:not([open]) > .bazi-compatibility-panel {
+  display: none !important;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-disclosure .bazi-compatibility-panel {
+  margin-top: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-charts > article,
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations {
+  min-width: 0;
+  padding: 10px;
+  border: 2px solid var(--paipan-ink);
+  background: var(--paipan-ground);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-charts > article > header,
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1.5px solid var(--paipan-ink);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-charts > article > header span,
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations > header span {
+  font: 900 11px var(--paipan-font-mono);
+  color: var(--paipan-slate);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-charts > article > header strong,
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations > header strong {
+  font-size: 14px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-charts .bazi-panel {
+  min-width: 0;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations {
+  grid-column: 1 / -1;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+  border: 1.5px solid var(--paipan-ink);
+  background: var(--paipan-paper);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article > strong {
+  font-size: 18px;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article > span {
+  font: 800 11px var(--paipan-font-mono);
+  color: var(--paipan-slate);
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article.is-positive { border-top: 4px solid #15803d; }
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article.is-negative { border-top: 4px solid var(--paipan-red); }
+body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid article.is-neutral { border-top: 4px solid var(--paipan-slate); }
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-compatibility-charts,
+  body .product-chart[data-mode="bazi"] .bazi-compatibility-relations__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body .product-chart[data-mode="bazi"] .bazi-compatibility-relations {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-headband {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-headband__block--hero {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-reading-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong {
+    font-size: 1.9rem;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-timing-track {
+    min-height: 65px;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars::-webkit-scrollbar {
+    height: 4px;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars::-webkit-scrollbar-thumb {
+    background: var(--paipan-slate);
+    border-radius: 2px;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars::-webkit-scrollbar-track {
+    background: var(--paipan-paper);
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 34px repeat(6, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row > * {
+    min-width: 0 !important;
+    min-height: 23px !important;
+    padding: 2px 1px !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row > span {
+    font-size: 8px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row small {
+    font-size: 8px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--head > strong {
+    min-height: 36px !important;
+    font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--glyph > strong {
+    min-height: 42px !important;
+    font-size: 1.55rem !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--shensha > div {
+    min-height: 44px !important;
+    gap: 1px !important;
+    padding: 3px 1px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-six-pillars__row--shensha > div small {
+    font-size: 7px !important;
+    line-height: 1.05 !important;
+  }
+}
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart[data-mode="bazi"] .bazi-reading-workspace {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+    align-items: start !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="bazi"] .bazi-timing-rail {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="bazi"] .bazi-pair-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}

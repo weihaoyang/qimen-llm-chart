@@ -1,0 +1,523 @@
+/* Qimen board: one route-local owner for structure, scale, and card content. */
+
+.product-chart[data-mode="qimen"] .paipan-workspace,
+.product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart,
+.product-chart[data-mode="qimen"] .paipan-workspace .canvas-panel[data-mode="qimen"],
+.product-chart[data-mode="qimen"] .paipan-workspace .qimen-board-layout,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .canvas-panel[data-mode="qimen"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: var(--paipan-paper);
+}
+
+.product-chart[data-mode="qimen"] .chart-time-stepper {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--paipan-ink);
+  background: var(--paipan-ground);
+  color: var(--paipan-ink);
+  font: 800 11px/1.2 var(--paipan-font-mono);
+}
+.product-chart[data-mode="qimen"] .chart-time-stepper > span { color: var(--paipan-slate); }
+.product-chart[data-mode="qimen"] .chart-time-stepper > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper { display: flex; gap: 4px; }
+.product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper button { min-height: 26px; padding: 3px 7px; border: 1.5px solid var(--paipan-ink); background: var(--paipan-paper); color: var(--paipan-ink); font: 800 10px/1 var(--paipan-font-mono); }
+
+.product-chart[data-mode="qimen"] .paipan-workspace .qimen-board-layout,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .qimen-board-layout.has-sequence {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid {
+  display: grid;
+  grid-template: repeat(3, minmax(0, 1fr)) / repeat(3, minmax(0, 1fr));
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: 2px;
+  border: 2px solid var(--paipan-ink);
+  border-radius: 4px;
+  background: var(--paipan-ink);
+  box-shadow: var(--paipan-shadow-lg);
+  overflow: hidden;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell__legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 9px;
+  color: var(--paipan-ink);
+  background: var(--paipan-ground);
+  border: 2px solid var(--paipan-ink);
+  box-shadow: var(--paipan-shadow-sm);
+  font: 850 13px/1.25 var(--paipan-font-mono);
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell__legend > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 7px;
+  background: var(--paipan-paper);
+  border: 1.5px solid var(--paipan-ink);
+  white-space: nowrap;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell__legend > span:first-child,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell__legend > span:nth-child(2) {
+  background: var(--paipan-accent);
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell__legend .palace-grid-shell__term {
+  cursor: help;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-grid > .palace-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  gap: 3px;
+  padding: 5px 6px;
+  border: 0;
+  background: var(--paipan-paper);
+  color: var(--paipan-ink);
+  overflow: hidden;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card::before { display: none; }
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card:hover { background: #fffef2; }
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card.is-selected { background: #fff9db; box-shadow: inset 0 0 0 3px var(--paipan-accent); }
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card.is-center { background: var(--paipan-paper); }
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__topline {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  gap: 3px;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__header,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__identity,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__status {
+  min-width: 0;
+  gap: 2px;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__identity {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__index,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__identity > span,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary-item span,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__facts dt {
+  color: var(--paipan-slate);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__header h3 {
+  color: var(--paipan-ink);
+  font-family: var(--paipan-font);
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__status strong {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  border: 1.5px solid var(--paipan-ink);
+  border-radius: 2px;
+  background: var(--paipan-accent);
+  color: var(--paipan-ink);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.1;
+  box-shadow: 1px 1px 0 var(--paipan-ink);
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  min-width: 0;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary-item {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  gap: 1px;
+  padding: 1px;
+  overflow: hidden;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary-item strong,
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__facts dd {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--paipan-ink);
+  font-size: 15px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary-item--star strong { color: #dc2626; }
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary-item--gate strong { color: #047857; }
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__primary-item--deity strong { color: #b45309; }
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__facts {
+  display: grid;
+  grid-template: repeat(2, minmax(0, 1fr)) / repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  gap: 1px;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__fact {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__fact dt {
+  padding: 2px;
+  background: #18181b;
+  color: #fff;
+  text-align: center;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .palace-card__fact dd {
+  margin: 0;
+  font-family: var(--paipan-font-mono);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(19px, auto));
+  gap: 2px;
+  min-width: 0;
+  min-height: 0;
+  padding: 2px;
+  border: 2px solid var(--paipan-ink);
+  border-radius: 4px;
+  background: var(--paipan-ink);
+  box-shadow: var(--paipan-shadow-sm);
+  overflow: hidden;
+}
+
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip {
+  min-width: 0;
+  min-height: 19px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--paipan-paper);
+  box-shadow: none;
+}
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip--metadata,
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip--pillars { grid-column: 1 / -1; }
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip__content { display: flex; align-items: center; width: 100%; height: 100%; min-width: 0; gap: 3px; padding: 2px; overflow: hidden; }
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip .semi-card-body { width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 0; overflow: hidden; }
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip__badge { flex: 0 0 auto; padding-inline: 3px; border: 1px solid var(--paipan-ink); border-radius: 2px; background: #18181b; color: #fff; font-size: 8px; }
+.product-chart[data-mode="qimen"] .paipan-workspace .summary-chip__content strong { min-width: 0; overflow: hidden; color: var(--paipan-ink); font: 850 9px/1.1 var(--paipan-font-mono); text-overflow: ellipsis; white-space: nowrap; }
+
+/* The compact sequence switcher is rendered outside the parameters drawer.
+   Give its labels and controls an explicit vertical rhythm so the label can
+   never occupy the same row as the date input. */
+.product-chart[data-mode="qimen"] .sidebar-quick-controls {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  background: #df392b;
+  border: 3px solid var(--paipan-ink);
+  box-shadow: var(--paipan-shadow-lg);
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__heading {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__heading > div:first-child {
+  display: grid;
+  gap: 4px;
+  color: #fffdf8;
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__heading span {
+  font-size: 17px;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__heading small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__field {
+  display: grid;
+  grid-template-rows: auto minmax(46px, auto);
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+  color: var(--paipan-ink);
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__field > span {
+  display: block;
+  min-height: 16px;
+  color: var(--paipan-ink);
+  font: 900 12px/1.25 var(--paipan-font-mono);
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__field input,
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  color: var(--paipan-ink);
+  background: var(--paipan-paper);
+  border: 3px solid var(--paipan-ink);
+  border-radius: 0;
+  font: 800 16px/1.2 var(--paipan-font);
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__actions {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.product-chart[data-mode="qimen"] .sidebar-quick-controls__actions .command-button {
+  width: 100%;
+  min-height: 42px;
+}
+
+@media (max-width: 720px) {
+  .product-chart[data-mode="qimen"] .sidebar-quick-controls {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .product-chart[data-mode="qimen"] .sidebar-quick-controls__field input,
+  .product-chart[data-mode="qimen"] .sidebar-quick-controls__select {
+    min-height: 44px;
+    font-size: 15px;
+  }
+}
+
+/* Final readability scale: the board is the primary surface, so its symbols
+   use the available square instead of being reduced to metadata size. */
+@media (min-width: 721px) {
+  html body .product-chart[data-mode="qimen"] .paipan-workspace .palace-grid {
+    width: min(100%, 84dvh, 1120px) !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__header h3 {
+    font-size: clamp(19px, 1.2vw, 28px) !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong {
+    font-size: clamp(24px, 1.6vw, 38px) !important;
+    line-height: 1.15 !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact dd {
+    font-size: clamp(17px, 1.05vw, 25px) !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__index,
+  html body .product-chart[data-mode="qimen"] .palace-card__identity > span,
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item span,
+  html body .product-chart[data-mode="qimen"] .palace-card__facts dt {
+    font-size: clamp(12px, .72vw, 17px) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  html body .product-chart[data-mode="qimen"] .palace-grid-shell {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    gap: 5px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-grid {
+    width: min(100%, 100cqh) !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__header h3 {
+    font-size: 16px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong {
+    font-size: 19px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact dd {
+    font-size: 15px !important;
+  }
+}
+
+@media (min-width: 721px) {
+  .product-chart[data-mode="qimen"] { display: flex; flex-direction: column; block-size: 100dvh; min-block-size: 0; overflow: hidden; }
+  .product-chart[data-mode="qimen"] > .paipan-workspace { display: grid; flex: 1 1 0; grid-template: minmax(0, 1fr) / minmax(0, 2fr) 6px minmax(320px, 1fr); min-height: 0; overflow: hidden; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; overflow: hidden; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart > .canvas-panel { min-height: 0; overflow: hidden; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-workbench-separator { display: grid; place-items: center; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-agent { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-agent > .sidebar-panel { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .product-chart[data-mode="qimen"] .paipan-workspace .qimen-board-layout,
+  .product-chart[data-mode="qimen"] .paipan-workspace .palace-grid-shell { height: 100%; }
+  .product-chart[data-mode="qimen"] .paipan-workspace .palace-grid { width: min(100%, 70vh); height: auto; max-width: 100%; max-height: 100%; justify-self: center; align-self: center; }
+}
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart[data-mode="qimen"] { display: grid !important; grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) !important; width: 100vw !important; max-width: 100vw !important; height: 100dvh !important; min-width: 0 !important; min-height: 0 !important; padding: 6px !important; overflow: hidden !important; }
+  html body .page-shell.product-chart[data-mode="qimen"] > .observatory-hero { display: grid !important; grid-template: 32px 36px 32px / minmax(0, 1fr) auto !important; width: 100% !important; min-width: 0 !important; gap: 6px !important; padding: 8px !important; }
+  .product-chart[data-mode="qimen"] .observatory-hero__copy { grid-area: 1 / 1; min-width: 0 !important; }
+  .product-chart[data-mode="qimen"] .observatory-hero .workbench-tabs { grid-area: 2 / 1 / 3 / -1; min-width: 0; overflow-x: auto; }
+  .product-chart[data-mode="qimen"] .observatory-hero .platform-account { grid-area: 1 / 2; min-width: 0; }
+  .product-chart[data-mode="qimen"] .observatory-hero .hero-action { grid-area: 3 / 2; min-height: 32px; margin: 0; padding: 4px 8px; }
+  .product-chart[data-mode="qimen"] .observatory-hero__agent-entry { display: none !important; }
+  .product-chart[data-mode="qimen"] > :is(.error-banner, .qmdj-footer) { display: none !important; }
+  html body .page-shell.product-chart[data-mode="qimen"] > .observatory-hero .observatory-hero__materials { grid-area: 3 / 1; justify-self: start; }
+  .product-chart[data-mode="qimen"] > .paipan-workspace { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > :is(#qimen-workbench-separator, #qimen-agent) { display: none; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+  .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart > .chart-analysis-toggle { flex: 0 0 32px; min-height: 32px; }
+  .product-chart[data-mode="qimen"] .paipan-workspace .canvas-panel[data-mode="qimen"] { flex: 1 1 0; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+  .product-chart[data-mode="qimen"] .chart-time-stepper { grid-template-columns: auto minmax(0, 1fr); gap: 4px; margin: 0; padding: 4px; }
+  .product-chart[data-mode="qimen"] .chart-time-stepper > span { font-size: 9px; }
+  .product-chart[data-mode="qimen"] .chart-time-stepper > strong { min-width: 0; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+  .product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper button { min-height: 28px; padding: 3px; font-size: 9px; }
+  .product-chart[data-mode="qimen"] .qimen-board-layout { grid-template-rows: minmax(0, 1fr); }
+  .product-chart[data-mode="qimen"] .qimen-board-layout.has-sequence { grid-template-rows: 28px minmax(0, 1fr); }
+  .product-chart[data-mode="qimen"] .sequence-rail { min-height: 0; overflow: auto hidden; }
+  .product-chart[data-mode="qimen"] .palace-grid-shell { grid-template-rows: 18px minmax(0, 1fr); gap: 2px; height: 100%; container-type: size; }
+  .product-chart[data-mode="qimen"] .palace-grid-shell__legend { flex-wrap: nowrap; gap: 4px; overflow: hidden; font-size: 10px; white-space: nowrap; }
+  .product-chart[data-mode="qimen"] .palace-grid { place-self: center; width: min(100%, 100cqh); height: auto; max-width: 100%; max-height: 100%; aspect-ratio: 1; }
+  .product-chart[data-mode="qimen"] .palace-grid > .palace-card { gap: 2px; padding: 3px; }
+  .product-chart[data-mode="qimen"] .palace-card__header h3 { font-size: 11px; }
+  .product-chart[data-mode="qimen"] .palace-card__index,
+  .product-chart[data-mode="qimen"] .palace-card__identity > span,
+  .product-chart[data-mode="qimen"] .palace-card__status strong,
+  .product-chart[data-mode="qimen"] .palace-card__primary-item span,
+  .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 8px; }
+  .product-chart[data-mode="qimen"] .palace-card__primary-item strong { font-size: 12px; line-height: 1.1; }
+  .product-chart[data-mode="qimen"] .palace-card__fact dd { font-size: 11px; }
+  .product-chart[data-mode="qimen"] .summary-strip { grid-template-rows: repeat(4, minmax(19px, auto)); gap: 2px; padding: 2px; }
+}
+
+/* End-of-file override: this must win over the legacy compact mobile rules
+   above, which otherwise shrink the actual chart glyphs back to tiny labels. */
+@media (min-width: 721px) {
+  html body .product-chart[data-mode="qimen"] .paipan-workspace .palace-grid {
+    width: min(100%, 84dvh, 1120px) !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__header h3 { font-size: clamp(19px, 1.2vw, 28px) !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong { font-size: clamp(24px, 1.6vw, 38px) !important; line-height: 1.15 !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact dd { font-size: clamp(17px, 1.05vw, 25px) !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__index,
+  html body .product-chart[data-mode="qimen"] .palace-card__identity > span,
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item span,
+  html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: clamp(12px, .72vw, 17px) !important; }
+}
+
+@media (max-width: 720px) {
+  html body .product-chart[data-mode="qimen"] .palace-grid-shell { grid-template-rows: auto minmax(0, 1fr) !important; gap: 5px !important; }
+  html body .product-chart[data-mode="qimen"] .palace-grid { width: min(100%, 100cqh) !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__header h3 { font-size: 16px !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong { font-size: 19px !important; line-height: 1.15 !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact dd { font-size: 15px !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__index,
+  html body .product-chart[data-mode="qimen"] .palace-card__identity > span,
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item span,
+  html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 12px !important; }
+}
+
+/* Keep sequence labels in their own row.  Older sidebar rules used a compact
+   single-flow layout, which lets the next label sit on the previous input. */
+html body .product-chart[data-mode="qimen"] .sidebar-quick-controls {
+  gap: 14px !important;
+}
+
+html body .product-chart[data-mode="qimen"] .sidebar-quick-controls__field {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding-block: 2px !important;
+  line-height: 1.25 !important;
+}
+
+html body .product-chart[data-mode="qimen"] .sidebar-quick-controls__field > span {
+  min-height: 0 !important;
+  line-height: 1.25 !important;
+}
+
+html body .product-chart[data-mode="qimen"] .sidebar-quick-controls__field input,
+html body .product-chart[data-mode="qimen"] .sidebar-quick-controls__select {
+  margin: 0 !important;
+}
+
+@media (max-width: 720px) {
+  html body .product-chart[data-mode="qimen"] .sidebar-quick-controls {
+    gap: 12px !important;
+  }
+
+  html body .product-chart[data-mode="qimen"] .sidebar-quick-controls__field {
+    gap: 6px !important;
+    padding-block: 1px !important;
+  }
+}

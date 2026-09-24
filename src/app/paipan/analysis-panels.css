@@ -1,0 +1,826 @@
+/* One owner for every chart Agent. Qimen's rail/drawer and the two classic
+  * methods differ only in placement; their controls must never inherit a
+  * separate generic Agent theme. */
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 8px !important;
+  gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 721px) {
+  body .product-chart .paipan-workspace > #qimen-chart > .chart-analysis-toggle {
+    display: none !important;
+  }
+  body .product-chart[data-mode="bazi"] .paipan-workspace,
+  body .product-chart[data-mode="ziwei"] .paipan-workspace {
+    display: grid !important;
+    grid-template-columns: minmax(0, 2fr) 6px minmax(320px, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+  body .product-chart[data-mode="bazi"] .paipan-workspace > #qimen-chart,
+  body .product-chart[data-mode="ziwei"] .paipan-workspace > #qimen-chart {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+  }
+  body .product-chart[data-mode="bazi"] .paipan-workspace > #qimen-agent,
+  body .product-chart[data-mode="ziwei"] .paipan-workspace > #qimen-agent {
+    display: flex !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  body .product-chart[data-mode="bazi"] .paipan-workspace > #qimen-chart,
+  body .product-chart[data-mode="ziwei"] .paipan-workspace > #qimen-chart {
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--paipan-paper) !important;
+    border: 2px solid var(--paipan-ink) !important;
+    overflow: hidden !important;
+  }
+  body .product-chart[data-mode="bazi"] .paipan-workspace > #qimen-chart > .canvas-panel,
+  body .product-chart[data-mode="ziwei"] .paipan-workspace > #qimen-chart > .canvas-panel {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    padding: 8px !important;
+    background: var(--paipan-paper) !important;
+  }
+  body .product-chart[data-mode="bazi"] .canvas-panel__content,
+  body .product-chart[data-mode="ziwei"] .canvas-panel__content {
+    min-height: 100% !important;
+  }
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .inspector-tabs__list {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.45fr) minmax(0, .78fr) minmax(0, .62fr) !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) [data-slot="tabs-trigger"],
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .semi-tabs-tab {
+  display: inline-flex !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 6px !important;
+  border-right: 1px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  color: var(--paipan-ink) !important;
+  background: transparent !important;
+  font: 900 clamp(.72rem, .95vw, .86rem)/1 ui-sans-serif, system-ui, sans-serif !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) [data-slot="tabs-trigger"]:last-child,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .semi-tabs-tab:last-child {
+  border-right: 0 !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) [data-slot="tabs-trigger"][data-state="active"],
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .semi-tabs-tab-active {
+  background: var(--paipan-yellow) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .semi-tabs-ink-bar {
+  display: none !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .inspector-tabs__content,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) [data-slot="tabs-content"] {
+  min-height: 0 !important;
+  height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .inspector-output {
+  display: grid !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  gap: 8px !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .agent-panel {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-output {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__section,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .inspector-output {
+  min-width: 0 !important;
+  padding: 10px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: none !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__section--question {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__section--result {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__section-head,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .inspector-output__toolbar {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 2px solid var(--paipan-ink) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__section-head strong {
+  color: var(--paipan-ink) !important;
+  font: 950 1rem/1 ui-sans-serif, system-ui, sans-serif !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__section-head > span,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__result-actions {
+  color: var(--paipan-violet) !important;
+  font-size: .72rem !important;
+  text-align: right !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__angles {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__angle,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__followups button,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-copy,
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .inspector-output__toolbar .command-button {
+  min-height: 30px !important;
+  padding: 4px 8px !important;
+  border: 1.5px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  color: var(--paipan-ink) !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  font: 850 .78rem/1.15 ui-sans-serif, system-ui, sans-serif !important;
+  cursor: pointer !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__angle.is-active {
+  background: var(--paipan-yellow) !important;
+  box-shadow: 2px 2px 0 var(--paipan-ink) !important;
+  transform: translate(-1px, -1px) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__textarea {
+  width: 100% !important;
+  min-height: 76px !important;
+  max-height: 112px !important;
+  padding: 8px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  color: var(--paipan-ink) !important;
+  background: #fff !important;
+  font: 800 .84rem/1.45 ui-sans-serif, system-ui, sans-serif !important;
+  resize: vertical !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__question-meta {
+  display: flex !important;
+  justify-content: space-between !important;
+  color: var(--paipan-slate) !important;
+  font-size: .72rem !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__question-meta button {
+  color: var(--paipan-ink) !important;
+  font-weight: 850 !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__followups {
+  padding-top: 6px !important;
+  border-top: 1px solid var(--paipan-ink) !important;
+  color: var(--paipan-ink) !important;
+  font-size: .74rem !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__followups > div {
+  display: grid !important;
+  gap: 4px !important;
+  margin-top: 6px !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__followups button {
+  text-align: left !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__entitlement {
+  display: grid !important;
+  gap: 2px !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__entitlement span {
+  font: 800 .7rem/1 ui-sans-serif, system-ui, sans-serif !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-panel__entitlement strong {
+  font: 950 .92rem/1 ui-sans-serif, system-ui, sans-serif !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .command-button-primary {
+  min-height: 42px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  color: var(--paipan-ink) !important;
+  background: var(--paipan-yellow) !important;
+  box-shadow: 3px 3px 0 var(--paipan-ink) !important;
+  font: 950 .88rem/1.1 ui-sans-serif, system-ui, sans-serif !important;
+  cursor: pointer !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart, .agent-surface--chart) .inspector-scroll {
+  min-height: 0 !important;
+  height: 100% !important;
+  border: 1px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty {
+  min-height: 0 !important;
+  color: var(--paipan-ink) !important;
+  background: var(--paipan-ground) !important;
+  border-radius: 3px !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty strong {
+  color: var(--paipan-ink) !important;
+  font-size: 1rem !important;
+  font-weight: 950 !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty span {
+  max-width: 28rem !important;
+  color: var(--paipan-slate) !important;
+  font-weight: 750 !important;
+  text-align: center !important;
+}
+
+/* The empty result is an analysis protocol, not an oversized apology. */
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty--chart {
+  display: grid !important;
+  min-height: 100% !important;
+  align-content: space-between !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 0 !important;
+  background: #fffaf0 !important;
+  color: var(--paipan-ink) !important;
+  text-align: left !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__stamp {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: var(--paipan-ink) !important;
+  font: 950 10px/1 ui-monospace, monospace !important;
+  letter-spacing: .08em !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__stamp svg {
+  width: 16px !important;
+  height: 16px !important;
+  padding: 2px !important;
+  border: 1px solid var(--paipan-ink) !important;
+  background: var(--paipan-yellow) !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__lead {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__lead strong {
+  color: var(--paipan-ink) !important;
+  font: 950 clamp(1rem, 1.3vw, 1.2rem)/1 ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -.045em !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__lead p {
+  margin: 0 !important;
+  color: #55418c !important;
+  font: 750 11px/1.42 ui-sans-serif, system-ui, sans-serif !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__protocol {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  border: 1px solid var(--paipan-ink) !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__protocol span {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 3px !important;
+  padding: 5px 4px !important;
+  border-right: 1px solid var(--paipan-ink) !important;
+  color: var(--paipan-ink) !important;
+  font: 850 10px/1.15 ui-sans-serif, system-ui, sans-serif !important;
+  text-align: left !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__protocol span:last-child {
+  border-right: 0 !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty__protocol b {
+  color: var(--paipan-red) !important;
+  font: 950 9px/1 ui-monospace, monospace !important;
+}
+
+body .product-chart :is(#qimen-agent .agent-surface--chart,
+.agent-surface--chart) .agent-result-empty--chart > small {
+  color: #55418c !important;
+  font: 800 9px/1.2 ui-monospace, monospace !important;
+}
+
+/* 三盘联合只有 Agent：把它做成完整的分析台，而不是拉宽侧栏。 */
+
+@media (max-width: 1180px) {
+  /* The server first renders the deterministic desktop tree. Keep only the
+    * main chart visible at narrow widths so the desktop rail cannot squeeze it. */
+  html:has(.product-chart), body:has(.product-chart) {
+    min-height: 100% !important;
+    overflow: auto !important;
+  }
+  body .page-shell.product-chart {
+    width: calc(100vw - 16px) !important;
+    height: auto !important;
+    min-height: 100svh !important;
+    grid-template-rows: auto auto auto auto !important;
+    overflow: visible !important;
+  }
+  /* Narrow title bars keep identity, account actions, navigation and chart
+    * controls in explicit rows. */
+  body .product-chart .observatory-hero {
+    position: relative !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+    padding: 9px !important;
+  }
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    padding-right: 148px !important;
+  }
+  body .product-chart .observatory-hero__copy h1 {
+    margin: 0 !important;
+    font-size: 1.18rem !important;
+    letter-spacing: -.065em !important;
+    white-space: nowrap !important;
+  }
+  body .product-chart .observatory-hero .platform-account {
+    display: flex !important;
+    position: absolute !important;
+    top: 9px !important;
+    right: 9px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+  }
+  body .product-chart .observatory-hero .platform-account__redeem-wrap {
+    position: relative !important;
+  }
+  body .product-chart .observatory-hero .platform-account__button {
+    min-height: 30px !important;
+    padding: 5px 7px !important;
+    border: 1.5px solid var(--paipan-paper) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--paipan-paper) !important;
+    font: 900 10px/1 ui-sans-serif, system-ui, sans-serif !important;
+    white-space: nowrap !important;
+  }
+  body .product-chart .observatory-hero .platform-account__button.is-primary {
+    background: var(--paipan-yellow) !important;
+    color: var(--paipan-ink) !important;
+  }
+  body .product-chart .observatory-hero .platform-account__redeem-popover {
+    right: 0 !important;
+    left: auto !important;
+    z-index: 110 !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    overflow-x: auto !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    width: max-content !important;
+    min-width: 100% !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 58px !important;
+  }
+  body .product-chart .observatory-hero .hero-action {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    justify-self: end !important;
+    min-height: 32px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+  body .product-chart .observatory-hero__agent-entry {
+    display: none !important;
+  }
+  body .product-chart .qmdj-footer__compact {
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    overflow-x: auto !important;
+  }
+  body .product-chart .qmdj-footer {
+    margin-top: auto !important;
+    flex: none !important;
+  }
+  /* The compact workbench renders the inspector in a separate drawer.  It
+    * therefore cannot inherit the desktop sidebar's visual treatment. */
+  body .product-chart .chart-analysis-toggle {
+    display: inline-flex !important;
+    position: fixed !important;
+    right: 14px !important;
+    bottom: 14px !important;
+    z-index: 70 !important;
+    min-height: 44px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 0 13px !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 3px !important;
+    background: var(--paipan-yellow) !important;
+    box-shadow: var(--paipan-shadow) !important;
+    color: var(--paipan-ink) !important;
+    font: 950 13px/1 ui-sans-serif, system-ui, sans-serif !important;
+    letter-spacing: -.02em !important;
+  }
+  body .product-chart .chart-analysis-toggle span {
+    display: grid !important;
+    width: 21px !important;
+    height: 21px !important;
+    place-items: center !important;
+    background: var(--paipan-ink) !important;
+    color: var(--paipan-yellow) !important;
+    font: 950 10px/1 ui-monospace, monospace !important;
+  }
+  body .product-chart .chart-analysis-drawer {
+    position: fixed !important;
+    z-index: 100 !important;
+    inset: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body .product-chart .chart-analysis-drawer.is-open {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  body .product-chart .chart-analysis-drawer__backdrop {
+    position: absolute !important;
+    z-index: 0 !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0 !important;
+    background: rgb(18 18 20 / .6) !important;
+    opacity: 0 !important;
+    transition: opacity 160ms ease-out !important;
+  }
+  body .product-chart .chart-analysis-drawer.is-open .chart-analysis-drawer__backdrop {
+    opacity: 1 !important;
+  }
+  body .product-chart .chart-analysis-drawer__panel {
+    position: relative !important;
+    z-index: 1 !important;
+    display: grid !important;
+    width: min(calc(100% - 16px), 520px) !important;
+    height: min(calc(100% - 16px), 920px) !important;
+    margin: auto !important;
+    grid-template-rows: 46px minmax(0, 1fr) !important;
+    overflow: hidden !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 4px !important;
+    background: var(--paipan-paper) !important;
+    box-shadow: var(--paipan-shadow-lg) !important;
+    color: var(--paipan-ink) !important;
+    transform: translateY(18px) !important;
+    transition: transform 160ms ease-out !important;
+  }
+  body .product-chart .chart-analysis-drawer.is-open .chart-analysis-drawer__panel {
+    transform: translateY(0) !important;
+  }
+  body .product-chart .chart-analysis-drawer__header {
+    display: flex !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 10px 0 12px !important;
+    border-bottom: 3px solid var(--paipan-ink) !important;
+    background: var(--paipan-ink) !important;
+    color: var(--paipan-paper) !important;
+  }
+  body .product-chart .chart-analysis-drawer__header strong {
+    color: inherit !important;
+    font: 950 16px/1 ui-sans-serif, system-ui, sans-serif !important;
+    letter-spacing: -.04em !important;
+  }
+  body .product-chart .chart-analysis-drawer__header button {
+    display: grid !important;
+    width: 27px !important;
+    height: 27px !important;
+    place-items: center !important;
+    border: 2px solid var(--paipan-paper) !important;
+    border-radius: 0 !important;
+    background: var(--paipan-red) !important;
+    color: var(--paipan-paper) !important;
+    font: 950 20px/1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+  body .product-chart .chart-analysis-drawer .sidebar-panel,
+  body .product-chart .chart-analysis-drawer .semi-tabs-content,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-active,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-motion-overlay,
+  body .product-chart .chart-analysis-drawer .inspector-tabs__content {
+    min-height: 0 !important;
+  }
+  body .product-chart .chart-analysis-drawer .sidebar-panel {
+    display: flex !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    background: var(--paipan-paper) !important;
+  }
+  body .product-chart .chart-analysis-drawer .semi-tabs-content,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-active,
+  body .product-chart .chart-analysis-drawer .semi-tabs-pane-motion-overlay,
+  body .product-chart .chart-analysis-drawer .inspector-tabs__content {
+    display: flex !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+  body .product-chart .chart-analysis-drawer .command-button-primary {
+    min-height: 38px !important;
+    padding: 6px 9px !important;
+    justify-content: center !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 3px !important;
+    background: var(--paipan-accent) !important;
+    box-shadow: var(--paipan-shadow-sm) !important;
+    color: var(--paipan-ink) !important;
+    font: 950 12px/1.1 ui-sans-serif, system-ui, sans-serif !important;
+  }
+  body .product-chart .chart-analysis-drawer .command-button-primary svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+  Mobile visual contract
+  --------------------------------------------------------------------------
+  This is intentionally the final, route-scoped mobile owner.  The workbench
+  has seven modes but one shell: product identity + account actions, a
+  compact scrollable mode rail, an in-flow chart control, then the reading
+  surface.  Do not add mode-specific phone overrides ahead of this block. */
+
+@media (max-width: 720px) {
+  html:has(.product-chart), body:has(.product-chart) {
+    overflow-x: clip !important;
+  }
+  body .page-shell.product-chart {
+    width: 100% !important;
+    min-height: 100svh !important;
+    margin: 0 !important;
+    padding: 4px 4px 68px !important;
+    gap: 5px !important;
+  }
+  body .product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: 31px 40px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-height: 0 !important;
+    padding: 8px !important;
+    box-shadow: var(--paipan-shadow) !important;
+  }
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+  body .product-chart .observatory-hero__copy h1 {
+    overflow: hidden !important;
+    font-size: 1.08rem !important;
+    text-overflow: ellipsis !important;
+  }
+  body .product-chart .observatory-hero .platform-account {
+    position: static !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    transform: none !important;
+  }
+  body .product-chart .observatory-hero .platform-account__button {
+    min-height: 28px !important;
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--paipan-slate) var(--paipan-paper);
+  }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-thumb {
+    background: var(--paipan-slate);
+    border-radius: 2px;
+  }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-track {
+    background: var(--paipan-paper);
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    min-width: max-content !important;
+    width: max-content !important;
+    height: 40px !important;
+    padding: 2px !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 46px !important;
+    min-height: 32px !important;
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+  }
+  body .product-chart .observatory-hero .hero-action {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 5px 8px !important;
+    white-space: nowrap !important;
+  }
+  /* The analysis entry belongs after the reading surface on phones.  A fixed
+    action covered palaces, K-line evidence and the footer on short pages. */
+  body .product-chart :is(.analysis-layout--stacked, .analysis-layout--classic) {
+    padding-bottom: 6px !important;
+  }
+  body .product-chart .chart-analysis-toggle {
+    position: static !important;
+    align-self: end !important;
+    width: auto !important;
+    margin: 10px 0 0 auto !important;
+    min-height: 42px !important;
+    padding: 0 10px !important;
+  }
+  /* Six pillars are a reading table, not a desktop canvas.  Show all six
+    columns at once on a phone; the compact label rail and wrapped evidence
+    replace the previous 680px horizontal strip. */
+  /* 紫微 on phones: the astrolabe owns the screen.  Two changes make that
+    true instead of aspirational:
+
+    1. The metadata chips leave the flow behind a disclosure button — they are
+       reference data, not the chart, and a phone cannot spend a row of them.
+    2. The chart re-flows to the viewport width. The old contract pinned a
+       520px min-width and turned the panel into a horizontal reading strip;
+       at phone widths the library's three-column palace interior collapses to
+       single characters, so the interior gets a phone layout of its own —
+       主星/辅星 stacked on the left, 杂曜 wrapping down the right, footer as
+       name · 大限 · 干支 — and secondary layers (运限星, 长生/岁前 lists, the
+       iztro credit) drop out. The result is twelve readable palaces and the
+       center manifest inside one screen, with no sideways scrolling. */
+
+  /* The malformed-datetime alert is not decoration; it never hides. */
+
+  /* The arrow crosses the center manifest text on a phone — unreadable and
+    cramped; scope selection is already echoed by the yellow active chips. */
+
+  /* Phone interior: two stacked star columns instead of the library's three
+    (which need ~125px cells to avoid one character per line). */
+
+  /* 杂曜 flow as wrapped chips down the right column; the library splits them
+    into two nowrap blocks that overflow a phone cell by design. */
+
+  /* Brightness suffixes cost a line each on a 9px chip column. */
+
+  /* 运限星 duplicate a layer the运限 buttons and fate chips already describe;
+    the ~30px they occupy is the difference between one screen and two. */
+
+  /* Footer: the library's three fixed columns need a full-width cell; on a
+    phone they stack — name stamp, 大限 range, 干支 right-aligned. */
+
+  /* The age list restates what the year range says, in more width. */
+
+  /* Center manifest on a phone: one column with no mid-word breaks (the
+    two-column grid chopped CJK values like 农历/四柱 across three lines), and
+    a steppers block small enough to stay inside the two middle rows instead
+    of spilling over the bottom palaces. Same fields, denser rhythm. */
+  /* Classical boards and the all-Agent screen share the page edge rhythm. */
+}

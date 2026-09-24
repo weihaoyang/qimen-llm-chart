@@ -1,0 +1,411 @@
+/* Mobile shell geometry. */
+
+@media (max-width: 420px) {
+  body .product-chart .observatory-hero {
+    gap: 6px !important;
+    padding: 8px !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs {
+    scrollbar-width: none !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    height: 34px !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 56px !important;
+    min-height: 28px !important;
+    padding-inline: 7px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* Desktop shell geometry. */
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > .qmdj-footer {
+    flex: 0 0 auto !important;
+  }
+  html body .page-shell.product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    height: auto !important;
+    min-height: 76px !important;
+    padding: 9px 12px !important;
+    align-items: center !important;
+  }
+}
+
+/* Wide masthead. */
+
+@media (min-width: 1141px) {
+  html body .page-shell.product-chart .observatory-hero {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    min-height: 62px !important;
+    padding: 10px 18px !important;
+    background: var(--paipan-paper) !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 4px !important;
+    box-shadow: var(--paipan-shadow-lg) !important;
+  }
+  html body .page-shell.product-chart .observatory-hero__copy {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 1px !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .platform-account {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: static !important;
+    transform: none !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .hero-action {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+  }
+}
+
+/* Medium masthead. */
+
+@media (max-width: 1140px) and (min-width: 721px) {
+  html body .page-shell.product-chart .observatory-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 8px 12px !important;
+    min-height: 84px !important;
+    padding: 10px 14px !important;
+    background: var(--paipan-paper) !important;
+    border: 2px solid var(--paipan-ink) !important;
+    border-radius: 4px !important;
+    box-shadow: var(--paipan-shadow-lg) !important;
+    align-items: center !important;
+  }
+  html body .page-shell.product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 1px !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .platform-account {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    justify-self: end !important;
+    position: static !important;
+    transform: none !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .hero-action {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-self: end !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html body .page-shell.product-chart .observatory-hero .observatory-hero__materials {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+    justify-self: end !important;
+  }
+}
+
+/* Visual system: unified high-aesthetic neo-brutalist language across every mode */
+
+html body .page-shell.product-chart {
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+}
+
+/* Desktop shell contract: the reading workbench owns every pixel between the
+   masthead and footer. Chart-specific files only style their inner surfaces. */
+@media (min-width: 721px) {
+  html body .page-shell.product-chart {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 6px 8px !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > .observatory-hero,
+  html body .page-shell.product-chart > .chart-materials-entry,
+  html body .page-shell.product-chart > .error-banner,
+  html body .page-shell.product-chart > .qmdj-footer {
+    flex: 0 0 auto !important;
+  }
+  html body .page-shell.product-chart > .paipan-workspace,
+  html body .page-shell.product-chart > .analysis-layout,
+  html body .page-shell.product-chart > .analysis-layout--classic {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > .paipan-workspace {
+    display: grid !important;
+    grid-template-columns: minmax(0, 2fr) 6px minmax(320px, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-chart,
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent,
+  html body .page-shell.product-chart > .paipan-workspace > .analysis-panel-divider {
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-chart { overflow: auto !important; }
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent { display: flex !important; overflow: hidden !important; }
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel { flex: 1 1 auto !important; min-height: 0 !important; overflow: auto !important; }
+  html body .page-shell.product-chart > .qmdj-footer { margin-top: 0 !important; }
+  html body .page-shell.product-chart > .chart-materials-entry {
+    height: 28px !important;
+    min-height: 28px !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+  html body .page-shell.product-chart > .chart-materials-entry > * {
+    max-height: 28px !important;
+  }
+}
+
+/* Brand Identity */
+
+html body .page-shell.product-chart .observatory-hero__copy .workspace-kicker {
+  display: block !important;
+  font-family: var(--paipan-font-mono) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  color: var(--paipan-ink) !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  margin: 0 0 2px 0 !important;
+}
+
+html body .page-shell.product-chart .observatory-hero__copy h1 {
+  margin: 0 !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 1.65rem !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.1 !important;
+  color: var(--paipan-ink) !important;
+  padding: 0 !important;
+}
+
+/* ModeTabs: physical keyboard / index key aesthetic */
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-bar {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  gap: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab {
+  background: var(--paipan-ground) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 5px 13px !important;
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+  outline: none !important;
+}
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab strong {
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:hover {
+  background: var(--paipan-paper) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  font-weight: 900 !important;
+  transform: none !important;
+  outline: none !important;
+}
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:focus,
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:focus-visible,
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active:focus,
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active:focus-visible {
+  outline: none !important;
+}
+
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-ink-bar {
+  display: none !important;
+}
+
+/* Account Info & Buttons */
+
+html body .page-shell.product-chart .observatory-hero .platform-account__status {
+  color: var(--paipan-ink) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  text-align: right !important;
+}
+
+html body .page-shell.product-chart .observatory-hero .platform-account__status small {
+  display: block !important;
+  color: var(--paipan-slate) !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  margin-top: 1px !important;
+}
+
+html body .page-shell.product-chart .platform-account__button,
+html body .page-shell.product-chart .observatory-hero .hero-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 13px !important;
+  min-height: 34px !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
+  outline: none !important;
+}
+
+html body .page-shell.product-chart .observatory-hero__materials {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+}
+
+html body .page-shell.product-chart .observatory-hero__materials > button {
+  min-height: 34px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+}
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart .observatory-hero__materials {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    justify-self: start !important;
+  }
+
+  html body .page-shell.product-chart .observatory-hero__materials > button {
+    min-height: 32px !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+html body .page-shell.product-chart .platform-account__button:hover,
+html body .page-shell.product-chart .observatory-hero .hero-action:hover {
+  background: var(--paipan-ground) !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: var(--paipan-shadow) !important;
+}
+
+html body .page-shell.product-chart .platform-account__button:active,
+html body .page-shell.product-chart .observatory-hero .hero-action:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0 var(--paipan-ink) !important;
+}
+
+html body .page-shell.product-chart .platform-account__button.is-primary {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 850 !important;
+}
+
+html body .page-shell.product-chart .platform-account__button.is-primary:hover {
+  background: var(--paipan-accent-hover) !important;
+}
+
+html body .page-shell.product-chart .platform-account__error {
+  flex: 1 0 100%;
+  color: #8b1e14;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.birth-library-control { position: relative; align-self: center; }
+.birth-library-popover { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; width: 280px; padding: 10px; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); box-shadow: 4px 4px 0 var(--paipan-ink); }
+.birth-library-save { display: flex; gap: 5px; margin: 8px 0; }
+.birth-library-save input { min-width: 0; flex: 1; border: 1px solid var(--paipan-ink); padding: 5px; }
+.birth-library-save button, .birth-library-item button { border: 1px solid var(--paipan-ink); background: var(--paipan-accent); padding: 5px 7px; }
+.birth-library-item { display: flex; gap: 4px; margin-top: 5px; }
+.birth-library-item > button:first-child { display: flex; flex: 1; justify-content: space-between; text-align: left; background: var(--paipan-ground); }
+.birth-library-item small { color: var(--paipan-slate); }
+.birth-library-history-title { display: block; margin-top: 10px; padding-top: 8px; border-top: 1px solid #c7c0ae; }
+.birth-library-history { display: block; width: 100%; margin-top: 4px; text-align: left; background: var(--paipan-ground) !important; }

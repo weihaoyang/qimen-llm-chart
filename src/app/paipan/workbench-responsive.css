@@ -1,0 +1,202 @@
+/* Mobile page shell, identity and mode rail. */
+
+@media (max-width: 720px) {
+  body .page-shell.product-chart {
+    padding: 6px 6px 52px !important;
+    gap: 8px !important;
+  }
+  body .product-chart .observatory-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    border-bottom-width: 3px !important;
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
+  }
+  body .product-chart .observatory-hero__copy {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+  }
+  body .product-chart .observatory-hero__copy h1 {
+    font-size: clamp(1.15rem, 3.4vw, 1.45rem) !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.03em !important;
+  }
+  body .product-chart .observatory-hero .platform-account {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+  }
+  body .product-chart .observatory-hero .platform-account__status {
+    display: none !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+    width: max-content !important;
+    min-width: 100% !important;
+    height: 36px !important;
+    padding: 2px !important;
+  }
+  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+    min-width: 58px !important;
+    min-height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+  body .product-chart .observatory-hero .hero-action {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    justify-self: end !important;
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  body .product-chart .classic-observatory {
+    box-shadow: 3px 3px 0 var(--paipan-ink) !important;
+  }
+  body .product-chart .qmdj-footer {
+    width: 100% !important;
+    min-height: 30px !important;
+    padding: 7px 9px !important;
+  }
+  body .product-chart .qmdj-footer__compact {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+}
+
+html:has(.product-chart), body:has(.product-chart) {
+  background: var(--paipan-ground) !important;
+}
+
+body .page-shell.product-chart {
+  width: min(1520px, calc(100vw - 28px)) !important;
+  height: 100svh !important;
+  min-height: 100svh !important;
+  padding: 4px 0 6px !important;
+  gap: 5px !important;
+  background: var(--paipan-ground) !important;
+  color: var(--paipan-ink) !important;
+}
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart {
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+}
+
+body .product-chart .observatory-hero {
+  position: relative !important;
+  overflow: visible !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 4px !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: var(--paipan-shadow-lg) !important;
+  color: var(--paipan-ink) !important;
+}
+
+body .product-chart .observatory-hero__copy {
+  display: flex !important;
+  min-width: max-content !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 1px !important;
+}
+
+body .product-chart .workspace-kicker {
+  display: block !important;
+}
+
+body .product-chart .observatory-hero__copy h1 {
+  margin: 0 !important;
+  color: var(--paipan-ink) !important;
+  font-size: 1.65rem !important;
+  font-weight: 950 !important;
+  letter-spacing: -.04em !important;
+  line-height: 1.1 !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs {
+  min-width: 0 !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
+  border: none !important;
+  background: transparent !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
+  background: var(--paipan-ground) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+  font-weight: 700 !important;
+  outline: none !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab-active {
+  background: var(--paipan-accent) !important;
+  color: var(--paipan-ink) !important;
+  border: 2px solid var(--paipan-ink) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  font-weight: 900 !important;
+  outline: none !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs .semi-tabs-ink-bar,
+body .product-chart .observatory-hero__agent-entry {
+  display: none !important;
+}
+
+body .product-chart .observatory-hero .platform-account {
+  position: static !important;
+  transform: none !important;
+}
+
+body .product-chart .observatory-hero .hero-action {
+  position: static !important;
+}
+
+body .product-chart .qmdj-footer {
+  display: flex !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 0 !important;
+  background: var(--paipan-paper) !important;
+  box-shadow: none !important;
+}
+
+body .product-chart .qmdj-footer__compact {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  color: var(--paipan-violet) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+body .product-chart .qmdj-footer__compact a {
+  color: var(--paipan-red) !important;
+}
