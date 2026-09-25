@@ -531,6 +531,57 @@ html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .izt
   }
 }
 
+/* Small-screen final contract: one scroll owner for the whole chart. */
+html body .page-shell.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] > .canvas-panel__content {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  padding: 8px !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+  width: 760px !important;
+  min-width: 760px !important;
+  max-width: none !important;
+  height: 760px !important;
+  min-height: 760px !important;
+  max-height: none !important;
+  margin: 0 auto !important;
+  aspect-ratio: 1 / 1 !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+  overflow: visible !important;
+  scrollbar-width: none !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace::-webkit-scrollbar,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace::-webkit-scrollbar {
+  display: none !important;
+}
+
+@media (min-width: 721px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] > .canvas-panel__content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: auto !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    width: min(100%, calc(100dvh - 260px)) !important;
+    min-width: 0 !important;
+    max-width: calc(100dvh - 260px) !important;
+    height: min(calc(100dvh - 260px), 100%) !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 260px) !important;
+  }
+}
+
 /* Fit the square to the actual desktop work area. A width-driven square can
    be wider than the space below the masthead, which hides its bottom row. */
 @media (min-width: 721px) {
