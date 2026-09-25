@@ -3,6 +3,7 @@
 .divination-panel__header span { font: 800 10px/1 var(--paipan-font-mono); letter-spacing: .16em; }
 .divination-panel__header h2 { margin: 7px 0 3px; font-size: clamp(28px, 4vw, 48px); line-height: .95; }
 .divination-panel__header p, .divination-panel__note { margin: 0; color: var(--paipan-slate); font-size: 12px; }
+.divination-panel__action { margin-top: 12px; padding: 8px 12px; border: 2px solid var(--paipan-ink); background: var(--paipan-accent); color: var(--paipan-ink); font-weight: 800; cursor: pointer; box-shadow: var(--paipan-shadow-sm); }
 .divination-panel__hero-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
 .divination-panel__hero-cell { padding: 13px; border: 2px solid var(--paipan-ink); background: var(--paipan-ground); box-shadow: var(--paipan-shadow-sm); display: grid; gap: 6px; }
 .divination-panel__hero-cell small, .divination-panel__hero-cell span { color: var(--paipan-slate); font-size: 11px; }

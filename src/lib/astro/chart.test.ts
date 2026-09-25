@@ -5,12 +5,24 @@ import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "./s
 
 describe("astro chart", () => {
   it("is deterministic and exposes the three core points", () => {
-    const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+    const input = getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai");
+    input.location = { city: "上海", timeZone: "Asia/Shanghai", latitude: 31.2304, longitude: 121.4737 };
+    const profile = normalizeProfileInput(input);
     const first = buildAstroChart(profile);
     expect(buildAstroChart(profile)).toEqual(first);
     expect(first.sun.sign).toBeTruthy();
+    expect(first.complete).toBe(true);
+    expect(first.points).toHaveLength(10);
+    expect(first.sun.longitude).toBeGreaterThan(279);
+    expect(first.sun.longitude).toBeLessThan(281);
     expect(first.moon.house).toBeGreaterThanOrEqual(1);
     expect(serializeAstroToStructuredText(first)).toContain("上升");
     expect(JSON.parse(serializeAstroToCompactJson(first)).format).toBe("qmdj-astro-chart-v1");
+  });
+
+  it("fails closed when coordinates are absent", () => {
+    const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+    expect(buildAstroChart(profile).complete).toBe(false);
+    expect(buildAstroChart(profile).ascendant.longitude).toBeNull();
   });
 });

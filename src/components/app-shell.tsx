@@ -688,7 +688,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const astroChart = useMemo<AstroChart>(() => buildAstroChart(normalizedProfile), [normalizedProfile]);
   const humanDesignChart = useMemo<HumanDesignChart>(() => buildHumanDesignChart(normalizedProfile), [normalizedProfile]);
-  const tarotReading = useMemo<TarotReading>(() => buildTarotReading(normalizedProfile), [normalizedProfile]);
+  const [tarotSeed, setTarotSeed] = useState<string | undefined>(undefined);
+  const tarotReading = useMemo<TarotReading>(() => buildTarotReading(normalizedProfile, tarotSeed), [normalizedProfile, tarotSeed]);
   const astroStructuredText = useMemo(() => serializeAstroToStructuredText(astroChart), [astroChart]);
   const humanDesignStructuredText = useMemo(() => serializeHumanDesignToStructuredText(humanDesignChart), [humanDesignChart]);
   const tarotStructuredText = useMemo(() => serializeTarotToStructuredText(tarotReading), [tarotReading]);
@@ -1756,7 +1757,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
         {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} /> : null}
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} /> : null}
-        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} /> : null}
+        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onRedraw={() => setTarotSeed(crypto.randomUUID())} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

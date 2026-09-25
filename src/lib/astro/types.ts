@@ -1,13 +1,13 @@
 import type { NormalizedProfileInput } from "@/lib/profile";
 
-export type ZodiacSign = "白羊" | "金牛" | "双子" | "巨蟹" | "狮子" | "处女" | "天秤" | "天蝎" | "射手" | "摩羯" | "水瓶" | "双鱼";
+export type ZodiacSign = "白羊" | "金牛" | "双子" | "巨蟹" | "狮子" | "处女" | "天秤" | "天蝎" | "射手" | "摩羯" | "水瓶" | "双鱼" | "未知";
 
 export type AstroPoint = {
   name: string;
-  longitude: number;
+  longitude: number | null;
   sign: ZodiacSign;
-  degree: number;
-  house: number;
+  degree: number | null;
+  house: number | null;
 };
 
 export type AstroChart = {
@@ -17,6 +17,7 @@ export type AstroChart = {
   moon: AstroPoint;
   ascendant: AstroPoint;
   points: AstroPoint[];
+  complete: boolean;
   disclaimer: string;
 };
 
