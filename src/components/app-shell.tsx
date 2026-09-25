@@ -998,6 +998,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const handleModeChange = (nextMode: WorkbenchMode) => {
     setMode(nextMode);
+    setCopyState("idle");
     setClassicWorkspace(null);
     setParametersOpen(false);
   };
@@ -1755,9 +1756,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
         {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
 
-        {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} /> : null}
-        {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} /> : null}
-        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onRedraw={() => setTarotSeed(crypto.randomUUID())} /> : null}
+        {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onRedraw={() => { setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel
