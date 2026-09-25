@@ -33,10 +33,10 @@ npm install
 npm run dev
 ```
 
-默认访问：
+默认访问（开发服务器会使用 3000 端口）：
 
 ```text
-http://127.0.0.1:3001
+http://localhost:3000/paipan
 ```
 
 如需启用右侧 `AI 分析`，先配置服务端环境变量：

@@ -336,7 +336,7 @@ export function ChartForm({
             </>
           ) : null}
 
-          {value.timeBasis === "true-solar" ? (
+          {value.timeBasis === "true-solar" || mode === "astro" || mode === "human-design" ? (
             <>
               <label className="control-field control-field--true-solar control-field--city">
                 <span>出生地 / 城市</span>
@@ -370,7 +370,7 @@ export function ChartForm({
                 </Select>
                 <small>
                   {value.location?.city
-                    ? `已按 ${value.location.city} 的经度换算真太阳时`
+                    ? `${mode === "astro" || mode === "human-design" ? "当前盘面使用" : "已按"} ${value.location.city} 的经纬度`
                     : "选择城市后自动带入时区、经度与纬度"}
                 </small>
               </label>

@@ -26,7 +26,9 @@ describe("astro chart", () => {
   });
 
   it("fails closed when coordinates are absent", () => {
-    const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+    const input = getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai");
+    delete input.location;
+    const profile = normalizeProfileInput(input);
     expect(buildAstroChart(profile).complete).toBe(false);
     expect(buildAstroChart(profile).ascendant.longitude).toBeNull();
   });

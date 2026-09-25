@@ -21,7 +21,9 @@ describe("human design chart", () => {
   });
 
   it("does not infer a chart without coordinates", () => {
-    const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+    const input = getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai");
+    delete input.location;
+    const profile = normalizeProfileInput(input);
     const chart = buildHumanDesignChart(profile);
     expect(chart.complete).toBe(false);
     expect(chart.type).toBeNull();
