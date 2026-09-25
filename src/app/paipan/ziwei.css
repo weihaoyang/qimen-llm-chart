@@ -1275,3 +1275,30 @@ html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .izt
 @media (min-width:721px) { .product-chart[data-mode="ziwei"] .ziwei-panel__canvas { width:min(100%,calc(100dvh - 260px)) !important; max-width:calc(100dvh - 260px) !important; height:auto !important; } }
 @media (max-width:1100px) { .product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] > .canvas-panel__content { overflow:auto !important; } .product-chart[data-mode="ziwei"] .ziwei-panel__canvas { width:980px !important; min-width:980px !important; max-width:none !important; height:980px !important; min-height:980px !important; margin:0 !important; } }
 @media (max-width:720px) { .product-chart[data-mode="ziwei"] .ziwei-panel__canvas { width:980px !important; min-width:980px !important; height:980px !important; min-height:980px !important; } }
+
+/* SCALE WITH THE AVAILABLE CHART WIDTH, never with a fixed mobile canvas. */
+.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] > .canvas-panel__content { overflow:auto !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+  width:100% !important; min-width:0 !important; max-width:none !important;
+  height:auto !important; min-height:0 !important; max-height:none !important;
+  aspect-ratio:1 !important; margin:0 auto !important; container-type:inline-size !important;
+}
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe { gap:clamp(2px, .55cqw, 7px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace { gap:clamp(1px, .35cqw, 4px) !important; padding:clamp(3px, .75cqw, 8px) !important; overflow:visible !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace { padding:clamp(5px, 1.2cqw, 18px) !important; overflow:visible !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-major { font-size:clamp(7px, 1.75cqw, 19px) !important; line-height:1.12 !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-soft,.iztro-star-helper,.iztro-star-lucun,.iztro-star-tianma,.iztro-star-minor) { font-size:clamp(6.5px, 1.38cqw, 15px) !important; line-height:1.12 !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas :is(.iztro-star-tough,.iztro-star-flower,.iztro-star-adjective) { font-size:clamp(6px, 1.15cqw, 13px) !important; line-height:1.1 !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-brightness { font-size:clamp(5.5px, .9cqw, 10px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-star-mutagen { padding:0 clamp(1px,.35cqw,3px) !important; font-size:clamp(5.5px,.9cqw,10px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-name { padding:clamp(1px,.45cqw,6px) !important; font-size:clamp(7px,1.45cqw,16px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-gz span { font-size:clamp(6px,1.1cqw,13px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate span,
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name span { padding:0 clamp(1px,.3cqw,3px) !important; font-size:clamp(5.5px,.95cqw,12px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace .center-title { margin:0 0 clamp(3px,.7cqw,8px) !important; padding:clamp(3px,.65cqw,8px) !important; font-size:clamp(8px,1.65cqw,18px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace ul.basic-info { margin:0 0 clamp(3px,.8cqw,10px) !important; gap:clamp(2px,.45cqw,6px) clamp(4px,1.2cqw,14px) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-center-item { font-size:clamp(6px,1.05cqw,14px) !important; line-height:1.2 !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons { gap:clamp(2px,.45cqw,5px) !important; margin:clamp(3px,.8cqw,10px) 0 0 !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .horo-buttons .center-button,
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .solar-horoscope .today { padding:clamp(2px,.45cqw,7px) !important; border-width:clamp(1px,.25cqw,2px) !important; font-size:clamp(6px,1cqw,13px) !important; box-shadow:clamp(1px,.25cqw,2px) clamp(1px,.25cqw,2px) 0 var(--paipan-ink) !important; }
+.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-copyright { font-size:clamp(6px,.8cqw,10px) !important; }
