@@ -3,6 +3,8 @@
 import type { AstroChart } from "@/lib/astro/types";
 import type { HumanDesignChart } from "@/lib/human-design/types";
 import type { TarotReading, TarotSpreadId } from "@/lib/tarot/types";
+import { AstroWheel } from "./astro-wheel";
+import { HumanDesignBodygraph } from "./human-design-bodygraph";
 
 type Props =
   | { kind: "astro"; value: AstroChart; onCopyJson?: () => void; jsonCopied?: boolean }
@@ -20,6 +22,7 @@ export function DivinationPanel(props: Props) {
       <div className="divination-panel__topline"><span>OBSERVATORY / 01</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "CALCULATED" : "INPUT REQUIRED"}</span></div>
       <header className="divination-panel__header"><div><p className="divination-panel__kicker">ASTRO / NATAL CHART</p><h2>星盘</h2><p className="divination-panel__subhead">把出生时刻转换成可检视的天文坐标。</p></div><div className="divination-panel__header-actions">{props.onCopyJson ? <button type="button" className="divination-panel__export" onClick={props.onCopyJson}>复制 JSON <span>{props.jsonCopied ? "✓" : "⧉"}</span></button> : null}<div className="astro-orbit" aria-hidden="true"><i /><i /><i /><b /></div></div></header>
       <div className="divination-panel__rule" />
+      <AstroWheel chart={value} />
       <div className="divination-panel__stat-grid">{astroStats.map(([label, key], index) => { const point = value[key]; return <div className="divination-stat" key={key} style={{ "--item-index": index } as React.CSSProperties}><span className="divination-stat__index">0{index + 1}</span><small>{label}</small><strong>{displayPoint(point)}</strong><em>{point.house === null ? "未计算宫位" : "第" + point.house + "宫"}</em></div>; })}</div>
       <div className="divination-section-heading"><span>PLANETARY POSITIONS</span><small>{value.points.length || 0} POINTS / TROPICAL</small></div>
       <div className="astro-table">{value.points.map((point, index) => <div className="astro-row" key={point.name} style={{ "--item-index": index } as React.CSSProperties}><span className="astro-row__marker" /><b>{point.name}</b><span>{point.sign}</span><strong>{point.degree === null ? "—" : point.degree + "°"}</strong><small>{point.house === null ? "—" : "H" + point.house}</small></div>)}{!value.points.length ? <div className="empty-state"><b>还差一项输入</b><span>补充城市或经纬度后，才会计算上升点与宫位。</span></div> : null}</div>
@@ -32,6 +35,7 @@ export function DivinationPanel(props: Props) {
       <div className="divination-panel__topline"><span>BODYGRAPH / 02</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "SIGNALS READY" : "INPUT REQUIRED"}</span></div>
       <header className="divination-panel__header"><div><p className="divination-panel__kicker">HUMAN DESIGN / ACTIVATION MAP</p><h2>人类图</h2><p className="divination-panel__subhead">看见人格与设计两侧的激活信号，不替你下人格结论。</p></div><div className="divination-panel__header-actions">{props.onCopyJson ? <button type="button" className="divination-panel__export" onClick={props.onCopyJson}>复制 JSON <span>{props.jsonCopied ? "✓" : "⧉"}</span></button> : null}<div className="hd-glyph" aria-hidden="true"><span /><span /><span /><span /><b /></div></div></header>
       <div className="divination-panel__rule" />
+      <HumanDesignBodygraph chart={value} />
       <div className="hd-summary"><div><small>TYPE</small><strong>{value.type ?? "待推导"}</strong><span>{value.strategy ?? "不作猜测"}</span></div><div><small>AUTHORITY</small><strong>{value.authority ?? "—"}</strong><span>Profile {value.profile ?? "待推导"}</span></div><div><small>PRECISION</small><strong>{value.precision?.gate ?? "—"}</strong><span>{value.channels.length} channels / 13 bodies</span></div></div>
       <div className="divination-section-heading"><span>DEFINED CENTERS / CHANNELS</span><small>{value.centers.filter((center) => center.defined).length} CENTERS · {value.channels.length} CHANNELS</small></div>
       <div className="hd-chip-row">{value.centers.filter((center) => center.defined).map((center) => <span key={center.name}>{center.name}</span>)}{value.channels.slice(0, 8).map((channel) => <span key={channel.name}>{channel.gates.join("-")}</span>)}</div>
