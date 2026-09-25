@@ -342,12 +342,18 @@ html body .page-shell.product-chart .observatory-hero .hero-action {
 }
 
 html body .page-shell.product-chart .observatory-hero__materials {
+  position: relative !important;
+  z-index: 250 !important;
   display: flex !important;
   flex: 0 0 auto !important;
   align-items: center !important;
+  pointer-events: auto !important;
 }
 
 html body .page-shell.product-chart .observatory-hero__materials > button {
+  position: relative !important;
+  z-index: 251 !important;
+  pointer-events: auto !important;
   min-height: 34px !important;
   padding: 6px 10px !important;
   font-size: 12px !important;

@@ -1,4 +1,6 @@
 .trigger {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -8,6 +10,7 @@
   color: #191919;
   font-weight: 750;
   cursor: pointer;
+  pointer-events: auto;
   box-shadow: 2px 2px 0 #191919;
   white-space: nowrap;
 }
@@ -24,6 +27,8 @@
 .backdrop { position: absolute; inset: 0; background: transparent; cursor: default; }
 
 .drawer {
+  display: flex;
+  flex-direction: column;
   position: relative;
   z-index: 1;
   position: fixed;
@@ -39,11 +44,6 @@
   padding: 0;
   color: #191919;
   background: #fffdf7;
-}
-
-.drawer[open] {
-  display: flex;
-  flex-direction: column;
 }
 
 .drawer header {
