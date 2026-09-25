@@ -76,7 +76,7 @@ import {
   preparePlatformOAuthLogin,
   savePlatformOAuthRequest,
 } from "@/lib/platform/browser";
-import { createPlatformClient } from "@/lib/platform/client";
+import { createProductPlatformClient } from "@/lib/platform/client";
 import { loadPlatformSession, clearPlatformSession } from "@/lib/platform/session";
 import { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 import type { PlanCatalogItem, PlatformProfile, PlatformSession } from "@singularity-sequence/web-sdk";
@@ -599,7 +599,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
       try {
         const access = await restorePlatformAccessState(session);
-        const client = createPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
+        const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
         const [gate, usage, plans] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
@@ -656,7 +656,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const handlePlatformLogout = async () => {
     const session = platformWorkspace.session;
     try {
-      if (session) await createPlatformClient({ accessToken: session.access_token, csrfToken: session.csrf_token }).logout();
+      if (session) await createProductPlatformClient({ accessToken: session.access_token, csrfToken: session.csrf_token }).logout();
     } catch {
       // The local session is cleared even if the platform logout request has expired.
     }
@@ -1149,7 +1149,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       let usage = platformWorkspace.usage;
       let refreshWarning = "";
       try {
-        const client = createPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
+        const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
         [gate, usage] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token),

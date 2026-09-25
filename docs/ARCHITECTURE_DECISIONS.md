@@ -96,3 +96,9 @@ Record only decisions that affect boundaries, data contracts, dependencies, depl
 - 原因：本次故障同时暴露了平台请求编码错误和官网代理额外故障面。把修复放进 qmdj 会制造第二套认证并让其他产品继续重复故障。
 - 证据边界：真实移动端用户确认原 CAPTCHA 错误消失；这不自动证明新的短信发送、OTP 验证或 OAuth 完整回跳。
 - Evidence: platform `667f2aa`; website `16c0b67` / release `20260916-214725-16c0b67`; `docs/platform-integration-status.md`。
+## 2026-09-25：qmdj 统一平台门面与 AI token usage
+
+- 普通 qmdj 代码统一使用 `ProductPlatformClient`；管理员邀请码操作保留独立 `PlatformClient` 门面。
+- qmdj 服务端 gate、账户 usage 和 guest usage 通过平台 SDK 调用，服务端适配层只保留产品错误/超时映射。
+- provider token usage 在成功结算后通过 `ProductServiceClient.reportTokenUsage` 上报平台，使用请求级幂等键；产品不计算 points、不维护余额真相。
+- 平台 SDK 增加显式 Cookie、可注入 transport 和服务端关闭自动 refresh 的选项，以支持产品服务器的 session bridge 与可测试超时边界。

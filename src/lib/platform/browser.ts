@@ -1,5 +1,5 @@
 import { PlatformHttpError, type EntitlementGateResponse, type InvitationCodeRedemption, type PlanCatalogItem, type PlatformProfile, type PlatformSession } from "@singularity-sequence/web-sdk";
-import { createPlatformClient } from "@/lib/platform/client";
+import { createProductPlatformClient } from "@/lib/platform/client";
 import { buildPlatformOAuthLoginUrl, requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
 import {
   clearPlatformSession,
@@ -66,54 +66,26 @@ const createIdempotencyKey = (scope: string) => {
   return `qmdj-${scope}-${random}`.slice(0, 128);
 };
 
-const guestRequest = async <T>(path: string, options: { method?: string; body?: unknown; token?: string } = {}): Promise<T> => {
-  const config = requirePlatformClientConfig();
-  const response = await fetch(new URL(path, config.baseUrl), {
-    method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.token ? { "X-Guest-Checkout-Token": options.token } : {}),
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    cache: "no-store",
-  });
-  const body = (await response.json().catch(() => ({}))) as T & { detail?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(body.detail?.message ?? "支付请求失败。", { cause: response.status });
-  }
-  return body;
-};
-
 export const createGuestCheckout = (planCode: string, paymentChannel: string, idempotencyKey = createIdempotencyKey(planCode)) =>
-  guestRequest<GuestCheckout>("/api/v1/commerce/guest/orders", {
-    method: "POST",
-    body: {
+  createProductPlatformClient().createGuestOrder({
       product_code: requirePlatformClientConfig().productCode,
       plan_code: planCode,
       payment_channel: paymentChannel,
       idempotency_key: idempotencyKey,
-    },
-  });
+    }) as Promise<GuestCheckout>;
 
 export const createGuestPaymentAttempt = (checkout: GuestCheckout, paymentChannel: string, returnUrl: string, paymentScene: "web" | "wap" = "web") =>
-  guestRequest<{ provider_checkout_url: string }>("/api/v1/commerce/guest/payment-attempts", {
-    method: "POST",
-    token: checkout.checkout_token,
-    body: {
+  createProductPlatformClient().createGuestPaymentAttempt(checkout.checkout_token, {
       order_id: checkout.order.order_id,
       product_code: requirePlatformClientConfig().productCode,
       payment_channel: paymentChannel,
       payment_scene: paymentScene,
       return_url: returnUrl,
-    },
-  });
+    }) as Promise<{ provider_checkout_url: string }>;
 
 export const getGuestPaymentResult = (orderId: string, checkoutToken: string) => {
   const config = requirePlatformClientConfig();
-  return guestRequest<{ order: { status: string }; entitlement_active: boolean }>(
-    `/api/v1/commerce/guest/payment-result/${encodeURIComponent(orderId)}?product_code=${encodeURIComponent(config.productCode)}`,
-    { token: checkoutToken },
-  );
+  return createProductPlatformClient().getGuestPaymentResult(checkoutToken, orderId, config.productCode) as Promise<{ order: { status: string }; entitlement_active: boolean }>;
 };
 
 const asOrderId = (value: unknown) => {
@@ -144,7 +116,7 @@ export const createAccountCheckout = async (
   paymentScene: "web" | "wap" = "web",
 ): Promise<PlatformCheckout> => {
   const config = requirePlatformClientConfig();
-  const client = createPlatformClient({ accessToken, csrfToken: options?.csrfToken });
+  const client = createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken });
   const orderResponse = await client.createOrder({
     product_code: config.productCode,
     plan_code: planCode,
@@ -170,7 +142,7 @@ export const getAccountPaymentResult = async (
   orderId: string,
   productCode = requirePlatformClientConfig().productCode,
   options?: { csrfToken?: string },
-) => createPlatformClient({ accessToken, csrfToken: options?.csrfToken }).getPaymentResult(orderId, productCode) as Promise<{
+) => createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).getPaymentResult(orderId, productCode) as Promise<{
   order?: { status?: string; order_id?: string };
   entitlement_active?: boolean;
   payment_status?: string;
@@ -183,10 +155,10 @@ export const getAccountGate = (
   productCode = requirePlatformClientConfig().productCode,
   accessScope = requirePlatformClientConfig().accessScope,
   options?: { csrfToken?: string },
-) => createPlatformClient({ accessToken, csrfToken: options?.csrfToken }).getCurrentGate(productCode, accessScope) as Promise<EntitlementGateResponse>;
+) => createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).getCurrentGate(productCode, accessScope) as Promise<EntitlementGateResponse>;
 
 export const redeemInvitationCode = (accessToken: string, code: string, options?: { csrfToken?: string }) =>
-  createPlatformClient({ accessToken, csrfToken: options?.csrfToken }).redeemInvitationCode(code) as Promise<InvitationCodeRedemption>;
+  createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).redeemInvitationCode(code) as Promise<InvitationCodeRedemption>;
 
 const base64UrlEncode = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
@@ -325,7 +297,7 @@ export const restorePlatformAccessState = async (
     if (!bridge.ok || !body.session) throw new Error(body.error ?? "平台登录已过期，请重新登录。");
     session = { ...session, ...body.session };
   }
-  const authenticatedClient = createPlatformClient({
+  const authenticatedClient = createProductPlatformClient({
     accessToken: session.access_token,
     csrfToken: session.csrf_token,
   });
@@ -348,7 +320,7 @@ export const restorePlatformAccessState = async (
       throw error;
     }
 
-    const refreshClient = createPlatformClient({ csrfToken: session.csrf_token });
+    const refreshClient = createProductPlatformClient({ csrfToken: session.csrf_token });
     const refreshed = await refreshClient.refresh(session.refresh_token);
     const refreshedSession = {
       ...refreshed.session,
@@ -356,7 +328,7 @@ export const restorePlatformAccessState = async (
     };
     savePlatformSession(refreshedSession);
 
-    const revalidated = await createPlatformClient({
+    const revalidated = await createProductPlatformClient({
       accessToken: refreshedSession.access_token,
       csrfToken: refreshedSession.csrf_token,
     }).me();
@@ -371,7 +343,7 @@ export const restorePlatformAccessState = async (
 };
 
 export const listPlatformPlans = async (productCode: string): Promise<PlatformPlanState> => {
-  const client = createPlatformClient();
+  const client = createProductPlatformClient();
   const result = (await client.listPlans(productCode)) as PlatformPlanState;
   return {
     items: result.items ?? [],
@@ -381,7 +353,7 @@ export const listPlatformPlans = async (productCode: string): Promise<PlatformPl
 
 export const fetchPlatformUsage = async (accessToken = "", csrfToken = ""): Promise<PlatformUsage> => {
   const config = requirePlatformClientConfig();
-  const body = await createPlatformClient({ accessToken, csrfToken }).getUsageSummary(config.productCode) as Partial<PlatformUsage> & { detail?: { message?: string } };
+  const body = await createProductPlatformClient({ accessToken, csrfToken }).getUsageSummary(config.productCode) as Partial<PlatformUsage> & { detail?: { message?: string } };
   return {
     product_code: body.product_code ?? config.productCode,
     available: Number(body.available ?? 0),

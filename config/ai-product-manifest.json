@@ -8,17 +8,17 @@
       "usage_unit": "analysis_turn",
       "provider_route": "/api/agent",
       "gate_required": true,
-      "token_metering": "provider_usage_when_available"
+      "token_metering": "platform_token_usage"
     },
     "kline": {
       "plan_code": "shengtian-banzi-kline-precise-1",
       "usage_unit": "analysis_turn",
       "provider_route": "/api/agent",
       "gate_required": true,
-      "token_metering": "provider_usage_when_available"
+      "token_metering": "platform_token_usage"
     }
   },
-  "lifecycle": ["gate", "reserve", "provider", "commit_or_release", "audit"],
+  "lifecycle": ["gate", "reserve", "provider", "commit_or_release", "report_token_usage", "audit"],
   "payment_owned_by": "consumer-platform",
   "identity_owned_by": "consumer-platform",
   "entitlement_owned_by": "consumer-platform"

@@ -13,11 +13,11 @@ fresh platform session -> gate -> reserve -> provider -> commit
                                       \-> failure -> release
 ```
 
-`src/lib/platform/ai-contract.ts` 提供最小 adapter 范式，`src/lib/platform/ai-platform-adapter.ts` 将现有账户/游客平台 helper 适配到该合同。reserve 的不确定 POST 不自动重试；commit 通过 `settledCommit` 识别平台 terminal 409，避免重复扣费；provider 失败只释放当前 reservation，provider 已返回而 commit 不确定时绝不 release。
+`src/lib/platform/ai-contract.ts` 提供最小 adapter 范式，`src/lib/platform/ai-platform-adapter.ts` 将账户/游客平台用量和服务端 token-usage 上报适配到该合同。reserve 的不确定 POST 不自动重试；commit 通过 `settledCommit` 识别平台 terminal 409，避免重复扣费；provider 失败只释放当前 reservation，provider 已返回而 commit 不确定时绝不 release。
 
 ## Provider 与 token 计量
 
-AI provider 只返回产品结果和可选 `AiUsage`：`inputTokens`、`outputTokens`、`totalTokens`。`readProviderUsage` 同时读取 OpenAI 兼容字段 `prompt_tokens`、`completion_tokens`、`total_tokens` 和 AI SDK 字段，并映射到审计事件的 `usage` 字段。token 数是审计信息，不是本地余额真相；余额和扣费结果只能使用平台返回值。当前 `/api/agent` 已支持 provider 调用和平台 usage 生命周期，但 token usage 尚未持久化到本地审计表，manifest 将其标记为 `provider_usage_when_available`。
+AI provider 只返回产品结果和可选 `AiUsage`：`inputTokens`、`outputTokens`、`cachedInputTokens`、`totalTokens`。`readProviderUsage` 同时读取 OpenAI 兼容字段和 AI SDK 字段。`/api/agent` 在成功结算后使用服务端 `PLATFORM_PRODUCT_SERVICE_SECRET` 调用平台 `token-usage`，以请求级幂等键上报 provider、model 和 token 数。token 数和 points 由平台保存；产品不计算价格、不扣本地余额。
 
 ## 幂等与重试
 
@@ -37,8 +37,8 @@ npm run css:audit
 npm run build
 ```
 
-## 尚未闭合的 AI 计费缺口
+## 当前边界
 
-- `/api/agent` 的流式 provider usage 尚未从 AI SDK `fullStream` 持久化到审计存储；目前只保留内存事件和平台 usage 结果。
-- Agent 普通 route 尚未使用数据库级业务幂等记录；断线恢复依赖平台 reservation reconciliation。
-- 真实生产环境的 provider token usage、reserve/commit/release 追踪仍需接入集中日志或指标系统。
+- 流式 provider usage 在 AI SDK `onFinish` 取得，并在 reservation 成功结算后上报平台；上报失败不释放已交付结果，平台 reconciliation 负责继续收敛。
+- Agent route 的业务幂等由平台 reservation 与 token-usage 幂等键共同承担；产品不复制订单或余额真相。
+- 生产部署必须注入 `PLATFORM_PRODUCT_SERVICE_SECRET`。缺失时 token-usage 上报返回 `platform_product_service_secret_missing`，发布 readiness 应阻断；本地无密钥测试只验证保守结果，不宣称已完成生产计费。

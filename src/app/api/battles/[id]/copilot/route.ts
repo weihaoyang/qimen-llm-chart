@@ -7,6 +7,8 @@ import { getLatestGravityLine, getActiveCommitment, listJunctions, listMoves } f
 import { listAdvice, listAttachments, listOpportunities, listReviews, listTimeline } from "@/lib/battle/extended-repository";
 import { loadBattleInput } from "@/lib/battle/service";
 import { isUuid, asText } from "@/lib/battle/input";
+import { readProviderUsage } from "@/lib/platform/ai-contract";
+import { reportPlatformTokenUsage } from "@/lib/platform/ai-platform-adapter";
 
 type Context={params:Promise<{id:string}>};
 type Body={question?:unknown;history?:unknown};
@@ -35,6 +37,8 @@ export async function POST(request:Request,context:Context){
     const result=await requestAgentAnalysis({mode:"research",researchTool:"battle",focus:"现实极限博弈",question,history:body?.history as Array<{role:"user"|"assistant";content:string}>|undefined,structuredText,jsonPayload,analysisProduct:"agent"});
     const usage=accessToken?await commitPlatformUsage(accessToken,reservationId,{planCode:AGENT_PLAN_CODE}):await commitPlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken});
     reservationId="";
+    const providerUsage=readProviderUsage(result.usage);
+    if(providerUsage?.inputTokens!==undefined||providerUsage?.outputTokens!==undefined)await reportPlatformTokenUsage({providerCode:process.env.GEMINI_API_KEY&&!process.env.OPENAI_API_KEY?"gemini":"openai-compatible",modelCode:result.model||"unknown",usage:providerUsage,idempotencyKey:`battle-copilot:${id}:token-usage`});
     return noStore({analysis:result.content,model:result.model,usage,source:{layer:"ai_copilot",persisted:false}});
   }catch(error){
     if(reservationId){try{const accessToken=readBearerToken(request.headers.get("authorization"));const cookieHeader=readPlatformCookieHeader(request.headers.get("cookie"));const csrfToken=readCookieValue(request.headers.get("cookie"),"ssp_csrf");if(accessToken)await releasePlatformUsage(accessToken,reservationId,{planCode:AGENT_PLAN_CODE});else await releasePlatformUsage(null,reservationId,{planCode:AGENT_PLAN_CODE,cookieHeader,csrfToken});}catch{/* preserve original error */}}

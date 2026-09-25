@@ -4,11 +4,11 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminInvitationPanel } from "./admin-invitation-panel";
-import { createPlatformClient } from "@/lib/platform/client";
+import { createPlatformAdminClient } from "@/lib/platform/client";
 import { PlatformHttpError } from "@singularity-sequence/web-sdk";
 
 vi.mock("@/lib/platform/client", () => ({
-  createPlatformClient: vi.fn(),
+  createPlatformAdminClient: vi.fn(),
 }));
 
 describe("AdminInvitationPanel", () => {
@@ -28,7 +28,7 @@ describe("AdminInvitationPanel", () => {
       code: "SSAR-AAAA-BBBB-CCCC-DDDD",
       plaintext_shown_once: true,
     });
-    vi.mocked(createPlatformClient).mockReturnValue(client as never);
+    vi.mocked(createPlatformAdminClient).mockReturnValue(client as never);
   });
 
   afterEach(() => {

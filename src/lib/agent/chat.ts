@@ -213,6 +213,7 @@ type ChatMessage = {
 
 type ChatCompletionResponse = {
   model?: string;
+  usage?: unknown;
   choices?: Array<{
     message?: {
       content?: string | Array<{ type?: string; text?: string } | { text?: string }>;
@@ -874,10 +875,11 @@ export const requestAgentAnalysis = async (
       content: parsed.analysisMarkdown,
       decision: parsed.decision,
       model: data.model ?? config.model,
+      usage: data.usage,
     };
   }
 
-  return { content, model: data.model ?? config.model };
+  return { content, model: data.model ?? config.model, usage: data.usage };
 };
 
 /**
@@ -887,7 +889,7 @@ export const requestAgentAnalysis = async (
  */
 export const streamAgentAnalysis = (
   payload: AgentRequestPayload,
-  options?: { env?: AgentEnvironment; abortSignal?: AbortSignal; onChunk?: () => void; onFinish?: (text: string) => Promise<void> | void; onError?: (error: unknown) => Promise<void> | void; onAbort?: () => Promise<void> | void },
+  options?: { env?: AgentEnvironment; abortSignal?: AbortSignal; onChunk?: () => void; onFinish?: (text: string, usage?: unknown, model?: string) => Promise<void> | void; onError?: (error: unknown) => Promise<void> | void; onAbort?: () => Promise<void> | void },
 ) => {
   const config = getAgentConfig(options?.env ?? process.env);
   const provider = createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl });
@@ -904,7 +906,7 @@ export const streamAgentAnalysis = (
     // Lets the caller learn that output has started reaching the client, which
     // decides whether an abort may still release the usage reservation.
     onChunk: () => { options?.onChunk?.(); },
-    onFinish: async ({ text }) => { await options?.onFinish?.(text); },
+    onFinish: async ({ text, usage }) => { await options?.onFinish?.(text, usage, config.model); },
     onError: async ({ error }) => { await options?.onError?.(error); },
     onAbort: async () => { await options?.onAbort?.(); },
   });

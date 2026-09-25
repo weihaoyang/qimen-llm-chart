@@ -1,4 +1,5 @@
 import { requirePlatformServerConfig } from "@/lib/platform/config";
+import { PlatformHttpError, ProductPlatformClient } from "@singularity-sequence/web-sdk";
 import {
   PLATFORM_BRIDGE_ACCESS_COOKIE,
   PLATFORM_BRIDGE_CSRF_COOKIE,
@@ -130,11 +131,28 @@ const fetchPlatform = async (
   }
 };
 
-const buildPlatformHeaders = (accessToken: string | null, options?: PlatformRequestOptions) => ({
-  ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-  ...(options?.cookieHeader ? { Cookie: options.cookieHeader } : {}),
-  ...(options?.csrfToken ? { "x-csrf-token": options.csrfToken } : {}),
-});
+const createServerProductClient = (
+  accessToken: string | null,
+  options?: PlatformRequestOptions,
+) => {
+  const config = requirePlatformServerConfig(options?.env ?? process.env);
+  const fetchImpl = options?.fetchImpl ?? fetch;
+  return new ProductPlatformClient({
+    baseUrl: config.baseUrl,
+    getAccessToken: () => accessToken,
+    getCookieHeader: () => options?.cookieHeader ?? null,
+    getCsrfToken: () => options?.csrfToken ?? null,
+    refreshOnUnauthorized: false,
+    fetchImpl: (input, init) => fetchPlatform(fetchImpl, new URL(String(input)), init ?? {}),
+  });
+};
+
+const mapPlatformError = (error: unknown): never => {
+  if (error instanceof PlatformHttpError) {
+    throw new PlatformServerRequestError(error.status, error.reasonCode, error.message);
+  }
+  throw error;
+};
 
 export const fetchPlatformGate = async (
   accessToken: string | null,
@@ -146,132 +164,49 @@ export const fetchPlatformGate = async (
   },
 ): Promise<PlatformGate> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  const fetchImpl = options?.fetchImpl ?? fetch;
-  const url = new URL(
-    `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/gate`,
-    config.baseUrl,
-  );
-  url.searchParams.set("access_scope", config.accessScope);
-
-  const response = await fetchPlatform(fetchImpl, url, {
-    headers: buildPlatformHeaders(accessToken, options),
-    cache: "no-store",
-  });
-
-  const body = (await response.json().catch(() => ({}))) as Partial<PlatformGate> & {
-    message?: string;
-    reason_code?: string;
-  };
-
-  if (!response.ok) {
-    throw new PlatformServerRequestError(
-      response.status,
-      body.reason_code ?? "platform_gate_request_failed",
-      body.message ?? "平台 gate 请求失败。",
-    );
+  try {
+    const body = await createServerProductClient(accessToken, options).getCurrentGate(config.productCode, config.accessScope);
+    return {
+      allowed: Boolean(body.allowed),
+      mode: body.mode ?? "blocked",
+      product_code: body.product_code ?? config.productCode,
+      access_scope: body.access_scope ?? config.accessScope,
+      subject_type: body.subject_type ?? "user",
+      subject_id: body.subject_id ?? "",
+      entitlement_source: body.entitlement_source ?? "none",
+      reason_code: body.reason_code ?? "",
+      message: body.message ?? "",
+    };
+  } catch (error) {
+    return mapPlatformError(error);
   }
-
-  return {
-    allowed: Boolean(body.allowed),
-    mode: body.mode ?? "blocked",
-    product_code: body.product_code ?? config.productCode,
-    access_scope: body.access_scope ?? config.accessScope,
-    subject_type: body.subject_type ?? "user",
-    subject_id: body.subject_id ?? "",
-    entitlement_source: body.entitlement_source ?? "none",
-    reason_code: body.reason_code ?? "",
-    message: body.message ?? "",
-  };
 };
 
-const platformUsageRequest = async (
-  accessToken: string | null,
-  path: string,
-  options?: PlatformRequestOptions,
-) => {
+export const reserveGuestUsage = async (checkoutToken: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  const url = new URL(path, config.baseUrl);
-  if (options?.planCode) url.searchParams.set("plan_code", options.planCode);
-  const response = await fetchPlatform(options?.fetchImpl ?? fetch, url, {
-    method: options?.method ?? "GET",
-    headers: buildPlatformHeaders(accessToken, options),
-    cache: "no-store",
-  });
-  const body = (await response.json().catch(() => ({}))) as Partial<PlatformUsage> & {
-    message?: string;
-    reason_code?: string;
-  };
-  if (!response.ok) {
-    throw new PlatformServerRequestError(
-      response.status,
-      body.reason_code ?? "platform_usage_request_failed",
-      body.message ?? "分析次数请求失败。",
-    );
+  try {
+    return await createServerProductClient(null, options).reserveGuestUsage(config.productCode, checkoutToken, options?.planCode ?? AGENT_PLAN_CODE);
+  } catch (error) {
+    return mapPlatformError(error);
   }
-  return {
-    product_code: body.product_code ?? config.productCode,
-    available: Number(body.available ?? 0),
-    reserved: Number(body.reserved ?? 0),
-    consumed: Number(body.consumed ?? 0),
-    reservation_id: typeof (body as { reservation_id?: unknown }).reservation_id === "string" ? (body as { reservation_id: string }).reservation_id : "",
-  };
 };
 
-const guestUsageRequest = async (
-  checkoutToken: string,
-  path: string,
-  options?: {
-    env?: Record<string, string | undefined>;
-    fetchImpl?: typeof fetch;
-    method?: "POST";
-    planCode?: string;
-  },
-) => {
+export const commitGuestUsage = async (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  const url = new URL(path, config.baseUrl);
-  if (options?.planCode) {
-    url.searchParams.set("plan_code", options.planCode);
+  try {
+    return await createServerProductClient(null, options).commitGuestUsage(config.productCode, checkoutToken, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
+  } catch (error) {
+    return mapPlatformError(error);
   }
-  const response = await fetchPlatform(options?.fetchImpl ?? fetch, url, {
-    method: options?.method ?? "POST",
-    headers: { "X-Guest-Checkout-Token": checkoutToken },
-    cache: "no-store",
-  });
-  const body = (await response.json().catch(() => ({}))) as Partial<PlatformUsage> & { message?: string; reason_code?: string };
-  if (!response.ok) {
-    throw new PlatformServerRequestError(response.status, body.reason_code ?? "platform_usage_request_failed", body.message ?? "支付请求失败。");
+};
+
+export const releaseGuestUsage = async (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
+  const config = requirePlatformServerConfig(options?.env ?? process.env);
+  try {
+    return await createServerProductClient(null, options).releaseGuestUsage(config.productCode, checkoutToken, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
+  } catch (error) {
+    return mapPlatformError(error);
   }
-  return {
-    product_code: body.product_code ?? config.productCode,
-    available: Number(body.available ?? 0),
-    reserved: Number(body.reserved ?? 0),
-    consumed: Number(body.consumed ?? 0),
-    reservation_id: typeof (body as { reservation_id?: unknown }).reservation_id === "string" ? (body as { reservation_id: string }).reservation_id : "",
-  };
-};
-
-export const reserveGuestUsage = (checkoutToken: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/reserve`, {
-    ...options,
-    planCode: options?.planCode ?? AGENT_PLAN_CODE,
-  });
-};
-
-export const commitGuestUsage = (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/commit`, {
-    ...options,
-    planCode: options?.planCode ?? AGENT_PLAN_CODE,
-  });
-};
-
-export const releaseGuestUsage = (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return guestUsageRequest(checkoutToken, `/api/v1/entitlement/guest/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/release`, {
-    ...options,
-    planCode: options?.planCode ?? AGENT_PLAN_CODE,
-  });
 };
 
 export const fetchPlatformUsage = async (
@@ -279,7 +214,12 @@ export const fetchPlatformUsage = async (
   options?: PlatformRequestOptions,
 ): Promise<PlatformUsage> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage`, options);
+  try {
+    const body = await createServerProductClient(accessToken, options).getUsageSummary(config.productCode);
+    return { product_code: body.product_code ?? config.productCode, available: Number(body.available ?? 0), reserved: Number(body.reserved ?? 0), consumed: Number(body.consumed ?? 0) };
+  } catch (error) {
+    return mapPlatformError(error);
+  }
 };
 
 export const reservePlatformUsage = async (
@@ -287,7 +227,11 @@ export const reservePlatformUsage = async (
   options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/reserve`, { ...options, method: "POST", planCode: options?.planCode ?? AGENT_PLAN_CODE });
+  try {
+    return await createServerProductClient(accessToken, options).reserveUsage(config.productCode, options?.planCode ?? AGENT_PLAN_CODE);
+  } catch (error) {
+    return mapPlatformError(error);
+  }
 };
 
 export const commitPlatformUsage = async (
@@ -296,7 +240,11 @@ export const commitPlatformUsage = async (
   options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/commit`, { ...options, method: "POST", planCode: options?.planCode ?? AGENT_PLAN_CODE });
+  try {
+    return await createServerProductClient(accessToken, options).commitUsage(config.productCode, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
+  } catch (error) {
+    return mapPlatformError(error);
+  }
 };
 
 export const releasePlatformUsage = async (
@@ -305,5 +253,9 @@ export const releasePlatformUsage = async (
   options?: PlatformRequestOptions,
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
-  return platformUsageRequest(accessToken, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/release`, { ...options, method: "POST", planCode: options?.planCode ?? AGENT_PLAN_CODE });
+  try {
+    return await createServerProductClient(accessToken, options).releaseUsage(config.productCode, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
+  } catch (error) {
+    return mapPlatformError(error);
+  }
 };

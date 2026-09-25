@@ -6,7 +6,7 @@ import {
   type AdminInvitationCode,
   type AdminInvitationCodeCreatePayload,
 } from "@singularity-sequence/web-sdk";
-import { createPlatformClient } from "@/lib/platform/client";
+import { createPlatformAdminClient } from "@/lib/platform/client";
 
 type AdminInvitationPanelProps = {
   accessToken: string;
@@ -53,7 +53,7 @@ export function AdminInvitationPanel({ accessToken, csrfToken, productCode, plan
   const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
 
   const loadCodes = async (token = accessToken) => {
-    const client = createPlatformClient({ accessToken: token, csrfToken });
+    const client = createPlatformAdminClient({ accessToken: token, csrfToken });
     const result = await client.listAdminInvitationCodes(100, 0, productCode, planCode);
     setItems(result.items);
     setTotal(result.total);
@@ -69,7 +69,7 @@ export function AdminInvitationPanel({ accessToken, csrfToken, productCode, plan
       setCopied(false);
       setMessage(null);
       try {
-        const client = createPlatformClient({ accessToken, csrfToken });
+        const client = createPlatformAdminClient({ accessToken, csrfToken });
         const session = await client.getAdminSession();
         if (cancelled) return;
         if (session.role !== "owner" && session.role !== "admin") {
@@ -132,7 +132,7 @@ export function AdminInvitationPanel({ accessToken, csrfToken, productCode, plan
     setRawCode("");
     setCopied(false);
     try {
-      const result = await createPlatformClient({ accessToken, csrfToken }).createAdminInvitationCode(payload);
+      const result = await createPlatformAdminClient({ accessToken, csrfToken }).createAdminInvitationCode(payload);
       setRawCode(result.code);
       setMessage("邀请码已创建。原文只显示这一次，请立即复制并安全交付。平台不会再次返回原文。");
       try {
@@ -152,7 +152,7 @@ export function AdminInvitationPanel({ accessToken, csrfToken, productCode, plan
     setLoading(true);
     setMessage(null);
     try {
-      await createPlatformClient({ accessToken, csrfToken }).revokeAdminInvitationCode(invitationId);
+      await createPlatformAdminClient({ accessToken, csrfToken }).revokeAdminInvitationCode(invitationId);
       setRawCode("");
       setMessage("邀请码已撤销。");
       try {

@@ -7,7 +7,7 @@
 页面显示的权益与实际 AI 请求必须来自同一个主体、同一个产品和同一个 access scope：
 
 ```text
-账户 session → platform gate → usage summary → /api/agent Authorization → reserve → model → commit/release
+账户 session → platform gate → usage summary → /api/agent Authorization → reserve → model → commit/release → platform token-usage
 ```
 
 只要账户栏显示“平台账户权益剩余 N 轮”，就必须满足：
@@ -57,6 +57,7 @@
 3. gate 不允许、上下文缺失或平台请求失败时保守拦截。
 4. 成功后 reserve 用量。
 5. 模型成功才 commit；模型失败必须 release。
+6. provider 返回的 token usage 在成功结算后由服务端以幂等键上报平台；没有服务密钥时不得把本地计数当成平台扣费结果。
 
 禁止：
 

@@ -15,6 +15,8 @@ import {
   KLINE_PLAN_CODE,
 } from "@/lib/platform/server";
 import { settledCommit, type SettledUsage } from "@/lib/platform/settled-commit";
+import { readProviderUsage } from "@/lib/platform/ai-contract";
+import { reportPlatformTokenUsage } from "@/lib/platform/ai-platform-adapter";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
 const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot"];
@@ -248,6 +250,7 @@ export async function POST(request: Request) {
 
     if (request.headers.get("x-agent-stream") === "1" && analysisProduct === "agent") {
       let streamSettled = false;
+      const requestId = crypto.randomUUID();
       // One decision point for the whole stream. The previous split between a
       // `release` callback and a `commit` callback could mark the stream settled
       // in `release`, notice the analysis had already been delivered, and return
@@ -258,7 +261,7 @@ export async function POST(request: Request) {
       // Reading `delivered` and flipping the flag happen in the same synchronous
       // block (no `await` in between), so the choice cannot be raced: a delivered
       // analysis is always committed, an undelivered one is always released.
-      const settle = async () => {
+      const settle = async (providerUsage?: unknown, providerModel?: string) => {
         if (streamSettled || !reservationId) return;
         const deliveredToClient = delivered;
         streamSettled = true;
@@ -280,6 +283,17 @@ export async function POST(request: Request) {
           } else {
             await releaseGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
           }
+          if (deliveredToClient) {
+            const usage = readProviderUsage(providerUsage);
+            if (usage?.inputTokens !== undefined || usage?.outputTokens !== undefined) {
+              await reportPlatformTokenUsage({
+                providerCode: process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? "gemini" : "openai-compatible",
+                modelCode: providerModel || process.env.OPENAI_MODEL || process.env.GEMINI_MODEL || "unknown",
+                usage,
+                idempotencyKey: `${requestId}:agent-token-usage`,
+              });
+            }
+          }
         } finally {
           // Clearing the id in `finally` is what makes this the *only* settle:
           // a failed commit must not be retried by a later callback (that would
@@ -291,7 +305,7 @@ export async function POST(request: Request) {
       const result = streamAgentAnalysis(analysisPayload, {
         abortSignal: request.signal,
         onChunk: () => { delivered = true; },
-        onFinish: settle,
+        onFinish: async (_text, usage, model) => settle(usage, model),
         onError: async () => { await settle(); },
         onAbort: async () => { await settle(); },
       });
@@ -326,6 +340,16 @@ export async function POST(request: Request) {
       }
     }
     reservationId = "";
+
+    const providerUsage = readProviderUsage(result.usage);
+    if (providerUsage?.inputTokens !== undefined || providerUsage?.outputTokens !== undefined) {
+      await reportPlatformTokenUsage({
+        providerCode: process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? "gemini" : "openai-compatible",
+        modelCode: result.model || process.env.OPENAI_MODEL || process.env.GEMINI_MODEL || "unknown",
+        usage: providerUsage,
+        idempotencyKey: `${crypto.randomUUID()}:agent-token-usage`,
+      });
+    }
 
     return noStore({ ...result, usage });
   } catch (error) {

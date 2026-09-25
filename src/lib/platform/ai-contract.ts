@@ -5,6 +5,7 @@ import type { PlatformUsage } from "./server";
 export type AiUsage = {
   inputTokens?: number;
   outputTokens?: number;
+  cachedInputTokens?: number;
   totalTokens?: number;
 };
 
@@ -14,6 +15,8 @@ type ProviderUsageShape = {
   total_tokens?: unknown;
   inputTokens?: unknown;
   outputTokens?: unknown;
+  cachedInputTokens?: unknown;
+  cached_input_tokens?: unknown;
   totalTokens?: unknown;
 };
 
@@ -25,9 +28,15 @@ export const readProviderUsage = (value: unknown): AiUsage | undefined => {
   const source = value as ProviderUsageShape;
   const inputTokens = positiveInteger(source.inputTokens) ?? positiveInteger(source.prompt_tokens);
   const outputTokens = positiveInteger(source.outputTokens) ?? positiveInteger(source.completion_tokens);
+  const cachedInputTokens = positiveInteger(source.cachedInputTokens) ?? positiveInteger(source.cached_input_tokens);
   const totalTokens = positiveInteger(source.totalTokens) ?? positiveInteger(source.total_tokens) ?? (inputTokens !== undefined && outputTokens !== undefined ? inputTokens + outputTokens : undefined);
   if (inputTokens === undefined && outputTokens === undefined && totalTokens === undefined) return undefined;
-  return { inputTokens, outputTokens, totalTokens };
+  return {
+    ...(inputTokens !== undefined ? { inputTokens } : {}),
+    ...(outputTokens !== undefined ? { outputTokens } : {}),
+    ...(cachedInputTokens !== undefined ? { cachedInputTokens } : {}),
+    ...(totalTokens !== undefined ? { totalTokens } : {}),
+  };
 };
 
 export type AiAuditEvent = {

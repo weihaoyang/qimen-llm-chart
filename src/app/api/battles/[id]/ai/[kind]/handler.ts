@@ -12,6 +12,8 @@ import { appendInventory } from "@/lib/battle/repository";
 import { createAdvice, createReview } from "@/lib/battle/extended-repository";
 import { parseBattleAiJson, validateBattleAiResult, type BattleAiKind } from "@/lib/battle/ai-contract";
 import { appendInterviewTurn } from "@/lib/battle/interview-repository";
+import { readProviderUsage } from "@/lib/platform/ai-contract";
+import { reportPlatformTokenUsage } from "@/lib/platform/ai-platform-adapter";
 
 const kinds = new Set(["interview", "cards", "red-team", "breakthrough", "review"]);
 const normalizeKind = (value: string) => value === "red-team" ? "red_team" : value;
@@ -101,6 +103,10 @@ export async function handleAiPost(request: Request, context: { params: Promise<
       if (!await claimAiJobCommit(subject,id,created.jobId,runToken,structured,result.model)) throw new UserFacingError("AI 任务已超时或被终止，未应用模型结果。");
       commitAttempted = true;
       usage = await settledCommit("battle-ai", `reservation ${reservationId}`, () => accessToken ? commitPlatformUsage(accessToken, reservationId, platformOptions) : commitPlatformUsage(null, reservationId, platformOptions));
+      const providerUsage = readProviderUsage(result.usage);
+      if (providerUsage?.inputTokens !== undefined || providerUsage?.outputTokens !== undefined) {
+        await reportPlatformTokenUsage({ providerCode: process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? "gemini" : "openai-compatible", modelCode: result.model || "unknown", usage: providerUsage, idempotencyKey: `${created.jobId}:token-usage` });
+      }
       if (!await markAiJobCharged(subject,id,created.jobId,runToken,usage)) throw new UserFacingError("权益已确认，但 AI 恢复记录写入失败，请使用相同请求重试。");
       jobCharged = true;
       reservationId = "";
