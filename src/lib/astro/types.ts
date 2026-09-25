@@ -9,6 +9,9 @@ export type AstroPoint = {
   degree: number | null;
   house: number | null;
 };
+export type AstroAspect = { body1: string; body2: string; type: string; symbol: string; separation: number; deviation: number; strength: number; isApplying: boolean | null };
+export type AstroPattern = { type: string; bodies: string[]; description: string };
+export type AstroHouseCusp = { house: number; longitude: number; sign: ZodiacSign; degree: number };
 
 export type AstroChart = {
   format: "qmdj-astro-chart-v1";
@@ -17,6 +20,11 @@ export type AstroChart = {
   moon: AstroPoint;
   ascendant: AstroPoint;
   points: AstroPoint[];
+  angles: { ascendant: AstroPoint; midheaven: AstroPoint; descendant: AstroPoint; imumCoeli: AstroPoint };
+  houses: AstroHouseCusp[];
+  aspects: AstroAspect[];
+  aspectSummary: Record<string, number>;
+  patterns: AstroPattern[];
   complete: boolean;
   disclaimer: string;
 };

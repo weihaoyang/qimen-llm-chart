@@ -13,6 +13,11 @@ describe("astro chart", () => {
     expect(first.sun.sign).toBeTruthy();
     expect(first.complete).toBe(true);
     expect(first.points).toHaveLength(10);
+    expect(first.angles.midheaven.longitude).not.toBeNull();
+    expect(first.houses).toHaveLength(12);
+    expect(first.aspects).toEqual(expect.any(Array));
+    expect(first.aspectSummary).toEqual(expect.any(Object));
+    expect(first.patterns).toEqual(expect.any(Array));
     expect(first.sun.longitude).toBeGreaterThan(279);
     expect(first.sun.longitude).toBeLessThan(281);
     expect(first.moon.house).toBeGreaterThanOrEqual(1);

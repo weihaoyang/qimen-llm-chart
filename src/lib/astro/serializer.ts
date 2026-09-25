@@ -6,6 +6,8 @@ export const serializeAstroToStructuredText = (chart: AstroChart) => [
   `月亮：${chart.moon.sign} ${chart.moon.degree}° · 第${chart.moon.house}宫`,
   `上升：${chart.ascendant.sign} ${chart.ascendant.degree}°`,
   ...chart.points.slice(2).map((point) => `${point.name}：${point.sign} ${point.degree}° · 第${point.house}宫`),
+  `相位：${chart.aspects.slice(0, 8).map((aspect) => `${aspect.symbol}${aspect.body1}/${aspect.body2} ${aspect.strength}%`).join("、") || "暂无"}`,
+  `模式：${chart.patterns.map((pattern) => pattern.type).join("、") || "暂无"}`,
   `边界：${chart.disclaimer}`,
 ].join("\n");
 export const serializeAstroToCompactJson = (chart: AstroChart) => JSON.stringify(chart);

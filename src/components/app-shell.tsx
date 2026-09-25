@@ -117,7 +117,7 @@ import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText
 import type { HumanDesignChart } from "@/lib/human-design/types";
 import { buildTarotReading } from "@/lib/tarot/reading";
 import { serializeTarotToCompactJson, serializeTarotToStructuredText } from "@/lib/tarot/serializer";
-import type { TarotReading } from "@/lib/tarot/types";
+import type { TarotReading, TarotSpreadId } from "@/lib/tarot/types";
 
 type AgentModeState = {
   question: string;
@@ -689,7 +689,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const astroChart = useMemo<AstroChart>(() => buildAstroChart(normalizedProfile), [normalizedProfile]);
   const humanDesignChart = useMemo<HumanDesignChart>(() => buildHumanDesignChart(normalizedProfile), [normalizedProfile]);
   const [tarotSeed, setTarotSeed] = useState<string | undefined>(undefined);
-  const tarotReading = useMemo<TarotReading>(() => buildTarotReading(normalizedProfile, tarotSeed), [normalizedProfile, tarotSeed]);
+  const [tarotSpreadId, setTarotSpreadId] = useState<TarotSpreadId>("three-card");
+  const tarotReading = useMemo<TarotReading>(() => buildTarotReading(normalizedProfile, tarotSeed, tarotSpreadId), [normalizedProfile, tarotSeed, tarotSpreadId]);
   const astroStructuredText = useMemo(() => serializeAstroToStructuredText(astroChart), [astroChart]);
   const humanDesignStructuredText = useMemo(() => serializeHumanDesignToStructuredText(humanDesignChart), [humanDesignChart]);
   const tarotStructuredText = useMemo(() => serializeTarotToStructuredText(tarotReading), [tarotReading]);
@@ -915,6 +916,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       resolvedSequence[resolvedSequenceIndex]?.chart ?? nextCharts.qimenChart;
 
     setNormalizedProfile(nextCharts.normalizedProfile);
+    setTarotSeed(undefined);
     setQimenChart(nextCharts.qimenChart);
     setBaziChart(nextCharts.baziChart);
     setZiweiChart(nextCharts.ziweiChart);
@@ -1758,7 +1760,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
         {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
-        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onRedraw={() => { setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onSpreadChange={(next) => { setTarotSpreadId(next); setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onRedraw={() => { setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel
