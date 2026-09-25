@@ -402,6 +402,135 @@ body .product-chart[data-mode="ziwei"] .ziwei-panel__canvas #palace-line {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Final geometry contract
+   The vendor renderer owns the 4x4 palace topology.  Product CSS only sets
+   the containing block and readable information bands; it must never hide a
+   star list just because a viewport is short or a palace has extra badges.
+   -------------------------------------------------------------------------- */
+html body .page-shell.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] .canvas-panel__content {
+  min-width: 0 !important;
+  min-height: 100% !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+  box-sizing: border-box !important;
+  width: min(100%, 1120px) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1 !important;
+  margin: 0 auto !important;
+  padding: clamp(6px, 0.8vw, 12px) !important;
+  overflow: visible !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-astrolabe {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  gap: clamp(3px, 0.45vw, 7px) !important;
+  align-content: stretch !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) auto auto auto !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-content: stretch !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-major,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-minor,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-adj,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-horo-star {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-major,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-minor {
+  align-self: stretch !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  padding: clamp(8px, 1vw, 16px) !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace .center-title {
+  flex: 0 0 auto !important;
+  margin: 0 0 8px !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace ul.basic-info {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  margin: 0 0 8px !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace .horo-buttons {
+  flex: 0 0 auto !important;
+  flex-wrap: wrap !important;
+  margin: auto 0 0 !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-center-palace .iztro-palace-center-item {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-footer,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-fate,
+html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas .iztro-palace-dynamic-name {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex-wrap: wrap !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 900px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .canvas-panel[data-mode="ziwei"] .canvas-panel__content {
+    overflow-x: auto !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    width: max(760px, 100%) !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+}
+
+@media (max-width: 720px) {
+  html body .page-shell.product-chart[data-mode="ziwei"] .ziwei-panel__canvas {
+    width: max(680px, 100%) !important;
+  }
+}
+
 /* Fit the square to the actual desktop work area. A width-driven square can
    be wider than the space below the masthead, which hides its bottom row. */
 @media (min-width: 721px) {
