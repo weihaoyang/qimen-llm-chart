@@ -825,6 +825,14 @@ export const buildAgentMessages = ({
   return messages;
 };
 
+export const buildAgentStreamPrompt = (messages: ChatMessage[]) => {
+  const [systemMessage, ...conversation] = messages;
+  if (systemMessage?.role !== "system") {
+    throw new Error("Agent system instructions are missing.");
+  }
+  return { system: systemMessage.content, messages: conversation };
+};
+
 export const requestAgentAnalysis = async (
   payload: AgentRequestPayload,
   options?: {
@@ -894,10 +902,12 @@ export const streamAgentAnalysis = (
   const config = getAgentConfig(options?.env ?? process.env);
   const provider = createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl });
   const isChoiceContract = payload.outputContract === "choice_json" || payload.outputContract === "choice_json_forced";
+  const prompt = buildAgentStreamPrompt(buildAgentMessages(payload));
   return streamText({
     abortSignal: options?.abortSignal,
     model: provider(config.model),
-    messages: buildAgentMessages(payload),
+    system: prompt.system,
+    messages: prompt.messages,
     maxOutputTokens: isChoiceContract ? 900 : payload.analysisProduct === "kline" ? 3800 : 2600,
     temperature: isChoiceContract ? 0 : 0.4,
     tools: { calculate_chart: createChartTool(), calibrate_birth_time: createBirthTimeCalibrationTool() },

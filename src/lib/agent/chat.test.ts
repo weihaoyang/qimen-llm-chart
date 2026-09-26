@@ -5,6 +5,7 @@ import {
   AGENT_ANALYSIS_ANGLES,
   AGENT_INTERVIEW_START_QUESTION,
   buildAgentMessages,
+  buildAgentStreamPrompt,
   buildAgentSystemPrompt,
   DEFAULT_AGENT_QUESTIONS,
   extractAssistantText,
@@ -84,6 +85,19 @@ describe("agent chat helpers", () => {
     expect(messages[1]?.content).toContain(DEFAULT_AGENT_QUESTIONS.combined);
     expect(messages[1]?.content).toContain("结构化文本：\ncombined text");
     expect(messages[1]?.content).toContain('紧凑 JSON：\n{"ok":true}');
+  });
+
+  it("passes system instructions separately from AI SDK conversation messages", () => {
+    const prompt = buildAgentStreamPrompt(buildAgentMessages({
+      mode: "qimen",
+      question: "请拆解支持与阻滞条件。",
+      structuredText: "盘面材料",
+      jsonPayload: "{}",
+    }));
+
+    expect(prompt.system).toContain("【奇门分析规则】");
+    expect(prompt.messages.length).toBeGreaterThan(0);
+    expect(prompt.messages.every((message) => message.role === "user" || message.role === "assistant")).toBe(true);
   });
 
   it("fences the payload and states the fence's meaning in the system prompt", () => {
