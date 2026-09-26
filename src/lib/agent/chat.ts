@@ -4,8 +4,7 @@ import { selectBaziClassicsContext } from "./bazi-classics";
 import { BAZI_SYSTEM_PROMPT } from "./bazi-guidance";
 import { formatAgentSkillsPrompt, selectAgentSkills } from "./skills";
 import { isolateUntrustedPayload, UNTRUSTED_PAYLOAD_PROTOCOL } from "./prompt-isolation";
-import { createOpenAI } from "@ai-sdk/openai";
-import { jsonSchema, stepCountIs, streamText, tool } from "ai";
+import { jsonSchema, tool } from "ai";
 import { normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib/bazi/serializer";
@@ -899,27 +898,30 @@ export const streamAgentAnalysis = (
   payload: AgentRequestPayload,
   options?: { env?: AgentEnvironment; abortSignal?: AbortSignal; onChunk?: () => void; onFinish?: (text: string, usage?: unknown, model?: string) => Promise<void> | void; onError?: (error: unknown) => Promise<void> | void; onAbort?: () => Promise<void> | void },
 ) => {
-  const config = getAgentConfig(options?.env ?? process.env);
-  const provider = createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl });
-  const isChoiceContract = payload.outputContract === "choice_json" || payload.outputContract === "choice_json_forced";
-  const prompt = buildAgentStreamPrompt(buildAgentMessages(payload));
-  return streamText({
-    abortSignal: options?.abortSignal,
-    model: provider(config.model),
-    system: prompt.system,
-    messages: prompt.messages,
-    maxOutputTokens: isChoiceContract ? 900 : payload.analysisProduct === "kline" ? 3800 : 2600,
-    temperature: isChoiceContract ? 0 : 0.4,
-    tools: { calculate_chart: createChartTool(), calibrate_birth_time: createBirthTimeCalibrationTool() },
-    stopWhen: stepCountIs(3),
-    providerOptions: isChoiceContract ? { openai: { response_format: { type: "json_object" } } } : undefined,
-    // Lets the caller learn that output has started reaching the client, which
-    // decides whether an abort may still release the usage reservation.
-    onChunk: () => { options?.onChunk?.(); },
-    onFinish: async ({ text, usage }) => { await options?.onFinish?.(text, usage, config.model); },
-    onError: async ({ error }) => { await options?.onError?.(error); },
-    onAbort: async () => { await options?.onAbort?.(); },
-  });
+  // The configured provider is OpenAI-compatible but does not implement the
+  // SSE framing expected by AI SDK's streamText transport: it returned a 200
+  // stream containing only start/end events. Reuse the proven JSON transport
+  // and expose its completed answer through the workbench NDJSON protocol.
+  const fullStream = (async function* () {
+    if (options?.abortSignal?.aborted) {
+      await options?.onAbort?.();
+      return;
+    }
+    try {
+      const result = await requestAgentAnalysis(payload, { env: options?.env });
+      if (options?.abortSignal?.aborted) {
+        await options?.onAbort?.();
+        return;
+      }
+      options?.onChunk?.();
+      yield { type: "text-delta", textDelta: result.content };
+      await options?.onFinish?.(result.content, result.usage, result.model);
+    } catch (error) {
+      await options?.onError?.(error);
+      throw error;
+    }
+  })();
+  return { fullStream };
 };
 
 /**
