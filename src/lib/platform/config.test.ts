@@ -9,6 +9,15 @@ import {
 } from "./config";
 
 describe("platform config", () => {
+  it("uses the checked-in product contract when public build env is absent", () => {
+    expect(resolvePlatformClientConfig({})).toEqual({
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+      loginUrl: undefined,
+    });
+  });
+
   it("resolves public client configuration from env", () => {
     expect(
       resolvePlatformClientConfig({

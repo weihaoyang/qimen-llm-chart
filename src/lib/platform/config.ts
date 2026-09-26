@@ -1,8 +1,27 @@
+import productManifest from "../../../config/ai-product-manifest.json";
+
 export type PlatformClientConfig = {
   baseUrl: string;
   productCode: string;
   accessScope: string;
   loginUrl?: string;
+};
+
+type PublicProductContract = {
+  platform_api_origin: string;
+  oauth_authorize_url: string;
+  product_code: string;
+  access_scope: string;
+};
+
+// Public identity and platform coordinates are product contract data, not
+// deployment secrets. Keeping them in the manifest prevents a standalone
+// build from losing OAuth/gate configuration when only server env is mounted.
+const PUBLIC_PRODUCT_CONTRACT: PublicProductContract = {
+  platform_api_origin: productManifest.platform_api_origin,
+  oauth_authorize_url: productManifest.oauth_authorize_url,
+  product_code: productManifest.product_code,
+  access_scope: productManifest.access_scope,
 };
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
@@ -25,9 +44,9 @@ const readServerPlatformEnv = (): Record<string, string | undefined> => ({
 export const resolvePlatformClientConfig = (
   env: Record<string, string | undefined> = readPublicPlatformEnv(),
 ): PlatformClientConfig | null => {
-  const baseUrl = env.NEXT_PUBLIC_PLATFORM_BASE_URL?.trim();
-  const productCode = env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE?.trim();
-  const accessScope = env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE?.trim();
+  const baseUrl = env.NEXT_PUBLIC_PLATFORM_BASE_URL?.trim() || PUBLIC_PRODUCT_CONTRACT.platform_api_origin;
+  const productCode = env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE?.trim() || PUBLIC_PRODUCT_CONTRACT.product_code;
+  const accessScope = env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE?.trim() || PUBLIC_PRODUCT_CONTRACT.access_scope;
 
   if (!baseUrl || !productCode || !accessScope) {
     return null;
