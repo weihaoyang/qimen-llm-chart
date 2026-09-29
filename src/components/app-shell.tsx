@@ -1852,7 +1852,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           <BaziCompatibilityPanel value={compatibility} chart={baziChart} partnerChart={partnerBaziChart} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} open={baziPairOpen} onOpenChange={setBaziPairOpen} />
         </> : null}
 
-        {mode === "ziwei" ? <ZiweiPanel value={formState} chart={ziweiChart} /> : null}
+        {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
 
         {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
