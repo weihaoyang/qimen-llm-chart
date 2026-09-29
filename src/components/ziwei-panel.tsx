@@ -5,9 +5,11 @@ import { Iztrolabe } from "@/vendor/react-iztro";
 import type { ProfileInput } from "@/lib/profile";
 import { DEFAULT_BAZI_SETTINGS } from "@/lib/bazi/settings";
 import { toTimeIndex } from "@/lib/ziwei/time-index";
+import type { NormalizedZiweiChart } from "@/lib/ziwei/types";
 
 type ZiweiPanelProps = {
   value: ProfileInput;
+  chart?: NormalizedZiweiChart | null;
 };
 
 const parseDateTime = (datetime: string) => {
@@ -26,7 +28,7 @@ const parseDateTime = (datetime: string) => {
   };
 };
 
-export function ZiweiPanel({ value }: ZiweiPanelProps) {
+export function ZiweiPanel({ value, chart }: ZiweiPanelProps) {
   // `new Date()` resolves to a different instant during the server render than
   // during the client render, which desynchronizes hydration. Resolve the
   // horoscope inputs after mount instead; the library treats both as optional,
@@ -136,6 +138,41 @@ export function ZiweiPanel({ value }: ZiweiPanelProps) {
           width="100%"
         />
       </div>
+
+      {chart ? (
+        <section className="ziwei-insights" aria-labelledby="ziwei-insights-title">
+          <header className="ziwei-insights__header">
+            <div>
+              <p>STRUCTURE / EVIDENCE</p>
+              <h2 id="ziwei-insights-title">命盘结构识别</h2>
+            </div>
+            <span>{chart.raw.patterns.length} 项结构</span>
+          </header>
+          <div className="ziwei-insights__facts">
+            <article><span>命宫三方四正</span><strong>{chart.raw.sanFangSiZheng.join(" · ") || "资料不足"}</strong></article>
+            <article><span>命主 / 身主</span><strong>{chart.raw.mingZhu} / {chart.raw.shenZhu}</strong></article>
+          </div>
+          {chart.raw.patterns.length ? (
+            <div className="ziwei-insights__patterns">
+              {chart.raw.patterns.map((item) => (
+                <article className="ziwei-insight" key={item.id}>
+                  <div className="ziwei-insight__title"><h3>{item.name}</h3><span data-level={item.level}>{item.level}</span></div>
+                  <p>{item.summary}</p>
+                  <div className="ziwei-insight__evidence">{item.evidence.map((evidence) => <span key={evidence}>{evidence}</span>)}</div>
+                  <small>来源：{item.source ?? "未标注"}</small>
+                </article>
+              ))}
+            </div>
+          ) : <p className="ziwei-insights__empty">当前规则未识别到已实现的格局；这不代表命盘不存在其他传统结构。</p>}
+          {chart.raw.emptyPalaces.length ? (
+            <details className="ziwei-insights__empty-palaces">
+              <summary>空宫与对宫借星 <span>{chart.raw.emptyPalaces.length}</span></summary>
+              <ul>{chart.raw.emptyPalaces.map((item) => <li key={item.palace}><strong>{item.palace}</strong><span>对宫 {item.oppositePalace}</span><span>借星 {item.borrowedStars.join("、") || "无主星"}</span></li>)}</ul>
+            </details>
+          ) : null}
+          <footer>结构识别根据盘面星曜与宫位关系生成，供核对与研究，不构成确定事件判断。</footer>
+        </section>
+      ) : null}
     </div>
   );
 }

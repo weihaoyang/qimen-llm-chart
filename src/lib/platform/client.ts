@@ -1,4 +1,4 @@
-import { PlatformClient, ProductPlatformClient, type PlatformSession } from "@singularity-sequence/web-sdk";
+import { ProductPlatformClient, type PlatformSession } from "@singularity-sequence/web-sdk";
 import { requirePlatformClientConfig } from "@/lib/platform/config";
 
 type ClientOptions = {
@@ -22,11 +22,6 @@ const buildOptions = (options?: ClientOptions) => {
 /** The only client available to ordinary qmdj product code. */
 export const createProductPlatformClient = (options?: ClientOptions) => {
   return new ProductPlatformClient(buildOptions(options));
-};
-
-/** Admin operations stay isolated from the product-facing client surface. */
-export const createPlatformAdminClient = (options?: ClientOptions) => {
-  return new PlatformClient(buildOptions(options));
 };
 
 export type PlatformIdentity = {

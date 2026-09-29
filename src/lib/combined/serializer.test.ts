@@ -22,7 +22,7 @@ describe("serializeCombinedToCompactJson", () => {
         },
         qimen: { format: "qmdj-llm-compact-v1", payload: {} },
         bazi: { format: "bazi-llm-compact-v1", payload: {} },
-        ziwei: { format: "ziwei-llm-compact-v1", payload: {} },
+        ziwei: { format: "ziwei-llm-compact-v2", payload: {} },
       }),
     ) as {
       format: string;
@@ -36,6 +36,6 @@ describe("serializeCombinedToCompactJson", () => {
     expect(parsed.format).toBe("meta-llm-combined-v1");
     expect(parsed.charts.qimen?.format).toBe("qmdj-llm-compact-v1");
     expect(parsed.charts.bazi?.format).toBe("bazi-llm-compact-v1");
-    expect(parsed.charts.ziwei?.format).toBe("ziwei-llm-compact-v1");
+    expect(parsed.charts.ziwei?.format).toBe("ziwei-llm-compact-v2");
   });
 });

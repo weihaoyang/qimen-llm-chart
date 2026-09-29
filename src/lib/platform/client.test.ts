@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createPlatformAdminClient, createProductPlatformClient } from "./client";
+import { createProductPlatformClient } from "./client";
 
 describe("platform client surfaces", () => {
   beforeEach(() => {
@@ -10,10 +10,7 @@ describe("platform client surfaces", () => {
 
   it("keeps admin methods off the product client", () => {
     const product = createProductPlatformClient();
-    const admin = createPlatformAdminClient();
     expect("getAdminSession" in product).toBe(false);
     expect("createAdminInvitationCode" in product).toBe(false);
-    expect("getAdminSession" in admin).toBe(true);
-    expect("createAdminInvitationCode" in admin).toBe(true);
   });
 });

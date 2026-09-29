@@ -2,8 +2,15 @@
 
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "./app-shell";
+
+// Keep the workbench wiring test focused on mode switching and data injection;
+// the vendor chart renderer has its own contract and is covered by the Ziwei
+// panel tests.
+vi.mock("@/vendor/react-iztro", () => ({
+  Iztrolabe: () => <div data-testid="iztrolabe" />,
+}));
 
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
@@ -20,6 +27,7 @@ describe("AppShell", () => {
     }} />);
 
     expect(await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /管理员.*邀请码/ })).not.toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).not.toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-analysis-drawer"]')).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /盘面分析/ })).toBeInTheDocument();
@@ -32,6 +40,20 @@ describe("AppShell", () => {
     expect(screen.getByRole("tab", { name: "序列" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "盘面资料" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "发送给 Agent 的问题" })).toBeInTheDocument();
+  }, 60000);
+
+  it("wires the normalized Ziwei chart into the visible workbench panel", async () => {
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("tab", { name: "紫微" }));
+
+    expect(await screen.findByRole("heading", { name: "命盘结构识别" })).toBeInTheDocument();
+    expect(screen.getByText(/命宫三方四正/)).toBeInTheDocument();
   }, 60000);
 
   // The 胜天半子 surface used to be selected by a `product` prop that defaulted

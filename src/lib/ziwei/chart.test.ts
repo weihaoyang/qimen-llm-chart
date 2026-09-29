@@ -45,6 +45,11 @@ describe("buildZiweiChartFromProfile", () => {
 
     expect(chart.raw.palaces).toHaveLength(12);
     expect(chart.raw.chineseDate).toBe("丙午 甲午 戊寅 戊午");
+    expect(chart.raw.palaces.every((palace) => palace.branchIndex >= 0)).toBe(true);
+    expect(chart.raw.palaces.every((palace) => palace.sanFangSiZheng.length === 4)).toBe(true);
+    expect(new Set(chart.raw.palaces.map((palace) => palace.sanFangSiZheng.join("/"))).size).toBeGreaterThan(1);
+    expect(chart.raw.palaces.some((palace) => palace.minorStars.some((star) => star.name === "禄存"))).toBe(true);
+    expect(chart.raw.patterns).toEqual(expect.any(Array));
   });
 
   it("agrees with the bazi engine on which day a 23:30 birth belongs to", () => {

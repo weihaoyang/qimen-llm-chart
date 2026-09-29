@@ -4,11 +4,14 @@ import type { NormalizedProfileInput } from "@/lib/profile";
 import { DEFAULT_BAZI_SETTINGS, type BaziDayBoundary } from "@/lib/bazi/settings";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import { toTimeIndex } from "./time-index";
+import { buildZiweiInsights } from "./insights";
 import type {
   NormalizedZiweiChart,
   ZiweiPalaceSummary,
   ZiweiStarSummary,
 } from "./types";
+
+const BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"] as const;
 
 /**
  * iztro keeps its day-division convention in module-global state, and its default
@@ -106,6 +109,7 @@ const serializePalace = (palace: {
     earthlyBranch: string;
   };
   ages: number[];
+  branchIndex?: number;
 }): ZiweiPalaceSummary => ({
   index: palace.index,
   name: palace.name,
@@ -113,6 +117,7 @@ const serializePalace = (palace: {
   isOriginalPalace: palace.isOriginalPalace,
   heavenlyStem: palace.heavenlyStem,
   earthlyBranch: palace.earthlyBranch,
+  branchIndex: palace.branchIndex ?? -1,
   majorStars: palace.majorStars.map(serializeStar),
   minorStars: palace.minorStars.map(serializeStar),
   adjectiveStars: palace.adjectiveStars.map(serializeStar),
@@ -122,6 +127,9 @@ const serializePalace = (palace: {
   suiqian12: palace.suiqian12,
   decadal: palace.decadal,
   ages: palace.ages,
+  isEmpty: palace.majorStars.length === 0,
+  borrowedStars: [],
+  sanFangSiZheng: [],
 });
 
 export const buildZiweiChartFromProfile = (
@@ -155,6 +163,27 @@ export const buildZiweiChartFromProfile = (
   // four-pillar truth is the deterministic Bazi engine and the user-selected
   // year/day conventions, so never expose two incompatible pillar strings.
   const bazi = buildBaziChartFromProfile(profile);
+  const mingGongBranch = BRANCHES.indexOf(astrolabe.earthlyBranchOfSoulPalace as typeof BRANCHES[number]);
+  const shenGongBranch = BRANCHES.indexOf(astrolabe.earthlyBranchOfBodyPalace as typeof BRANCHES[number]);
+  const basePalaces = astrolabe.palaces.map((palace) =>
+    serializePalace({ ...palace, branchIndex: BRANCHES.indexOf(palace.earthlyBranch as typeof BRANCHES[number]) }),
+  );
+  const palaceByBranch = new Map(basePalaces.map((palace) => [palace.branchIndex, palace]));
+  const palaces = basePalaces.map((palace) => {
+    const opposite = palaceByBranch.get((palace.branchIndex + 6) % 12);
+    const sanFangBranches = [palace.branchIndex, (palace.branchIndex + 4) % 12, (palace.branchIndex + 8) % 12, (palace.branchIndex + 6) % 12];
+    const sanFangSiZheng = sanFangBranches.map((branch) => palaceByBranch.get(branch)?.name).filter((name): name is string => Boolean(name));
+    return {
+      ...palace,
+      oppositePalace: opposite?.name,
+      borrowedStars: palace.isEmpty ? (opposite?.majorStars.map((star) => star.name) ?? []) : [],
+      sanFangSiZheng,
+    };
+  });
+  const insights = buildZiweiInsights({ palaces, mingGongBranch, shenGongBranch });
+  const yearStem = String(astrolabe.rawDates.chineseDate.yearly[0] ?? "").slice(0, 1);
+  const yangStems = new Set(["甲", "丙", "戊", "庚", "壬"]);
+  const yinYangGender = `${yangStems.has(yearStem) ? "阳" : "阴"}${gender}`;
 
   return {
     input: profile,
@@ -174,13 +203,19 @@ export const buildZiweiChartFromProfile = (
       earthlyBranchOfSoulPalace: astrolabe.earthlyBranchOfSoulPalace,
       earthlyBranchOfBodyPalace: astrolabe.earthlyBranchOfBodyPalace,
       fiveElementsClass: astrolabe.fiveElementsClass,
+      mingZhu: astrolabe.soul,
+      shenZhu: astrolabe.body,
+      yinYangGender,
       mutagens: {
         lu,
         quan,
         ke,
         ji,
       },
-      palaces: astrolabe.palaces.map(serializePalace),
+      patterns: insights.patterns,
+      sanFangSiZheng: insights.sanFangSiZheng,
+      emptyPalaces: insights.emptyPalaces,
+      palaces,
     },
   };
 };

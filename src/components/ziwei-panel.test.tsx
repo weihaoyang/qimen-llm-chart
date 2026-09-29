@@ -3,6 +3,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ProfileInput } from "@/lib/profile";
+import { buildZiweiChartFromProfile } from "@/lib/ziwei/chart";
 
 const state = vi.hoisted(() => ({ props: [] as Array<Record<string, unknown>> }));
 
@@ -69,5 +70,17 @@ describe("ZiweiPanel", () => {
     expect(divideFor()).toBe("current");
     expect(divideFor("midnight")).toBe("current");
     expect(divideFor("zi-start")).toBe("forward");
+  });
+
+  it("shows auditable chart structure when a normalized chart is supplied", () => {
+    const chart = buildZiweiChartFromProfile({
+      original: { ...baseValue, timeZone: "Asia/Shanghai" },
+      normalized: { datetime: baseValue.datetime, timeZone: baseValue.timeZone, calendarMode: "solar", timeBasis: "civil" },
+    });
+    render(<ZiweiPanel value={baseValue} chart={chart} />);
+
+    expect(screen.getByRole("heading", { name: "命盘结构识别" })).toBeTruthy();
+    expect(screen.getByText(/命宫三方四正/)).toBeTruthy();
+    expect(screen.getByText(/供核对与研究/)).toBeTruthy();
   });
 });
