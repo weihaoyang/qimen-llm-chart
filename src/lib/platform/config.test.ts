@@ -72,10 +72,10 @@ describe("platform config", () => {
       buildPlatformSocialLoginStartUrl({
         baseUrl: "https://platform.example.com",
         provider: "wechat",
-        redirectUrl: "https://qmdj.example.com/auth/platform-callback",
+        redirectUrl: "https://qmdj.example.com/#/auth/callback",
       }),
     ).toBe(
-      "https://platform.example.com/api/v1/identity/social/wechat/start?redirect=https%3A%2F%2Fqmdj.example.com%2Fauth%2Fplatform-callback",
+      "https://platform.example.com/api/v1/identity/social/wechat/start?redirect=https%3A%2F%2Fqmdj.example.com%2F%23%2Fauth%2Fcallback",
     );
   });
 
@@ -86,10 +86,10 @@ describe("platform config", () => {
         loginUrl: "https://account.example.com/login",
         productCode: "shengtian-banzi",
         accessScope: "shengtian-banzi-core",
-        returnUrl: "https://qmdj.example.com/auth/platform-callback",
+        returnUrl: "https://qmdj.example.com/#/auth/callback",
       }),
     ).toBe(
-      "https://account.example.com/login?return_url=https%3A%2F%2Fqmdj.example.com%2Fauth%2Fplatform-callback&redirect_url=https%3A%2F%2Fqmdj.example.com%2Fauth%2Fplatform-callback&product_code=shengtian-banzi&access_scope=shengtian-banzi-core",
+      "https://account.example.com/login?return_url=https%3A%2F%2Fqmdj.example.com%2F%23%2Fauth%2Fcallback&redirect_url=https%3A%2F%2Fqmdj.example.com%2F%23%2Fauth%2Fcallback&product_code=shengtian-banzi&access_scope=shengtian-banzi-core",
     );
   });
 
@@ -99,13 +99,13 @@ describe("platform config", () => {
       clientId: "shengtian-banzi",
       productCode: "shengtian-banzi",
       accessScope: "shengtian-banzi-core",
-      redirectUri: "https://qmdj.singseq.com/auth/platform-callback",
+      redirectUri: "https://qmdj.singseq.com/#/auth/callback",
       codeChallenge: "challenge",
       state: "state",
     });
 
     expect(url).toBe(
-      "https://singseq.com/oauth/authorize?return_url=https%3A%2F%2Fqmdj.singseq.com%2Fauth%2Fplatform-callback&redirect_url=https%3A%2F%2Fqmdj.singseq.com%2Fauth%2Fplatform-callback&product_code=shengtian-banzi&access_scope=shengtian-banzi-core&client_id=shengtian-banzi&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2Fauth%2Fplatform-callback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
+      "https://singseq.com/oauth/authorize?return_url=https%3A%2F%2Fqmdj.singseq.com%2F%23%2Fauth%2Fcallback&redirect_url=https%3A%2F%2Fqmdj.singseq.com%2F%23%2Fauth%2Fcallback&product_code=shengtian-banzi&access_scope=shengtian-banzi-core&client_id=shengtian-banzi&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2F%23%2Fauth%2Fcallback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
     );
     expect(url).not.toContain("app.singseq.com");
   });

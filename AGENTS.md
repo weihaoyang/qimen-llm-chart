@@ -45,7 +45,7 @@
 - 登录入口路由: `/paipan`
 - 购买入口路由: `/`
 - 支付结果页路由: `/billing/result`
-- 平台登录回跳页路由: `/auth/platform-callback`
+- 平台登录回跳合同: `/#/auth/callback`（由 `/paipan` 主工作台处理，不存在独立回跳页）
 
 ## 平台接入硬约束
 
@@ -105,7 +105,7 @@
 - 生产环境已部署到包含 `shengtian-banzi` 的版本
 - 生产环境 seed 已包含 `shengtian-banzi` 产品、三档套餐与 `metaphysics_workbench` 行业入口
 - Alipay 当前可用；WeChat Pay 尚未配置完成
-- `https://qmdj.singseq.com/auth/platform-callback` 已可进入统一 OAuth/PKCE 链路；若域名或路径变化，必须重新同步平台 `return_url` 白名单
+- `https://qmdj.singseq.com/#/auth/callback` 是唯一统一 OAuth/PKCE 回跳合同；若域名或路径变化，必须重新同步平台 `return_url` 白名单。旧 `/auth/platform-callback` 不得恢复。
 - 2026-09-16 统一登录 CAPTCHA 生产修复已验收：平台 siteverify 使用 form-urlencoded，官网控件直连平台签发的 canonical Cap endpoint；本仓库不得复制或绕过该实现
 
 ## 标准接入流程

@@ -22,6 +22,7 @@ export type PlatformOAuthCallback = {
 };
 
 const PLATFORM_OAUTH_STORAGE_KEY = "qmdj.platform.oauth.v1";
+export const PLATFORM_OAUTH_CALLBACK_PATH = "/#/auth/callback";
 
 export type PlatformAccessState = {
   session: PlatformSession;
@@ -190,7 +191,7 @@ export const preparePlatformOAuthLogin = async (
   origin: string,
 ) => {
   const request = await createPlatformOAuthRequest();
-  const redirectUri = `${origin.replace(/\/$/, "")}/auth/platform-callback`;
+  const redirectUri = `${origin.replace(/\/$/, "")}${PLATFORM_OAUTH_CALLBACK_PATH}`;
   return {
     request,
     url: buildPlatformOAuthLoginUrl({
@@ -227,9 +228,12 @@ export const consumePlatformOAuthRequest = (state: string) => {
 };
 
 export const parsePlatformOAuthCallback = (value: string): PlatformOAuthCallback | null => {
-  const normalized = value.startsWith("#") || value.startsWith("?") ? value.slice(1) : value;
-  if (!normalized) return null;
-  const params = new URLSearchParams(normalized);
+  if (!value.startsWith("#")) return null;
+  const normalized = value.slice(1);
+  if (!normalized.startsWith("/auth/callback")) return null;
+  const query = normalized.slice("/auth/callback".length);
+  if (query && !query.startsWith("?")) return null;
+  const params = new URLSearchParams(query.slice(1));
   const code = params.get("code")?.trim() ?? "";
   const state = params.get("state")?.trim() ?? "";
   return code.startsWith("ssp_oauth_") && state ? { code, state } : null;

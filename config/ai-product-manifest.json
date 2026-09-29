@@ -3,7 +3,7 @@
   "platform_api_origin": "https://api.singseq.com",
   "oauth_authorize_url": "https://singseq.com/oauth/authorize",
   "product_origin_url": "https://qmdj.singseq.com",
-  "oauth_callback_path": "/auth/platform-callback",
+  "oauth_callback_path": "/#/auth/callback",
   "product_code": "shengtian-banzi",
   "access_scope": "shengtian-banzi-core",
   "capabilities": {

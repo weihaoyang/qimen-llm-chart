@@ -74,10 +74,13 @@ import {
   redeemInvitationCode,
   restorePlatformAccessState,
   preparePlatformOAuthLogin,
+  parsePlatformOAuthCallback,
+  consumePlatformOAuthRequest,
+  PLATFORM_OAUTH_CALLBACK_PATH,
   savePlatformOAuthRequest,
 } from "@/lib/platform/browser";
 import { createProductPlatformClient } from "@/lib/platform/client";
-import { loadPlatformSession, clearPlatformSession } from "@/lib/platform/session";
+import { loadPlatformSession, clearPlatformSession, savePlatformSession } from "@/lib/platform/session";
 import { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 import type { PlanCatalogItem, PlatformProfile, PlatformSession } from "@singularity-sequence/web-sdk";
 import {
@@ -102,7 +105,6 @@ import { SummaryStrip } from "./summary-strip";
 import { KlinePanel } from "./kline-panel";
 import { ClassicObservatoryPanel } from "./classic-observatory-panel";
 import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
-import { AdminInvitationPanel } from "./admin-invitation-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
 import { ZiweiPanel } from "./ziwei-panel";
 import { CombinedMap } from "./combined-map";
@@ -535,6 +537,91 @@ export function AppShell({ platformConfig }: AppShellProps) {
     setSelectedPalace(currentState.qimenChart?.raw.palaces[0]?.position ?? null);
   }, [clock]);
 
+  useEffect(() => {
+    let active = true;
+    const restoreOAuthCallback = async () => {
+      if (typeof window === "undefined") return;
+      const callback = parsePlatformOAuthCallback(window.location.hash);
+      if (!callback) return;
+      const clearCallback = () => {
+        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+      };
+      try {
+        const oauthRequest = consumePlatformOAuthRequest(callback.state);
+        if (!oauthRequest) throw new Error("登录授权已过期或来源校验失败，请返回首页重新登录。");
+        const redirectUri = `${window.location.origin}${PLATFORM_OAUTH_CALLBACK_PATH}`;
+        const response = await fetch("/api/platform/session", {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: callback.code,
+            verifier: oauthRequest.verifier,
+            redirect_uri: redirectUri,
+          }),
+        });
+        const result = await response.json().catch(() => ({})) as {
+          session?: PlatformSession;
+          profile?: PlatformProfile;
+          csrf_token?: string;
+          error?: string;
+        };
+        if (!response.ok || !result.session) {
+          throw new Error(result.error ?? "平台登录交换失败，请重试。");
+        }
+        const session = {
+          ...result.session,
+          access_token: "",
+          refresh_token: "",
+          csrf_token: result.csrf_token ?? "",
+        };
+        savePlatformSession(session);
+        clearCallback();
+        const access = await restorePlatformAccessState(session);
+        const client = createProductPlatformClient({
+          accessToken: access.session.access_token,
+          csrfToken: access.session.csrf_token,
+        });
+        const [gate, usage, plans] = await Promise.all([
+          client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
+          fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
+          listPlatformPlans(platformConfig.productCode),
+        ]);
+        if (!active) return;
+        setPlatformWorkspace({
+          status: "authenticated",
+          catalogStatus: "ready",
+          session: access.session,
+          profile: access.profile ?? result.profile ?? null,
+          gate,
+          usage,
+          plans: plans.items,
+          channels: plans.channels,
+          error: null,
+        });
+        setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
+          key,
+          { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
+        ])) as Record<WorkbenchMode, AgentModeState>);
+      } catch (error) {
+        clearPlatformSession();
+        clearCallback();
+        if (!active) return;
+        setPlatformWorkspace((current) => ({
+          ...current,
+          status: "guest",
+          session: null,
+          profile: null,
+          gate: null,
+          usage: null,
+          error: error instanceof Error ? error.message : "恢复平台登录失败。",
+        }));
+      }
+    };
+    void restoreOAuthCallback();
+    return () => { active = false; };
+  }, [platformConfig]);
+
   const partnerNormalizedProfile = useMemo(() => {
     try { return normalizeProfileInput(partnerFormState); } catch { return null; }
   }, [partnerFormState]);
@@ -568,6 +655,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
   useEffect(() => {
     let cancelled = false;
     const loadPlatformWorkspace = async () => {
+      if (typeof window !== "undefined" && parsePlatformOAuthCallback(window.location.hash)) {
+        // The callback effect owns this mount while the authorization code is exchanged.
+        return;
+      }
       if (!platformConfig) {
         setPlatformWorkspace((current) => ({ ...current, status: "error", error: "平台接入配置缺失，暂时无法登录或使用 AI 分析。" }));
         return;
@@ -668,6 +759,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
       key,
       { ...state, authMode: "guest", usageAvailable: 0, usageConsumed: 0 },
     ])) as Record<WorkbenchMode, AgentModeState>);
+  };
+
+  const handlePlatformSwitchAccount = async () => {
+    await handlePlatformLogout();
+    await handlePlatformLogin();
   };
 
   const qimenStructuredText = useMemo(() => {
@@ -810,7 +906,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             : undefined,
           ziwei: ziweiChart
             ? {
-                format: "ziwei-llm-compact-v1",
+                format: "ziwei-llm-compact-v2",
                 payload: JSON.parse(serializeZiweiToCompactJson(ziweiChart)),
                 structuredText: ziweiStructuredText,
               }
@@ -869,7 +965,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             : undefined,
           ziwei: ziweiChart
             ? {
-                format: "ziwei-llm-compact-v1",
+                format: "ziwei-llm-compact-v2",
                 payload: JSON.parse(serializeZiweiToCompactJson(ziweiChart)),
               }
             : undefined,
@@ -1756,7 +1852,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           <BaziCompatibilityPanel value={compatibility} chart={baziChart} partnerChart={partnerBaziChart} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} open={baziPairOpen} onOpenChange={setBaziPairOpen} />
         </> : null}
 
-        {mode === "ziwei" ? <ZiweiPanel value={formState} /> : null}
+        {mode === "ziwei" ? <ZiweiPanel value={formState} chart={ziweiChart} /> : null}
 
         {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
@@ -2030,16 +2126,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
                 <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} 轮` : "权益已连接"}</small>
               </span>
               {invitationRedeemControl}
-              {platformWorkspace.session && platformConfig ? (
-                <AdminInvitationPanel
-                  key={platformWorkspace.session.access_token}
-                  accessToken={platformWorkspace.session.access_token}
-                  csrfToken={platformWorkspace.session.csrf_token}
-                  productCode={platformConfig.productCode}
-                  planCode={AGENT_PLAN_CODE}
-                />
-              ) : null}
-              <button type="button" className="platform-account__button" onClick={() => void handlePlatformLogout()}>退出</button>
+              <button type="button" className="platform-account__button" onClick={() => void handlePlatformSwitchAccount()}>切换账户</button>
+              <button type="button" className="platform-account__button" onClick={() => void handlePlatformLogout()}>退出登录</button>
             </>
           ) : (
             <>

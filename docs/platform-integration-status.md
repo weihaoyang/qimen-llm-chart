@@ -95,7 +95,9 @@ CAPTCHA 已完成生产验收。CAPTCHA/OTP 仍完全属于 Consumer Platform �
 4. 行业入口：`GET /api/v1/commerce/industries/metaphysics_workbench/launch`
 5. 数据库迁移：生产环境 migration head 已对齐
 6. seed 状态：生产环境已包含 `shengtian-banzi` 产品、三档套餐与行业入口
-7. OAuth callback：`https://qmdj.singseq.com/auth/platform-callback`
+7. OAuth callback：`https://qmdj.singseq.com/#/auth/callback`。这是唯一回跳合同；授权
+   code/state 位于 fragment，QMDJ 主工作台完成 state/PKCE 交换、平台 session 恢复和
+   gate/usage 刷新后清理 fragment。旧的 `/auth/platform-callback` 路径已删除，不保留兼容白名单。
 8. CAPTCHA：平台运行 `667f2aa`（form-urlencoded siteverify）；官网运行
    `20260916-214725-16c0b67`（canonical Cap endpoint）；真实移动端用户确认原
    “验证失败”已消失

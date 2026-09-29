@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, parsePlatformCallbackFragment, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
+import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, parsePlatformCallbackFragment, parsePlatformOAuthCallback, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
 
 describe("platform browser helpers", () => {
   afterEach(() => {
@@ -17,11 +17,20 @@ describe("platform browser helpers", () => {
     expect(url.origin + url.pathname).toBe("https://singseq.com/oauth/authorize");
     expect(url.searchParams.get("client_id")).toBe("shengtian-banzi");
     expect(url.searchParams.get("access_scope")).toBe("shengtian-banzi-core");
-    expect(url.searchParams.get("redirect_uri")).toBe("https://qmdj.singseq.com/auth/platform-callback");
+    expect(url.searchParams.get("redirect_uri")).toBe("https://qmdj.singseq.com/#/auth/callback");
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("code_challenge")).toBe(login.request.challenge);
     expect(url.searchParams.get("state")).toBe(login.request.state);
     expect(login.request.verifier.length).toBeGreaterThan(40);
+  });
+
+  it("parses only the canonical hash callback route", () => {
+    expect(parsePlatformOAuthCallback("#/auth/callback?code=ssp_oauth_1&state=state-1")).toEqual({
+      code: "ssp_oauth_1",
+      state: "state-1",
+    });
+    expect(parsePlatformOAuthCallback("#/auth/legacy-callback?code=ssp_oauth_1&state=state-1")).toBeNull();
+    expect(parsePlatformOAuthCallback("?code=ssp_oauth_1&state=state-1")).toBeNull();
   });
   it("parses the social login callback hash fragment", () => {
     const result = parsePlatformCallbackFragment(
