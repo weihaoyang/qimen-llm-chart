@@ -6,6 +6,14 @@
   "platform_api_origin": "https://api.singseq.com",
   "product_origin_url": "https://qmdj.singseq.com",
   "access_scope": "shengtian-banzi-core",
+  "oauth": {
+    "client_id": "shengtian-banzi",
+    "redirect_uri": "https://qmdj.singseq.com/#/auth/callback",
+    "access_scope": "shengtian-banzi-core",
+    "response_type": "code",
+    "code_challenge_method": "S256",
+    "session_mode": "platform_http_only_cookie"
+  },
   "capabilities": [
     "identity",
     "catalog",
