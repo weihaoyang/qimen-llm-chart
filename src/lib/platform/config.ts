@@ -143,6 +143,7 @@ export const buildPlatformUnifiedLoginUrl = ({
   accessScope: string;
   returnUrl: string;
 }) => {
+  void returnUrl;
   // The unified identity entrypoint is hosted by the canonical website.
   // app.singseq.com is not a production DNS route and must never be used as
   // an implicit fallback for product OAuth redirects.
@@ -151,8 +152,6 @@ export const buildPlatformUnifiedLoginUrl = ({
     resolvedLoginUrl,
     /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
   );
-  url.searchParams.set("return_url", returnUrl);
-  url.searchParams.set("redirect_url", returnUrl);
   url.searchParams.set("product_code", productCode);
   url.searchParams.set("access_scope", accessScope);
   return url.toString();
@@ -185,8 +184,6 @@ export const buildPlatformOAuthLoginUrl = ({
     resolvedLoginUrl,
     /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
   );
-  url.searchParams.set("return_url", redirectUri);
-  url.searchParams.set("redirect_url", redirectUri);
   url.searchParams.set("product_code", productCode);
   url.searchParams.set("access_scope", accessScope);
   url.searchParams.set("client_id", clientId);

@@ -10,13 +10,15 @@
     "agent": {
       "plan_code": "shengtian-banzi-analysis-10",
       "usage_unit": "analysis_turn",
+      "usage_label": "研究对话轮次",
       "provider_route": "/api/agent",
       "gate_required": true,
       "token_metering": "platform_token_usage"
     },
     "kline": {
       "plan_code": "shengtian-banzi-kline-precise-1",
-      "usage_unit": "analysis_turn",
+      "usage_unit": "kline_report",
+      "usage_label": "K 线 AI 分析报告",
       "provider_route": "/api/agent",
       "gate_required": true,
       "token_metering": "platform_token_usage"

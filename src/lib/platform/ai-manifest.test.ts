@@ -10,7 +10,7 @@ describe("AI product manifest", () => {
       oauth_authorize_url: string;
       product_code: string;
       access_scope: string;
-      capabilities: Record<string, { plan_code: string }>;
+      capabilities: Record<string, { plan_code: string; usage_unit: string; usage_label: string }>;
     };
     expect(manifest.platform_api_origin).toBe("https://api.singseq.com");
     expect(manifest.oauth_authorize_url).toBe("https://singseq.com/oauth/authorize");
@@ -18,5 +18,8 @@ describe("AI product manifest", () => {
     expect(manifest.access_scope).toBe("shengtian-banzi-core");
     expect(manifest.capabilities.agent.plan_code).toBe(AGENT_PLAN_CODE);
     expect(manifest.capabilities.kline.plan_code).toBe(KLINE_PLAN_CODE);
+    expect(manifest.capabilities.agent.usage_unit).toBe("analysis_turn");
+    expect(manifest.capabilities.kline.usage_unit).toBe("kline_report");
+    expect(manifest.capabilities.kline.usage_label).toBe("K 线 AI 分析报告");
   });
 });

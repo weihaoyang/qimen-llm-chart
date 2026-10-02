@@ -1,0 +1,24 @@
+{
+  "schema_version": "singseq.product.v1",
+  "product_code": "shengtian-banzi",
+  "product_name": "知几",
+  "product_origin": "web",
+  "platform_api_origin": "https://api.singseq.com",
+  "product_origin_url": "https://qmdj.singseq.com",
+  "access_scope": "shengtian-banzi-core",
+  "capabilities": [
+    "identity",
+    "catalog",
+    "checkout",
+    "payment_result",
+    "entitlement_gate",
+    "usage_reserve",
+    "invitation_redeem",
+    "token_usage",
+    "ai_analysis"
+  ],
+  "plans": [
+    { "plan_code": "shengtian-banzi-analysis-10", "billing_mode": "per_use", "access_scope": "shengtian-banzi-core", "usage_quantity": 10, "usage_unit": "analysis_turn", "usage_label": "研究对话轮次" },
+    { "plan_code": "shengtian-banzi-kline-precise-1", "billing_mode": "per_use", "access_scope": "shengtian-banzi-core", "usage_quantity": 1, "usage_unit": "kline_report", "usage_label": "K 线 AI 分析报告" }
+  ]
+}

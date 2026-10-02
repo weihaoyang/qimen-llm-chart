@@ -411,6 +411,12 @@ const EMPTY_RELATIONSHIP_KLINES = {
   year: buildQimenKline([], "relationship"),
 };
 
+const PLATFORM_CATALOG_TIMEOUT_MS = 2500;
+const withPlatformCatalogTimeout = <T,>(promise: Promise<T>) => Promise.race([
+  promise,
+  new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error("平台目录请求超时。")), PLATFORM_CATALOG_TIMEOUT_MS)),
+]);
+
 export function AppShell({ platformConfig }: AppShellProps) {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
@@ -585,7 +591,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         const [gate, usage, plans] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
-          listPlatformPlans(platformConfig.productCode),
+          withPlatformCatalogTimeout(listPlatformPlans(platformConfig.productCode)),
         ]);
         if (!active) return;
         setPlatformWorkspace({
@@ -668,14 +674,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
       const session = loadPlatformSession();
       if (!session) {
         try {
-          const plans = await plansPromise;
+          const plans = await withPlatformCatalogTimeout(plansPromise);
           if (cancelled) return;
           setPlatformWorkspace({ status: "guest", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: null });
         } catch (nextError) {
           if (cancelled) return;
           setPlatformWorkspace({
             status: "guest",
-            catalogStatus: "error",
+            // A slow public catalog must never hide the account action. The
+            // catalog can be retried by the next checkout interaction.
+            catalogStatus: nextError instanceof Error && nextError.message === "平台目录请求超时。" ? "loading" : "error",
             session: null,
             profile: null,
             gate: null,
@@ -694,7 +702,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         const [gate, usage, plans] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
-          plansPromise,
+          withPlatformCatalogTimeout(plansPromise),
         ]);
         if (cancelled) return;
         setPlatformWorkspace({ status: "authenticated", catalogStatus: "ready", session: access.session, profile: access.profile, gate, usage, plans: plans.items, channels: plans.channels, error: null });
@@ -706,7 +714,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         if (cancelled) return;
         clearPlatformSession();
         try {
-          const plans = await plansPromise;
+          const plans = await withPlatformCatalogTimeout(plansPromise);
           setPlatformWorkspace({ status: "guest", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: nextError instanceof Error ? nextError.message : "平台登录状态已失效。" });
         } catch (catalogError) {
           setPlatformWorkspace({
@@ -1280,7 +1288,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         { ...state, authMode: "account", usageAvailable: nextUsage.available, usageConsumed: nextUsage.consumed },
       ])) as Record<WorkbenchMode, AgentModeState>);
       setInvitationCode("");
-      setInvitationCodeMessage(`兑换成功：${redemption.plan_title}，获得 ${redemption.credits_granted} 次；当前可用 ${redemption.available} 次。${refreshWarning}`);
+      setInvitationCodeMessage(`兑换成功：${redemption.plan_title}，获得 ${redemption.credits_granted} ${redemption.usage_label}；当前可用 ${redemption.available}。${refreshWarning}`);
     } catch (error) {
       setInvitationCodeError(error instanceof Error ? error.message : "邀请码兑换失败，请稍后重试。");
     } finally {
@@ -2031,8 +2039,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
       </button>
       {invitationCodeOpen ? (
         <form className="platform-account__redeem-popover" onSubmit={(event) => void handleInvitationRedeem(event)}>
-          <strong>兑换分析次数</strong>
-          <p>登录平台账户后兑换；次数和有效期由平台邀请码配置决定，本产品不额外设置每日兑换限制。</p>
+          <strong>兑换平台权益</strong>
+          <p>额度类型、数量和有效期由平台套餐及邀请码配置决定。</p>
           <Input
             aria-label="邀请码"
             autoComplete="off"
