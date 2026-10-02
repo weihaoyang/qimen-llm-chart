@@ -1,6 +1,6 @@
 # Agent 聊天栏交接说明
 
-更新时间：2026-08-30
+更新时间：2026-10-02
 
 ## 当前目标
 
@@ -45,6 +45,14 @@ node node_modules\next\dist\bin\next start -p 3102
 ```
 
 启动前先确认没有旧实例占用 3102；只保留一个 `next start`。不要混用 `next dev`、standalone `server.js` 或手工拼接 `.next/static`。
+
+生产使用 Next standalone 时，发布包必须同时提供：
+
+- `.next/standalone/server.js` 及其依赖；
+- `.next/standalone/.next/static`（从同一次构建的 `.next/static` 复制）；
+- `public`（如果产品构建了该目录）。
+
+`qmdj.service` 的工作目录是发布包内的 `.next/standalone`。只复制 `server.js` 或只切换服务路径会让 HTML 返回 200，但所有 Next JS/CSS 资源变成 404。切换前必须从公网 HTML 提取所有同源 `script`/`link` 资源并逐个确认 HTTP 200，再保留旧 release 作为回滚目标。
 
 如果新电脑没有 `F:\qmdj`，先从版本库恢复到该路径，再执行上面的构建和启动命令；不要从旧 `.next` 目录或临时压缩包拼装运行版本。
 
