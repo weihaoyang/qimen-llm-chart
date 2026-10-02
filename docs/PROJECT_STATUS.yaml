@@ -1,12 +1,12 @@
 project: 'qmdj'
 profile: 'high-risk'
-updated: '2026-09-25'
+updated: '2026-10-02'
 objective: '完成知几排盘工作台的领域能力、平台接入与本地可验证闭环'
 success_condition: '用户可在 /paipan 使用奇门、八字、紫微与三盘联合排盘及相关分析；平台登录、套餐、支付恢复和受限 AI 均遵守统一平台 gate；产品业务数据留在本仓库边界且本地验证可复现'
-phase: 'completed'
-status: 'platform_account_payment_ai_integration_closed_locally'
-current_blocker: '本次代码与合同已收口；生产部署尚未执行。部署前必须注入 PLATFORM_PRODUCT_SERVICE_SECRET，并按平台真实拓扑完成备份、重建、healthz 与不扣款支付链接冒烟。'
-next_action: '按 singseq-production-deploy 完成独立生产发布；本地提交 d25f87a 与平台 SDK ba59c84 已推送 main。'
+phase: 'verifying'
+status: 'platform_account_payment_ai_integration_deployed_pending_authenticated_acceptance'
+current_blocker: '生产 release 20261002-0836-d9fe71b（commit d9fe71b）已切换并通过本地/公网 health、version 与匿名 AI 拒绝冒烟；自动化浏览器当前缺少 Codex session token，无法独立复核已登录后的 gate/AI 页面或执行管理员邀请码读写。未创建生产订单、支付尝试或邀请码。'
+next_action: '使用可审计的已登录管理员会话完成四产品 gate/AI 页面点击和邀请码列表/创建权限验收；不要执行真实扣款。'
 active_workers: []
 recent_evidence:
   - '2026-08-16: 修复奇门移动端摘要条的 36px 固定高度和省略裁切；390px 实测九项摘要的 strong scrollHeight 均等于 clientHeight，节气、旬首、值符、值使、驿马、时盘仪表与四柱均完整显示。'
@@ -31,8 +31,8 @@ recent_evidence:
   - '2026-09-16: 统一登录边界完成生产修复：platform 667f2aa 使用 form-urlencoded siteverify，website release 20260916-214725-16c0b67 使用 canonical Cap endpoint；/login、/paipan、identity captcha、Cap challenge 均 200，真实移动端用户确认原 CAPTCHA 验证失败消失。'
   - '2026-09-25: qmdj 平台接入收口：普通代码统一 ProductPlatformClient，管理员邀请码隔离 admin client，服务端 gate/usage/guest usage 改走平台 SDK；AI 非流式与流式成功结算后通过 ProductServiceClient 上报 provider/model/token usage；新增 PLATFORM_INTEGRATION.md 与服务密钥边界文档。qmdj 全量 578 passed/13 skipped、TypeScript、lint、Next build 通过；qmdj commit d25f87a 已推送 main。'
   - '2026-09-25: 平台 web SDK 增加服务端显式 Cookie、可注入 fetch 与关闭自动 refresh 选项；SDK 28/28 测试通过，commit ba59c84 已推送 main。'
-last_commit: 'd25f87a'
-remote_state: 'qmdj main 已推送 d25f87a；平台 main 已推送 ba59c84。当前生产仍运行既有 release，本次重构尚未部署；并行 CSS 与平台身份改动均未混入本次提交。'
+last_commit: 'd9fe71b'
+remote_state: 'qmdj main 已推送 d9fe71b；平台 main 已推送 e32bd42。生产 qmdj 已运行 20261002-0836-d9fe71b，保留 20261001-1012-login-timeout 作为回滚目标；平台网站 OAuth 上下文修复候选已由独立线程发布，Quant 仅完成公网 bundle 只读审查。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'

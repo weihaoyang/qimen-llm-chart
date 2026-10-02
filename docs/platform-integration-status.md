@@ -28,6 +28,7 @@ QMDJ 不实现公司级 OTP、用户库、订单、支付结果、订阅或 enti
 - 平台 `/healthz`：公网 200。
 - 四个已登记产品的套餐/合同接口：公网 200。
 - QMDJ `/api/health`、`/api/version`：公网 200。
+- 当前生产 release：`20261002-0836-d9fe71b`，commit `d9fe71b`；本地上游与公网 `/api/version` 一致。
 - QMDJ 全套测试：583 passed，13 skipped。
 - QMDJ 生产构建：已通过。
 - 匿名访问 entitlement、AI、订单和支付尝试：按预期拒绝，未创建真实订单或扣款。
