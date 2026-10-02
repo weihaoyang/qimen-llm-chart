@@ -53,7 +53,7 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("tab", { name: "紫微" }));
 
     expect(await screen.findByRole("heading", { name: "命盘结构识别" })).toBeInTheDocument();
-    expect(screen.getByText(/命宫三方四正/)).toBeInTheDocument();
+    expect(screen.getAllByText(/命宫三方四正/).length).toBeGreaterThan(0);
   }, 60000);
 
   // The 胜天半子 surface used to be selected by a `product` prop that defaulted
