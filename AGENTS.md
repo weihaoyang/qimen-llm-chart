@@ -24,9 +24,13 @@
 
 任何 Agent 在本仓库开始工作前，必须先阅读以下平台文档：
 
-1. `F:\\singularity-sequence-consumer-platform\\docs\\integration\\ai-agent-platform-integration-spec.md`
-2. `F:\\singularity-sequence-consumer-platform\\docs\\integration\\product-integration-guide.md`
+1. `F:\\singularity-sequence-consumer-platform\\docs\\integration\\platform-sdk-and-product-integration.md`
+2. `F:\\singularity-sequence-consumer-platform\\docs\\integration\\qmdj-and-ai-platform-contract.md`
 3. `F:\\singularity-sequence-consumer-platform\\docs\\integration\\new-product-platform-launch-checklist.md`
+
+These are the only current platform integration sources. The two historical names
+`ai-agent-platform-integration-spec.md` and `product-integration-guide.md` are
+retired and must not be recreated or referenced by new work.
 
 如果任务涉及登录、账户、支付、会员、订阅、gate、上线接入，必须先按这些文档执行。
 
