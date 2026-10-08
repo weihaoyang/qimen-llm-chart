@@ -136,6 +136,10 @@ superadmin 原始读取），且 `ops.py` 直接读 `assessment_interpretations`
 - `bazi_provider.py` 改为调用该网关；qmdj 侧把内部端点挂到该合同下（保留旧路径一版兼容）。
 - 出口：平台不再有 `BAZI_AGENT_URL` 专用配置；qmdj 内部接口版本化；契约测试绿。
 
+> **契约草案已完成**：见
+> [`docs/rfc/2026-10-09-internal-ai-gateway-contract.md`](./2026-10-09-internal-ai-gateway-contract.md)
+> （HMAC/幂等/schema 版本/计量归属/qmdj 迁移映射/验收测试）。
+
 ### 阶段 2｜泛化「支付后一次性交付」原语
 - 把 `commerce.py` 的 guest 盲测绑定抽象为通用 primitives（产品注册「下单→可交付产物」）。
 - 出口：`commerce.py` 不再出现产品字面量/产品模型；具名豁免移除；支付合同测试不变绿不算完。
