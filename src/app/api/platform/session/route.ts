@@ -6,12 +6,22 @@ import {
   PLATFORM_BRIDGE_REFRESH_COOKIE,
   clearBridgeCookies,
   isBridgeToken,
+  isTrustedBridgeWriteOrigin,
   readRequestCookie,
   readResponseCookie,
   setBridgeCookies,
 } from "@/lib/platform/bridge";
 
+/**
+ * Reject a cross-site write before it can install or rotate the bridge cookies.
+ * See `isTrustedBridgeWriteOrigin` for why Origin is the only usable signal.
+ */
+const untrustedOrigin = (request: Request) =>
+  isTrustedBridgeWriteOrigin(request) ? null : noStore({ error: "请求来源不被信任。" }, { status: 403 });
+
 export async function PUT(request: Request) {
+  const rejected = untrustedOrigin(request);
+  if (rejected) return rejected;
   let body: { code?: unknown; verifier?: unknown; redirect_uri?: unknown };
   try { body = (await request.json()) as typeof body; } catch { return noStore({ error: "登录参数格式无效。" }, { status: 400 }); }
   if (typeof body.code !== "string" || typeof body.verifier !== "string" || typeof body.redirect_uri !== "string") return noStore({ error: "登录参数不完整。" }, { status: 400 });
@@ -32,6 +42,8 @@ export async function PUT(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const rejected = untrustedOrigin(request);
+  if (rejected) return rejected;
   let body: { access_token?: unknown; refresh_token?: unknown; csrf_token?: unknown };
   try {
     body = (await request.json()) as typeof body;
@@ -77,7 +89,9 @@ export async function GET(request: Request) {
   return noStore({ session: { access_token: access, csrf_token: csrf }, csrf_token: csrf });
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const rejected = untrustedOrigin(request);
+  if (rejected) return rejected;
   const response = noStore({ ok: true });
   clearBridgeCookies(response);
   return response;

@@ -100,3 +100,43 @@ export const clearBridgeCookies = (response: NextResponse) => {
     });
   }
 };
+
+/**
+ * Origins allowed to write to the bridge.
+ *
+ * Derived from the request itself so every deployment works without
+ * product-specific config: the request URL origin, the `Host` header (with
+ * `x-forwarded-proto` when behind a proxy), plus any explicit extras.
+ */
+const trustedBridgeWriteOrigins = (request: Request, extraOrigins: readonly string[]): Set<string> => {
+  const trusted = new Set<string>(extraOrigins.filter(Boolean));
+  try {
+    trusted.add(new URL(request.url).origin);
+  } catch {
+    // Route handlers always receive an absolute URL; ignore an unparsable one.
+  }
+  const host = request.headers.get("host");
+  if (host) {
+    trusted.add(`https://${host}`);
+    trusted.add(`http://${host}`);
+    const proto = request.headers.get("x-forwarded-proto");
+    if (proto) trusted.add(`${proto}://${host}`);
+  }
+  return trusted;
+};
+
+/**
+ * Reject cross-site writes to the bridge.
+ *
+ * `POST /api/platform/session` installs a caller-supplied token pair into
+ * first-party cookies, and it is reachable by a top-level cross-site `<form>`
+ * POST — which `SameSite=Lax` does not stop. The body token is attacker-chosen,
+ * so a CSRF token cannot help; Origin is the only reliable signal. A missing
+ * Origin (same-origin `fetch`, curl, the test client) is allowed, because
+ * browsers always attach it to the cross-site writes we intend to reject.
+ */
+export const isTrustedBridgeWriteOrigin = (request: Request, extraOrigins: readonly string[] = []): boolean => {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  return trustedBridgeWriteOrigins(request, extraOrigins).has(origin);
+};

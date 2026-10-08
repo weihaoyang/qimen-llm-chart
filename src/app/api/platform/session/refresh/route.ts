@@ -3,6 +3,7 @@ import { requirePlatformServerConfig } from "@/lib/platform/config";
 import {
   PLATFORM_BRIDGE_REFRESH_COOKIE,
   isBridgeToken,
+  isTrustedBridgeWriteOrigin,
   readRequestCookie,
   readResponseCookie,
   setBridgeCookies,
@@ -27,6 +28,7 @@ import {
  * deliberately, rather than something a `GET` could be trusted to do.
  */
 export async function POST(request: Request) {
+  if (!isTrustedBridgeWriteOrigin(request)) return noStore({ error: "请求来源不被信任。" }, { status: 403 });
   const refreshToken = readRequestCookie(request.headers, PLATFORM_BRIDGE_REFRESH_COOKIE);
   if (!isBridgeToken(refreshToken)) return noStore({ error: "平台登录已过期。" }, { status: 401 });
   const config = requirePlatformServerConfig(process.env);

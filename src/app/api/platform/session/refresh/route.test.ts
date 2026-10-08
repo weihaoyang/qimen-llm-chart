@@ -112,3 +112,41 @@ describe("POST /api/platform/session/refresh", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("bridge refresh Origin guard", () => {
+  const fetchSpy = vi.fn();
+
+  beforeEach(() => {
+    fetchSpy.mockReset();
+    vi.stubGlobal("fetch", fetchSpy);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const withOrigin = (origin: string, cookie: string) =>
+    new Request("http://local/api/platform/session/refresh", {
+      method: "POST",
+      headers: { origin, cookie },
+    });
+
+  it("rejects a cross-site Origin before touching the platform or the cookie", async () => {
+    const { POST } = await import("./route");
+    const response = await POST(withOrigin("https://evil.example", `qmdj_platform_refresh=${REFRESH}`));
+
+    expect(response.status).toBe(403);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("accepts the request's own Origin", async () => {
+    fetchSpy.mockResolvedValue(
+      platformResponse({ session: { user_id: "u_1" }, csrf_token: "c" }, 200, { ssp_access: NEW_ACCESS }),
+    );
+    const { POST } = await import("./route");
+    const response = await POST(withOrigin("http://local", `qmdj_platform_refresh=${REFRESH}`));
+
+    expect(response.status).toBe(200);
+  });
+});

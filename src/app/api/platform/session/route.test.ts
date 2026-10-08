@@ -119,7 +119,7 @@ describe("POST /api/platform/session", () => {
 describe("DELETE /api/platform/session", () => {
   it("expires every bridge cookie", async () => {
     const { DELETE } = await import("./route");
-    const response = await DELETE();
+    const response = await DELETE(request());
 
     expect(response.status).toBe(200);
     const cookies = response.headers.getSetCookie();
@@ -131,3 +131,51 @@ describe("DELETE /api/platform/session", () => {
     }
   });
 });
+
+// SameSite=Lax does not stop a top-level cross-site <form> POST, and the body
+// token is attacker-chosen, so a CSRF token cannot help — Origin is the only
+// reliable signal that a write to the bridge is first-party.
+describe("bridge write Origin guard", () => {
+  const withOrigin = (origin: string | undefined, init: RequestInit = {}) => {
+    const headers = new Headers(init.headers);
+    if (origin) headers.set("origin", origin);
+    return new Request("http://local/api/platform/session", { ...init, headers });
+  };
+
+  const tokenBody = JSON.stringify({ access_token: ACCESS, refresh_token: REFRESH, csrf_token: CSRF });
+  const writeInit: RequestInit = { method: "POST", headers: { "content-type": "application/json" }, body: tokenBody };
+
+  it("rejects a cross-site Origin on every write method", async () => {
+    const { PUT, POST, DELETE } = await import("./route");
+
+    expect((await PUT(withOrigin("https://evil.example", writeInit))).status).toBe(403);
+    expect((await POST(withOrigin("https://evil.example", writeInit))).status).toBe(403);
+    expect((await DELETE(withOrigin("https://evil.example", { method: "DELETE" }))).status).toBe(403);
+  });
+
+  it("accepts the request's own Origin", async () => {
+    const { POST } = await import("./route");
+    const response = await POST(withOrigin("http://local", writeInit));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.getSetCookie().some((value) => value.startsWith("qmdj_platform_access="))).toBe(true);
+  });
+
+  it("accepts an absent Origin (same-origin fetch, curl, the test client)", async () => {
+    const { DELETE } = await import("./route");
+    expect((await DELETE(withOrigin(undefined, { method: "DELETE" }))).status).toBe(200);
+  });
+
+  it("trusts a proxied Host when the request URL is internal", async () => {
+    const { DELETE } = await import("./route");
+    const headers = new Headers({
+      origin: "https://qmdj.singseq.com",
+      host: "qmdj.singseq.com",
+      "x-forwarded-proto": "https",
+    });
+    const request = new Request("http://internal:3000/api/platform/session", { method: "DELETE", headers });
+
+    expect((await DELETE(request)).status).toBe(200);
+  });
+});
+
