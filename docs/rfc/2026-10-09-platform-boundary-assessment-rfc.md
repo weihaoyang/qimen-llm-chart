@@ -139,10 +139,20 @@ superadmin 原始读取），且 `ops.py` 直接读 `assessment_interpretations`
 > **契约草案已完成**：见
 > [`docs/rfc/2026-10-09-internal-ai-gateway-contract.md`](./2026-10-09-internal-ai-gateway-contract.md)
 > （HMAC/幂等/schema 版本/计量归属/qmdj 迁移映射/验收测试）。
+>
+> **实现状态（双侧，已提交并推送）**：
+> - qmdj：新增 `POST /api/internal/ai/bazi-prediction`（双签名 + 能力绑定 + nonce 一次性）；
+> - 平台：`app/integrations/internal_ai.py` + `SS_INTERNAL_AI_*` 配置 + `bazi_provider` **opt-in** 路由；
+> - **默认行为不变**（未配置网关时仍走旧 `SS_BAZI_AGENT_URL`）；
+> - 平台未部署：上线仍需按平台 `AGENTS.md` §7 走拓扑确认/备份/重建/迁移头/healthz/冒烟。
 
 ### 阶段 2｜泛化「支付后一次性交付」原语
 - 把 `commerce.py` 的 guest 盲测绑定抽象为通用 primitives（产品注册「下单→可交付产物」）。
 - 出口：`commerce.py` 不再出现产品字面量/产品模型；具名豁免移除；支付合同测试不变绿不算完。
+
+> **阻塞（需独立支付评审，本轮不执行）**：`commerce.py` 属**支付冻结区**。平台 `AGENTS.md` §8
+> 与边界文档 §10「具名豁免」明确：支付语义不随结构重构迁移。本条必须走独立支付评审后单独排期，
+> **不能作为边界重构的一部分直接改**。
 
 ### 阶段 3｜计算迁出（灰度，数据不动）
 - 在 assessment 产品仓库实现领域**计算**（预测/解读/盲测打分规则与提示词）；
