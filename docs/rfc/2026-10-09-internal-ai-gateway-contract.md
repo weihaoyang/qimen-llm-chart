@@ -59,6 +59,11 @@ canonical = f"{timestamp}.{nonce}.{raw_body}"
 
 ## 4. 请求封装（`X-SS-Request-Schema: 1`）
 
+> **v1 简化（已按此实现）**：请求体就是**能力载荷本体**（如八字出生资料），签名对象也是它；
+> `{capability, input, context, options}` 信封是**后续 v2 选项**，v1 不启用，以减少一层包装。
+
+若启用 v2 信封，形态如下：
+
 ```json
 {
   "capability": "bazi-prediction",
@@ -153,6 +158,15 @@ canonical = f"{timestamp}.{nonce}.{raw_body}"
 >   版本化 `X-SS-*`（`hmac(ts.nonce.body)` + 能力绑定 + nonce 一次性）与旧 `x-ss-bazi-*`；
 > - 常量能力名 `bazi-prediction`；nonce 走有界 TTL 缓存；
 > - 兼容：旧路径与旧签名行为不变（回归测试保持通过）。
+>
+> **平台侧阶段 1（已实现，本地未部署）**：`singularity-sequence-consumer-platform`
+> - `app/integrations/internal_ai.py`：通用 `InternalAiClient`（签名 `timestamp.nonce.body`、
+>   `X-SS-*` 头、能力/键标识、HTTPS/超时约束、信封容错）；
+> - `core/config.py`：新增 `SS_INTERNAL_AI_URL / SECRET / KEY_ID / TIMEOUT_SECONDS /
+>   BAZI_CAPABILITY`，并加入 readiness 详情（信息项，不新增启动阻断）；
+> - `products/assessment/services/bazi_provider.py`：**配置了网关就优先用网关，否则维持旧 URL**；
+> - `infra/env/{.env.example,.env.prod.example}`：新增空值项；
+> - 新测试 `tests/test_internal_ai_gateway_contract.py`（7 例）。
 
 
 ## 10. 验收测试（契约层）
