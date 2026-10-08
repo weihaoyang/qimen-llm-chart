@@ -3264,10 +3264,27 @@ VERDICT: computed styles IDENTICAL across all 4 viewports x 9 elements
 | 从 bridge 重建 | 记录被清时仍能拿回 access + 有效期 |
 | bridge 无会话 | 返回 null |
 
-### 四、残留
+### 四、跨标签轮换：用 Web Locks 把竞态消掉（不依赖平台 grace）
 
-- **仍未向平台确认 refresh 轮换的宽限期**。GET-first 已把轮换压到 access 过期时，重试也吸收了并发，但若平台能给
-  refresh 一个几十秒的 grace，则连"过期那一刻多标签同时轮换"也能彻底无感。这条继续作为要问平台的问题。
-- **跨浏览器重启的极端场景**未做真机验证（无生产拓扑）。修复点是纯粹的"少清一次记录 + 少轮换一次"，逻辑上
-  可单测覆盖，真机验证留到上线联调。
+原以为这里需要平台给 refresh 一个轮换宽限期。改为在客户端用 **Web Locks API**（origin 级）把 bridge 轮换
+串行化：第二个标签会等第一个标签的 `Set-Cookie` 落地后再轮换，用的就是新 token；不支持 `navigator.locks`
+的浏览器回退到原来的「401 后 300ms 重试一次」。**两端都不需要平台改动。**
+
+真浏览器证据（本机 `:3010`，非单测）：
+
+| 步骤 | 结果 |
+| --- | --- |
+| 塞入「access 已过期、refresh 未过期」的会话记录 → reload | 触发 bridge 401 |
+| reload 后读 `localStorage` | ✅ 记录仍在，`user_id=browser-test-user` |
+| reload 后的界面 | ✅ 显示「已登录」，**不是**「游客模式」 |
+
+这正是旧代码会 `clearPlatformSession()` → 变游客的那条路径。控制台只剩 localhost 未进平台 CORS 白名单的
+计划拉取失败与 bridge 401，都是该场景的预期，无脚本异常。
+
+### 五、仍待办
+
+- **RFC 阶段 3/4（计算迁出）**需要 assessment 产品侧的**计算**仓库/owner：平台侧计算是 Python，而
+  `F:\assessment-center` 是 TS 前端，没有合法的计算落点。挂在 RFC，不在本批。
+- **生产部署**需要线上真实拓扑（平台 `AGENTS.md` §4/§7）；没有访问权限，**尚未上线**。
+
 

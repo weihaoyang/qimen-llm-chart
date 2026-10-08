@@ -339,6 +339,24 @@ const readBridgeAccessToken = async (): Promise<Partial<PlatformSession> | null>
 };
 
 /**
+ * Serialize bridge rotations across tabs.
+ *
+ * The refresh token is single-use, but the httpOnly cookie that carries it is
+ * shared by every tab on the origin, so two tabs restoring at once present the
+ * same token and one of them loses the race. The Web Locks API is origin-scoped,
+ * so holding this lock while rotating makes the second tab wait for the first
+ * tab's `Set-Cookie` to land; it then rotates from the fresh token. Browsers
+ * without `navigator.locks` fall back to the retry below.
+ */
+const withBridgeRefreshLock = async <T>(task: () => Promise<T>): Promise<T> => {
+  const locks = typeof navigator !== "undefined"
+    ? (navigator as Navigator & { locks?: LockManager }).locks
+    : undefined;
+  if (!locks || typeof locks.request !== "function") return task();
+  return locks.request("qmdj-platform-refresh", task) as Promise<T>;
+};
+
+/**
  * Rotate the bridge session against the platform.
  *
  * The refresh token is single-use. If two tabs restore together, the loser still
@@ -347,7 +365,7 @@ const readBridgeAccessToken = async (): Promise<Partial<PlatformSession> | null>
  * point the winner's `Set-Cookie` has landed). Only a client retry can tell a
  * genuine expiry apart from an in-flight rotation race.
  */
-const rotateBridgeSession = async (): Promise<Partial<PlatformSession> | null> => {
+const rotateBridgeSession = () => withBridgeRefreshLock(async (): Promise<Partial<PlatformSession> | null> => {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const response = await fetch("/api/platform/session/refresh", { method: "POST", cache: "no-store" });
@@ -364,7 +382,7 @@ const rotateBridgeSession = async (): Promise<Partial<PlatformSession> | null> =
     if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 300));
   }
   return null;
-};
+});
 
 const toSeedSession = (partial: Partial<PlatformSession>): PlatformSession => ({
   access_token: partial.access_token ?? "",

@@ -205,3 +205,47 @@ describe("bridge session recovery", () => {
     expect(await recoverPlatformSessionFromBridge()).toBeNull();
   });
 });
+
+describe("cross-tab refresh lock", () => {
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, "locks");
+    delete process.env.NEXT_PUBLIC_PLATFORM_BASE_URL;
+    delete process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE;
+    delete process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE;
+  });
+
+  it("rotates under the origin-scoped Web Lock when the browser supports it", async () => {
+    const request = vi.fn(async (_name: string, task: () => Promise<unknown>) => task());
+    Object.defineProperty(navigator, "locks", { value: { request }, configurable: true });
+    installFetch({
+      bridgeGet: () => jsonResponse({ error: "expired" }, 401),
+      bridgeRefresh: () => jsonResponse({ session: { access_token: NEW_ACCESS, csrf_token: CSRF, expires_at_iso: FUTURE, refresh_expires_at_iso: FUTURE } }),
+    });
+
+    const restored = await restorePlatformAccessState(storedSession());
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls[0]?.[0]).toBe("qmdj-platform-refresh");
+    expect(restored.session.access_token).toBe(NEW_ACCESS);
+  });
+
+  it("falls back to the retry when Web Locks is unavailable", async () => {
+    installFetch({
+      bridgeGet: () => jsonResponse({ error: "expired" }, 401),
+      bridgeRefresh: () => jsonResponse({ session: { access_token: NEW_ACCESS, csrf_token: CSRF, expires_at_iso: FUTURE, refresh_expires_at_iso: FUTURE } }),
+    });
+
+    const restored = await restorePlatformAccessState(storedSession());
+
+    expect(restored.session.access_token).toBe(NEW_ACCESS);
+  });
+});
+
