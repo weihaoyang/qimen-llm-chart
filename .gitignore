@@ -47,6 +47,7 @@ next-env.d.ts
 
 # local references
 /vendor/
+/ziwei-doushu/
 
 # local planning artifacts
 /docs/superpowers/
