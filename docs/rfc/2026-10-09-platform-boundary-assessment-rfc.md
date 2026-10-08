@@ -150,12 +150,15 @@ superadmin 原始读取），且 `ops.py` 直接读 `assessment_interpretations`
 - 把 `commerce.py` 的 guest 盲测绑定抽象为通用 primitives（产品注册「下单→可交付产物」）。
 - 出口：`commerce.py` 不再出现产品字面量/产品模型；具名豁免移除；支付合同测试不变绿不算完。
 
-> **阻塞（需独立支付评审，本轮不执行）**：`commerce.py` 属**支付冻结区**。平台 `AGENTS.md` §8
-> 与边界文档 §10「具名豁免」明确：支付语义不随结构重构迁移。本条必须走独立支付评审后单独排期，
-> **不能作为边界重构的一部分直接改**。
+> **已完成（owner 已批准支付重构，2026-10-09）**：
+> - 新增核心 seam `app/domain/guest_deliverable.py`（注册表 + `GuestDeliverableClaim` + binder 协议）；
+> - `commerce.py` 只解析并调用 binder，**不再 import 产品模型、不再出现产品/套餐字面量**；
+> - assessment 规则迁到 `app/products/assessment/services/guest_deliverable_binder.py`，在组合根
+>   `app/main.py` 注册；**错误码与判定顺序不变**；
+> - 边界测试已**删除 `services/commerce.py` 的两处豁免**；
+> - 验证：边界+启动 **32 passed**；commerce+盲测 **74 passed**。
 >
-> 评审材料包（含精确代码面、泛化设计、影响面、验证与回滚）见
-> [`docs/rfc/2026-10-09-phase2-payment-review-package.md`](./2026-10-09-phase2-payment-review-package.md)。
+> `ops.py` / `main.py` 两项属具名豁免/组合根允许，非阶段 2 出口要求，保持现状（可选后续优化）。
 
 ### 阶段 3｜计算迁出（灰度，数据不动）
 - 在 assessment 产品仓库实现领域**计算**（预测/解读/盲测打分规则与提示词）；

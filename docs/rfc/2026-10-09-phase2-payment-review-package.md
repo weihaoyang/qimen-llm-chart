@@ -1,7 +1,11 @@
 # 阶段 2 解冻材料：支付冻结区泛化评审包
 
-- 状态: Proposal（**需要独立支付评审**才能执行）
-- 日期: 2026-10-09
+- 状态: **已批准并实施**（owner 于 2026-10-09 批准；平台提交 `7aa3498`）
+- 实施结果: 新增 `app/domain/guest_deliverable.py` seam；`commerce.py` 去产品模型/字面量；
+  assessment binder 迁至 `app/products/assessment/services/guest_deliverable_binder.py` 并在
+  `app/main.py` 组合根注册；边界测试删除 `services/commerce.py` 两处豁免；
+  验证：边界+启动 32 passed、commerce+盲测 74 passed。
+- 日期: 2026-10-09（原文，保留作为评审记录）
 - 配套: `docs/rfc/2026-10-09-platform-boundary-assessment-rfc.md`（阶段 2）、
   `docs/rfc/2026-10-09-phase0-assessment-inventory.md`
 - 规则依据（平台自身）:
