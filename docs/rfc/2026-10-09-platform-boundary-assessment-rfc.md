@@ -153,6 +153,9 @@ superadmin 原始读取），且 `ops.py` 直接读 `assessment_interpretations`
 > **阻塞（需独立支付评审，本轮不执行）**：`commerce.py` 属**支付冻结区**。平台 `AGENTS.md` §8
 > 与边界文档 §10「具名豁免」明确：支付语义不随结构重构迁移。本条必须走独立支付评审后单独排期，
 > **不能作为边界重构的一部分直接改**。
+>
+> 评审材料包（含精确代码面、泛化设计、影响面、验证与回滚）见
+> [`docs/rfc/2026-10-09-phase2-payment-review-package.md`](./2026-10-09-phase2-payment-review-package.md)。
 
 ### 阶段 3｜计算迁出（灰度，数据不动）
 - 在 assessment 产品仓库实现领域**计算**（预测/解读/盲测打分规则与提示词）；
