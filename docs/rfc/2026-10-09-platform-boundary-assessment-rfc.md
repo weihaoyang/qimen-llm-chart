@@ -126,6 +126,11 @@ superadmin 原始读取），且 `ops.py` 直接读 `assessment_interpretations`
 - 产出「必须留平台 / 可迁出 / 需泛化」三张清单，登记为具名豁免的收尾计划。
 - 出口：清单评审通过，边界文档新增「assessment 迁移中」状态。
 
+> **已完成（只读）**：盘点结果见配套文档
+> [`docs/rfc/2026-10-09-phase0-assessment-inventory.md`](./2026-10-09-phase0-assessment-inventory.md)
+> （依赖方向图、配置/敏感项、三张清单、阶段 1 网关契约草案骨架）。
+> 待人工：平台 owner 会签三张清单 + 边界文档标注迁移状态。
+
 ### 阶段 1｜泛化内部 AI 网关（不改业务）
 - 新增平台通用内部合同 `/internal/ai/{capability}`（HMAC、schema 版本、幂等键、超时/重试）。
 - `bazi_provider.py` 改为调用该网关；qmdj 侧把内部端点挂到该合同下（保留旧路径一版兼容）。
