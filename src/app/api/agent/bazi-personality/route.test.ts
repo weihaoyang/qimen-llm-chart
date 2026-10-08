@@ -100,6 +100,30 @@ const signedRequest = (body: object = requestBody, timestamp = Math.floor(Date.n
   });
 };
 
+const gatewayRequest = (
+  body: object = requestBody,
+  options: { timestamp?: string; nonce?: string; capability?: string } = {},
+) => {
+  const rawBody = JSON.stringify(body);
+  const timestamp = options.timestamp ?? Math.floor(Date.now() / 1000).toString();
+  const nonce = options.nonce ?? `nonce-${Math.random().toString(36).slice(2)}`;
+  const capability = options.capability ?? "bazi-prediction";
+  const signature = createHmac("sha256", SECRET)
+    .update(`${timestamp}.${nonce}.${rawBody}`)
+    .digest("hex");
+  return new Request("http://localhost/api/internal/ai/bazi-prediction", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-SS-Capability": capability,
+      "X-SS-Timestamp": timestamp,
+      "X-SS-Nonce": nonce,
+      "X-SS-Signature": signature,
+    },
+    body: rawBody,
+  });
+};
+
 describe("POST /api/agent/bazi-personality", () => {
   beforeEach(() => {
     process.env.BAZI_AGENT_INTERNAL_SECRET = SECRET;
@@ -389,5 +413,32 @@ describe("POST /api/agent/bazi-personality", () => {
     } finally {
       errorSpy.mockRestore();
     }
+  });
+
+  it("accepts the versioned internal gateway signature", async () => {
+    const response = await POST(gatewayRequest());
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.mbti_code).toBe("ENFP");
+    expect(body.provider).toBe("qmdj-agent");
+  });
+
+  it("rejects a replayed gateway nonce", async () => {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const nonce = "replayed-nonce";
+
+    const first = await POST(gatewayRequest(requestBody, { timestamp, nonce }));
+    expect(first.status).toBe(200);
+
+    const second = await POST(gatewayRequest(requestBody, { timestamp, nonce }));
+    expect(second.status).toBe(401);
+  });
+
+  it("rejects a gateway signature bound to a different capability", async () => {
+    const response = await POST(gatewayRequest(requestBody, { capability: "assessment-interpretation" }));
+
+    expect(response.status).toBe(401);
+    expect(buildBaziChartFromProfileMock).not.toHaveBeenCalled();
   });
 });

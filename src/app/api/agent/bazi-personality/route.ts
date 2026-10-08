@@ -198,9 +198,44 @@ const resolveAxisScore = (
   throw new UserFacingError("Agent 返回的 MBTI 四维不符合结构化契约。");
 };
 
+// Versioned internal gateway contract (`/internal/ai/{capability}`): HMAC over
+// `timestamp.nonce.body` with `X-SS-*` headers. The legacy `x-ss-bazi-*` form
+// (HMAC over `timestamp.body`) is kept working during the migration, so a hard
+// cutover to the new path is not required.
+const INTERNAL_AI_CAPABILITY = "bazi-prediction";
+// Gateway nonces are one-time inside the clock-skew window; the legacy form has
+// no nonce. Bounded so a long-lived instance cannot grow without limit.
+const usedGatewayNonces = createBoundedTtlCache<string, true>({
+  ttlMs: MAX_CLOCK_SKEW_SECONDS * 1000,
+  maxEntries: 5000,
+});
+
+const hexSignatureMatches = (provided: string, expected: string) =>
+  provided.length === expected.length && timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+
 const verifyInternalSignature = (request: Request, rawBody: string) => {
   const secret = process.env.BAZI_AGENT_INTERNAL_SECRET?.trim();
   if (!secret) return "missing-secret" as const;
+
+  const gatewaySignature = request.headers.get("x-ss-signature")?.trim() ?? "";
+  if (gatewaySignature) {
+    const capability = request.headers.get("x-ss-capability")?.trim() ?? "";
+    if (capability && capability !== INTERNAL_AI_CAPABILITY) return false;
+    const timestamp = request.headers.get("x-ss-timestamp")?.trim() ?? "";
+    const nonce = request.headers.get("x-ss-nonce")?.trim() ?? "";
+    const timestampNumber = Number(timestamp);
+    if (!timestamp || !nonce || !Number.isFinite(timestampNumber)) return false;
+    if (Math.abs(Date.now() / 1000 - timestampNumber) > MAX_CLOCK_SKEW_SECONDS) return false;
+    const nonceKey = `${timestamp}.${nonce}`;
+    if (usedGatewayNonces.get(nonceKey)) return false;
+    const expected = createHmac("sha256", secret)
+      .update(`${timestamp}.${nonce}.${rawBody}`)
+      .digest("hex");
+    if (!hexSignatureMatches(gatewaySignature, expected)) return false;
+    usedGatewayNonces.set(nonceKey, true);
+    return true;
+  }
+
   const timestamp = request.headers.get("x-ss-bazi-timestamp")?.trim() ?? "";
   const signature = request.headers.get("x-ss-bazi-signature")?.trim() ?? "";
   const timestampNumber = Number(timestamp);
@@ -209,8 +244,7 @@ const verifyInternalSignature = (request: Request, rawBody: string) => {
   const expected = createHmac("sha256", secret)
     .update(`${timestamp}.${rawBody}`)
     .digest("hex");
-  if (signature.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  return hexSignatureMatches(signature, expected);
 };
 
 const parsePredictionJson = (content: string) => {

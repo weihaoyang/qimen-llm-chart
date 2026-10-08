@@ -137,7 +137,7 @@ canonical = f"{timestamp}.{nonce}.{raw_body}"
 
 | 现有（qmdj） | 新契约 |
 |---|---|
-| `POST /api/agent/bazi-personality` | `POST /internal/ai/bazi-prediction` |
+| `POST /api/agent/bazi-personality` | `POST /api/internal/ai/bazi-prediction` |
 | `x-ss-bazi-timestamp` | `X-SS-Timestamp` |
 | `x-ss-bazi-signature = hmac(ts.rawBody)` | `X-SS-Signature = hmac(ts.nonce.rawBody)` |
 | （无） | `X-SS-Nonce` / `X-SS-Key-Id` / `X-SS-Request-Schema` / `X-SS-Idempotency-Key` |
@@ -145,6 +145,15 @@ canonical = f"{timestamp}.{nonce}.{raw_body}"
 
 - qmdj 侧：**保留旧路径一版**（弃用期），新增新路径；两版共享同一业务实现。
 - 平台侧：`bazi_agent_url/secret` → 网关 `INTERNAL_AI_URL` + `key_id/secret`（按 capability 配置）。
+
+> **qmdj 侧阶段 1 骨架（已实现，待契约会签后启用）**：
+> - 路由前缀：本产品是 Next app，实际路径为 `POST /api/internal/ai/bazi-prediction`
+>   （`src/app/api/internal/ai/bazi-prediction/route.ts`），委托同一个 handler；
+> - 鉴权：`src/app/api/agent/bazi-personality/route.ts` 的校验器已支持**双签名**——
+>   版本化 `X-SS-*`（`hmac(ts.nonce.body)` + 能力绑定 + nonce 一次性）与旧 `x-ss-bazi-*`；
+> - 常量能力名 `bazi-prediction`；nonce 走有界 TTL 缓存；
+> - 兼容：旧路径与旧签名行为不变（回归测试保持通过）。
+
 
 ## 10. 验收测试（契约层）
 
