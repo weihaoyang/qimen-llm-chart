@@ -850,7 +850,7 @@ const safeSession: PlatformSession = {
 
 ### 本轮不做、但已登记的三件事
 
-1. **每次恢复都会轮换一次 refresh token**。改动前后一致，不是本轮引入的。真正该问平台的是"轮换后旧 token 有多长宽限期"——如果没有宽限，多标签页同时恢复就会互相踢掉。这条和 W 的 commit 幂等是同一批要问平台的问题，建议合并去问。
+1. **每次恢复都会轮换一次 refresh token**。改动前后一致，不是本轮引入的。真正该问平台的是"轮换后旧 token 有多长宽限期"——如果没有宽限，多标签页同时恢复就会互相踢掉。这条和 W 的 commit 幂等是同一批要问平台的问题，建议合并去问平台。 **2026-10-09 更新：产品侧已修，见附录二十六**（改为「先读 access cookie，401 才轮换」+ 轮换失败重试一次 + 不再用空 token 走客户端刷新）。
 2. **`src/app/api/agent/route.ts:30-35` 仍自带一份 cookie 别名表**（与 `server.ts` 重复）。有意不动：它的 `readPlatformCookieHeader` 与 `readCookieValue` 语义和 `server.ts` 版本**并不相同**（agent 版没有"优先第一方 `ssp_*`"的逻辑），合并属于行为变更，而这是全仓最敏感的一段鉴权代码。登记为独立项。
 3. **D（会话 cookie 固定）需要重新定级**，见下。
 
@@ -3194,3 +3194,80 @@ VERDICT: computed styles IDENTICAL across all 4 viewports x 9 elements
 三条注释（说 `shengtian-reference` 已退役）、一条测试（断言 `isPaipanHost("shengtian.singseq.com") === false`）。
 **UI 维度已彻底退场。** 仍值得下一批看一眼的是 `src/lib/product-host.ts` 的文档注释
 （「keeps the two public products separate」——函数是活的，注释过期）。
+
+---
+
+## 附录二十六：第二十四批 — 「关了浏览器再打开就要重新登录」：根因在登出路径，不在 cookie 持久性（2026-10-09）
+
+现场报告：有人反馈**关掉浏览器再打开就要重新登录**。先排除掉的假设都站得住：平台 `ssp_*` cookie 是持久 cookie
+（`access_token_ttl_seconds=3600`、`refresh_token_ttl_seconds=2592000`，见 `apps/api/app/core/cookies.py`），
+本仓库 bridge cookie 也是持久的（access 1h / refresh 30d），`localStorage` 记录本来就跨浏览器重启存活。
+**所以问题不在"cookie 没活下来"，而在"活下来之后被我们自己擦掉了"。**
+
+### 一、链路
+
+挂载 effect（`src/components/app-shell.tsx`）→ `loadPlatformSession()`（只读 `localStorage`）→
+`restorePlatformAccessState()`（`src/lib/platform/browser.ts`）。后者每次都做同一件事：
+
+```
+本地记录不含 token（loadPlatformSession 每次读都抹掉 access/refresh）
+  → POST /api/platform/session/refresh  ← 每次加载都轮换
+  → me()
+```
+
+平台 refresh 是**单次使用 + `with_for_update` 串行**（`auth.py:918`）。于是：
+
+1. **每次加载轮换一次**（附录六第 1 条登记的残留）。多标签同时恢复时，后到者拿的是已作废的 token，直接 401。
+2. 401 之后 `restorePlatformAccessState` 的 catch 调 `clearPlatformSession()`，**把 localStorage 记录删掉**。
+3. 更糟的是 `app-shell` 的 try 块把「鉴权恢复」和「目录/gate/usage 读取」混在一起：
+   `withPlatformCatalogTimeout` 2.5s 超时、或 gate/usage 任一次抖动，都会走到同一个 catch → `clearPlatformSession()`。
+   **一次慢目录 = 一次强制登出。**
+4. `refreshPlatformAccount()` 同样在任何错误上清记录。
+5. 一旦记录被清，`loadPlatformWorkspace` 只看 `localStorage`，**即使 httpOnly cookie 里还有有效会话也不会恢复** ——
+   于是"永远要重新登录"，直到用户手动登一次。
+
+结论：这是**产品侧登出路径的过度触发**，不是 cookie 生命周期问题。
+
+### 二、修复
+
+| 文件 | 改动 |
+| --- | --- |
+| `src/lib/platform/browser.ts` | `restorePlatformAccessState` 重写：① 先走**纯读** `GET /api/platform/session`，只要 access cookie 还在就**不轮换**；② access 没了才 `POST /refresh`；③ 轮换 401 **重试一次（300ms）**，吸收多标签竞态；④ `me()` 401 时改用 **bridge 的服务端 POST 轮换**（读 httpOnly refresh cookie），不再用被抹成空的 `refresh_token` 走 SDK 客户端刷新；⑤ 只有 refresh 真的过期才 `clearPlatformSession()`，网络/瞬时失败一律**保留记录** |
+| `src/lib/platform/browser.ts` | 新增 `hasBridgeSessionHint()`（读可读的 `qmdj_platform_csrf` cookie）+ `recoverPlatformSessionFromBridge()`：localStorage 记录被清时，从 bridge 重建会话 |
+| `src/components/app-shell.tsx` | 挂载 effect 与 OAuth 回调都改成**认证与账户数据解耦**：`Promise.allSettled` 取 gate/usage/plans，任一失败保留 `authenticated`，只把 `catalogStatus` 标 error/loading；恢复失败但记录仍在时不再强制 guest；无记录时才尝试 bridge 恢复 |
+| `src/components/app-shell.tsx` | `refreshPlatformAccount` 只有记录真的没了才降级 guest，否则只挂 error |
+
+**这同时回答了附录六留下的顾虑**（line 816：*"为什么不让 `browser.ts` 先试纯读 GET、401 再 POST … 会引入新的失败面"*）。
+当时的失败面是：*"access cookie 存在但已被平台吊销时 `me()` 401，而客户端 refresh 分支拿的是空 `refresh_token`"*。
+现在 catch 走的是 **bridge 的服务端轮换**，读的是 httpOnly cookie 里的真 token，空 token 那条路已经不存在。
+所以 GET-first 不再引入新失败面，反而把轮换频率从「每次加载」降到「access 过期时」。
+
+### 三、验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `tsc --noEmit` | ✅ 0 错误 |
+| `eslint src/lib/platform/browser.ts src/components/app-shell.tsx` | ✅ 0 错误 |
+| `vitest run`（全量） | ✅ **116 文件通过 / 3 跳过；602 通过 / 13 跳过**（上一批 104/559） |
+| 新增回归测试 | `src/lib/platform/browser-session-restore.test.ts`（8 项） |
+
+新增用例直接锁住每条根因：
+
+| 用例 | 断言 |
+| --- | --- |
+| access cookie 还在 | **不调 `/refresh`**（bridge 轮换调用数 = 0） |
+| access 没了 | 只轮换一次 |
+| 轮换竞态失败 | **localStorage 记录仍在** |
+| refresh 真过期 | 记录才被清 |
+| `me()` 401 且重试轮换也失败 | **记录仍在**（不误判登出） |
+| bridge hint cookie | 有无可读 cookie → `hasBridgeSessionHint()` 对应 true/false |
+| 从 bridge 重建 | 记录被清时仍能拿回 access + 有效期 |
+| bridge 无会话 | 返回 null |
+
+### 四、残留
+
+- **仍未向平台确认 refresh 轮换的宽限期**。GET-first 已把轮换压到 access 过期时，重试也吸收了并发，但若平台能给
+  refresh 一个几十秒的 grace，则连"过期那一刻多标签同时轮换"也能彻底无感。这条继续作为要问平台的问题。
+- **跨浏览器重启的极端场景**未做真机验证（无生产拓扑）。修复点是纯粹的"少清一次记录 + 少轮换一次"，逻辑上
+  可单测覆盖，真机验证留到上线联调。
+

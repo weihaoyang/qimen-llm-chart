@@ -73,6 +73,9 @@ import {
   listPlatformPlans,
   redeemInvitationCode,
   restorePlatformAccessState,
+  recoverPlatformSessionFromBridge,
+  hasBridgeSessionHint,
+  type PlatformPlanState,
   preparePlatformOAuthLogin,
   parsePlatformOAuthCallback,
   consumePlatformOAuthRequest,
@@ -620,29 +623,38 @@ export function AppShell({ platformConfig }: AppShellProps) {
           accessToken: access.session.access_token,
           csrfToken: access.session.csrf_token,
         });
-        const [gate, usage, plans] = await Promise.all([
+        // A failed or slow catalog / gate / usage read must not undo a login
+        // that already succeeded.
+        const [gateResult, usageResult, plansResult] = await Promise.allSettled([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
           withPlatformCatalogTimeout(listPlatformPlans(platformConfig.productCode)),
         ]);
         if (!active) return;
+        const gate = gateResult.status === "fulfilled" ? gateResult.value : null;
+        const usage = usageResult.status === "fulfilled" ? usageResult.value : null;
+        const plans = plansResult.status === "fulfilled" ? plansResult.value : null;
+        const catalogTimedOut = plansResult.status === "rejected" && plansResult.reason instanceof Error && plansResult.reason.message === "平台目录请求超时。";
+        const accountDataFailed = gateResult.status === "rejected" || usageResult.status === "rejected";
         setPlatformWorkspace({
           status: "authenticated",
-          catalogStatus: "ready",
+          catalogStatus: plans ? "ready" : catalogTimedOut ? "loading" : "error",
           session: access.session,
           profile: access.profile ?? result.profile ?? null,
           gate,
           usage,
-          plans: plans.items,
-          channels: plans.channels,
-          error: null,
+          plans: plans?.items ?? [],
+          channels: plans?.channels ?? [],
+          error: accountDataFailed ? "账户数据暂时读取失败，请稍后重试。" : null,
         });
-        setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
-          key,
-          { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
-        ])) as Record<WorkbenchMode, AgentModeState>);
+        if (usage) {
+          setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
+            key,
+            { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
+          ])) as Record<WorkbenchMode, AgentModeState>);
+        }
       } catch (error) {
-        clearPlatformSession();
+        if (!loadPlatformSession()) clearPlatformSession();
         clearCallback();
         if (!active) return;
         setPlatformWorkspace((current) => ({
@@ -703,7 +715,18 @@ export function AppShell({ platformConfig }: AppShellProps) {
       }
 
       const plansPromise = listPlatformPlans(platformConfig.productCode);
-      const session = loadPlatformSession();
+      // `loadPlatformSession` only knows about local storage. If its record was
+      // evicted (private mode, a storage-capped/ITP browser, a manual clear) the
+      // httpOnly bridge cookies may still carry a live session, so recover from
+      // them before declaring the visitor a guest.
+      let session = loadPlatformSession();
+      if (!session && hasBridgeSessionHint()) {
+        try {
+          session = await recoverPlatformSessionFromBridge();
+        } catch {
+          session = null;
+        }
+      }
       if (!session) {
         try {
           const plans = await withPlatformCatalogTimeout(plansPromise);
@@ -728,39 +751,65 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return;
       }
 
+      // Authentication and account data are separate concerns. A failed or slow
+      // catalog / gate / usage read must never log the user out, so only the
+      // restore itself can drop the session.
+      let access: Awaited<ReturnType<typeof restorePlatformAccessState>>;
       try {
-        const access = await restorePlatformAccessState(session);
-        const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
-        const [gate, usage, plans] = await Promise.all([
-          client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
-          fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
-          withPlatformCatalogTimeout(plansPromise),
-        ]);
+        access = await restorePlatformAccessState(session);
+      } catch (nextError) {
         if (cancelled) return;
-        setPlatformWorkspace({ status: "authenticated", catalogStatus: "ready", session: access.session, profile: access.profile, gate, usage, plans: plans.items, channels: plans.channels, error: null });
+        const message = nextError instanceof Error ? nextError.message : "平台登录状态已失效。";
+        // `restorePlatformAccessState` clears the stored record only once the
+        // refresh token is genuinely past its expiry. If the record survives,
+        // this was a transient failure and the next load can recover — keep the
+        // account visible instead of bouncing the user to the login screen.
+        const retained = loadPlatformSession();
+        let plans: PlatformPlanState = { items: [], channels: [] };
+        try { plans = await withPlatformCatalogTimeout(plansPromise); } catch { /* catalog is retried later */ }
+        if (cancelled) return;
+        setPlatformWorkspace({
+          status: retained ? "authenticated" : "guest",
+          catalogStatus: "ready",
+          session: retained,
+          profile: null,
+          gate: null,
+          usage: null,
+          plans: plans.items,
+          channels: plans.channels,
+          error: message,
+        });
+        return;
+      }
+
+      const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
+      const [gateResult, usageResult, plansResult] = await Promise.allSettled([
+        client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
+        fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
+        withPlatformCatalogTimeout(plansPromise),
+      ]);
+      if (cancelled) return;
+      const gate = gateResult.status === "fulfilled" ? gateResult.value : null;
+      const usage = usageResult.status === "fulfilled" ? usageResult.value : null;
+      const plans = plansResult.status === "fulfilled" ? plansResult.value : null;
+      const catalogTimedOut = plansResult.status === "rejected" && plansResult.reason instanceof Error && plansResult.reason.message === "平台目录请求超时。";
+      const accountDataFailed = gateResult.status === "rejected" || usageResult.status === "rejected";
+      setPlatformWorkspace({
+        status: "authenticated",
+        catalogStatus: plans ? "ready" : catalogTimedOut ? "loading" : "error",
+        session: access.session,
+        profile: access.profile,
+        gate,
+        usage,
+        plans: plans?.items ?? [],
+        channels: plans?.channels ?? [],
+        error: accountDataFailed ? "账户数据暂时读取失败，请稍后重试。" : null,
+      });
+      if (usage) {
         setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
           key,
           { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
         ])) as Record<WorkbenchMode, AgentModeState>);
-      } catch (nextError) {
-        if (cancelled) return;
-        clearPlatformSession();
-        try {
-          const plans = await withPlatformCatalogTimeout(plansPromise);
-          setPlatformWorkspace({ status: "guest", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: nextError instanceof Error ? nextError.message : "平台登录状态已失效。" });
-        } catch (catalogError) {
-          setPlatformWorkspace({
-            status: "guest",
-            catalogStatus: "error",
-            session: null,
-            profile: null,
-            gate: null,
-            usage: null,
-            plans: [],
-            channels: [],
-            error: catalogError instanceof Error ? `无法读取支付方式：${catalogError.message}` : "无法读取支付方式，请稍后重试。",
-          });
-        }
       }
     };
 
@@ -1247,16 +1296,26 @@ export function AppShell({ platformConfig }: AppShellProps) {
       }));
       return access;
     } catch (error) {
-      clearPlatformSession();
-      setPlatformWorkspace((current) => ({
-        ...current,
-        status: "guest",
-        session: null,
-        profile: null,
-        gate: null,
-        usage: null,
-        error: error instanceof Error ? error.message : "平台登录状态已失效。",
-      }));
+      // `restorePlatformAccessState` clears the stored record only once the
+      // refresh token is genuinely past its expiry. A transient failure must not
+      // drop the account, or the user is bounced to guest for a slow network.
+      if (!loadPlatformSession()) {
+        clearPlatformSession();
+        setPlatformWorkspace((current) => ({
+          ...current,
+          status: "guest",
+          session: null,
+          profile: null,
+          gate: null,
+          usage: null,
+          error: error instanceof Error ? error.message : "平台登录状态已失效。",
+        }));
+      } else {
+        setPlatformWorkspace((current) => ({
+          ...current,
+          error: error instanceof Error ? error.message : "账户数据暂时读取失败，请稍后重试。",
+        }));
+      }
       throw error;
     }
   };
