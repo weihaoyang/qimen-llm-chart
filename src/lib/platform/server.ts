@@ -20,11 +20,23 @@ export type PlatformGate = {
   message: string;
 };
 
+export type PlatformPlanUsage = {
+  plan_code: string;
+  available: number;
+  reserved: number;
+  consumed: number;
+  usage_unit: string;
+  usage_label: string;
+};
+
 export type PlatformUsage = {
   product_code: string;
   available: number;
   reserved: number;
   consumed: number;
+  usage_unit?: string;
+  usage_label?: string;
+  by_plan?: PlatformPlanUsage[];
 };
 
 export class PlatformServerRequestError extends Error {
@@ -215,8 +227,21 @@ export const fetchPlatformUsage = async (
 ): Promise<PlatformUsage> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    const body = await createServerProductClient(accessToken, options).getUsageSummary(config.productCode);
-    return { product_code: body.product_code ?? config.productCode, available: Number(body.available ?? 0), reserved: Number(body.reserved ?? 0), consumed: Number(body.consumed ?? 0) };
+    // Scope to a plan code: with two per-use units (analysis_turn / kline_report)
+    // an unscoped read returns a "mixed" balance that adds unlike units together.
+    const body = await createServerProductClient(accessToken, options).getUsageSummary(
+      config.productCode,
+      options?.planCode ?? AGENT_PLAN_CODE,
+    );
+    return {
+      product_code: body.product_code ?? config.productCode,
+      available: Number(body.available ?? 0),
+      reserved: Number(body.reserved ?? 0),
+      consumed: Number(body.consumed ?? 0),
+      usage_unit: body.usage_unit ?? "",
+      usage_label: body.usage_label ?? "",
+      by_plan: Array.isArray(body.by_plan) ? body.by_plan : [],
+    };
   } catch (error) {
     return mapPlatformError(error);
   }

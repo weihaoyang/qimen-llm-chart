@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, parsePlatformCallbackFragment, parsePlatformOAuthCallback, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
+import { createAccountCheckout, createGuestCheckout, createGuestPaymentAttempt, fetchPlatformUsage, parsePlatformCallbackFragment, parsePlatformOAuthCallback, preparePlatformOAuthLogin, redeemInvitationCode, toPlatformSession } from "./browser";
 
 describe("platform browser helpers", () => {
   afterEach(() => {
@@ -157,6 +157,51 @@ describe("platform browser helpers", () => {
         authorization: "Bearer access-token",
         body: JSON.stringify({ code: "SSAR-AAAA-BBBB-CCCC-DDDD" }),
       });
+    } finally {
+      process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = previous.base;
+      process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = previous.product;
+      process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = previous.scope;
+    }
+  });
+
+  it("scopes the usage read to a plan code and surfaces the unit", async () => {
+    const previous = {
+      base: process.env.NEXT_PUBLIC_PLATFORM_BASE_URL,
+      product: process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE,
+      scope: process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE,
+    };
+    process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = "https://platform.example.com";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+
+    let requestUrl = "";
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      requestUrl = input.toString();
+      return new Response(JSON.stringify({
+        return_code: 0,
+        product_code: "shengtian-banzi",
+        plan_code: "shengtian-banzi-analysis-10",
+        available: 9,
+        reserved: 0,
+        consumed: 1,
+        usage_unit: "analysis_turn",
+        usage_label: "研究对话轮次",
+        by_plan: [
+          { plan_code: "shengtian-banzi-analysis-10", available: 9, reserved: 0, consumed: 1, usage_unit: "analysis_turn", usage_label: "研究对话轮次" },
+        ],
+      }), { status: 200 });
+    }));
+
+    try {
+      // Two per-use units exist for this product; an unscoped read would return a
+      // "mixed" sum. The read must carry plan_code so the balance stays per-unit.
+      const usage = await fetchPlatformUsage("access-token", "csrf-token", "shengtian-banzi-analysis-10");
+      expect(requestUrl).toContain("/api/v1/entitlement/products/shengtian-banzi/usage");
+      expect(requestUrl).toContain("plan_code=shengtian-banzi-analysis-10");
+      expect(usage.usage_unit).toBe("analysis_turn");
+      expect(usage.usage_label).toBe("研究对话轮次");
+      expect(usage.by_plan).toHaveLength(1);
+      expect(usage.available).toBe(9);
     } finally {
       process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = previous.base;
       process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = previous.product;

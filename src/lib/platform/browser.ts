@@ -1,6 +1,7 @@
 import { PlatformHttpError, type EntitlementGateResponse, type InvitationCodeRedemption, type PlanCatalogItem, type PlatformProfile, type PlatformSession } from "@singularity-sequence/web-sdk";
 import { createProductPlatformClient } from "@/lib/platform/client";
 import { buildPlatformOAuthLoginUrl, requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
+import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
 import {
   clearPlatformSession,
   isPlatformRefreshExpired,
@@ -40,11 +41,23 @@ export type PlatformPlanState = {
   }>;
 };
 
+export type PlatformPlanUsage = {
+  plan_code: string;
+  available: number;
+  reserved: number;
+  consumed: number;
+  usage_unit: string;
+  usage_label: string;
+};
+
 export type PlatformUsage = {
   product_code: string;
   available: number;
   reserved: number;
   consumed: number;
+  usage_unit: string;
+  usage_label: string;
+  by_plan: PlatformPlanUsage[];
 };
 
 export type PlatformCheckout = {
@@ -355,13 +368,24 @@ export const listPlatformPlans = async (productCode: string): Promise<PlatformPl
   };
 };
 
-export const fetchPlatformUsage = async (accessToken = "", csrfToken = ""): Promise<PlatformUsage> => {
+export const fetchPlatformUsage = async (
+  accessToken = "",
+  csrfToken = "",
+  planCode = AGENT_PLAN_CODE,
+): Promise<PlatformUsage> => {
   const config = requirePlatformClientConfig();
-  const body = await createProductPlatformClient({ accessToken, csrfToken }).getUsageSummary(config.productCode) as Partial<PlatformUsage> & { detail?: { message?: string } };
+  // This product sells two per-use plans with different units (analysis_turn and
+  // kline_report). Reading usage without a plan code makes the platform sum the
+  // units into one "mixed" balance, which would show K-line reports as agent
+  // turns and mis-open the agent entry. Always scope the read to one plan.
+  const body = await createProductPlatformClient({ accessToken, csrfToken }).getUsageSummary(config.productCode, planCode);
   return {
     product_code: body.product_code ?? config.productCode,
     available: Number(body.available ?? 0),
     reserved: Number(body.reserved ?? 0),
     consumed: Number(body.consumed ?? 0),
+    usage_unit: body.usage_unit ?? "",
+    usage_label: body.usage_label ?? "",
+    by_plan: Array.isArray(body.by_plan) ? body.by_plan : [],
   };
 };

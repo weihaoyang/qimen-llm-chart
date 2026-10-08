@@ -147,7 +147,14 @@ type PlatformWorkspaceState = {
   session: PlatformSession | null;
   profile: PlatformProfile | null;
   gate: { allowed: boolean; mode: string; reason_code: string; message: string } | null;
-  usage: { available: number; reserved: number; consumed: number } | null;
+  usage: {
+    available: number;
+    reserved: number;
+    consumed: number;
+    /** Platform-provided unit for this plan (e.g. analysis_turn / kline_report). */
+    usage_unit?: string;
+    usage_label?: string;
+  } | null;
   plans: PlanCatalogItem[];
   channels: Array<{ channel: string; ready: boolean; mobile_ready: boolean; reason_code: string; message: string }>;
   error: string | null;
@@ -615,7 +622,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         });
         const [gate, usage, plans] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
-          fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
+          fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
           withPlatformCatalogTimeout(listPlatformPlans(platformConfig.productCode)),
         ]);
         if (!active) return;
@@ -726,7 +733,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
         const [gate, usage, plans] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
-          fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
+          fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
           withPlatformCatalogTimeout(plansPromise),
         ]);
         if (cancelled) return;
@@ -1281,7 +1288,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
         [gate, usage] = await Promise.all([
           client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
-          fetchPlatformUsage(access.session.access_token, access.session.csrf_token),
+          fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
         ]);
       } catch {
         // The redemption has already been committed by the platform. Keep the
@@ -2149,7 +2156,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         <>
           <span className="platform-account__status">
             {platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录"}
-            <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} 轮` : "权益已连接"}</small>
+            <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "权益已连接"}</small>
           </span>
           {invitationRedeemControl}
           <button type="button" className="platform-account__button" onClick={() => void handlePlatformSwitchAccount()}>切换账户</button>
@@ -2247,7 +2254,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             </div>
             <button type="button" className="mobile-account-trigger" onClick={() => setMobileAccountOpen(true)} aria-haspopup="dialog" aria-expanded={mobileAccountOpen}>
               <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "游客模式"}</span>
-              <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} 轮` : "账户与权益"}</small>
+              <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "账户与权益"}</small>
             </button>
           </div>
           <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
