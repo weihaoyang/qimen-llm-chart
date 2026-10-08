@@ -81,3 +81,14 @@ export const buildShenSha = (
     return result;
   });
 };
+
+/**
+ * Lookup tables exposed for the 禄命 workbench: these answer "where would this
+ * star fall for this day master", including when the chart does not have it.
+ */
+export const getLuShenBranch = (dayMaster: string): string | undefined => LU_SHEN[dayMaster];
+export const getYangRenBranch = (dayMaster: string): string | undefined => YANG_REN[dayMaster];
+export const getWenChangBranch = (dayMaster: string): string | undefined => WEN_CHANG[dayMaster];
+export const getTianYiBranches = (dayMaster: string): string[] => TIAN_YI[dayMaster] ?? [];
+export const getGroupStarBranch = (star: keyof typeof GROUP_TARGET, baseBranch: string): string | undefined =>
+  GROUP_TARGET[star]?.[baseBranch];

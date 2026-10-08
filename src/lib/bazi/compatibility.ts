@@ -1,53 +1,125 @@
 import type { NormalizedBaziChart } from "./types";
 import { getStemTrait } from "./relations";
+import {
+  branchRelations,
+  stemRelations,
+  type BaziRelationKind,
+  type BaziRelationTone,
+} from "./relations-analysis";
 
 export type BaziCompatibility = {
   score: number;
   headline: string;
-  relations: Array<{ type: "六合" | "六冲" | "相刑" | "六害" | "六破" | "生克"; left: string; right: string; detail: string; tone: "positive" | "negative" | "neutral" }>;
+  relations: Array<{ type: BaziRelationKind; left: string; right: string; detail: string; tone: BaziRelationTone }>;
   evidence: string[];
   suggestions: string[];
   disclaimer: string;
 };
 
-const BRANCH_HARMONY: Record<string, string> = { 子丑: "六合", 寅亥: "六合", 卯戌: "六合", 辰酉: "六合", 巳申: "六合", 午未: "六合" };
-const BRANCH_CLASH: Record<string, string> = { 子午: "相冲", 丑未: "相冲", 寅申: "相冲", 卯酉: "相冲", 辰戌: "相冲", 巳亥: "相冲" };
-const BRANCH_HARM: Record<string, string> = { 子未: "六害", 丑午: "六害", 寅巳: "六害", 卯辰: "六害", 申亥: "六害", 酉戌: "六害" };
-const BRANCH_BREAK: Record<string, string> = { 子酉: "六破", 寅亥: "六破", 卯午: "六破", 辰丑: "六破", 巳申: "六破", 未戌: "六破" };
-const BRANCH_PUNISH: Record<string, string> = { 子卯: "相刑", 寅巳: "相刑", 巳申: "相刑", 丑戌: "相刑", 未戌: "相刑" };
+const PILLAR_LABELS: Record<"year" | "month" | "day" | "time", string> = {
+  year: "年柱",
+  month: "月柱",
+  day: "日柱",
+  time: "时柱",
+};
 
-export const buildBaziCompatibility = (left: NormalizedBaziChart, right: NormalizedBaziChart): BaziCompatibility => {
+const isStemClash = (a: string, b: string) =>
+  stemRelations(a, b).some((relation) => relation.kind === "天干相冲");
+const isBranchClash = (a: string, b: string) =>
+  branchRelations(a, b).some((relation) => relation.kind === "地支六冲");
+
+/**
+ * 双人合盘: the same glyph-pair engine as the single chart, applied across two
+ * people. Day-pillar (夫妻宫) signals are called out explicitly, and every other
+ * column pair is reported so nothing noteworthy is hidden behind a summary.
+ */
+export const buildBaziCompatibility = (
+  left: NormalizedBaziChart,
+  right: NormalizedBaziChart,
+): BaziCompatibility => {
   const evidence: string[] = [];
   const relations: BaziCompatibility["relations"] = [];
   let score = 50;
-  const leftDay = left.raw.pillars.find((pillar) => pillar.key === "day");
-  const rightDay = right.raw.pillars.find((pillar) => pillar.key === "day");
+
+  const addRelation = (
+    type: BaziRelationKind,
+    tone: BaziRelationTone,
+    leftLabel: string,
+    rightLabel: string,
+    detail: string,
+  ) => {
+    if (relations.some((item) => item.type === type && item.left === leftLabel && item.right === rightLabel)) {
+      return;
+    }
+    relations.push({ type, left: leftLabel, right: rightLabel, detail, tone });
+    if (tone === "positive") score += 4;
+    else if (tone === "negative") score -= 4;
+  };
+
   const leftTrait = getStemTrait(left.raw.dayMaster);
   const rightTrait = getStemTrait(right.raw.dayMaster);
+  const leftDay = left.raw.pillars.find((pillar) => pillar.key === "day");
+  const rightDay = right.raw.pillars.find((pillar) => pillar.key === "day");
+
+  // 日主 (day master) stem interaction.
+  stemRelations(left.raw.dayMaster, right.raw.dayMaster).forEach((relation) => {
+    addRelation(relation.kind, relation.tone, "日主", "日主", relation.detail);
+    evidence.push(`日主${left.raw.dayMaster}/${right.raw.dayMaster}：${relation.detail}`);
+  });
   if (leftTrait && rightTrait) {
-    if (leftTrait.element === rightTrait.element) { score += 5; evidence.push(`双方日主同属${leftTrait.element}，节奏与关注点较容易互相理解`); }
-    else if (leftTrait.yinYang !== rightTrait.yinYang) { score += 3; evidence.push(`双方日主阴阳不同，互动中可能形成互补`); }
-    else { score -= 2; evidence.push(`双方日主五行分别为${leftTrait.element}/${rightTrait.element}，需要协调表达节奏`); }
-  }
-  if (leftDay && rightDay) {
-    const pair = `${leftDay.earthlyBranch}${rightDay.earthlyBranch}`;
-    const reverse = `${rightDay.earthlyBranch}${leftDay.earthlyBranch}`;
-    if (BRANCH_HARMONY[pair] || BRANCH_HARMONY[reverse]) { score += 10; relations.push({ type: "六合", left: "日支", right: "日支", detail: `${leftDay.earthlyBranch} × ${rightDay.earthlyBranch}，共同目标容易形成黏合`, tone: "positive" }); evidence.push(`夫妻宫地支${leftDay.earthlyBranch}/${rightDay.earthlyBranch}见六合倾向，适合通过共同目标建立稳定互动`); }
-    if (BRANCH_CLASH[pair] || BRANCH_CLASH[reverse]) { score -= 10; relations.push({ type: "六冲", left: "日支", right: "日支", detail: `${leftDay.earthlyBranch} × ${rightDay.earthlyBranch}，节奏与边界容易正面碰撞`, tone: "negative" }); evidence.push(`夫妻宫地支${leftDay.earthlyBranch}/${rightDay.earthlyBranch}见相冲倾向，冲突处理方式比“合不合”更重要`); }
-  }
-  const leftPillars = left.raw.pillars;
-  const rightPillars = right.raw.pillars;
-  for (const leftPillar of leftPillars) for (const rightPillar of rightPillars) {
-    if (leftPillar.key === "day" && rightPillar.key === "day") continue;
-    const pair = `${leftPillar.earthlyBranch}${rightPillar.earthlyBranch}`;
-    const reverse = `${rightPillar.earthlyBranch}${leftPillar.earthlyBranch}`;
-    const type = BRANCH_HARMONY[pair] || BRANCH_HARMONY[reverse] ? "六合" : BRANCH_CLASH[pair] || BRANCH_CLASH[reverse] ? "六冲" : BRANCH_PUNISH[pair] || BRANCH_PUNISH[reverse] ? "相刑" : BRANCH_HARM[pair] || BRANCH_HARM[reverse] ? "六害" : BRANCH_BREAK[pair] || BRANCH_BREAK[reverse] ? "六破" : null;
-    if (type && !relations.some((item) => item.type === type && item.left === `${leftPillar.key}柱` && item.right === `${rightPillar.key}柱`)) {
-      relations.push({ type, left: `${leftPillar.key}柱`, right: `${rightPillar.key}柱`, detail: `${leftPillar.earthlyBranch} × ${rightPillar.earthlyBranch}`, tone: type === "六合" ? "positive" : "negative" });
+    if (leftTrait.element === rightTrait.element) {
+      evidence.push(`双方日主同属${leftTrait.element}，节奏与关注点较容易互相理解`);
+    } else if (leftTrait.yinYang !== rightTrait.yinYang) {
+      evidence.push(`双方日主阴阳不同，互动中可能形成互补`);
+    } else {
+      evidence.push(`双方日主五行分别为${leftTrait.element}/${rightTrait.element}，需要协调表达节奏`);
     }
   }
+
+  // 夫妻宫 (day branch) interaction, called out on its own.
+  if (leftDay && rightDay) {
+    branchRelations(leftDay.earthlyBranch, rightDay.earthlyBranch).forEach((relation) => {
+      addRelation(relation.kind, relation.tone, "夫妻宫", "夫妻宫", `${leftDay.earthlyBranch} × ${rightDay.earthlyBranch}，${relation.detail}`);
+    });
+  }
+
+  // Every other pillar pair, stem and branch.
+  for (const leftPillar of left.raw.pillars) {
+    for (const rightPillar of right.raw.pillars) {
+      if (leftPillar.key === "day" && rightPillar.key === "day") continue;
+      const leftLabel = PILLAR_LABELS[leftPillar.key];
+      const rightLabel = PILLAR_LABELS[rightPillar.key];
+      stemRelations(leftPillar.heavenlyStem, rightPillar.heavenlyStem).forEach((relation) => {
+        addRelation(relation.kind, relation.tone, leftLabel, rightLabel, `${leftPillar.heavenlyStem} × ${rightPillar.heavenlyStem}，${relation.detail}`);
+      });
+      branchRelations(leftPillar.earthlyBranch, rightPillar.earthlyBranch).forEach((relation) => {
+        addRelation(relation.kind, relation.tone, leftLabel, rightLabel, `${leftPillar.earthlyBranch} × ${rightPillar.earthlyBranch}，${relation.detail}`);
+      });
+      if (
+        isStemClash(leftPillar.heavenlyStem, rightPillar.heavenlyStem) &&
+        isBranchClash(leftPillar.earthlyBranch, rightPillar.earthlyBranch)
+      ) {
+        addRelation(
+          "天克地冲",
+          "negative",
+          leftLabel,
+          rightLabel,
+          `${leftPillar.pillar} × ${rightPillar.pillar}，天干相冲同时地支相冲`,
+        );
+      }
+    }
+  }
+
   const shared = left.raw.wuXing.filter((element) => right.raw.wuXing.includes(element));
-  if (shared.length) { score += Math.min(6, shared.length); evidence.push(`两盘共同出现五行：${shared.join("、")}`); }
+  if (shared.length) {
+    score += Math.min(6, shared.length);
+    evidence.push(`两盘共同出现五行：${shared.join("、")}`);
+  }
+
+  const positiveCount = relations.filter((relation) => relation.tone === "positive").length;
+  const negativeCount = relations.filter((relation) => relation.tone === "negative").length;
+  evidence.unshift(`两盘共识别 ${relations.length} 组干支关系：合会 ${positiveCount} 组、冲刑害破 ${negativeCount} 组`);
+
   const finalScore = Math.max(0, Math.min(100, score));
   return {
     score: finalScore,
@@ -58,4 +130,3 @@ export const buildBaziCompatibility = (left: NormalizedBaziChart, right: Normali
     disclaimer: "双人合盘是传统结构的比较工具，不替任何一方断言想法、忠诚或必然结果。",
   };
 };
-

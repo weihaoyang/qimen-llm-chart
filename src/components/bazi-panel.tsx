@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { Solar } from "lunar-typescript";
+import { LunarUtil, Solar } from "lunar-typescript";
 import { HYDRATION_SAFE_DATE } from "@/lib/hydration-clock";
 import type { NormalizedBaziChart } from "@/lib/bazi/types";
 import type { FiveElement, TenGodGroup } from "@/lib/bazi/relations";
@@ -13,6 +13,17 @@ import {
   getTenGod,
   getTenGodGroup,
 } from "@/lib/bazi/relations";
+import { analyzeBaziRelations, formatDayMasterStrength, groupBaziRelations } from "@/lib/bazi/relations-analysis";
+import {
+  DEFAULT_STRENGTH_FACTORS,
+  STRENGTH_FACTORS,
+  buildTiaohouAssessment,
+  computeStrengthBreakdown,
+  formatElementLabel,
+  formatFollowStructure,
+  type StrengthFactorState,
+} from "@/lib/bazi/structure-audit";
+import { getLuShenBranch, getTianYiBranches, getWenChangBranch, getYangRenBranch } from "@/lib/bazi/shen-sha";
 
 type BaziPanelProps = {
   chart: NormalizedBaziChart | null;
@@ -32,6 +43,8 @@ type CorePillar = {
   heavenlyStem: string;
   earthlyBranch: string;
   stemTenGod: string;
+  branchTenGods: string[];
+  hiddenStems: string[];
   timing: string;
   naYin: string;
   shenSha: string[];
@@ -63,15 +76,6 @@ const renderTenGodBadge = (tenGod: string, key?: string) => (
   </span>
 );
 
-const renderTenGodBadges = (values: string[]) =>
-  values.length > 0 ? (
-    <div className="bazi-god-list">
-      {values.map((value, index) => renderTenGodBadge(value, `${value}-${index}`))}
-    </div>
-  ) : (
-    <span className="bazi-stack-cell__empty">无</span>
-  );
-
 const getHiddenStemPairs = (
   dayMaster: string,
   pillar: NormalizedBaziChart["raw"]["pillars"][number],
@@ -85,6 +89,13 @@ const splitGanZhi = (ganZhi: string) => ({
   stem: ganZhi.slice(0, 1),
   branch: ganZhi.slice(1, 2),
 });
+
+const hiddenStemsOf = (branch: string): string[] => LunarUtil.ZHI_HIDE_GAN[branch] ?? [];
+
+const branchTenGodsOf = (dayMaster: string, branch: string): string[] =>
+  hiddenStemsOf(branch)
+    .map((stem) => getTenGod(dayMaster, stem))
+    .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
 const getLiuNianGanZhi = (year: number) => {
   // Use a date well after 立春 so a selected civil year always maps to that
@@ -158,6 +169,8 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
   const [selectedDaYunIndex, setSelectedDaYunIndex] = useState(0);
   const [selectedLiuNianYear, setSelectedLiuNianYear] = useState<number | null>(null);
   const [selectedLiuYueMonth, setSelectedLiuYueMonth] = useState<number | null>(null);
+  const [relationFilter, setRelationFilter] = useState<"all" | "clash">("all");
+  const [strengthFactors, setStrengthFactors] = useState<StrengthFactorState>(DEFAULT_STRENGTH_FACTORS);
 
   if (!chart) {
     return <div className="empty-panel">等待生成八字盘。</div>;
@@ -173,6 +186,52 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
   const elementCounts = buildElementCounts(chart);
   const startOffsetText = formatStartOffset(chart.raw.yun.startOffset);
   const supportPillars = buildSupportPillars(chart);
+  const relationAnalysis = analyzeBaziRelations(chart);
+  const relationBuckets = groupBaziRelations(relationAnalysis.relations, { clashOnly: relationFilter === "clash" });
+  const strengthLabel = formatDayMasterStrength(chart.raw.structureAudit.dayMasterStrength);
+  const structureAudit = chart.raw.structureAudit;
+  const elementWeightMax = Math.max(1, ...Object.values(structureAudit.elementWeights));
+  const monthPillar = chart.raw.pillars.find((pillar) => pillar.key === "month");
+  const branchPositions = (targets: Array<string | undefined>) => {
+    const set = new Set(targets.filter((value): value is string => Boolean(value)));
+    return chart.raw.pillars
+      .filter((pillar) => set.has(pillar.earthlyBranch))
+      .map((pillar) => PILLAR_LABELS[pillar.key]);
+  };
+  const lumingLookup = [
+    { name: "禄神", targets: [getLuShenBranch(chart.raw.dayMaster)] },
+    { name: "羊刃", targets: [getYangRenBranch(chart.raw.dayMaster)] },
+    { name: "文昌贵人", targets: [getWenChangBranch(chart.raw.dayMaster)] },
+    { name: "天乙贵人", targets: getTianYiBranches(chart.raw.dayMaster) },
+  ]
+    .map((item) => ({ ...item, hits: branchPositions(item.targets) }))
+    .filter((item) => item.targets.filter(Boolean).length > 0);
+  const strengthBreakdown = computeStrengthBreakdown(chart.raw.pillars, chart.raw.dayMaster, strengthFactors);
+  const tiaohou = buildTiaohouAssessment(structureAudit.elementWeights, chart.raw.pillars);
+  const timePillar = chart.raw.pillars.find((pillar) => pillar.key === "time");
+  const mingGongStem = chart.raw.mingGong.pillar.slice(0, 1);
+  const shenGongStem = chart.raw.shenGong.pillar.slice(0, 1);
+  const sanming = {
+    lu: { target: getLuShenBranch(chart.raw.dayMaster), hits: branchPositions([getLuShenBranch(chart.raw.dayMaster)]) },
+    ming: {
+      pillar: chart.raw.mingGong.pillar,
+      naYin: chart.raw.mingGong.naYin,
+      god: getTenGod(chart.raw.dayMaster, mingGongStem),
+      shenGong: chart.raw.shenGong.pillar,
+      shenGongGod: getTenGod(chart.raw.dayMaster, shenGongStem),
+    },
+    shou: {
+      pillar: timePillar?.pillar ?? "—",
+      naYin: timePillar?.naYin ?? "—",
+      diShi: timePillar?.diShi ?? "—",
+      relations: relationAnalysis.relations.filter((relation) => relation.pillars.includes("time") && relation.tone === "negative").map((relation) => relation.kind),
+    },
+  };
+  const formatWeights = (weights: Record<string, number>) =>
+    Object.entries(weights)
+      .filter(([, value]) => value > 0)
+      .map(([key, value]) => `${formatElementLabel(key)} ${value.toFixed(2)}`)
+      .join(" · ") || "无";
   const selectedDaYun = chart.raw.yun.daYun[Math.min(selectedDaYunIndex, chart.raw.yun.daYun.length - 1)] ?? null;
   const availableLiuNianYears = selectedDaYun
     ? Array.from(
@@ -199,6 +258,8 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
         heavenlyStem: selectedDaYun.ganZhi.slice(0, 1),
         earthlyBranch: selectedDaYun.ganZhi.slice(1, 2),
       stemTenGod: getTenGod(chart.raw.dayMaster, selectedDaYun.ganZhi.slice(0, 1)) ?? "无",
+      branchTenGods: branchTenGodsOf(chart.raw.dayMaster, selectedDaYun.ganZhi.slice(1, 2)),
+      hiddenStems: hiddenStemsOf(selectedDaYun.ganZhi.slice(1, 2)),
       timing: `${selectedDaYun.startAge}-${selectedDaYun.endAge}岁`,
       naYin: "—",
       shenSha: [],
@@ -211,6 +272,8 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
         heavenlyStem: "—",
         earthlyBranch: "—",
         stemTenGod: "无",
+        branchTenGods: [],
+        hiddenStems: [],
         timing: "暂无资料",
         naYin: "—",
         shenSha: [],
@@ -224,6 +287,8 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
       heavenlyStem: pillar.heavenlyStem,
       earthlyBranch: pillar.earthlyBranch,
       stemTenGod: pillar.shiShenGan,
+      branchTenGods: pillar.shiShenZhi,
+      hiddenStems: pillar.hiddenStems,
       timing: pillar.key === "day" ? "日主" : pillar.diShi,
       naYin: pillar.naYin,
       shenSha: pillar.shenSha,
@@ -237,6 +302,8 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
       heavenlyStem: activeLiuNian.slice(0, 1),
       earthlyBranch: activeLiuNian.slice(1, 2),
       stemTenGod: getTenGod(chart.raw.dayMaster, activeLiuNian.slice(0, 1)) ?? "无",
+      branchTenGods: branchTenGodsOf(chart.raw.dayMaster, activeLiuNian.slice(1, 2)),
+      hiddenStems: hiddenStemsOf(activeLiuNian.slice(1, 2)),
       timing: `${activeLiuNianYear}年 · ${MONTH_LABELS[activeLiuYueMonth - 1]}`,
       naYin: "—",
       shenSha: [],
@@ -260,6 +327,7 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
                 <span>日主</span>
                 <strong>{chart.raw.dayMaster}</strong>
                 <em>{formatTraitLabel(dayMasterTrait)}</em>
+                {strengthLabel ? <em className="bazi-strength-badge" data-strength={chart.raw.structureAudit.dayMasterStrength}>旺衰 {strengthLabel}</em> : null}
               </div>
               <div className="bazi-headband__hero-calendar">
                 <div className="bazi-headband__hero-calendar-row">
@@ -326,6 +394,74 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
         </div>
       </section>
 
+      <section className="bazi-strength-panel" aria-label="旺衰判断与规则依据">
+        <div className="bazi-strength-panel__head">
+          <div>
+            <h2>旺衰判断 · 规则</h2>
+            <small>{structureAudit.engineVersion} · 固定权重复算，不替代流派取格</small>
+          </div>
+          <strong data-strength={structureAudit.dayMasterStrength}>{strengthLabel ?? "存疑"}</strong>
+        </div>
+
+        <div className="bazi-strength-panel__facts">
+          <span>日主<b>{chart.raw.dayMaster}</b>属{structureAudit.dayMasterElement}</span>
+          <span>月令<b>{monthPillar?.earthlyBranch ?? "—"}</b>·{structureAudit.monthCommandElement}</span>
+          <span>同我+生我<b>{structureAudit.supportWeight}</b></span>
+          <span>泄耗克<b>{structureAudit.drainWeight}</b></span>
+          <span>同五行根气<b>{structureAudit.rootCount}</b></span>
+          <span>透干生扶<b>{structureAudit.visibleSupportCount}</b></span>
+          <span>从格倾向<b>{formatFollowStructure(structureAudit.followStructure)}</b></span>
+          <span>置信度<b>{structureAudit.confidence}</b></span>
+        </div>
+
+        <div className="bazi-element-weights" aria-label="五行力量权重">
+          {Object.entries(structureAudit.elementWeights).map(([key, value]) => (
+            <div className="bazi-element-weight" data-element={formatElementLabel(key)} key={key}>
+              <span>{formatElementLabel(key)}</span>
+              <i aria-hidden="true"><b style={{ width: `${Math.round((value / elementWeightMax) * 100)}%` }} /></i>
+              <em>{value.toFixed(2)}</em>
+            </div>
+          ))}
+        </div>
+
+        <div className="bazi-strength-sandbox">
+          <div className="bazi-strength-sandbox__head">
+            <strong>沙盒 · 勾选参与计算</strong>
+            <span data-strength={strengthBreakdown.dayMasterStrength}>{formatDayMasterStrength(strengthBreakdown.dayMasterStrength) ?? "存疑"} · 同我+生我 {strengthBreakdown.supportWeight} / 泄耗克 {strengthBreakdown.drainWeight}</span>
+          </div>
+          <div className="bazi-strength-sandbox__toggles" role="group" aria-label="旺衰计算因子">
+            {STRENGTH_FACTORS.map((factor) => (
+              <label key={factor.id} className={strengthFactors[factor.id] ? "is-on" : ""} title={factor.hint}>
+                <input
+                  type="checkbox"
+                  checked={strengthFactors[factor.id]}
+                  onChange={(event) => setStrengthFactors((current) => ({ ...current, [factor.id]: event.target.checked }))}
+                />
+                {factor.label}
+              </label>
+            ))}
+          </div>
+          <ul className="bazi-strength-sandbox__rows">
+            {strengthBreakdown.contributions.map((contribution) => (
+              <li key={contribution.factor} className={contribution.enabled ? "" : "is-off"}>
+                <span>{contribution.label}</span>
+                <b>{contribution.enabled ? formatWeights(contribution.elements) : "未计入"}</b>
+                <small>{contribution.detail}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="bazi-strength-evidence">
+          <ul className="is-support" aria-label="支持依据">
+            {structureAudit.supportingEvidence.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+          <ul className="is-contra" aria-label="反证与边界">
+            {structureAudit.contradictingEvidence.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </div>
+      </section>
+
       <section className="bazi-traditional-board">
         <div className="bazi-traditional-board__header">
           <div>
@@ -339,9 +475,9 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
               <span>柱位</span>
               {corePillars.map((pillar) => <strong className={pillar.isTiming ? "is-timing" : pillar.isDayMaster ? "is-day-master" : ""} key={`${pillar.id}-head`}><small>{pillar.label}</small>{pillar.ganZhi}</strong>)}
             </div>
-            <div className="bazi-six-pillars__row">
-              <span>十神</span>
-              {corePillars.map((pillar) => <div key={`${pillar.id}-god`}>{renderTenGodBadge(pillar.stemTenGod)}</div>)}
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--god">
+              <span>天干十神</span>
+              {corePillars.map((pillar) => <div key={`${pillar.id}-stem-god`}>{renderTenGodBadge(pillar.stemTenGod)}</div>)}
             </div>
             <div className="bazi-six-pillars__row bazi-six-pillars__row--glyph">
               <span>天干</span>
@@ -350,12 +486,32 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
                 return <strong data-element={trait?.element ?? "未知"} className={pillar.isDayMaster ? "is-day-master" : ""} key={`${pillar.id}-stem`}>{pillar.heavenlyStem}</strong>;
               })}
             </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--god">
+              <span>地支十神</span>
+              {corePillars.map((pillar) => {
+                const branchGod = pillar.hiddenStems[0] ? getTenGod(chart.raw.dayMaster, pillar.hiddenStems[0]) : null;
+                return <div key={`${pillar.id}-branch-god`}>{branchGod ? renderTenGodBadge(branchGod) : <span className="bazi-stack-cell__empty">—</span>}</div>;
+              })}
+            </div>
             <div className="bazi-six-pillars__row bazi-six-pillars__row--glyph">
               <span>地支</span>
               {corePillars.map((pillar) => {
                 const trait = getBranchTrait(pillar.earthlyBranch);
                 return <strong data-element={trait?.element ?? "未知"} key={`${pillar.id}-branch`}>{pillar.earthlyBranch}</strong>;
               })}
+            </div>
+            <div className="bazi-six-pillars__row bazi-six-pillars__row--hidden">
+              <span>藏干十神</span>
+              {corePillars.map((pillar) => (
+                <div className="bazi-hidden-gods" key={`${pillar.id}-hidden`}>
+                  {pillar.hiddenStems.length
+                    ? pillar.hiddenStems.map((stem, index) => {
+                        const god = getTenGod(chart.raw.dayMaster, stem);
+                        return <span className="bazi-hidden-god" key={`${pillar.id}-hidden-${index}`}><b>{stem}</b>{god ? renderTenGodBadge(god, `${pillar.id}-hidden-god-${index}`) : null}</span>;
+                      })
+                    : <em>—</em>}
+                </div>
+              ))}
             </div>
             <div className="bazi-six-pillars__row bazi-six-pillars__row--timing">
               <span>定位</span>
@@ -437,11 +593,14 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
 
           <div className="bazi-table__row">
             <div className="bazi-table__label">地支十神</div>
-            {chart.raw.pillars.map((pillar) => (
-              <div className="bazi-table__cell bazi-plain-cell" key={`branch-god-${pillar.key}`}>
-                {renderTenGodBadges(pillar.shiShenZhi)}
-              </div>
-            ))}
+            {chart.raw.pillars.map((pillar) => {
+              const branchGod = pillar.hiddenStems[0] ? getTenGod(chart.raw.dayMaster, pillar.hiddenStems[0]) : null;
+              return (
+                <div className="bazi-table__cell bazi-plain-cell" key={`branch-god-${pillar.key}`}>
+                  {branchGod ? renderTenGodBadge(branchGod) : <span className="bazi-stack-cell__empty">无</span>}
+                </div>
+              );
+            })}
           </div>
 
           <div className="bazi-table__row">
@@ -467,7 +626,7 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
           </div>
 
           <div className="bazi-table__row">
-            <div className="bazi-table__label">藏干</div>
+            <div className="bazi-table__label">藏干十神</div>
             {chart.raw.pillars.map((pillar) => (
               <div className="bazi-table__cell bazi-stack-cell" key={`hidden-${pillar.key}`}>
                 {getHiddenStemPairs(chart.raw.dayMaster, pillar).length > 0 ? (
@@ -531,6 +690,104 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
         </div>
         </div>
         </details>
+      </section>
+
+      <section className="bazi-relations-panel" aria-label="结构关系与注意事项">
+        <div className="bazi-relations-panel__head">
+          <div>
+            <h2>结构关系</h2>
+            <small>四柱之间的合会冲刑害破、天克地冲与空亡</small>
+          </div>
+          <div className="bazi-relations-filter" role="group" aria-label="关系筛选">
+            <button type="button" aria-pressed={relationFilter === "all"} className={relationFilter === "all" ? "is-active" : ""} onClick={() => setRelationFilter("all")}>全部 {relationAnalysis.relations.length}</button>
+            <button type="button" aria-pressed={relationFilter === "clash"} className={relationFilter === "clash" ? "is-active" : ""} onClick={() => setRelationFilter("clash")}>只看冲合</button>
+          </div>
+        </div>
+
+        {relationAnalysis.relations.length ? (
+          <div className="bazi-relation-groups">
+            {relationBuckets.map((bucket) => (
+              <details className="bazi-relation-group" key={bucket.group} open>
+                <summary><strong>{bucket.group}</strong><span>{bucket.relations.length}</span></summary>
+                <ul className="bazi-relation-list">
+                  {bucket.relations.map((relation, index) => (
+                    <li className={`bazi-relation-row is-${relation.tone}`} key={`${relation.kind}-${relation.symbols}-${index}`}>
+                      <b className="bazi-relation-row__symbols">{relation.symbols}</b>
+                      <span className="bazi-relation-row__kind">{relation.kind}</span>
+                      <span className="bazi-relation-row__pair">{relation.pairLabel}</span>
+                      <small className="bazi-relation-row__detail">{relation.detail}</small>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+        ) : (
+          <p className="bazi-relations-empty">四柱之间暂未发现已登记的合会冲刑害破关系。</p>
+        )}
+
+        {relationAnalysis.notes.length ? (
+          <ul className="bazi-relations-notes">
+            {relationAnalysis.notes.map((note) => <li key={note}>{note}</li>)}
+          </ul>
+        ) : null}
+      </section>
+
+      <section className="bazi-luming-panel" aria-label="禄命法工具">
+        <div className="bazi-luming-panel__head">
+          <div>
+            <h2>禄命法工具</h2>
+            <small>神煞、纳音、命身宫与禄命速查</small>
+          </div>
+          <span>{structureAudit.luMingFeatures.length} 项</span>
+        </div>
+
+        <div className="bazi-luming-grid">
+          {structureAudit.luMingFeatures.map((feature) => (
+            <article className="bazi-luming-card" key={feature.name}>
+              <div className="bazi-luming-card__top"><strong>{feature.name}</strong><span>{feature.positions.join(" · ")}</span></div>
+              <p>{feature.evidence}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="bazi-sanming" aria-label="三命取象">
+          <article className="bazi-sanming__card">
+            <div className="bazi-sanming__top"><strong>禄命</strong><span>干禄</span></div>
+            <b>{sanming.lu.target ?? "—"}</b>
+            <small>{sanming.lu.hits.length ? `禄神见于 ${sanming.lu.hits.join("、")}` : "本命四柱未见禄神"}</small>
+          </article>
+          <article className="bazi-sanming__card">
+            <div className="bazi-sanming__top"><strong>命宫</strong><span>身命</span></div>
+            <b>{sanming.ming.pillar}</b>
+            <small>纳音 {sanming.ming.naYin} · 命宫干 {sanming.ming.god ?? "无"}；身宫 {sanming.ming.shenGong}（{sanming.ming.shenGongGod ?? "无"}）</small>
+          </article>
+          <article className="bazi-sanming__card">
+            <div className="bazi-sanming__top"><strong>寿元</strong><span>时命</span></div>
+            <b>{sanming.shou.pillar}</b>
+            <small>纳音 {sanming.shou.naYin} · 长生 {sanming.shou.diShi}{sanming.shou.relations.length ? ` · 逢${sanming.shou.relations.join("、")}` : " · 时柱无明显冲刑"}</small>
+          </article>
+        </div>
+
+        <div className="bazi-tiaohou" aria-label="调候参考">
+          <div className="bazi-tiaohou__head"><strong>调候参考（寒暖燥湿）</strong><span>{tiaohou.tone}</span></div>
+          <p>{tiaohou.detail}</p>
+          <p className="bazi-tiaohou__direction">取用方向：{tiaohou.direction}</p>
+          <small>寒暖燥湿为启发式评估，非《穷通宝鉴》逐格调候用神表。</small>
+        </div>
+
+        <div className="bazi-luming-lookup" aria-label="禄命速查">
+          <div className="bazi-luming-lookup__head"><strong>禄命速查</strong><span>以日主 {chart.raw.dayMaster} 起，四柱对照</span></div>
+          <ul className="bazi-luming-lookup__rows">
+            {lumingLookup.map((item) => (
+              <li className="bazi-luming-lookup__row" key={item.name}>
+                <span>{item.name}</span>
+                <b>{item.targets.filter(Boolean).join(" / ")}</b>
+                <small>{item.hits.length ? `见于 ${item.hits.join("、")}` : "本命四柱未见"}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <details className="bazi-details bazi-details--secondary">

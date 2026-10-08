@@ -56,10 +56,18 @@ describe("serializeBaziToCompactJson", () => {
     const parsed = JSON.parse(serializeBaziToCompactJson(chart, { referenceDate })) as {
       relations: {
         heavenlyStemCombinations: Array<{ stems?: string; pattern: string }>;
+        heavenlyStemClashes: Array<{ symbols?: string; pattern: string }>;
         earthlyBranchRelations: {
           liuChong: Array<{ branches?: string }>;
+          banHe: Array<{ symbols?: string }>;
           xing: Array<{ branches?: string; pattern: string }>;
         };
+        tianKeDiChong: unknown[];
+        fuYin: unknown[];
+        dayXunKongVoid: unknown[];
+        missingElements: string[];
+        dayMasterStrength: string;
+        notes: string[];
         timing: {
           referenceDate: string;
           liuNian: { calendarYear: number; ganZhi: string };
@@ -79,6 +87,14 @@ describe("serializeBaziToCompactJson", () => {
     expect(parsed.relations.earthlyBranchRelations.xing).toEqual(
       expect.arrayContaining([expect.objectContaining({ branches: "巳寅", pattern: "相刑" })]),
     );
+    // The finer relation fields feed the Agent the same list the panel shows.
+    expect(Array.isArray(parsed.relations.heavenlyStemClashes)).toBe(true);
+    expect(Array.isArray(parsed.relations.earthlyBranchRelations.banHe)).toBe(true);
+    expect(parsed.relations.tianKeDiChong).toBeInstanceOf(Array);
+    expect(parsed.relations.dayXunKongVoid).toBeInstanceOf(Array);
+    expect(parsed.relations.missingElements).toBeInstanceOf(Array);
+    expect(typeof parsed.relations.dayMasterStrength).toBe("string");
+    expect(parsed.relations.notes.length).toBeGreaterThan(0);
     expect(parsed.relations.timing).toMatchObject({
       referenceDate: "2026-08-02",
       liuNian: { calendarYear: 2026, ganZhi: "丙午" },
@@ -87,6 +103,8 @@ describe("serializeBaziToCompactJson", () => {
 
     const structuredText = serializeBaziToStructuredText(chart, { referenceDate });
     expect(structuredText).toContain("### 结构关系摘要");
+    expect(structuredText).toContain("天干相冲:");
+    expect(structuredText).toContain("关系提示:");
     expect(structuredText).toContain("### 流年与当前大运");
     expect(structuredText).toContain("当前大运: 癸酉");
   });

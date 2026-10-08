@@ -40,7 +40,7 @@ describe("BaziCompatibilityPanel", () => {
     );
 
     expect(screen.getByText("把两张盘，读成一段关系")).toBeTruthy();
-    expect(screen.getByText("关系总览")).toBeTruthy();
+    expect(screen.getByText("上下对照")).toBeTruthy();
     expect(screen.getByText("关系信号")).toBeTruthy();
     expect(screen.getByText("双方完整盘面")).toBeTruthy();
     expect(screen.getAllByText("展开盘面 +")).toHaveLength(2);

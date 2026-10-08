@@ -417,6 +417,29 @@ const withPlatformCatalogTimeout = <T,>(promise: Promise<T>) => Promise.race([
   new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error("平台目录请求超时。")), PLATFORM_CATALOG_TIMEOUT_MS)),
 ]);
 
+/**
+ * The phone layout is a different composition, not a style pass. A ≤720px
+ * viewport cannot hold the desktop masthead (identity + account cluster +
+ * ten-tab rail) and still leave room for the chart, so the shell swaps to an
+ * app bar plus a fixed action bar. This stays `false` through SSR and the first
+ * client render so hydration matches the server markup, then flips on mount.
+ * Environments without `matchMedia` (jsdom) keep the desktop composition.
+ */
+const MOBILE_VIEWPORT_QUERY = "(max-width: 720px)";
+
+function useIsMobileViewport(query = MOBILE_VIEWPORT_QUERY) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const media = window.matchMedia(query);
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, [query]);
+  return isMobile;
+}
+
 export function AppShell({ platformConfig }: AppShellProps) {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
@@ -514,6 +537,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
   const [baziPairOpen, setBaziPairOpen] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
+  const isMobile = useIsMobileViewport();
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
   const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
   // The Battle Domain uses the same paid Agent entitlement as the chart
@@ -2110,92 +2135,161 @@ export function AppShell({ platformConfig }: AppShellProps) {
     ? <div data-layout="chart-analysis-drawer" aria-hidden="true" hidden />
     : null;
 
+  const openParameters = () => {
+    parameterSnapshot.current = { profile: formState, settings: qimenSettings, sequence: sequenceFormState, quick: quickChartMode };
+    setError(null);
+    setParametersOpen(true);
+  };
+
+  const platformAccount = (
+    <div className="platform-account" aria-label="平台账户与 AI 权益">
+      {platformWorkspace.status === "checking" ? (
+        <span className="platform-account__status">正在读取账户…</span>
+      ) : platformWorkspace.status === "authenticated" ? (
+        <>
+          <span className="platform-account__status">
+            {platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录"}
+            <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} 轮` : "权益已连接"}</small>
+          </span>
+          {invitationRedeemControl}
+          <button type="button" className="platform-account__button" onClick={() => void handlePlatformSwitchAccount()}>切换账户</button>
+          <button type="button" className="platform-account__button" onClick={() => void handlePlatformLogout()}>退出登录</button>
+        </>
+      ) : (
+        <>
+          <span className="platform-account__status">游客模式 · 当前标签页可恢复 <small>关闭页面或换设备可能丢失恢复信息</small></span>
+          {invitationRedeemControl}
+          <button type="button" className="platform-account__button is-primary" disabled={platformLoginBusy} onClick={() => void handlePlatformLogin()}>{platformLoginBusy ? "正在打开登录…" : "登录平台账户"}</button>
+          {platformLoginError ? <span className="platform-account__error" role="alert">{platformLoginError}</span> : null}
+        </>
+      )}
+    </div>
+  );
+
+  const birthLibraryPanel = (
+    <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
+      <strong>姓名与生日库</strong>
+      <div className="birth-library-save"><input value={birthName} onChange={(event) => setBirthName(event.target.value)} placeholder="姓名" aria-label="姓名" /><button type="button" onClick={saveBirthProfile}>保存当前</button></div>
+      {birthProfiles.map((item) => <div className="birth-library-item" key={item.id}><button type="button" onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button><button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button></div>)}
+      {chartHistory.length ? <><strong className="birth-library-history-title">历史排盘</strong>{chartHistory.slice(0, 8).map((item) => <button type="button" className="birth-library-history" key={item.id} onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.mode} · {new Date(item.createdAt).toLocaleString("zh-CN")}</button>)}</> : null}
+      {!birthProfiles.length && !chartHistory.length ? <small>暂无保存档案</small> : null}
+    </div>
+  );
+
+  const parametersOverlay = mode !== "research" && parametersOpen ? createPortal(
+    <div className={parameterStyles.overlay}>
+      <button type="button" tabIndex={-1} aria-label="关闭调整盘面" className={parameterStyles.backdrop} onClick={cancelParameters} />
+      <section ref={parametersPopoverRef} id="chart-parameters-popover" className={parameterStyles.panel} role="dialog" aria-modal="true" aria-label="调整盘面" onKeyDown={event => {
+        if(event.key === "Escape") {event.stopPropagation();cancelParameters();}
+        if(event.key === "Tab" && event.currentTarget.contains(event.target as Node)) {
+          const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')).filter(node => node.getClientRects().length);
+          const first = items[0], last = items.at(-1);
+          if(event.shiftKey && document.activeElement === first) {event.preventDefault();last?.focus();}
+          else if(!event.shiftKey && document.activeElement === last) {event.preventDefault();first?.focus();}
+        }
+      }}>
+        <header className={parameterStyles.head}><div><small>CHART / PARAMETERS</small><h2>调整盘面</h2></div><button type="button" autoFocus aria-label="关闭调整盘面" onClick={cancelParameters}>关闭 ×</button></header>
+        <div className={parameterStyles.body}><h3>{activeModeMeta.title} · 排盘资料</h3><p>修改后点击“应用并重新排盘”；取消会恢复打开前的设置。</p>{mode === "combined" ? <p>当前三盘仍共用一组时间资料。独立出生时间与问事起局时间尚未接入，请勿视为不同时间分别起盘。</p> : null}{chartModeControls}{chartParametersForm}{error ? <p role="alert" className={parameterStyles.error}>{error}</p> : null}</div>
+        <footer className={parameterStyles.foot}><button type="button" onClick={cancelParameters}>取消</button><button type="button" onClick={() => {if(mode === "qimen" && quickChartMode === "series") handleGenerateSequence(sequenceFormState); else handleGenerate(formState);}}>应用并重新排盘 ↗</button></footer>
+      </section>
+    </div>, document.body
+  ) : null;
+
+  const mobileActionBar = isMobile ? (
+    <nav className="mobile-action-bar" aria-label="排盘操作">
+      {mode !== "research" && !classicWorkspace ? (
+        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters}>调整盘面</button>
+      ) : null}
+      {mode !== "research" && !classicWorkspace ? (
+        <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
+      ) : null}
+      <div className="mobile-action mobile-action--materials">
+        <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
+      </div>
+      {mode !== "combined" && !classicWorkspace ? (
+        <button type="button" className="mobile-action mobile-action--primary" onClick={() => setChartAnalysisOpen(true)}>
+          <span>AI</span>盘面分析
+        </button>
+      ) : null}
+    </nav>
+  ) : null;
+
+  const mobileSheets = isMobile ? (
+    <>
+      {mobileAccountOpen ? (
+        <div className="mobile-sheet" role="presentation">
+          <button type="button" className="mobile-sheet__backdrop" aria-label="关闭账户" onClick={() => setMobileAccountOpen(false)} />
+          <section className="mobile-sheet__panel" role="dialog" aria-modal="true" aria-label="账户与权益">
+            <header className="mobile-sheet__head"><strong>账户与权益</strong><button type="button" aria-label="关闭账户" onClick={() => setMobileAccountOpen(false)}>×</button></header>
+            <div className="mobile-sheet__body">{platformAccount}</div>
+          </section>
+        </div>
+      ) : null}
+      {birthLibraryOpen && mode !== "research" && !classicWorkspace ? (
+        <div className="mobile-sheet" role="presentation">
+          <button type="button" className="mobile-sheet__backdrop" aria-label="关闭生日库" onClick={() => setBirthLibraryOpen(false)} />
+          <section className="mobile-sheet__panel" role="dialog" aria-modal="true" aria-label="姓名与生日库">
+            <header className="mobile-sheet__head"><strong>生日库</strong><button type="button" aria-label="关闭生日库" onClick={() => setBirthLibraryOpen(false)}>×</button></header>
+            <div className="mobile-sheet__body">{birthLibraryPanel}</div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  ) : null;
+
   return (
-    <div className="page-shell product-chart" data-mode={mode}>
-      <header className="observatory-hero">
-        <div className="observatory-hero__copy">
-          <span className="workspace-kicker">知几 · 术数</span>
-          <h1>知几</h1>
-        </div>
+    <div className="page-shell product-chart" data-mode={mode} data-shell={isMobile ? "mobile" : "desktop"}>
+      {isMobile ? (
+        <header className="mobile-hero">
+          <div className="mobile-hero__top">
+            <div className="mobile-hero__brand">
+              <h1>知几</h1>
+            </div>
+            <button type="button" className="mobile-account-trigger" onClick={() => setMobileAccountOpen(true)} aria-haspopup="dialog" aria-expanded={mobileAccountOpen}>
+              <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "游客模式"}</span>
+              <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} 轮` : "账户与权益"}</small>
+            </button>
+          </div>
+          <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
+        </header>
+      ) : (
+        <header className="observatory-hero">
+          <div className="observatory-hero__copy">
+            <h1>知几</h1>
+          </div>
 
-        <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
+          <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
 
-        <div className="observatory-hero__materials">
-          <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
-        </div>
+          <div className="observatory-hero__materials">
+            <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
+          </div>
 
-        <div className="platform-account" aria-label="平台账户与 AI 权益">
-          {platformWorkspace.status === "checking" ? (
-            <span className="platform-account__status">正在读取账户…</span>
-          ) : platformWorkspace.status === "authenticated" ? (
-            <>
-              <span className="platform-account__status">
-                {platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录"}
-                <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} 轮` : "权益已连接"}</small>
-              </span>
-              {invitationRedeemControl}
-              <button type="button" className="platform-account__button" onClick={() => void handlePlatformSwitchAccount()}>切换账户</button>
-              <button type="button" className="platform-account__button" onClick={() => void handlePlatformLogout()}>退出登录</button>
-            </>
-          ) : (
-            <>
-              <span className="platform-account__status">游客模式 · 当前标签页可恢复 <small>关闭页面或换设备可能丢失恢复信息</small></span>
-              {invitationRedeemControl}
-              <button type="button" className="platform-account__button is-primary" disabled={platformLoginBusy} onClick={() => void handlePlatformLogin()}>{platformLoginBusy ? "正在打开登录…" : "登录平台账户"}</button>
-              {platformLoginError ? <span className="platform-account__error" role="alert">{platformLoginError}</span> : null}
-            </>
-          )}
-        </div>
+          {platformAccount}
 
-        {mode !== "research" && !classicWorkspace ? (
-          <button
-            className="hero-action"
-            type="button"
-            aria-controls="chart-parameters-popover"
-            aria-expanded={parametersOpen}
-            aria-haspopup="dialog"
-            onClick={() => { parameterSnapshot.current = {profile: formState, settings: qimenSettings, sequence: sequenceFormState, quick: quickChartMode}; setError(null); setParametersOpen(true); }}
-          >
-            调整盘面
-          </button>
-        ) : null}
-        {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
-          <button type="button" className="hero-action" onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
-          {birthLibraryOpen ? <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
-            <strong>姓名与生日库</strong>
-            <div className="birth-library-save"><input value={birthName} onChange={(event) => setBirthName(event.target.value)} placeholder="姓名" aria-label="姓名" /><button type="button" onClick={saveBirthProfile}>保存当前</button></div>
-            {birthProfiles.map((item) => <div className="birth-library-item" key={item.id}><button type="button" onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button><button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button></div>)}
-            {chartHistory.length ? <><strong className="birth-library-history-title">历史排盘</strong>{chartHistory.slice(0, 8).map((item) => <button type="button" className="birth-library-history" key={item.id} onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.mode} · {new Date(item.createdAt).toLocaleString("zh-CN")}</button>)}</> : null}
-            {!birthProfiles.length && !chartHistory.length ? <small>暂无保存档案</small> : null}
-          </div> : null}
-        </div> : null}
-
-        {mode !== "research" && parametersOpen ? createPortal(
-          <div className={parameterStyles.overlay}>
-            <button type="button" tabIndex={-1} aria-label="关闭调整盘面" className={parameterStyles.backdrop} onClick={cancelParameters} />
-            <section ref={parametersPopoverRef} id="chart-parameters-popover" className={parameterStyles.panel} role="dialog" aria-modal="true" aria-label="调整盘面" onKeyDown={event => {
-              if(event.key === "Escape") {event.stopPropagation();cancelParameters();}
-              if(event.key === "Tab" && event.currentTarget.contains(event.target as Node)) {
-                const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')).filter(node => node.getClientRects().length);
-                const first = items[0], last = items.at(-1);
-                if(event.shiftKey && document.activeElement === first) {event.preventDefault();last?.focus();}
-                else if(!event.shiftKey && document.activeElement === last) {event.preventDefault();first?.focus();}
-              }
-            }}>
-              <header className={parameterStyles.head}><div><small>CHART / PARAMETERS</small><h2>调整盘面</h2></div><button type="button" autoFocus aria-label="关闭调整盘面" onClick={cancelParameters}>关闭 ×</button></header>
-              <div className={parameterStyles.body}><h3>{activeModeMeta.title} · 排盘资料</h3><p>修改后点击“应用并重新排盘”；取消会恢复打开前的设置。</p>{mode === "combined" ? <p>当前三盘仍共用一组时间资料。独立出生时间与问事起局时间尚未接入，请勿视为不同时间分别起盘。</p> : null}{chartModeControls}{chartParametersForm}{error ? <p role="alert" className={parameterStyles.error}>{error}</p> : null}</div>
-              <footer className={parameterStyles.foot}><button type="button" onClick={cancelParameters}>取消</button><button type="button" onClick={() => {if(mode === "qimen" && quickChartMode === "series") handleGenerateSequence(sequenceFormState); else handleGenerate(formState);}}>应用并重新排盘 ↗</button></footer>
-            </section>
-          </div>, document.body
-        ) : null}
-
-        <div className="observatory-hero__agent-entry">
-          {mode === "combined" || mode === "research" ? (
-            <span className="observatory-hero__agent-status">{mode === "combined" ? "三盘数据已注入 Agent" : "研究材料已注入 Agent"}</span>
+          {mode !== "research" && !classicWorkspace ? (
+            <button
+              className="hero-action"
+              type="button"
+              aria-controls="chart-parameters-popover"
+              aria-expanded={parametersOpen}
+              aria-haspopup="dialog"
+              onClick={openParameters}
+            >
+              调整盘面
+            </button>
           ) : null}
-        </div>
+          {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
+            <button type="button" className="hero-action" onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
+            {birthLibraryOpen ? birthLibraryPanel : null}
+          </div> : null}
 
-      </header>
+          <div className="observatory-hero__agent-entry">
+            {mode === "combined" || mode === "research" ? (
+              <span className="observatory-hero__agent-status">{mode === "combined" ? "三盘数据已注入 Agent" : "研究材料已注入 Agent"}</span>
+            ) : null}
+          </div>
+        </header>
+      )}
 
       {error ? <p className="error-banner">{error}</p> : null}
 
@@ -2218,7 +2312,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           >
             <section id="qimen-chart" className="analysis-panel">
               {workbenchCanvas}
-              {chartAnalysisToggle}
+              {isMobile ? null : chartAnalysisToggle}
             </section>
             <div id="qimen-workbench-separator" className="analysis-panel-divider" aria-hidden="true">
               <span className="analysis-panel-divider__grip" aria-hidden="true">
@@ -2233,6 +2327,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
           {chartAnalysisOverlay}
         </>
       )}
+
+      {mobileActionBar}
+      {mobileSheets}
+      {parametersOverlay}
 
       <footer className="qmdj-footer">
         <div className="qmdj-footer__compact">

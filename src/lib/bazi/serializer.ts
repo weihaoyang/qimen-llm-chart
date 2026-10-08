@@ -1,5 +1,6 @@
 import { Solar } from "lunar-typescript";
 import type { BaziPillarDetail, NormalizedBaziChart } from "./types";
+import { analyzeBaziRelations, type BaziRelation } from "./relations-analysis";
 
 export type BaziSerializationOptions = {
   /**
@@ -18,21 +19,31 @@ export type BaziSerializationOptions = {
 export type BaziRelationMatch = {
   branches?: string;
   stems?: string;
+  symbols?: string;
   positions: string[];
   pattern: string;
 };
 
 export type BaziRelationSummary = {
   heavenlyStemCombinations: BaziRelationMatch[];
+  heavenlyStemClashes: BaziRelationMatch[];
+  heavenlyStemControls: BaziRelationMatch[];
   earthlyBranchRelations: {
     liuHe: BaziRelationMatch[];
     liuChong: BaziRelationMatch[];
+    banHe: BaziRelationMatch[];
     sanHe: BaziRelationMatch[];
     sanHui: BaziRelationMatch[];
     xing: BaziRelationMatch[];
     hai: BaziRelationMatch[];
     po: BaziRelationMatch[];
   };
+  tianKeDiChong: BaziRelationMatch[];
+  fuYin: BaziRelationMatch[];
+  dayXunKongVoid: BaziRelationMatch[];
+  missingElements: string[];
+  dayMasterStrength: string;
+  notes: string[];
   timing: {
     referenceDate: string;
     liuNian: {
@@ -284,18 +295,47 @@ export const buildBaziRelationSummary = (
     value: pillar.earthlyBranch,
     position: PILLAR_LABELS[pillar.key],
   }));
+  const engine = analyzeBaziRelations(chart);
+  const toMatch = (relation: BaziRelation): BaziRelationMatch => ({
+    ...(relation.kind.startsWith("天干") ? { stems: relation.symbols } : { branches: relation.symbols }),
+    symbols: relation.symbols,
+    positions: relation.pillars.map((key) => PILLAR_LABELS[key]),
+    pattern: relation.kind,
+  });
+  const matchesOf = (kind: BaziRelation["kind"]) =>
+    engine.relations.filter((relation) => relation.kind === kind).map(toMatch);
+  const dayPillar = chart.raw.pillars.find((pillar) => pillar.key === "day");
+  const dayXunKong = dayPillar?.xunKong ?? "";
 
   return {
     heavenlyStemCombinations: buildStemCombinationMatches(chart.raw.pillars),
+    heavenlyStemClashes: matchesOf("天干相冲"),
+    heavenlyStemControls: matchesOf("天干相克"),
     earthlyBranchRelations: {
       liuHe: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.liuHe, "六合"),
       liuChong: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.liuChong, "六冲"),
+      banHe: matchesOf("地支半合"),
       sanHe: buildGroupMatches(branchTokens, SAN_HE_GROUPS),
       sanHui: buildGroupMatches(branchTokens, SAN_HUI_GROUPS),
       xing: buildXingMatches(chart.raw.pillars),
       hai: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.hai, "六害"),
       po: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.po, "六破"),
     },
+    tianKeDiChong: matchesOf("天克地冲"),
+    fuYin: matchesOf("伏吟"),
+    dayXunKongVoid: dayXunKong
+      ? chart.raw.pillars
+          .filter((pillar) => pillar.key !== "day" && dayXunKong.includes(pillar.earthlyBranch))
+          .map((pillar) => ({
+            branches: pillar.earthlyBranch,
+            symbols: pillar.earthlyBranch,
+            positions: [PILLAR_LABELS[pillar.key]],
+            pattern: "空亡",
+          }))
+      : [],
+    missingElements: engine.missingElements,
+    dayMasterStrength: chart.raw.structureAudit.dayMasterStrength,
+    notes: engine.notes,
     timing: buildTimingSummary(chart, options.referenceDate ?? new Date()),
   };
 };
@@ -428,13 +468,22 @@ export const serializeBaziToStructuredText = (
     "",
     "### 结构关系摘要",
     `天干五合: ${formatRelationMatches(heavenlyStemCombinations)}`,
+    `天干相冲: ${formatRelationMatches(relations.heavenlyStemClashes)}`,
+    `天干相克: ${formatRelationMatches(relations.heavenlyStemControls)}`,
     `地支六合: ${formatRelationMatches(earthlyBranchRelations.liuHe)}`,
+    `地支半合: ${formatRelationMatches(earthlyBranchRelations.banHe)}`,
     `地支六冲: ${formatRelationMatches(earthlyBranchRelations.liuChong)}`,
     `地支三合: ${formatRelationMatches(earthlyBranchRelations.sanHe)}`,
     `地支三会: ${formatRelationMatches(earthlyBranchRelations.sanHui)}`,
     `地支刑: ${formatRelationMatches(earthlyBranchRelations.xing)}`,
     `地支六害: ${formatRelationMatches(earthlyBranchRelations.hai)}`,
     `地支六破: ${formatRelationMatches(earthlyBranchRelations.po)}`,
+    `天克地冲: ${formatRelationMatches(relations.tianKeDiChong)}`,
+    `伏吟: ${formatRelationMatches(relations.fuYin)}`,
+    `日柱空亡落宫: ${formatRelationMatches(relations.dayXunKongVoid)}`,
+    `五行未见: ${relations.missingElements.join("、") || "无"}`,
+    `日主旺衰候选: ${relations.dayMasterStrength}`,
+    `关系提示: ${relations.notes.join("；") || "无"}`,
     "",
     "### 流年与当前大运",
     `参考日期: ${timing.referenceDate}`,

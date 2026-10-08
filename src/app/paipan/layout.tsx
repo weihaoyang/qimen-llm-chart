@@ -15,6 +15,7 @@ import "./classic.css";
 import "./ziwei.css";
 import "./qimen-workbench.css";
 import "./divination.css";
+import "./mobile.css";
 
 export default function PaipanLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return children;
