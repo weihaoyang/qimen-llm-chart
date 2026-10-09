@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import type { AstroChart } from "@/lib/astro/types";
 import type { HumanDesignChart } from "@/lib/human-design/types";
+import { buildHumanDesignTransit, type HumanDesignTransit } from "@/lib/human-design/transit";
 import type { TarotReading, TarotSpreadId } from "@/lib/tarot/types";
 import { AstroWheel } from "./astro-wheel";
 import { HumanDesignBodygraph } from "./human-design-bodygraph";
@@ -17,6 +19,7 @@ const planetLabels: Record<string, string> = { sun: "太阳", earth: "地球", m
 
 export function DivinationPanel(props: Props) {
   const { kind, value } = props;
+  const [transit, setTransit] = useState<HumanDesignTransit | null>(null);
   if (kind === "astro") {
     return <section className="divination-panel divination-panel--astro" aria-label="星盘">
       <div className="divination-panel__topline"><span>OBSERVATORY / 01</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "CALCULATED" : "INPUT REQUIRED"}</span></div>
@@ -37,7 +40,7 @@ export function DivinationPanel(props: Props) {
       : null;
     return <section className="divination-panel divination-panel--human" aria-label="人类图">
       <div className="divination-panel__topline"><span>BODYGRAPH / 02</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "SIGNALS READY" : "INPUT REQUIRED"}</span></div>
-      <header className="divination-panel__header"><div><p className="divination-panel__kicker">HUMAN DESIGN / ACTIVATION MAP</p><h2>人类图</h2><p className="divination-panel__subhead">看见人格与设计两侧的激活信号，不替你下人格结论。</p></div><div className="divination-panel__header-actions">{props.onCopyJson ? <button type="button" className="divination-panel__export" onClick={props.onCopyJson}>复制 JSON <span>{props.jsonCopied ? "✓" : "⧉"}</span></button> : null}<div className="hd-glyph" aria-hidden="true"><span /><span /><span /><span /><b /></div></div></header>
+      <header className="divination-panel__header"><div><p className="divination-panel__kicker">HUMAN DESIGN / ACTIVATION MAP</p><h2>人类图</h2><p className="divination-panel__subhead">看见人格与设计两侧的激活信号，不替你下人格结论。</p></div><div className="divination-panel__header-actions">{props.onCopyJson ? <button type="button" className="divination-panel__export" onClick={props.onCopyJson}>复制 JSON <span>{props.jsonCopied ? "✓" : "⧉"}</span></button> : null}<button type="button" className="divination-panel__action" onClick={() => setTransit(buildHumanDesignTransit(value, new Date()))}><span>↻</span>叠加流日</button><div className="hd-glyph" aria-hidden="true"><span /><span /><span /><span /><b /></div></div></header>
       <div className="divination-panel__rule" />
       <HumanDesignBodygraph chart={value} />
       <div className="hd-summary"><div><small>TYPE</small><strong>{value.type ?? "待推导"}</strong><span>{value.strategy ?? "不作猜测"}</span></div><div><small>AUTHORITY</small><strong>{value.authority ?? "—"}</strong><span>Profile {value.profile ?? "待推导"}</span></div><div><small>DEFINITION</small><strong>{value.definition ?? "待推导"}</strong><span>{value.incarnationCrossType ?? "—"} · {value.channels.length} 通道</span></div></div>
@@ -47,6 +50,7 @@ export function DivinationPanel(props: Props) {
       <div className="hd-grid">{Object.entries(value.activations).map(([name, activation], index) => <div className="hd-cell" key={name} style={{ "--item-index": index } as React.CSSProperties}><span className="hd-cell__number">{String(index + 1).padStart(2, "0")}</span><b>{planetLabels[name] ?? name}</b><span className="hd-cell__side"><i />人格 {activation.personality.gate}.{activation.personality.line}</span><span className="hd-cell__side hd-cell__side--design"><i />设计 {activation.design.gate}.{activation.design.line}</span></div>)}{!Object.keys(value.activations).length ? <div className="empty-state"><b>暂无激活数据</b><span>当前输入无法计算两侧激活，请检查日期与时间。</span></div> : null}</div>
       <p className="divination-panel__note"><span>人生主题</span>{value.incarnationCross ?? "待推导"} · 精度 gate {value.precision?.gate ?? "—"}</p>
       {hdVariableLine ? <p className="divination-panel__note"><span>四变量</span>{hdVariableLine}</p> : null}
+      {transit ? <p className="divination-panel__note"><span>流日 {transit.at}</span>激活门 {transit.gates.join(" / ")} · 流日通道 {transit.channels.map((channel) => channel.gates.join("-")).join("、") || "无"} · 叠加后新增通道 {transit.overlay.newChannels.map((channel) => `${channel.gates.join("-")} ${channel.name}`).join("、") || "无"} · 新增中心 {transit.overlay.newCenters.join("、") || "无"}</p> : null}
       <p className="divination-panel__note"><span>BOUNDARY</span>{value.disclaimer}</p>
     </section>;
   }
