@@ -41,17 +41,19 @@ describe("migrations", () => {
     const result = await query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema='public'`,
     );
-    expect(result.rows.map((row) => row.table_name)).toEqual(expect.arrayContaining([
+    const tables = result.rows.map((row) => row.table_name);
+    expect(tables).toEqual(expect.arrayContaining([
       "agent_cases",
       "agent_decision_branches",
       "agent_decision_tree_versions",
-      "account_connectors",
     ]));
-    // The historical 胜天半子 migrations are kept so an existing production
-    // database still migrates cleanly; no product code reads these tables.
-    expect(result.rows.map((row) => row.table_name)).toEqual(expect.arrayContaining([
+    // 033 drops the 胜天半子 storage; the create-then-drop chain must actually
+    // remove it, or the migration is lying about what it did.
+    expect(tables).not.toEqual(expect.arrayContaining([
       "battle_cases",
       "battle_timeline_nodes",
+      "official_catalog_entries",
+      "account_connectors",
     ]));
   });
 });
