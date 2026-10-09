@@ -178,6 +178,9 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("上档/中档/下档是条件场景，不是概率、准确率或世界线发生频率");
     expect(systemPrompt).toContain("一个可使该判断失效的现实观察");
     expect(systemPrompt).toContain("不可检验机制");
+    expect(systemPrompt).toContain("登记格局");
+    expect(systemPrompt).toContain("『未成立』只表示本盘未命中");
+    expect(systemPrompt).toContain("旺衰档位（有力 / 中平 / 无力）");
   });
 
   it("uses the dedicated deep-generation contract for Bazi life K lines", () => {
