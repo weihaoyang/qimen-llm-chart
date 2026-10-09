@@ -413,5 +413,7 @@ html body .page-shell.product-chart .platform-account__error {
 .birth-library-item { display: flex; gap: 4px; margin-top: 5px; }
 .birth-library-item > button:first-child { display: flex; flex: 1; justify-content: space-between; text-align: left; background: var(--paipan-ground); }
 .birth-library-item small { color: var(--paipan-slate); }
+.birth-library-item--renaming .birth-library-rename { flex: 1; min-width: 0; border: 1px solid var(--paipan-ink); padding: 5px; background: var(--paipan-paper); color: var(--paipan-ink); }
+.birth-library-item button:disabled { opacity: 0.45; cursor: not-allowed; }
 .birth-library-history-title { display: block; margin-top: 10px; padding-top: 8px; border-top: 1px solid #c7c0ae; }
 .birth-library-history { display: block; width: 100%; margin-top: 4px; text-align: left; background: var(--paipan-ground) !important; }

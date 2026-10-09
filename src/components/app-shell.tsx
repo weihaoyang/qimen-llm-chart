@@ -468,6 +468,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   });
   const [birthLibraryOpen, setBirthLibraryOpen] = useState(false);
   const [birthName, setBirthName] = useState("");
+  const [renamingBirthId, setRenamingBirthId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
   const [chartHistory, setChartHistory] = useState<Array<{ id: string; mode: WorkbenchMode; profile: ProfileInput; createdAt: number }>>(() => {
     if (typeof window === "undefined") return [];
     try { const value = JSON.parse(localStorage.getItem("qmdj-chart-history") || "[]"); return Array.isArray(value) ? value : []; } catch { return []; }
@@ -505,16 +507,33 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free" });
   const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [] });
+  const persistBirthProfiles = (next: Array<{ id: string; name: string; profile: ProfileInput }>) => {
+    setBirthProfiles(next);
+    try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
+  };
+  const startRenameBirthProfile = (id: string, name: string) => {
+    setRenamingBirthId(id);
+    setRenameDraft(name);
+  };
+  const cancelRenameBirthProfile = () => {
+    setRenamingBirthId(null);
+    setRenameDraft("");
+  };
   const saveBirthProfile = () => {
     const name = birthName.trim();
     if (!name) return;
-    const next = [{ id: crypto.randomUUID(), name, profile: formState }, ...birthProfiles.filter((item) => item.name !== name)].slice(0, 50);
-    setBirthProfiles(next); setBirthName("");
-    try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
+    persistBirthProfiles([{ id: crypto.randomUUID(), name, profile: formState }, ...birthProfiles.filter((item) => item.name !== name)].slice(0, 50));
+    setBirthName("");
   };
   const deleteBirthProfile = (id: string) => {
-    const next = birthProfiles.filter((item) => item.id !== id); setBirthProfiles(next);
-    try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
+    persistBirthProfiles(birthProfiles.filter((item) => item.id !== id));
+    if (renamingBirthId === id) cancelRenameBirthProfile();
+  };
+  const commitRenameBirthProfile = () => {
+    const name = renameDraft.trim();
+    if (!renamingBirthId || !name) { cancelRenameBirthProfile(); return; }
+    persistBirthProfiles(birthProfiles.map((item) => (item.id === renamingBirthId ? { ...item, name } : item)));
+    cancelRenameBirthProfile();
   };
   const [agentResultCopied, setAgentResultCopied] = useState(false);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
@@ -2249,7 +2268,29 @@ export function AppShell({ platformConfig }: AppShellProps) {
     <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
       <strong>姓名与生日库</strong>
       <div className="birth-library-save"><input value={birthName} onChange={(event) => setBirthName(event.target.value)} placeholder="姓名" aria-label="姓名" /><button type="button" onClick={saveBirthProfile}>保存当前</button></div>
-      {birthProfiles.map((item) => <div className="birth-library-item" key={item.id}><button type="button" onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button><button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button></div>)}
+      {birthProfiles.map((item) => renamingBirthId === item.id ? (
+        <div className="birth-library-item birth-library-item--renaming" key={item.id}>
+          <input
+            className="birth-library-rename"
+            value={renameDraft}
+            autoFocus
+            aria-label={`重命名${item.name}`}
+            onChange={(event) => setRenameDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") { event.preventDefault(); commitRenameBirthProfile(); }
+              if (event.key === "Escape") { event.preventDefault(); cancelRenameBirthProfile(); }
+            }}
+          />
+          <button type="button" onClick={commitRenameBirthProfile} disabled={!renameDraft.trim()}>保存</button>
+          <button type="button" aria-label="取消重命名" onClick={cancelRenameBirthProfile}>取消</button>
+        </div>
+      ) : (
+        <div className="birth-library-item" key={item.id}>
+          <button type="button" onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button>
+          <button type="button" aria-label={`重命名${item.name}`} onClick={() => startRenameBirthProfile(item.id, item.name)}>✎</button>
+          <button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button>
+        </div>
+      ))}
       {chartHistory.length ? <><strong className="birth-library-history-title">历史排盘</strong>{chartHistory.slice(0, 8).map((item) => <button type="button" className="birth-library-history" key={item.id} onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.mode} · {new Date(item.createdAt).toLocaleString("zh-CN")}</button>)}</> : null}
       {!birthProfiles.length && !chartHistory.length ? <small>暂无保存档案</small> : null}
     </div>

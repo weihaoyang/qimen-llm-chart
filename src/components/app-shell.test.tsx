@@ -17,7 +17,7 @@ if (!globalThis.ResizeObserver) {
 }
 
 describe("AppShell", () => {
-  afterEach(() => cleanup());
+  afterEach(() => { cleanup(); localStorage.clear(); });
 
   it("keeps single-chart and sequence analysis in the chart product", async () => {
     render(<AppShell platformConfig={{
@@ -112,5 +112,28 @@ describe("AppShell", () => {
     for (const retired of ["胜天半子", "以身入局", "重构命运", "人生决策控制室", "关键决策树", "K 线观测"]) {
       expect(text).not.toContain(retired);
     }
+  }, 60000);
+
+  it("renames a saved 生日库 profile", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "seed-1", name: "旧名", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "重命名旧名" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "重命名旧名" }), { target: { value: "新名" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(screen.queryByRole("button", { name: "重命名旧名" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重命名新名" })).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
+    expect(stored[0]?.name).toBe("新名");
   }, 60000);
 });
