@@ -267,4 +267,23 @@ describe("ChartForm", () => {
       },
     });
   });
+
+  it("offers a separate question time only in combined mode", () => {
+    const props = createProps();
+    function Harness() {
+      const [value, setValue] = useState(props.value);
+      return <ChartForm {...props} value={value} mode="combined" onValueChange={setValue} />;
+    }
+
+    render(<Harness />);
+
+    const toggle = screen.getByRole("checkbox", { name: /三盘分别用不同时间/ });
+    expect(toggle).not.toBeChecked();
+    expect(screen.queryByText("问事起局时间（奇门）")).not.toBeInTheDocument();
+
+    fireEvent.click(toggle);
+
+    expect(screen.getByRole("checkbox", { name: /三盘分别用不同时间/ })).toBeChecked();
+    expect(screen.getByText("问事起局时间（奇门）")).toBeInTheDocument();
+  });
 });

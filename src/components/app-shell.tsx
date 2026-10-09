@@ -35,6 +35,7 @@ import {
   serializeCombinedToCompactJson,
   serializeCombinedToStructuredText,
 } from "@/lib/combined/serializer";
+import { toQimenProfileInput } from "@/lib/combined/chart-times";
 import {
   getDefaultProfileInput,
   normalizeProfileInput,
@@ -322,10 +323,13 @@ const buildWorkbenchCharts = (
     qimenSettings,
   };
   const normalizedProfile = normalizeProfileInput(inputWithQimenSettings);
+  // 三盘联合可选让奇门单独用「问事起局时间」；默认同源，复用同一份归一化结果。
+  const qimenInput = toQimenProfileInput(inputWithQimenSettings);
+  const qimenProfile = qimenInput === inputWithQimenSettings ? normalizedProfile : normalizeProfileInput(qimenInput);
 
   return {
     normalizedProfile,
-    qimenChart: buildQimenChartFromProfile(normalizedProfile),
+    qimenChart: buildQimenChartFromProfile(qimenProfile),
     baziChart: buildBaziChartFromProfile(normalizedProfile),
     ziweiChart: buildZiweiChartFromProfile(normalizedProfile),
   };
@@ -2261,7 +2265,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         }
       }}>
         <header className={parameterStyles.head}><div><small>CHART / PARAMETERS</small><h2>调整盘面</h2></div><button type="button" autoFocus aria-label="关闭调整盘面" onClick={cancelParameters}>关闭 ×</button></header>
-        <div className={parameterStyles.body}><h3>{activeModeMeta.title} · 排盘资料</h3><p>修改后点击“应用并重新排盘”；取消会恢复打开前的设置。</p>{mode === "combined" ? <p>当前三盘仍共用一组时间资料。独立出生时间与问事起局时间尚未接入，请勿视为不同时间分别起盘。</p> : null}{chartModeControls}{chartParametersForm}{error ? <p role="alert" className={parameterStyles.error}>{error}</p> : null}</div>
+        <div className={parameterStyles.body}><h3>{activeModeMeta.title} · 排盘资料</h3><p>修改后点击“应用并重新排盘”；取消会恢复打开前的设置。</p>{mode === "combined" ? <p>默认三盘共用一组时间资料；在「调整盘面」勾选「三盘分别用不同时间」后，奇门用问事起局时间，八字 / 紫微用出生时间。</p> : null}{chartModeControls}{chartParametersForm}{error ? <p role="alert" className={parameterStyles.error}>{error}</p> : null}</div>
         <footer className={parameterStyles.foot}><button type="button" onClick={cancelParameters}>取消</button><button type="button" onClick={() => {if(mode === "qimen" && quickChartMode === "series") handleGenerateSequence(sequenceFormState); else handleGenerate(formState);}}>应用并重新排盘 ↗</button></footer>
       </section>
     </div>, document.body

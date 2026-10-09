@@ -230,6 +230,37 @@ export function ChartForm({
               ) : (
                 <LunarDateTimeWheels value={fallbackLunar} onChange={(lunar) => onValueChange({ ...value, lunar })} />
               )}
+
+              {mode === "combined" ? (
+                <div className="control-field control-field-wide combined-split-times">
+                  <label className="datetime-wheel--check">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(value.splitChartTimes)}
+                      onChange={(event) =>
+                        onValueChange({
+                          ...value,
+                          splitChartTimes: event.target.checked,
+                          questionDatetime: value.questionDatetime ?? value.datetime,
+                        })
+                      }
+                    />
+                    <span>三盘分别用不同时间</span>
+                  </label>
+                  {value.splitChartTimes ? (
+                    <label className="control-field control-field-wide">
+                      <span>问事起局时间（奇门）</span>
+                      <DateTimeWheels
+                        value={value.questionDatetime ?? value.datetime}
+                        onChange={(questionDatetime) => onValueChange({ ...value, questionDatetime })}
+                      />
+                      <small>八字 / 紫微仍使用上面的出生时间。</small>
+                    </label>
+                  ) : (
+                    <small>默认三盘共用同一时间；勾选后用「问事起局时间」单独起奇门盘。</small>
+                  )}
+                </div>
+              ) : null}
             </>
           ) : null}
 

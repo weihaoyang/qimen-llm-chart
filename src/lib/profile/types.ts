@@ -42,6 +42,10 @@ export type ProfileInput = {
   solar?: SolarInput;
   lunar?: LunarInput;
   location?: GeoLocationInput;
+  /** 三盘联合：勾选后奇门用「问事起局时间」，八字/紫微仍用出生时间。 */
+  splitChartTimes?: boolean;
+  /** 问事起局时间（公历 `YYYY-MM-DDTHH:mm`）。 */
+  questionDatetime?: string;
 };
 
 export type NormalizedProfileInput = {
