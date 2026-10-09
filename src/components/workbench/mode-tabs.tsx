@@ -22,6 +22,7 @@ const MODE_OPTIONS: Array<{
   { value: "astro", label: "星盘" },
   { value: "human-design", label: "人类图" },
   { value: "tarot", label: "塔罗牌" },
+  { value: "fourth-way", label: "第四道" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

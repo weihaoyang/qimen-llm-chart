@@ -117,11 +117,14 @@ import { ModeTabs } from "./workbench/mode-tabs";
 import { ZiweiPanel } from "./ziwei-panel";
 import { CombinedMap } from "./combined-map";
 import { DivinationPanel } from "./divination-panel";
+import { FourthWayPanel } from "./fourth-way-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
 import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "@/lib/astro/serializer";
 import type { AstroChart } from "@/lib/astro/types";
+import { FOURTH_WAY_CONTENT } from "@/lib/fourth-way/content";
+import { serializeFourthWayToCompactJson, serializeFourthWayToStructuredText } from "@/lib/fourth-way/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -269,6 +272,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  "fourth-way": {
+    question: DEFAULT_AGENT_QUESTIONS["fourth-way"],
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -314,6 +322,7 @@ const MODE_META: Record<
   astro: { label: "西方星盘", title: "星盘", description: "太阳 / 月亮 / 上升 / 行星" },
   "human-design": { label: "人类图结构", title: "人类图", description: "类型 / 权威 / 中心 / 闸门" },
   tarot: { label: "塔罗三张牌", title: "塔罗牌", description: "主题 / 阻力 / 下一步" },
+  "fourth-way": { label: "葛吉夫第四道", title: "第四道", description: "三律 / 七律 / 九型图" },
 };
 
 const buildWorkbenchCharts = (
@@ -514,8 +523,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -960,6 +969,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const astroStructuredText = useMemo(() => serializeAstroToStructuredText(astroChart), [astroChart]);
   const humanDesignStructuredText = useMemo(() => serializeHumanDesignToStructuredText(humanDesignChart), [humanDesignChart]);
   const tarotStructuredText = useMemo(() => serializeTarotToStructuredText(tarotReading), [tarotReading]);
+  const fourthWayStructuredText = useMemo(() => serializeFourthWayToStructuredText(FOURTH_WAY_CONTENT), []);
 
   const researchData = useMemo<ResearchWorkspaceData | null>(() => {
     try {
@@ -1090,6 +1100,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return humanDesignStructuredText;
       case "tarot":
         return tarotStructuredText;
+      case "fourth-way":
+        return fourthWayStructuredText;
     }
   }, [
     mode,
@@ -1104,6 +1116,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     astroStructuredText,
     humanDesignStructuredText,
     tarotStructuredText,
+    fourthWayStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1148,6 +1161,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeHumanDesignToCompactJson(humanDesignChart);
       case "tarot":
         return serializeTarotToCompactJson(tarotReading);
+      case "fourth-way":
+        return serializeFourthWayToCompactJson(FOURTH_WAY_CONTENT);
     }
   }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading]);
 
@@ -1202,6 +1217,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       astro: { ...current.astro, content: "", model: null, error: null, loading: false },
       "human-design": { ...current["human-design"], content: "", model: null, error: null, loading: false },
       tarot: { ...current.tarot, content: "", model: null, error: null, loading: false },
+      "fourth-way": { ...current["fourth-way"], content: "", model: null, error: null, loading: false },
     }));
     setError(null);
   };
@@ -2044,6 +2060,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onSpreadChange={(next) => { setTarotSpreadId(next); setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onRedraw={() => { setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "fourth-way" ? <FourthWayPanel content={FOURTH_WAY_CONTENT} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

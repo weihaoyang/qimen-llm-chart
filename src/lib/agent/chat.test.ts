@@ -34,9 +34,9 @@ describe("agent chat helpers", () => {
   });
 
   it("offers focused analysis angles for every workbench mode", () => {
-    expect(Object.values(AGENT_ANALYSIS_ANGLES)).toHaveLength(8);
+    expect(Object.values(AGENT_ANALYSIS_ANGLES)).toHaveLength(9);
     for (const [mode, angles] of Object.entries(AGENT_ANALYSIS_ANGLES)) {
-      const expectedLength = mode === "research" ? 5 : mode === "qimen" ? 9 : mode === "astro" || mode === "human-design" || mode === "tarot" ? 2 : 6;
+      const expectedLength = mode === "research" ? 5 : mode === "qimen" ? 9 : mode === "astro" || mode === "human-design" || mode === "tarot" || mode === "fourth-way" ? 2 : 6;
       expect(angles).toHaveLength(expectedLength);
       expect(angles.every((angle) => angle.label && angle.question)).toBe(true);
     }
