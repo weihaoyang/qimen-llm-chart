@@ -40,7 +40,8 @@ flock -n 9 || { echo "release lock is held" >&2; exit 20; }
 test -d "$SDK_SRC" || { echo "missing web-sdk at $SDK_SRC" >&2; exit 3; }
 test -f "$ENV_FILE" || { echo "missing env file $ENV_FILE" >&2; exit 4; }
 command -v rsync >/dev/null || { echo "rsync is required" >&2; exit 5; }
-df -Pk "$BUILD_DIR" 2>/dev/null | awk 'NR==2 { if ($4 < 2097152) exit 41 }' || { echo "low disk (<2GB free)" >&2; exit 41; }
+mkdir -p "$BUILD_DIR"
+df -Pk "$BUILD_DIR" | awk 'NR==2 { if ($4 < 2097152) exit 41 }' || { echo "low disk (<2GB free)" >&2; exit 41; }
 
 PREVIOUS_IMAGE="$(docker inspect -f '{{.Config.Image}}' qmdj 2>/dev/null || true)"
 echo "previous_image=${PREVIOUS_IMAGE:-none}"
