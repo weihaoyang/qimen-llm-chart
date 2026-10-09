@@ -1,0 +1,30 @@
+# Run the 知几 workbench from an immutable image. Deployed by ops/deploy/release.sh.
+#
+# Host networking is intentional: the app reads DATABASE_URL from the host's
+# /srv/qmdj/.env.local, which points at 127.0.0.1:5432 (the host PostgreSQL).
+# With a bridge network that "127.0.0.1" would be the container, so the container
+# shares the host network instead. Nginx keeps proxying to 127.0.0.1:3002.
+services:
+  qmdj:
+    image: ${QMDJ_IMAGE:-qmdj:local}
+    container_name: qmdj
+    restart: always
+    network_mode: host
+    env_file:
+      - ${QMDJ_ENV_FILE:-/srv/qmdj/.env.local}
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 127.0.0.1
+      PORT: "3002"
+      QMDJ_RELEASE_ID: ${QMDJ_RELEASE_ID:-}
+      QMDJ_RELEASE_COMMIT: ${QMDJ_RELEASE_COMMIT:-}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3002/api/version').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
