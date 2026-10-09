@@ -527,8 +527,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const saveBirthProfile = () => {
     const name = birthName.trim();
     if (!name) return;
+    const duplicate = birthProfiles.some((item) => item.name === name);
     persistBirthProfiles([{ id: crypto.randomUUID(), name, profile: formState }, ...birthProfiles.filter((item) => item.name !== name)].slice(0, 50));
     setBirthName("");
+    setImportStatus(duplicate ? `已覆盖同名档案「${name}」` : `已保存「${name}」`);
   };
   const deleteBirthProfile = (id: string) => {
     const target = birthProfiles.find((item) => item.id === id);
@@ -541,8 +543,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const commitRenameBirthProfile = () => {
     const name = renameDraft.trim();
     if (!renamingBirthId || !name) { cancelRenameBirthProfile(); return; }
+    const duplicate = birthProfiles.some((item) => item.id !== renamingBirthId && item.name === name);
     persistBirthProfiles(birthProfiles.map((item) => (item.id === renamingBirthId ? { ...item, name } : item)));
     cancelRenameBirthProfile();
+    setImportStatus(duplicate ? `已改名为「${name}」，与既有档案同名` : `已改名为「${name}」`);
   };
   const exportBirthProfiles = () => {
     if (!birthProfiles.length) return;

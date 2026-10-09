@@ -260,4 +260,50 @@ describe("AppShell", () => {
     expect(screen.getByText(/已删除「需要确认」/)).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]")).toEqual([]);
   }, 60000);
+
+  it("reports when saving reuses an existing 生日库 name", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "n-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    const nameInput = screen.getByLabelText("姓名");
+
+    fireEvent.change(nameInput, { target: { value: "乙" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存当前" }));
+    expect(screen.getByText(/已保存「乙」/)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]")).toHaveLength(2);
+
+    fireEvent.change(nameInput, { target: { value: "甲" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存当前" }));
+    expect(screen.getByText(/已覆盖同名档案「甲」/)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]")).toHaveLength(2);
+  }, 60000);
+
+  it("warns when renaming to an existing 生日库 name", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "e-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+      { id: "e-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "重命名乙" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "重命名乙" }), { target: { value: "甲" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(screen.getByText(/与既有档案同名/)).toBeInTheDocument();
+  }, 60000);
 });
