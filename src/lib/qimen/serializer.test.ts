@@ -4,6 +4,7 @@ import {
   serializeChartToCompactJson,
   serializeSequenceToCompactJson,
   serializeChartToStructuredText,
+  summarizeRegisteredPatternsCompact,
 } from "./serializer";
 import { buildChartSequence } from "./sequence";
 
@@ -85,5 +86,26 @@ describe("serializeChartToStructuredText", () => {
     expect(parsed.legend.chart).toContain("时间信息");
     expect(parsed.items[1]?.datetime).toBe("2026-07-01T23:30");
     expect(parsed.items[0]?.palaces).toHaveLength(9);
+  });
+
+  // /api/agent rejects a jsonPayload over 80_000 chars, and the registered 格局
+  // judgement is repeated per sequence item. Keep it negligible, and keep the
+  // single-chart payloads comfortably under the route limits.
+  it("keeps the registered 格局 summary negligible and single-chart payloads bounded", () => {
+    const chart = buildChart({ datetime: "2026-07-01T21:30", timeZone: "Asia/Shanghai" });
+    expect(JSON.stringify(summarizeRegisteredPatternsCompact(chart)).length).toBeLessThan(1000);
+    expect(serializeChartToCompactJson(chart).length).toBeLessThan(40_000);
+    expect(serializeChartToStructuredText(chart).length).toBeLessThan(60_000);
+  });
+
+  it("keeps a five-step sequence compact payload within the agent API limit", () => {
+    const sequence = buildChartSequence({
+      startDatetime: "2026-07-01T00:00",
+      endDatetime: "2026-07-01T08:00",
+      timeZone: "Asia/Shanghai",
+      step: "double-hour",
+    });
+    expect(sequence).toHaveLength(5);
+    expect(serializeSequenceToCompactJson(sequence).length).toBeLessThan(80_000);
   });
 });
