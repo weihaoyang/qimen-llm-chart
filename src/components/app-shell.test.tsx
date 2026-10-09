@@ -235,4 +235,29 @@ describe("AppShell", () => {
     expect(stored[0]?.profile.datetime).not.toBe("1990-01-01T12:00");
     expect(stored[0]?.profile.datetime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
   }, 60000);
+
+  it("asks before deleting a 生日库 profile", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "d-1", name: "需要确认", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "删除需要确认" }));
+    expect(screen.getByText(/确认删除/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "取消删除" }));
+    expect(screen.getByRole("button", { name: "重命名需要确认" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "删除需要确认" }));
+    fireEvent.click(screen.getByRole("button", { name: "删除" }));
+    expect(screen.getByText(/已删除「需要确认」/)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]")).toEqual([]);
+  }, 60000);
 });

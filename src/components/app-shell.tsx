@@ -472,6 +472,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [birthQuery, setBirthQuery] = useState("");
   const [confirmingOverwriteId, setConfirmingOverwriteId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [renamingBirthId, setRenamingBirthId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [chartHistory, setChartHistory] = useState<Array<{ id: string; mode: WorkbenchMode; profile: ProfileInput; createdAt: number }>>(() => {
@@ -530,8 +531,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
     setBirthName("");
   };
   const deleteBirthProfile = (id: string) => {
+    const target = birthProfiles.find((item) => item.id === id);
     persistBirthProfiles(birthProfiles.filter((item) => item.id !== id));
     if (renamingBirthId === id) cancelRenameBirthProfile();
+    setConfirmingDeleteId(null);
+    setConfirmingOverwriteId(null);
+    if (target) setImportStatus(`已删除「${target.name}」`);
   };
   const commitRenameBirthProfile = () => {
     const name = renameDraft.trim();
@@ -2343,12 +2348,18 @@ export function AppShell({ platformConfig }: AppShellProps) {
           <button type="button" onClick={() => overwriteBirthProfile(item.id)}>覆盖</button>
           <button type="button" aria-label="取消覆盖" onClick={() => setConfirmingOverwriteId(null)}>取消</button>
         </div>
+      ) : confirmingDeleteId === item.id ? (
+        <div className="birth-library-item birth-library-item--renaming" key={item.id}>
+          <span className="birth-library-confirm">确认删除「{item.name}」？</span>
+          <button type="button" onClick={() => deleteBirthProfile(item.id)}>删除</button>
+          <button type="button" aria-label="取消删除" onClick={() => setConfirmingDeleteId(null)}>取消</button>
+        </div>
       ) : (
         <div className="birth-library-item" key={item.id}>
           <button type="button" onClick={() => loadBirthProfile(item)}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button>
           <button type="button" aria-label={`重命名${item.name}`} onClick={() => startRenameBirthProfile(item.id, item.name)}>✎</button>
-          <button type="button" aria-label={`更新${item.name}`} onClick={() => setConfirmingOverwriteId(item.id)}>⟳</button>
-          <button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button>
+          <button type="button" aria-label={`更新${item.name}`} onClick={() => { setConfirmingDeleteId(null); setConfirmingOverwriteId(item.id); }}>⟳</button>
+          <button type="button" aria-label={`删除${item.name}`} onClick={() => { setConfirmingOverwriteId(null); setConfirmingDeleteId(item.id); }}>×</button>
         </div>
       ))}
       {chartHistory.length ? <><strong className="birth-library-history-title">历史排盘</strong>{chartHistory.slice(0, 8).map((item) => <button type="button" className="birth-library-history" key={item.id} onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.mode} · {new Date(item.createdAt).toLocaleString("zh-CN")}</button>)}</> : null}
