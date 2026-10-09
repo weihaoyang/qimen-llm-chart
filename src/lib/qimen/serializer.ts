@@ -69,24 +69,6 @@ const normalizeValue = (value: unknown): unknown => {
   return value;
 };
 
-const normalizePatterns = (
-  patterns: AuspiciousPattern[] | InauspiciousPattern[] | undefined,
-) => {
-  if (!patterns || patterns.length === 0) {
-    return [];
-  }
-
-  return patterns.map((pattern) => ({
-    id: pattern.id ?? "无",
-    name: pattern.name ?? "无",
-    type: pattern.type ?? "无",
-    subType: pattern.sub_type ?? "无",
-    params: pattern.params ?? {},
-    description: pattern.description ?? "无",
-    position: pattern.position ?? "无",
-  }));
-};
-
 const joinPillar = (pillar: { stem: string; branch: string }) =>
   `${pillar.stem}${pillar.branch}`;
 
@@ -264,8 +246,6 @@ const buildCompactSchema = () => {
     "入墓信息",
     "十干克应",
     "六仪击刑",
-    "吉格列表",
-    "凶格列表",
   ];
 
   return {
@@ -320,8 +300,6 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       normalizeValue(palace.tombInfo),
       normalizeValue(palace.tenStemResponse),
       normalizeValue(palace.liuYiJiXing),
-      normalizePatterns(palace.auspiciousPatterns),
-      normalizePatterns(palace.inauspiciousPatterns),
     ]),
   };
 };
