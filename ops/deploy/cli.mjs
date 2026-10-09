@@ -50,7 +50,9 @@ const config = {
 };
 
 const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
-const SUDO = process.env.QMDJ_NO_SUDO === "1" || isRoot ? [] : ["sudo"];
+// `-n` keeps sudo non-interactive: without a passwordless rule it must fail fast
+// instead of blocking a deploy on a prompt that no one can answer.
+const SUDO = process.env.QMDJ_NO_SUDO === "1" || isRoot ? [] : ["sudo", "-n"];
 
 /** Run a command, inheriting stdio. Returns the exit status. */
 const run = (cmd, args, { allowFail = false } = {}) => {
