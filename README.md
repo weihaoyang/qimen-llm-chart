@@ -122,6 +122,21 @@ NEXT_DIST_DIR=.next-verify npm run build
 
 统一账户、邀请码兑换、游客凭证与 AI 权益链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
 
+## 部署（一键发布）
+
+生产发布走仓库自带的 deploy SDK，一条命令，失败自动回滚：
+
+```bash
+node ops/deploy/cli.mjs doctor     # 发布前自检（docker/rsync/node/磁盘/env/sdk）
+node ops/deploy/cli.mjs deploy     # 构建 → 切换 → 健康门 → 失败自动回滚
+node ops/deploy/cli.mjs status     # 当前发布、镜像、健康
+node ops/deploy/cli.mjs rollback   # 切回上一版镜像
+node ops/deploy/cli.mjs logs -f    # 跟随容器日志
+```
+
+契约在所有产品上一致：**不可变镜像 + 发布锁 + 健康门 + 自动回滚**。完整说明见
+[`ops/deploy/README.md`](./ops/deploy/README.md)。
+
 ## 许可证
 
 本项目使用 `GNU GPL v3.0` 许可证，详见 [LICENSE](./LICENSE)。
