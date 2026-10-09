@@ -165,4 +165,50 @@ describe("AppShell", () => {
     const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
     expect(stored.map((item) => item.name)).toEqual(["导入甲"]);
   }, 60000);
+
+  it("filters 生日库 by name and birthday and shows an empty state", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "s-1", name: "小明", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+      { id: "s-2", name: "小红", profile: { calendarMode: "solar", datetime: "2000-12-31T20:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    const search = screen.getByLabelText("搜索生日库");
+
+    fireEvent.change(search, { target: { value: "小红" } });
+    expect(screen.getByRole("button", { name: "重命名小红" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "重命名小明" })).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "1990" } });
+    expect(screen.getByRole("button", { name: "重命名小明" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "重命名小红" })).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "查无此人" } });
+    expect(screen.getByText(/没有匹配/)).toBeInTheDocument();
+  }, 60000);
+
+  it("moves the last-used 生日库 profile to the front", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "r-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+      { id: "r-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /^乙/ }));
+    const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
+    expect(stored.map((item) => item.name)).toEqual(["乙", "甲"]);
+  }, 60000);
 });

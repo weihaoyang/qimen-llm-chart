@@ -470,6 +470,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [birthLibraryOpen, setBirthLibraryOpen] = useState(false);
   const [birthName, setBirthName] = useState("");
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [birthQuery, setBirthQuery] = useState("");
   const [renamingBirthId, setRenamingBirthId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [chartHistory, setChartHistory] = useState<Array<{ id: string; mode: WorkbenchMode; profile: ProfileInput; createdAt: number }>>(() => {
@@ -2289,6 +2290,20 @@ export function AppShell({ platformConfig }: AppShellProps) {
     </div>
   );
 
+  const loadBirthProfile = (item: BirthProfileEntry) => {
+    setFormState(item.profile);
+    handleGenerate(item.profile);
+    setBirthLibraryOpen(false);
+    // 最近使用置顶：用过一次就移到最前，下次更好找。
+    if (birthProfiles[0]?.id !== item.id) {
+      persistBirthProfiles([item, ...birthProfiles.filter((entry) => entry.id !== item.id)]);
+    }
+  };
+  const normalizedBirthQuery = birthQuery.trim().toLowerCase();
+  const visibleBirthProfiles = normalizedBirthQuery
+    ? birthProfiles.filter((item) => item.name.toLowerCase().includes(normalizedBirthQuery) || item.profile.datetime.includes(normalizedBirthQuery))
+    : birthProfiles;
+
   const birthLibraryPanel = (
     <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
       <strong>姓名与生日库</strong>
@@ -2298,7 +2313,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         <label className="birth-library-import">导入<input type="file" accept="application/json,.json" aria-label="导入生日库文件" onChange={(event) => { const file = event.target.files?.[0]; if (file) importBirthProfiles(file); event.target.value = ""; }} /></label>
         {importStatus ? <span className="birth-library-status" role="status">{importStatus}</span> : null}
       </div>
-      {birthProfiles.map((item) => renamingBirthId === item.id ? (
+      {birthProfiles.length ? <input className="birth-library-search" value={birthQuery} onChange={(event) => setBirthQuery(event.target.value)} placeholder="搜索姓名或生日" aria-label="搜索生日库" /> : null}
+      {visibleBirthProfiles.map((item) => renamingBirthId === item.id ? (
         <div className="birth-library-item birth-library-item--renaming" key={item.id}>
           <input
             className="birth-library-rename"
@@ -2316,12 +2332,13 @@ export function AppShell({ platformConfig }: AppShellProps) {
         </div>
       ) : (
         <div className="birth-library-item" key={item.id}>
-          <button type="button" onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button>
+          <button type="button" onClick={() => loadBirthProfile(item)}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button>
           <button type="button" aria-label={`重命名${item.name}`} onClick={() => startRenameBirthProfile(item.id, item.name)}>✎</button>
           <button type="button" aria-label={`删除${item.name}`} onClick={() => deleteBirthProfile(item.id)}>×</button>
         </div>
       ))}
       {chartHistory.length ? <><strong className="birth-library-history-title">历史排盘</strong>{chartHistory.slice(0, 8).map((item) => <button type="button" className="birth-library-history" key={item.id} onClick={() => { setFormState(item.profile); handleGenerate(item.profile); setBirthLibraryOpen(false); }}>{item.mode} · {new Date(item.createdAt).toLocaleString("zh-CN")}</button>)}</> : null}
+      {birthProfiles.length && !visibleBirthProfiles.length ? <small>没有匹配「{birthQuery.trim()}」的档案</small> : null}
       {!birthProfiles.length && !chartHistory.length ? <small>暂无保存档案</small> : null}
     </div>
   );
