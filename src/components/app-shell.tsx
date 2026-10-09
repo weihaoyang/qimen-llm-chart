@@ -553,9 +553,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const isMobile = useIsMobileViewport();
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
   const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
-  // The Battle Domain uses the same paid Agent entitlement as the chart
-  // workbench. A guest checkout token must be forwarded explicitly; login is
-  // only required for persistence, not for consuming a paid guest turn.
+  // A guest checkout token is forwarded explicitly to the paid Agent endpoint;
+  // login is only required for persistence, not for consuming a paid guest turn.
   const clock = useResolvedClock();
   // Replace the hydration-safe defaults with the visitor's real clock and time
   // zone exactly once. The initial `useState` seeds above run with the fixed

@@ -96,7 +96,7 @@ export function BillingResultClient({ orderId, productCode }: { orderId: string;
         }
         clearStorefrontCheckout();
         setStage("paid");
-        setMessage("权益已由平台确认，正在返回胜天半子");
+        setMessage("权益已由平台确认，正在返回知几");
         window.setTimeout(() => window.location.replace("/"), 400);
       } catch (error) {
         setStage("failed");

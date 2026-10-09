@@ -180,14 +180,6 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("不可检验机制");
   });
 
-  it("uses a separate reality-battle copilot contract", () => {
-    const prompt = buildAgentSystemPrompt("research", { researchTool: "battle", focus: "现实极限博弈" });
-    expect(prompt).toContain("【胜天半子现实推演官规则】");
-    expect(prompt).toContain("不改事实、不替你落子");
-    expect(prompt).toContain("材料不足");
-    expect(prompt).toContain("三种落子");
-  });
-
   it("uses the dedicated deep-generation contract for Bazi life K lines", () => {
     const systemPrompt = buildAgentSystemPrompt("bazi", { analysisProduct: "kline" });
 
