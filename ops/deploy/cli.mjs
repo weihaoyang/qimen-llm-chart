@@ -76,7 +76,23 @@ const today = () => {
   const now = new Date();
   return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
 };
-const releaseId = () => `${today()}-${gitShort()}`;
+const argValue = (name) => {
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+};
+/**
+ * Release id. Prefer an explicit `--release`/`RELEASE_ID`, then the checkout's
+ * git hash, then the release directory name (a tarball deploy has no `.git`).
+ * Without the directory fallback a tarball release would be tagged `unknown`,
+ * and the health gate could not tell two releases apart.
+ */
+const releaseId = () => {
+  const explicit = argValue("--release") ?? process.env.RELEASE_ID;
+  if (explicit) return explicit;
+  const dirName = ROOT.split(/[\\/]/).filter(Boolean).pop() ?? "";
+  if (/^\d{8}-/.test(dirName)) return dirName;
+  return `${today()}-${gitShort()}`;
+};
 
 const releaseScript = (id, extraEnv = {}) => {
   const env = {
