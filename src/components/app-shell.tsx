@@ -7,6 +7,7 @@ import { GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
+import { BaziReversePanel } from "@/components/bazi-reverse-panel";
 import {
   HYDRATION_SAFE_DATE,
   HYDRATION_SAFE_TIME_ZONE,
@@ -29,6 +30,7 @@ import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "@/lib
 import type { NormalizedBaziChart } from "@/lib/bazi/types";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import { buildBaziCompatibility } from "@/lib/bazi/compatibility";
+import { DEFAULT_BAZI_SETTINGS } from "@/lib/bazi/settings";
 import {
   serializeCombinedToCompactJson,
   serializeCombinedToStructuredText,
@@ -1948,6 +1950,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
         {mode === "bazi" ? <>
           {!baziPairOpen ? <BaziPanel chart={baziChart} now={clock.now} /> : null}
+          <BaziReversePanel
+            settings={formState.baziSettings ?? DEFAULT_BAZI_SETTINGS}
+            chart={baziChart}
+            onApply={(datetime) => handleGenerate({ ...formState, datetime })}
+          />
           <BaziCompatibilityPanel value={compatibility} chart={baziChart} partnerChart={partnerBaziChart} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} open={baziPairOpen} onOpenChange={setBaziPairOpen} />
         </> : null}
 

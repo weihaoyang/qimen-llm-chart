@@ -56,6 +56,24 @@ describe("AppShell", () => {
     expect(screen.getAllByText(/命宫三方四正/).length).toBeGreaterThan(0);
   }, 60000);
 
+  it("exposes the 从八字逆推生日 entry point in the BaZi workspace", async () => {
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("tab", { name: "八字" }));
+
+    // The reverse engine (deriveBirthDatesFromBazi) and its panel shipped fully
+    // built but were never rendered, so the feature was unreachable. Pin the
+    // entry point and its controls so it cannot regress back into dead code.
+    expect(screen.getByText("从八字逆推生日")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /开始逆推/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /带入当前盘面四柱/ })).toBeInTheDocument();
+  }, 60000);
+
   // The 胜天半子 surface used to be selected by a `product` prop that defaulted
   // to `"shengtian"`; the only route renders the chart surface, so the whole
   // branch was unreachable and has been collapsed. Nothing enforced that until
