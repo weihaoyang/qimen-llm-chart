@@ -47,6 +47,22 @@ const TOMB_MAP: Record<string, string[]> = {
   壬: ["辰"],
 };
 
+// 伏吟 / 反吟：`3meta` 只在类型里声明了 `FuYinFanYinDetail`，运行时从不填充，
+// 所以这里按「星/门归本位」与「星/门临对冲宫」自行判定（与盘面结构等价）。
+const STAR_NATIVE: Record<string, number> = { 天蓬: 1, 天芮: 2, 天冲: 3, 天辅: 4, 天禽: 5, 天心: 6, 天柱: 7, 天任: 8, 天英: 9 };
+const GATE_NATIVE: Record<string, number> = { 休门: 1, 生门: 8, 伤门: 3, 杜门: 4, 景门: 9, 死门: 2, 惊门: 7, 开门: 6 };
+const OPPOSITE: Record<number, number> = { 1: 9, 9: 1, 2: 8, 8: 2, 3: 7, 7: 3, 4: 6, 6: 4, 5: 5 };
+const STEM_CLASH: Record<string, string> = { 甲: "庚", 庚: "甲", 乙: "辛", 辛: "乙", 丙: "壬", 壬: "丙", 丁: "癸", 癸: "丁" };
+
+const placedStars = (chart: NormalizedQimenChart) =>
+  chart.raw.palaces
+    .map((palace) => ({ palace, native: STAR_NATIVE[palace.star as string] }))
+    .filter((entry) => typeof entry.native === "number");
+const placedGates = (chart: NormalizedQimenChart) =>
+  chart.raw.palaces
+    .map((palace) => ({ palace, native: GATE_NATIVE[palace.gate as string] }))
+    .filter((entry) => typeof entry.native === "number");
+
 const hasHeaven = (palace: Palace, ...stems: string[]) =>
   valuesOf(palace.heavenlyStem).some((stem) => stems.includes(stem));
 const hasEarth = (palace: Palace, ...stems: string[]) =>
@@ -63,7 +79,7 @@ const gateEvidence = (palace: Palace) =>
   `${palaceLabel(palace.position)}：${palace.gate}${deityIn(palace, ["太阴", "六合", "九地", "九天", "值符", "螣蛇", "白虎", "玄武"]) ? ` · ${palace.deity}` : ""}`;
 
 export type QimenPatternKind = "吉格" | "凶格";
-export type QimenPatternGroup = "九遁" | "三诈五假" | "常用吉格" | "常用凶格" | "全局";
+export type QimenPatternGroup = "九遁" | "三诈五假" | "常用吉格" | "常用凶格" | "伏吟反吟" | "全局";
 
 type CatalogEntry = {
   id: string;
@@ -275,6 +291,42 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("men_po", "门迫", "常用凶格", "门克宫（门迫）", "主该宫事项受迫、处处掣肘；涉及此宫时留退路。", (p) =>
     p.gatePressure === "迫" ? `${palaceLabel(p.position)}：${p.gate}迫宫` : null,
   ),
+
+  // ---- 伏吟反吟 ----
+  bad("fu_yin_star", "星伏吟", "伏吟反吟", "九星各归本位", "主事情停滞、原地打转；宜静守整理，不宜强推。", (_p, chart) => {
+    const items = placedStars(chart);
+    return items.length > 0 && items.every(({ palace, native }) => native === palace.position) ? "九星皆归本位" : null;
+  }, "global"),
+  bad("fu_yin_gate", "门伏吟", "伏吟反吟", "八门各归本位", "主进退不得、守成尚可；忌开新局，宜收尾。", (_p, chart) => {
+    const items = placedGates(chart);
+    return items.length > 0 && items.every(({ palace, native }) => native === palace.position) ? "八门皆归本位" : null;
+  }, "global"),
+  bad("fu_yin_zhi_fu", "值符伏吟", "伏吟反吟", "值符宫天地盘天干相同", "主格局内缩、力量叠加却难动；宜固守既有条件。", (_p, chart) => {
+    const target = chart.raw.palaces.find((palace) => palace.position === chart.raw.zhiFu?.position);
+    if (!target) return null;
+    const heaven = valuesOf(target.heavenlyStem);
+    const earth = valuesOf(target.earthlyStem);
+    return heaven.some((stem) => earth.includes(stem))
+      ? `值符宫${palaceLabel(target.position)}：天盘 ${stemsOf(target.heavenlyStem)} · 地盘 ${stemsOf(target.earthlyStem)}`
+      : null;
+  }, "global"),
+  bad("fan_yin_star", "星反吟", "伏吟反吟", "九星各临对冲之宫", "主局势动荡、来回翻覆；宜留后手、随时调整。", (_p, chart) => {
+    const items = placedStars(chart);
+    return items.length > 0 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "九星皆临对冲宫" : null;
+  }, "global"),
+  bad("fan_yin_gate", "门反吟", "伏吟反吟", "八门各临对冲之宫", "主行动反复、计划易变；宜先定规则再动手。", (_p, chart) => {
+    const items = placedGates(chart);
+    return items.length > 0 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "八门皆临对冲宫" : null;
+  }, "global"),
+  bad("fan_yin_zhi_fu", "值符反吟", "伏吟反吟", "值符宫天地盘天干相冲", "主内外冲突、方向反复；宜先解决对立面。", (_p, chart) => {
+    const target = chart.raw.palaces.find((palace) => palace.position === chart.raw.zhiFu?.position);
+    if (!target) return null;
+    const heaven = valuesOf(target.heavenlyStem);
+    const earth = valuesOf(target.earthlyStem);
+    return heaven.some((stem) => earth.includes(STEM_CLASH[stem] ?? ""))
+      ? `值符宫${palaceLabel(target.position)}：天盘 ${stemsOf(target.heavenlyStem)} · 地盘 ${stemsOf(target.earthlyStem)} 相冲`
+      : null;
+  }, "global"),
 
   // ---- 全局 ----
   good(

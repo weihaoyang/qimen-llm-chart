@@ -25,12 +25,13 @@ const fourPillars = {
 
 const chartWith = (
   palaces: unknown[],
-  options: { zhiShi?: number; wuBuYuShi?: boolean; fourPillars?: unknown } = {},
+  options: { zhiShi?: number; zhiFu?: number; wuBuYuShi?: boolean; fourPillars?: unknown } = {},
 ) =>
   ({
     raw: {
       palaces,
       zhiShi: { position: options.zhiShi ?? 1, gate: "无门" },
+      zhiFu: { position: options.zhiFu ?? 1, star: "天蓬", heavenlyStem: "戊" },
       specialPatterns: { wuBuYuShi: { isWuBuYuShi: Boolean(options.wuBuYuShi) } },
       fourPillars: options.fourPillars ?? fourPillars,
     },
@@ -131,7 +132,52 @@ describe("evaluateQimenPatterns", () => {
       expect(check.requirement.length).toBeGreaterThan(0);
       expect(check.hint.length).toBeGreaterThan(0);
       expect(["吉格", "凶格"]).toContain(check.kind);
-      expect(["九遁", "三诈五假", "常用吉格", "常用凶格", "全局"]).toContain(check.group);
+      expect(["九遁", "三诈五假", "常用吉格", "常用凶格", "伏吟反吟", "全局"]).toContain(check.group);
     }
+  });
+
+  it("detects 门伏吟 / 门反吟 from the gate placement", () => {
+    const native = evaluateQimenPatterns(
+      chartWith([
+        palace(1, { gate: "休门" }),
+        palace(2, { gate: "死门" }),
+        palace(3, { gate: "伤门" }),
+        palace(4, { gate: "杜门" }),
+        palace(6, { gate: "开门" }),
+        palace(7, { gate: "惊门" }),
+        palace(8, { gate: "生门" }),
+        palace(9, { gate: "景门" }),
+      ]),
+    );
+    expect(statusOf(native, "fu_yin_gate")).toBe("成立");
+    expect(statusOf(native, "fan_yin_gate")).toBe("未成立");
+
+    const reversed = evaluateQimenPatterns(
+      chartWith([
+        palace(9, { gate: "休门" }),
+        palace(8, { gate: "死门" }),
+        palace(7, { gate: "伤门" }),
+        palace(6, { gate: "杜门" }),
+        palace(4, { gate: "开门" }),
+        palace(3, { gate: "惊门" }),
+        palace(2, { gate: "生门" }),
+        palace(1, { gate: "景门" }),
+      ]),
+    );
+    expect(statusOf(reversed, "fan_yin_gate")).toBe("成立");
+    expect(statusOf(reversed, "fu_yin_gate")).toBe("未成立");
+  });
+
+  it("detects 值符伏吟 / 反吟 from the 值符 palace stems", () => {
+    const fuYin = evaluateQimenPatterns(
+      chartWith([palace(3, { heavenlyStem: "戊", earthlyStem: "戊" })], { zhiFu: 3 }),
+    );
+    expect(statusOf(fuYin, "fu_yin_zhi_fu")).toBe("成立");
+
+    const fanYin = evaluateQimenPatterns(
+      chartWith([palace(3, { heavenlyStem: "甲", earthlyStem: "庚" })], { zhiFu: 3 }),
+    );
+    expect(statusOf(fanYin, "fan_yin_zhi_fu")).toBe("成立");
+    expect(statusOf(fanYin, "fu_yin_zhi_fu")).toBe("未成立");
   });
 });

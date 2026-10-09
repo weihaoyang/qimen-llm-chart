@@ -12,7 +12,7 @@ const FILTERS: Array<{ key: PatternFilter; label: string }> = [
   { key: "failed", label: "只看失败" },
 ];
 
-const GROUP_ORDER: QimenPatternGroup[] = ["九遁", "三诈五假", "常用吉格", "常用凶格", "全局"];
+const GROUP_ORDER: QimenPatternGroup[] = ["九遁", "三诈五假", "常用吉格", "常用凶格", "伏吟反吟", "全局"];
 
 const matchesFilter = (check: QimenPatternCheck, filter: PatternFilter) =>
   filter === "all" ? true : filter === "formed" ? check.status === "成立" : check.status === "未成立";

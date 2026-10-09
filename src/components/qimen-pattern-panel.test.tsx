@@ -35,6 +35,7 @@ const chart = {
       },
     ],
     zhiShi: { position: 3, gate: "开门" },
+    zhiFu: { position: 3, star: "天冲", heavenlyStem: "戊" },
     specialPatterns: { wuBuYuShi: { isWuBuYuShi: false } },
     fourPillars: {
       year: { stem: "甲", branch: "子" },
