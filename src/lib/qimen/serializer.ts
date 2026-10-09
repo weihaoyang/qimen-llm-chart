@@ -73,16 +73,11 @@ const joinPillar = (pillar: { stem: string; branch: string }) =>
   `${pillar.stem}${pillar.branch}`;
 
 /**
- * 紧凑载荷里的「十干克应」只保留五行关系码。`id`/`params`/`description`
- * 都能由同一行的天盘干、地盘干与五行推导，逐宫重复会把序列载荷撑大
- * （单是这一项就占 6 步序列的 40%）。完整描述保留在结构化文本里。
+ * 紧凑载荷逐宫只保留十干克应的五行关系码。`id`/`params`/`description`
+ * 都能由同一行的天盘干、地盘干与五行推导，逐宫重复会把序列载荷撑大。
+ * 完整描述保留在结构化文本里。
  */
 const relationOf = (entry: { relation?: string } | undefined) => entry?.relation ?? "无";
-const compactTenStemResponse = (value: Palace["tenStemResponse"]) => ({
-  heavenlyToEarthly: relationOf(value?.heavenlyToEarthly),
-  timeToDay: relationOf(value?.timeToDay),
-  heavenlyToDay: relationOf(value?.heavenlyToDay),
-});
 
 /**
  * 登记格局（`patterns.ts`）的判定结果，供 AI 上下文使用。
@@ -251,13 +246,28 @@ const buildCompactSchema = () => {
     "是否值使宫",
     "是否驿马宫",
     "暗干",
-    "空亡信息",
+    "空亡地支",
+    "本宫地支",
+    "本宫空亡",
+    "是否空亡",
     "门迫关系",
-    "旺衰",
-    "十二长生",
-    "入墓信息",
-    "十干克应",
+    "九星旺衰",
+    "八门旺衰",
+    "天盘干长生",
+    "地盘干长生",
+    "时干长生",
+    "日干长生",
+    "天盘干入墓",
+    "地盘干入墓",
+    "时干入墓",
+    "日干入墓",
+    "入墓地支",
+    "十干克应_天对地",
+    "十干克应_时对日",
+    "十干克应_天对日",
     "六仪击刑",
+    "击刑类型",
+    "击刑说明",
   ];
 
   return {
@@ -305,13 +315,28 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       Boolean(palace.isZhiShi),
       Boolean(palace.isPostHorse),
       normalizeValue(chart.hiddenStemsByPalace[palace.position] ?? "无"),
-      normalizeValue(palace.voidness),
+      normalizeValue(palace.voidness?.voidBranches),
+      normalizeValue(palace.voidness?.palaceBranches),
+      normalizeValue(palace.voidness?.voidInPalace),
+      normalizeValue(palace.voidness?.hasVoidness),
       normalizeValue(palace.gatePressure),
-      normalizeValue(palace.status),
-      normalizeValue(palace.growthInfo),
-      normalizeValue(palace.tombInfo),
-      compactTenStemResponse(palace.tenStemResponse),
-      normalizeValue(palace.liuYiJiXing),
+      normalizeValue(palace.status?.star),
+      normalizeValue(palace.status?.gate),
+      normalizeValue(palace.growthInfo?.heavenlyStem),
+      normalizeValue(palace.growthInfo?.earthlyStem),
+      normalizeValue(palace.growthInfo?.timeStem),
+      normalizeValue(palace.growthInfo?.dayStem),
+      normalizeValue(palace.tombInfo?.heavenlyStemInTomb),
+      normalizeValue(palace.tombInfo?.earthlyStemInTomb),
+      normalizeValue(palace.tombInfo?.timeStemInTomb),
+      normalizeValue(palace.tombInfo?.dayStemInTomb),
+      normalizeValue(palace.tombInfo?.tombBranch),
+      relationOf(palace.tenStemResponse?.heavenlyToEarthly),
+      relationOf(palace.tenStemResponse?.timeToDay),
+      relationOf(palace.tenStemResponse?.heavenlyToDay),
+      normalizeValue(palace.liuYiJiXing?.hasJiXing),
+      normalizeValue(palace.liuYiJiXing?.type),
+      normalizeValue(palace.liuYiJiXing?.description),
     ]),
   };
 };

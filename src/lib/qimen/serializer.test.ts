@@ -56,7 +56,7 @@ describe("serializeChartToStructuredText", () => {
     expect(parsed.format).toBe("qmdj-llm-compact-v1");
     expect(parsed.legend.chart).toContain("时间信息");
     expect(parsed.legend.chart).toContain("登记格局判定");
-    expect(parsed.legend.palace).toContain("十干克应");
+    expect(parsed.legend.palace).toContain("十干克应_天对地");
     expect(parsed.chart).toHaveLength(parsed.legend.chart.length);
     expect(parsed.palaces).toHaveLength(9);
     expect(parsed.palaces[0]).toHaveLength(parsed.legend.palace.length);
@@ -98,14 +98,14 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeChartToStructuredText(chart).length).toBeLessThan(60_000);
   });
 
-  it("keeps a ten-step sequence compact payload within the agent API limit", () => {
+  it("keeps a fourteen-step sequence compact payload within the agent API limit", () => {
     const sequence = buildChartSequence({
       startDatetime: "2026-07-01T00:00",
-      endDatetime: "2026-07-01T18:00",
+      endDatetime: "2026-07-02T02:00",
       timeZone: "Asia/Shanghai",
       step: "double-hour",
     });
-    expect(sequence).toHaveLength(10);
+    expect(sequence).toHaveLength(14);
     expect(serializeSequenceToCompactJson(sequence).length).toBeLessThan(80_000);
   });
 });
