@@ -51,7 +51,7 @@ echo "previous_image=${PREVIOUS_IMAGE:-none}"
 mkdir -p "$BUILD_DIR"
 rsync -a --delete \
   --exclude node_modules --exclude .next --exclude .git \
-  --exclude release-manifest.json --exclude .env.local \
+  --exclude release-manifest.json --exclude .env.local --exclude .qmdj-lock-hash \
   "$SRC/" "$BUILD_DIR/"
 
 # 2. Dependencies: only when the lock changes.
