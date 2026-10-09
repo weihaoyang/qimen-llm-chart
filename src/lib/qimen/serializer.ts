@@ -102,22 +102,7 @@ const summarizeRegisteredPatterns = (chart: NormalizedQimenChart) => {
     failed: report.failed.map((check) => check.name),
   };
 };
-
-/**
- * 紧凑版登记格局摘要：序列盘按步重复，逐项展开会把 JSON 载荷撑爆
- * （`/api/agent` 对 jsonPayload 有 80k 上限）。这里只留计数、档位与
- * 「成立格局」名+档位，证据与「未成立」名单交给单盘结构化文本。
- */
-export const summarizeRegisteredPatternsCompact = (chart: NormalizedQimenChart) => {
-  const report = evaluateQimenPatterns(chart);
-  return {
-    登记: report.registered,
-    成立: report.formed.length,
-    未成立: report.failed.length,
-    档位: report.strengthCounts,
-    成立格局: report.formed.map((check) => (check.strength ? `${check.name}(${check.strength})` : check.name)),
-  };
-};
+export { summarizeRegisteredPatterns };
 
 const formatPalace = (
   palace: Palace,
@@ -299,7 +284,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       normalizeValue(chart.raw.postHorse),
       normalizeValue(chart.hiddenStemsByPalace),
       normalizeValue(chart.raw.specialPatterns),
-      summarizeRegisteredPatternsCompact(chart),
+      summarizeRegisteredPatterns(chart),
     ],
     palaces: chart.raw.palaces.map((palace) => [
       palace.position,

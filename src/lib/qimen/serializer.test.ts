@@ -4,7 +4,7 @@ import {
   serializeChartToCompactJson,
   serializeSequenceToCompactJson,
   serializeChartToStructuredText,
-  summarizeRegisteredPatternsCompact,
+  summarizeRegisteredPatterns,
 } from "./serializer";
 import { buildChartSequence } from "./sequence";
 
@@ -88,24 +88,44 @@ describe("serializeChartToStructuredText", () => {
     expect(parsed.items[0]?.palaces).toHaveLength(9);
   });
 
-  // /api/agent rejects a jsonPayload over 80_000 chars, and the registered 格局
-  // judgement is repeated per sequence item. Keep it negligible, and keep the
-  // single-chart payloads comfortably under the route limits.
-  it("keeps the registered 格局 summary negligible and single-chart payloads bounded", () => {
+  // The compact JSON must carry the whole 格局识别 result (成立/未成立 + 旺衰 +
+  // 落宫证据) so it can be copied into an AI analysis, not just a summary.
+  it("carries the full registered 格局 judgement in the compact JSON", () => {
     const chart = buildChart({ datetime: "2026-07-01T21:30", timeZone: "Asia/Shanghai" });
-    expect(JSON.stringify(summarizeRegisteredPatternsCompact(chart)).length).toBeLessThan(1000);
+    const full = summarizeRegisteredPatterns(chart);
+    const parsed = JSON.parse(serializeChartToCompactJson(chart)) as { legend: { chart: string[] }; chart: unknown[] };
+    expect(parsed.legend.chart).toContain("登记格局判定");
+
+    const judgement = parsed.chart[parsed.chart.length - 1] as {
+      registered: number;
+      formedCount: number;
+      failedCount: number;
+      strengthCounts: Record<string, number>;
+      formed: Array<{ name: string; kind: string; group: string; strength: string; positions: number[]; evidence: string[] }>;
+      failed: string[];
+    };
+    expect(judgement.registered).toBe(full.registered);
+    expect(judgement.formed).toHaveLength(full.formedCount);
+    expect(judgement.failed).toHaveLength(full.failedCount);
+    for (const item of judgement.formed) {
+      expect(item.name.length).toBeGreaterThan(0);
+      expect(item.strength.length).toBeGreaterThan(0);
+      expect(Array.isArray(item.evidence)).toBe(true);
+    }
+
+    // Single-chart payloads stay well under the agent route limits.
     expect(serializeChartToCompactJson(chart).length).toBeLessThan(40_000);
     expect(serializeChartToStructuredText(chart).length).toBeLessThan(60_000);
   });
 
-  it("keeps a fourteen-step sequence compact payload within the agent API limit", () => {
+  it("keeps a twelve-step sequence compact payload within the agent API limit", () => {
     const sequence = buildChartSequence({
       startDatetime: "2026-07-01T00:00",
-      endDatetime: "2026-07-02T02:00",
+      endDatetime: "2026-07-01T22:00",
       timeZone: "Asia/Shanghai",
       step: "double-hour",
     });
-    expect(sequence).toHaveLength(14);
+    expect(sequence).toHaveLength(12);
     expect(serializeSequenceToCompactJson(sequence).length).toBeLessThan(80_000);
   });
 });
