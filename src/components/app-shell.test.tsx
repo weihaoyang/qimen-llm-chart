@@ -136,4 +136,33 @@ describe("AppShell", () => {
     const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
     expect(stored[0]?.name).toBe("新名");
   }, 60000);
+
+  it("imports a 生日库 JSON export into the library", async () => {
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+
+    const payload = JSON.stringify({
+      format: "qmdj-birth-library-v1",
+      profiles: [
+        { id: "imp-1", name: "导入甲", profile: { calendarMode: "solar", datetime: "1985-05-05T08:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
+      ],
+    });
+    const input = screen.getByLabelText("导入生日库文件");
+    Object.defineProperty(input, "files", {
+      value: [new File([payload], "lib.json", { type: "application/json" })],
+      configurable: true,
+    });
+    fireEvent.change(input);
+
+    expect(await screen.findByText(/已导入 1 条/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重命名导入甲" })).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
+    expect(stored.map((item) => item.name)).toEqual(["导入甲"]);
+  }, 60000);
 });

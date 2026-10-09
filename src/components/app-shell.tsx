@@ -43,6 +43,7 @@ import {
   type NormalizedProfileInput,
   type ProfileInput,
 } from "@/lib/profile";
+import { mergeBirthProfiles, parseBirthLibrary, readFileText, serializeBirthLibrary, type BirthProfileEntry } from "@/lib/birth-library";
 import { getDefaultSequenceInput } from "@/lib/qimen/defaults";
 import { buildQimenChartFromProfile } from "@/lib/qimen/chart";
 import { DEFAULT_QIMEN_SETTINGS, type QimenSettings } from "@/lib/qimen/settings";
@@ -462,12 +463,13 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
   const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
-  const [birthProfiles, setBirthProfiles] = useState<Array<{ id: string; name: string; profile: ProfileInput }>>(() => {
+  const [birthProfiles, setBirthProfiles] = useState<BirthProfileEntry[]>(() => {
     if (typeof window === "undefined") return [];
     try { const value = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]"); return Array.isArray(value) ? value : []; } catch { return []; }
   });
   const [birthLibraryOpen, setBirthLibraryOpen] = useState(false);
   const [birthName, setBirthName] = useState("");
+  const [importStatus, setImportStatus] = useState<string | null>(null);
   const [renamingBirthId, setRenamingBirthId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [chartHistory, setChartHistory] = useState<Array<{ id: string; mode: WorkbenchMode; profile: ProfileInput; createdAt: number }>>(() => {
@@ -507,7 +509,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [agentState, setAgentState] = useState(createInitialAgentState);
   const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free" });
   const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [] });
-  const persistBirthProfiles = (next: Array<{ id: string; name: string; profile: ProfileInput }>) => {
+  const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
   };
@@ -534,6 +536,29 @@ export function AppShell({ platformConfig }: AppShellProps) {
     if (!renamingBirthId || !name) { cancelRenameBirthProfile(); return; }
     persistBirthProfiles(birthProfiles.map((item) => (item.id === renamingBirthId ? { ...item, name } : item)));
     cancelRenameBirthProfile();
+  };
+  const exportBirthProfiles = () => {
+    if (!birthProfiles.length) return;
+    const blob = new Blob([serializeBirthLibrary(birthProfiles)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `知几生日库-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setImportStatus(`已导出 ${birthProfiles.length} 条`);
+  };
+  const importBirthProfiles = (file: File) => {
+    setImportStatus("正在导入…");
+    readFileText(file).then((text) => {
+      const { entries, skipped } = parseBirthLibrary(text);
+      if (!entries.length) {
+        setImportStatus(skipped ? `跳过 ${skipped} 条无效记录，没有可导入档案` : "文件中没有可用档案");
+        return;
+      }
+      persistBirthProfiles(mergeBirthProfiles(birthProfiles, entries));
+      setImportStatus(`已导入 ${entries.length} 条${skipped ? `，跳过 ${skipped} 条` : ""}`);
+    }).catch(() => setImportStatus("导入失败：无法读取文件"));
   };
   const [agentResultCopied, setAgentResultCopied] = useState(false);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
@@ -2268,6 +2293,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
     <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
       <strong>姓名与生日库</strong>
       <div className="birth-library-save"><input value={birthName} onChange={(event) => setBirthName(event.target.value)} placeholder="姓名" aria-label="姓名" /><button type="button" onClick={saveBirthProfile}>保存当前</button></div>
+      <div className="birth-library-tools">
+        <button type="button" onClick={exportBirthProfiles} disabled={!birthProfiles.length}>导出</button>
+        <label className="birth-library-import">导入<input type="file" accept="application/json,.json" aria-label="导入生日库文件" onChange={(event) => { const file = event.target.files?.[0]; if (file) importBirthProfiles(file); event.target.value = ""; }} /></label>
+        {importStatus ? <span className="birth-library-status" role="status">{importStatus}</span> : null}
+      </div>
       {birthProfiles.map((item) => renamingBirthId === item.id ? (
         <div className="birth-library-item birth-library-item--renaming" key={item.id}>
           <input

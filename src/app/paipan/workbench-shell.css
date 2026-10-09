@@ -410,6 +410,11 @@ html body .page-shell.product-chart .platform-account__error {
 .birth-library-save { display: flex; gap: 5px; margin: 8px 0; }
 .birth-library-save input { min-width: 0; flex: 1; border: 1px solid var(--paipan-ink); padding: 5px; }
 .birth-library-save button, .birth-library-item button { border: 1px solid var(--paipan-ink); background: var(--paipan-accent); padding: 5px 7px; }
+.birth-library-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0; }
+.birth-library-tools > button, .birth-library-import { border: 1px solid var(--paipan-ink); background: var(--paipan-paper); color: var(--paipan-ink); padding: 5px 7px; cursor: pointer; }
+.birth-library-import input { display: none; }
+.birth-library-tools > button:disabled { opacity: 0.45; cursor: not-allowed; }
+.birth-library-status { flex-basis: 100%; color: var(--paipan-slate); font-size: 11px; }
 .birth-library-item { display: flex; gap: 4px; margin-top: 5px; }
 .birth-library-item > button:first-child { display: flex; flex: 1; justify-content: space-between; text-align: left; background: var(--paipan-ground); }
 .birth-library-item small { color: var(--paipan-slate); }
