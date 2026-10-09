@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-#
 # Immutable image for the 知几 workbench.
 #
 # Deployed by `ops/deploy/release.sh`, which assembles a build context containing

@@ -70,7 +70,7 @@ rollback() {
 trap rollback ERR
 
 echo "building $IMAGE"
-DOCKER_BUILDKIT=1 docker build \
+docker build \
   --build-arg NPM_REGISTRY="$NPM_REGISTRY" \
   -t "$IMAGE" -f "$CTX/Dockerfile" "$CTX"
 IMAGE_ID="$(docker image inspect -f '{{.Id}}' "$IMAGE")"
