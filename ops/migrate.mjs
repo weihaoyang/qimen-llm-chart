@@ -106,13 +106,21 @@ const splitStatements = (sql) => {
   if (tail) statements.push(tail);
   return statements;
 };
+/**
+ * The ledger checksum is over *content*, not bytes: a CRLF and an LF copy of the
+ * same migration must hash the same. The historical ledger was recorded from
+ * CRLF files, so a checkout that normalizes to LF used to report every earlier
+ * migration as "changed" and refuse to run.
+ */
+const migrationChecksum = (sql) => createHash("sha256").update(sql.replace(/\r\n/g, "\n")).digest("hex");
+
 const pool = new Pool({ connectionString, ssl: process.env.DATABASE_SSL === "require" ? { rejectUnauthorized: true } : undefined, application_name: "shengtian-banzi-migrator", max: 1 });
 try {
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (version varchar(128) PRIMARY KEY, checksum varchar(64) NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`);
   const applied = new Map((await pool.query("SELECT version,checksum FROM schema_migrations ORDER BY version")).rows.map((row) => [row.version, row.checksum]));
   if (command === "status") {
     for (const file of files) {
-      const checksum = createHash("sha256").update(await readFile(join(migrationsDir, file))).digest("hex");
+      const checksum = migrationChecksum(await readFile(join(migrationsDir, file), "utf8"));
       const value = applied.get(file);
       console.log(`${value ? value === checksum ? "applied" : "changed" : "pending"}\t${file}`);
     }
@@ -136,7 +144,7 @@ try {
       }
       for (const file of files) {
         const sql = await readFile(join(migrationsDir, file), "utf8");
-        const checksum = createHash("sha256").update(sql).digest("hex");
+        const checksum = migrationChecksum(sql);
         const previous = applied.get(file);
         if (previous && previous !== checksum) throw new Error(`Applied migration changed: ${file}`);
         if (previous) continue;
