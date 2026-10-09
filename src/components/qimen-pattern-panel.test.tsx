@@ -9,11 +9,39 @@ import { QimenPatternPanel } from "./qimen-pattern-panel";
 const chart = {
   raw: {
     palaces: [
-      { position: 3, heavenlyStem: "戊", earthlyStem: "丙", gate: "开门", gatePressure: "无", liuYiJiXing: { hasJiXing: false } },
-      { position: 7, heavenlyStem: "无", earthlyStem: "无", gate: "无门", gatePressure: "迫", liuYiJiXing: { hasJiXing: false } },
+      {
+        position: 3,
+        heavenlyStem: "戊",
+        earthlyStem: "丙",
+        earthBranch: "卯",
+        gate: "开门",
+        deity: "值符",
+        gatePressure: "无",
+        fiveElements: "木",
+        isZhiFu: true,
+        liuYiJiXing: { hasJiXing: false },
+      },
+      {
+        position: 7,
+        heavenlyStem: "无",
+        earthlyStem: "无",
+        earthBranch: "酉",
+        gate: "无门",
+        deity: "无神",
+        gatePressure: "迫",
+        fiveElements: "金",
+        isZhiFu: false,
+        liuYiJiXing: { hasJiXing: false },
+      },
     ],
     zhiShi: { position: 3, gate: "开门" },
     specialPatterns: { wuBuYuShi: { isWuBuYuShi: false } },
+    fourPillars: {
+      year: { stem: "甲", branch: "子" },
+      month: { stem: "丙", branch: "寅" },
+      day: { stem: "戊", branch: "辰" },
+      hour: { stem: "甲", branch: "寅" },
+    },
   },
 } as unknown as NormalizedQimenChart;
 
@@ -28,7 +56,7 @@ describe("QimenPatternPanel", () => {
     // 青龙返首 is on the board; 飞鸟跌穴 is the reverse pairing and is not.
     expect(screen.getAllByText("成立").length).toBeGreaterThan(0);
     expect(screen.getAllByText("未成立").length).toBeGreaterThan(0);
-    expect(screen.getByText(/天盘 戊 · 地盘 丙/)).toBeInTheDocument();
+    expect(screen.getAllByText(/天盘 戊 · 地盘 丙/).length).toBeGreaterThan(0);
   });
 
   it("filters to formed or failed", () => {
