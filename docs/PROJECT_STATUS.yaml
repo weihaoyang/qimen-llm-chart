@@ -1,6 +1,6 @@
 project: 'qmdj'
 profile: 'high-risk'
-updated: '2026-10-02'
+updated: '2026-10-10'
 objective: '完成知几排盘工作台的领域能力、平台接入与本地可验证闭环'
 success_condition: '用户可在 /paipan 使用奇门、八字、紫微与三盘联合排盘及相关分析；平台登录、套餐、支付恢复和受限 AI 均遵守统一平台 gate；产品业务数据留在本仓库边界且本地验证可复现'
 phase: 'verifying'
@@ -9,6 +9,9 @@ current_blocker: '生产 release 20261002-0836-d9fe71b（commit d9fe71b）已切
 next_action: '使用可审计的已登录管理员会话完成四产品 gate/AI 页面点击和邀请码列表/创建权限验收；不要执行真实扣款。'
 active_workers: []
 recent_evidence:
+  - '2026-10-10: 从本仓库移除胜天半子（Battle Domain + 场景/目录/连接器生态 + 未接上的决策树/复盘 UI），并删除其数据库表（迁移 033/034；执行前 pg_dump 备份）。agent 域仅保留仍在用的 cases/turns/evidence。'
+  - '2026-10-10: 补齐「从八字逆推生日」（此前引擎与面板已写但未接、且 bazi.css 多一个 } 会让整页 500），并在真实浏览器验证：填入丙午/戊戌/丙辰/戊戌 → 1966-10-24 19:00–20:59。'
+  - '2026-10-10: qmdj 统一为「不可变镜像 + compose + 一键 deploy SDK（doctor/build/deploy/status/rollback/logs）+ 健康门 + 自动回滚」；迁移校验和改为对换行不敏感并重基线线上账本；发布可选 QMDJ_RUN_MIGRATIONS=true 一并迁移。生产已运行 20261010-53f3900。'
   - '2026-08-16: 修复奇门移动端摘要条的 36px 固定高度和省略裁切；390px 实测九项摘要的 strong scrollHeight 均等于 clientHeight，节气、旬首、值符、值使、驿马、时盘仪表与四柱均完整显示。'
   - '2026-08-16: 390x844 下完成奇门、八字、紫微、三盘联合、人生 K 线、大六壬、太乙逐模式复测：页面均无横向溢出；六柱不再横向截断；紫微保持可横向浏览的完整十二宫平面；AI 分析入口改为内容后顺序入口，实测不覆盖盘面与页脚。'
   - '2026-08-16: 修复 /paipan K 线阅读层样式遗漏；规则图表现已恢复野兽派容器、坐标网格、详情、关键点与 AI 入口，实测上涨实体 rgb(223,77,50) 红色、下跌实体 rgb(25,107,88) 绿色。'
@@ -31,8 +34,8 @@ recent_evidence:
   - '2026-09-16: 统一登录边界完成生产修复：platform 667f2aa 使用 form-urlencoded siteverify，website release 20260916-214725-16c0b67 使用 canonical Cap endpoint；/login、/paipan、identity captcha、Cap challenge 均 200，真实移动端用户确认原 CAPTCHA 验证失败消失。'
   - '2026-09-25: qmdj 平台接入收口：普通代码统一 ProductPlatformClient，管理员邀请码隔离 admin client，服务端 gate/usage/guest usage 改走平台 SDK；AI 非流式与流式成功结算后通过 ProductServiceClient 上报 provider/model/token usage；新增 PLATFORM_INTEGRATION.md 与服务密钥边界文档。qmdj 全量 578 passed/13 skipped、TypeScript、lint、Next build 通过；qmdj commit d25f87a 已推送 main。'
   - '2026-09-25: 平台 web SDK 增加服务端显式 Cookie、可注入 fetch 与关闭自动 refresh 选项；SDK 28/28 测试通过，commit ba59c84 已推送 main。'
-last_commit: 'd9fe71b'
-remote_state: 'qmdj main 已推送 d9fe71b；平台 main 已推送 e32bd42。生产 qmdj 已运行 20261002-0836-d9fe71b，保留 20261001-1012-login-timeout 作为回滚目标；平台网站 OAuth 上下文修复候选已由独立线程发布，Quant 仅完成公网 bundle 只读审查。'
+last_commit: '53f3900'
+remote_state: 'qmdj main 已推送 53f3900；生产 qmdj 已运行 20261010-53f3900（容器 qmdj，健康），上一版 20261009-ef8d498 保留为回滚目标。平台 main 已推送 5edbb66。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'
