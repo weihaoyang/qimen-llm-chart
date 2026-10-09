@@ -473,6 +473,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [birthQuery, setBirthQuery] = useState("");
   const [confirmingOverwriteId, setConfirmingOverwriteId] = useState<string | null>(null);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [pinnedBirthId, setPinnedBirthId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { return localStorage.getItem("qmdj-birth-library-pin"); } catch { return null; }
+  });
   const [renamingBirthId, setRenamingBirthId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [chartHistory, setChartHistory] = useState<Array<{ id: string; mode: WorkbenchMode; profile: ProfileInput; createdAt: number }>>(() => {
@@ -576,6 +580,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
     persistBirthProfiles(birthProfiles.map((item) => (item.id === id ? { ...item, profile: formState } : item)));
     setConfirmingOverwriteId(null);
     if (target) setImportStatus(`已用当前盘面资料更新「${target.name}」`);
+  };
+  const toggleBirthPin = (id: string) => {
+    const next = pinnedBirthId === id ? null : id;
+    setPinnedBirthId(next);
+    try {
+      if (next) localStorage.setItem("qmdj-birth-library-pin", next);
+      else localStorage.removeItem("qmdj-birth-library-pin");
+    } catch { /* optional */ }
+    const target = birthProfiles.find((item) => item.id === id);
+    if (target) setImportStatus(next ? `已置顶「${target.name}」` : `已取消置顶「${target.name}」`);
   };
   const [agentResultCopied, setAgentResultCopied] = useState(false);
   const [quickChartMode, setQuickChartMode] = useState<"single" | "series">("single");
@@ -2319,6 +2333,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const visibleBirthProfiles = normalizedBirthQuery
     ? birthProfiles.filter((item) => item.name.toLowerCase().includes(normalizedBirthQuery) || item.profile.datetime.includes(normalizedBirthQuery))
     : birthProfiles;
+  // 置顶档案永远排最前，其余沿用「最近使用置顶」的顺序。
+  const pinnedBirthEntry = pinnedBirthId ? visibleBirthProfiles.find((item) => item.id === pinnedBirthId) : undefined;
+  const orderedBirthProfiles = pinnedBirthEntry
+    ? [pinnedBirthEntry, ...visibleBirthProfiles.filter((item) => item.id !== pinnedBirthId)]
+    : visibleBirthProfiles;
 
   const birthLibraryPanel = (
     <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
@@ -2330,7 +2349,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {importStatus ? <span className="birth-library-status" role="status">{importStatus}</span> : null}
       </div>
       {birthProfiles.length ? <input className="birth-library-search" value={birthQuery} onChange={(event) => setBirthQuery(event.target.value)} placeholder="搜索姓名或生日" aria-label="搜索生日库" /> : null}
-      {visibleBirthProfiles.map((item) => renamingBirthId === item.id ? (
+      {orderedBirthProfiles.map((item) => renamingBirthId === item.id ? (
         <div className="birth-library-item birth-library-item--renaming" key={item.id}>
           <input
             className="birth-library-rename"
@@ -2360,7 +2379,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         </div>
       ) : (
         <div className="birth-library-item" key={item.id}>
-          <button type="button" onClick={() => loadBirthProfile(item)}>{item.name}<small>{formatBirthProfileMeta(item.profile)}</small></button>
+          <button type="button" onClick={() => loadBirthProfile(item)}>{item.id === pinnedBirthId ? "★ " : ""}{item.name}<small>{formatBirthProfileMeta(item.profile)}</small></button>
+          <button type="button" aria-label={`${item.id === pinnedBirthId ? "取消置顶" : "置顶"}${item.name}`} onClick={() => toggleBirthPin(item.id)}>★</button>
           <button type="button" aria-label={`重命名${item.name}`} onClick={() => startRenameBirthProfile(item.id, item.name)}>✎</button>
           <button type="button" aria-label={`更新${item.name}`} onClick={() => { setConfirmingDeleteId(null); setConfirmingOverwriteId(item.id); }}>⟳</button>
           <button type="button" aria-label={`删除${item.name}`} onClick={() => { setConfirmingOverwriteId(null); setConfirmingDeleteId(item.id); }}>×</button>
