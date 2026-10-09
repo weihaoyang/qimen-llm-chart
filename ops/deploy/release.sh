@@ -67,6 +67,16 @@ fi
 echo "building standalone"
 ( export PATH="$NODE_BIN:$PATH"; cd "$BUILD_DIR"; npm run build )
 
+# 3b. Optional schema step, run before any traffic moves. Opt-in because a
+#     migration is not reversible from here; the migrator is line-ending
+#     insensitive and refuses to run if an applied file's content changed.
+if [ "${QMDJ_RUN_MIGRATIONS:-false}" = "true" ]; then
+  echo "applying migrations"
+  DATABASE_URL_VALUE="$(grep -m1 '^DATABASE_URL=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r')"
+  [ -n "$DATABASE_URL_VALUE" ] || { echo "QMDJ_RUN_MIGRATIONS=true but DATABASE_URL is not in $ENV_FILE" >&2; exit 6; }
+  ( export PATH="$NODE_BIN:$PATH"; cd "$BUILD_DIR"; DATABASE_URL="$DATABASE_URL_VALUE" node ops/migrate.mjs apply )
+fi
+
 # 4. Wrap the output in a thin image.
 PKG="$(mktemp -d /tmp/qmdj-pkg-XXXXXX)"
 cleanup() { rm -rf "$PKG"; }

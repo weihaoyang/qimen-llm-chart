@@ -60,6 +60,17 @@ node ops/deploy/cli.mjs build     # 旧容器继续服务
 node ops/deploy/cli.mjs deploy    # 复用缓存，几秒内切换
 ```
 
+## 数据库迁移
+
+发布本身**不会**自动改库结构。需要一起迁移时：
+
+```bash
+QMDJ_RUN_MIGRATIONS=true node ops/deploy/cli.mjs deploy
+```
+
+它会在切流前用构建目录里的 `ops/migrate.mjs apply`（`DATABASE_URL` 从 `QMDJ_ENV_FILE` 读取），
+失败则中止发布。`ops/migrate.mjs` 的校验和**对换行不敏感**，所以 LF/CRLF 检出都能正常迁移。
+
 ## 构建形态（为什么快）
 
 - **宿主机构建 standalone**：复用持久构建目录 `<releases>/qmdj-build/node_modules`，
@@ -91,6 +102,7 @@ node ops/deploy/cli.mjs status            # 确认 image / health
 | `QMDJ_NODE_BIN` | nvm v24.16.0/bin | 构建用 node |
 | `QMDJ_HEALTH_URL` | `http://127.0.0.1:3002/api/version` | 健康端点 |
 | `QMDJ_NO_SUDO` | 空 | 置 `1` 时不给 docker 加 sudo |
+| `QMDJ_RUN_MIGRATIONS` | 空 | 置 `true` 时，发布会在**切流前**先执行 `ops/migrate.mjs apply`；把库结构变更和代码一起带上去 |
 
 ## 运行时拓扑
 
