@@ -23,6 +23,7 @@ export function DivinationPanel(props: Props) {
   const { kind, value } = props;
   const [transit, setTransit] = useState<HumanDesignTransit | null>(null);
   const [partnerDatetime, setPartnerDatetime] = useState("");
+  const [partnerChart, setPartnerChart] = useState<HumanDesignChart | null>(null);
   const [composite, setComposite] = useState<HumanDesignComposite | null>(null);
   if (kind === "astro") {
     return <section className="divination-panel divination-panel--astro" aria-label="星盘">
@@ -46,7 +47,7 @@ export function DivinationPanel(props: Props) {
       <div className="divination-panel__topline"><span>BODYGRAPH / 02</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "SIGNALS READY" : "INPUT REQUIRED"}</span></div>
       <header className="divination-panel__header"><div><p className="divination-panel__kicker">HUMAN DESIGN / ACTIVATION MAP</p><h2>人类图</h2><p className="divination-panel__subhead">看见人格与设计两侧的激活信号，不替你下人格结论。</p></div><div className="divination-panel__header-actions">{props.onCopyJson ? <button type="button" className="divination-panel__export" onClick={props.onCopyJson}>复制 JSON <span>{props.jsonCopied ? "✓" : "⧉"}</span></button> : null}<button type="button" className="divination-panel__action" onClick={() => setTransit(buildHumanDesignTransit(value, new Date()))}><span>↻</span>叠加流日</button><div className="hd-glyph" aria-hidden="true"><span /><span /><span /><span /><b /></div></div></header>
       <div className="divination-panel__rule" />
-      <HumanDesignBodygraph chart={value} />
+      <HumanDesignBodygraph chart={value} partner={partnerChart} />
       <div className="hd-summary"><div><small>TYPE</small><strong>{value.type ?? "待推导"}</strong><span>{value.strategy ?? "不作猜测"}</span></div><div><small>AUTHORITY</small><strong>{value.authority ?? "—"}</strong><span>Profile {value.profile ?? "待推导"}</span></div><div><small>DEFINITION</small><strong>{value.definition ?? "待推导"}</strong><span>{value.incarnationCrossType ?? "—"} · {value.channels.length} 通道</span></div></div>
       <div className="divination-section-heading"><span>DEFINED CENTERS / CHANNELS</span><small>{value.centers.filter((center) => center.defined).length} CENTERS · {value.channels.length} CHANNELS</small></div>
       <div className="hd-chip-row">{value.centers.filter((center) => center.defined).map((center) => <span key={center.name}>{center.name}</span>)}{value.channels.slice(0, 8).map((channel) => <span key={channel.name}>{channel.gates.join("-")}</span>)}</div>
@@ -57,7 +58,7 @@ export function DivinationPanel(props: Props) {
       {transit ? <p className="divination-panel__note"><span>流日 {transit.at}</span>激活门 {transit.gates.join(" / ")} · 流日通道 {transit.channels.map((channel) => channel.gates.join("-")).join("、") || "无"} · 叠加后新增通道 {transit.overlay.newChannels.map((channel) => `${channel.gates.join("-")} ${channel.name}`).join("、") || "无"} · 新增中心 {transit.overlay.newCenters.join("、") || "无"}</p> : null}
       <div className="divination-panel__composite">
         <label><span>合图对方出生时间</span><input type="datetime-local" value={partnerDatetime} onChange={(event) => setPartnerDatetime(event.target.value)} aria-label="合图对方出生时间" /></label>
-        <button type="button" className="divination-panel__action" disabled={!partnerDatetime} onClick={() => { try { setComposite(buildHumanDesignComposite(value, buildHumanDesignChartFromDatetime(partnerDatetime, value.input.timeZone))); } catch { setComposite(null); } }}>生成合图</button>
+        <button type="button" className="divination-panel__action" disabled={!partnerDatetime} onClick={() => { try { const partner = buildHumanDesignChartFromDatetime(partnerDatetime, value.input.timeZone); setPartnerChart(partner); setComposite(buildHumanDesignComposite(value, partner)); } catch { setPartnerChart(null); setComposite(null); } }}>生成合图</button>
       </div>
       {composite ? <p className="divination-panel__note"><span>合图</span>{composite.type} · {composite.authority} · 定义 {composite.definition} · 通道 {composite.channels.length}（新增 {composite.newChannels.map((channel) => channel.gates.join("-")).join("、") || "无"}） · 新增中心 {composite.newCenters.join("、") || "无"} · 门 {composite.gates.length}</p> : null}
       <p className="divination-panel__note"><span>BOUNDARY</span>{value.disclaimer}</p>

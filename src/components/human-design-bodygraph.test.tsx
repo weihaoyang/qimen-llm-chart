@@ -7,11 +7,13 @@ import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from
 import { buildHumanDesignChart, HD_CHANNELS } from "@/lib/human-design/chart";
 import { HumanDesignBodygraph } from "./human-design-bodygraph";
 
-const chart = () => {
-  const input: ProfileInput = getDefaultProfileInput(new Date("1990-05-20T08:30:00+08:00"), "Asia/Shanghai");
+const chartFor = (iso: string) => {
+  const input: ProfileInput = getDefaultProfileInput(new Date(iso), "Asia/Shanghai");
   input.location = { city: "上海", timeZone: "Asia/Shanghai", latitude: 31.2304, longitude: 121.4737 };
   return buildHumanDesignChart(normalizeProfileInput(input));
 };
+
+const chart = () => chartFor("1990-05-20T08:30:00+08:00");
 
 describe("HumanDesignBodygraph", () => {
   afterEach(() => cleanup());
@@ -32,5 +34,17 @@ describe("HumanDesignBodygraph", () => {
     render(<HumanDesignBodygraph chart={value} />);
     fireEvent.click(screen.getByRole("button", { name: `查看${definedCenter?.name}中心` }));
     expect(screen.getByText(/激活门/)).toHaveTextContent(String(definedCenter?.gates[0]));
+  });
+
+  it("marks the channels and centers only the partner brings", () => {
+    const value = chart();
+    const partner = chartFor("1992-02-02T09:00:00+08:00");
+    const { container } = render(<HumanDesignBodygraph chart={value} partner={partner} />);
+
+    const selfKeys = new Set(value.channels.map((channel) => channel.gates.join("-")));
+    const partnerOnly = partner.channels.filter((channel) => !selfKeys.has(channel.gates.join("-"))).length;
+    expect(container.querySelectorAll(".bodygraph-svg__channel.is-partner")).toHaveLength(partnerOnly);
+    expect(container.querySelectorAll(".bodygraph-svg__channel.is-muted")).toHaveLength(36 - value.channels.length - partnerOnly);
+    expect(screen.getByText("合图")).toBeInTheDocument();
   });
 });

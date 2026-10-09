@@ -32,6 +32,8 @@ describe("DivinationPanel human design", () => {
     expect(note).toBeTruthy();
     expect(note?.textContent).toContain(expected.type);
     expect(note?.textContent).toContain(String(expected.channels.length));
+    // The BodyGraph legend gains the composite swatch once a partner is set.
+    expect(document.querySelector(".legend-line--partner")).toBeTruthy();
   });
 
   it("computes a transit overlay on demand", () => {
