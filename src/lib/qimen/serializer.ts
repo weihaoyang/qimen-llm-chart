@@ -73,6 +73,18 @@ const joinPillar = (pillar: { stem: string; branch: string }) =>
   `${pillar.stem}${pillar.branch}`;
 
 /**
+ * 紧凑载荷里的「十干克应」只保留五行关系码。`id`/`params`/`description`
+ * 都能由同一行的天盘干、地盘干与五行推导，逐宫重复会把序列载荷撑大
+ * （单是这一项就占 6 步序列的 40%）。完整描述保留在结构化文本里。
+ */
+const relationOf = (entry: { relation?: string } | undefined) => entry?.relation ?? "无";
+const compactTenStemResponse = (value: Palace["tenStemResponse"]) => ({
+  heavenlyToEarthly: relationOf(value?.heavenlyToEarthly),
+  timeToDay: relationOf(value?.timeToDay),
+  heavenlyToDay: relationOf(value?.heavenlyToDay),
+});
+
+/**
  * 登记格局（`patterns.ts`）的判定结果，供 AI 上下文使用。
  * `3meta` 只给「已成立」的格局；这里补上「未成立」的名单与旺衰分档，
  * 让模型知道哪些经典格局被**正面否掉**、哪些成立且有力。
@@ -298,7 +310,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       normalizeValue(palace.status),
       normalizeValue(palace.growthInfo),
       normalizeValue(palace.tombInfo),
-      normalizeValue(palace.tenStemResponse),
+      compactTenStemResponse(palace.tenStemResponse),
       normalizeValue(palace.liuYiJiXing),
     ]),
   };
@@ -306,7 +318,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
 
 const buildCompactPayload = (chart: NormalizedQimenChart) => ({
   format: "qmdj-llm-compact-v1",
-  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。",
+  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。",
   ...buildCompactSections(chart),
 });
 

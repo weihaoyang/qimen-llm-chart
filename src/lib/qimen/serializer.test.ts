@@ -98,14 +98,14 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeChartToStructuredText(chart).length).toBeLessThan(60_000);
   });
 
-  it("keeps a six-step sequence compact payload within the agent API limit", () => {
+  it("keeps a ten-step sequence compact payload within the agent API limit", () => {
     const sequence = buildChartSequence({
       startDatetime: "2026-07-01T00:00",
-      endDatetime: "2026-07-01T10:00",
+      endDatetime: "2026-07-01T18:00",
       timeZone: "Asia/Shanghai",
       step: "double-hour",
     });
-    expect(sequence).toHaveLength(6);
+    expect(sequence).toHaveLength(10);
     expect(serializeSequenceToCompactJson(sequence).length).toBeLessThan(80_000);
   });
 });
