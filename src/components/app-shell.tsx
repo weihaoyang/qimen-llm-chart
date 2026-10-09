@@ -107,6 +107,7 @@ import type { ResearchTool, ResearchWorkspaceData, VerificationRow } from "@/lib
 import { ChartForm } from "./chart-form";
 import { InspectorPanel } from "./inspector-panel";
 import { PalaceGrid } from "./palace-grid";
+import { QimenPatternPanel } from "./qimen-pattern-panel";
 import { SummaryStrip } from "./summary-strip";
 import { KlinePanel } from "./kline-panel";
 import { ClassicObservatoryPanel } from "./classic-observatory-panel";
@@ -1948,6 +1949,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
             ) : (
               <div className="empty-panel">等待生成盘面。</div>
             )}
+
+            {activeQimenChart ? <QimenPatternPanel chart={activeQimenChart} /> : null}
           </>
         ) : null}
 

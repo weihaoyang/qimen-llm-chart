@@ -521,3 +521,45 @@ html body .product-chart[data-mode="qimen"] .sidebar-quick-controls__select {
     padding-block: 1px !important;
   }
 }
+
+/* 奇门格局 · 成立 / 失败（侧边提示） */
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure { margin-top: 14px; border: 2px solid var(--paipan-ink); background: var(--paipan-paper); box-shadow: var(--paipan-shadow); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 48px; padding: 10px 14px; cursor: pointer; list-style: none; background: var(--paipan-ground); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure > summary::-webkit-details-marker { display: none; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure > summary strong { color: var(--paipan-ink); font-size: 14px; font-weight: 950; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__mark { color: var(--paipan-slate); font: 900 10px var(--paipan-font-mono); letter-spacing: .08em; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__hint { min-width: 0; overflow: hidden; color: var(--paipan-slate); font: 800 11px var(--paipan-font-mono); text-overflow: ellipsis; white-space: nowrap; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__toggle { color: var(--paipan-ink); font: 950 20px/1 var(--paipan-font-mono); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure[open] > summary { border-bottom: 2px solid var(--paipan-ink); background: var(--paipan-accent); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure[open] .qimen-pattern-disclosure__toggle { font-size: 0; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure[open] .qimen-pattern-disclosure__toggle::after { content: "−"; font-size: 20px; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-panel { background: var(--paipan-paper); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1.5px solid var(--paipan-ink); background: var(--paipan-ground); color: var(--paipan-slate); font: 800 11px var(--paipan-font-mono); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-head b.is-bad { color: var(--paipan-red); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-filter { display: flex; gap: 6px; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-filter button { padding: 5px 9px; border: 1.5px solid var(--paipan-ink); background: var(--paipan-paper); color: var(--paipan-ink); cursor: pointer; font: 900 10px var(--paipan-font-mono); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-filter button.is-active { background: var(--paipan-ink); color: var(--paipan-accent); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 0; padding: 14px; list-style: none; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item { display: grid; gap: 8px; padding: 10px 12px; border: 1.5px solid var(--paipan-ink); background: var(--paipan-ground); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item.is-failed { border-style: dashed; opacity: .72; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item.is-formed.is-bad { border-left: 6px solid var(--paipan-red); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item.is-formed.is-good { border-left: 6px solid var(--paipan-ink); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item__head { display: flex; align-items: baseline; gap: 8px; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item__head > b { padding: 2px 6px; border: 1px solid var(--paipan-ink); font: 900 9px var(--paipan-font-mono); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item__head > strong { flex: 1; color: var(--paipan-ink); font-size: 14px; font-weight: 950; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item__status { font: 950 10px var(--paipan-font-mono); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item__status.is-formed { color: var(--paipan-ink); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item__status.is-failed { color: var(--paipan-red); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; margin: 0; font-size: 11.5px; line-height: 1.55; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item dt { color: var(--paipan-slate); font: 900 10px var(--paipan-font-mono); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-item dd { margin: 0; color: var(--paipan-ink); }
+body .product-chart[data-mode="qimen"] .qimen-pattern-empty { padding: 16px; color: var(--paipan-slate); font-size: 12px; }
+body .product-chart[data-mode="qimen"] .qimen-pattern-disclaimer { display: block; padding: 0 14px 14px; color: var(--paipan-slate); font: 800 10px/1.6 var(--paipan-font-mono); }
+
+@media (max-width: 720px) {
+  body .product-chart[data-mode="qimen"] .qimen-pattern-list { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__mark { display: none; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure > summary { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__hint { grid-column: 1; grid-row: 2; font-size: 9px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__toggle { grid-column: 2; grid-row: 1 / span 2; }
+}
