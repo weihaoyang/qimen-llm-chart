@@ -1,5 +1,5 @@
 import { calculateChart } from "hd-chart-engine";
-import type { NormalizedProfileInput } from "@/lib/profile";
+import { normalizeProfileInput, type NormalizedProfileInput, type ProfileInput } from "@/lib/profile";
 import type { HumanDesignAuthority, HumanDesignChart, HumanDesignDefinition, HumanDesignType, HumanDesignVariable } from "./types";
 
 const PLANETS = ["sun", "earth", "moon", "north_node", "south_node", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"] as const;
@@ -120,6 +120,32 @@ export const HD_STRATEGY_BY_TYPE: Record<HumanDesignType, string> = {
   显化者: "先行动，再告知",
 };
 
+export type HumanDesignDesign = {
+  channels: Array<{ gates: [number, number]; name: string; centers: [string, string] }>;
+  defined: Set<string>;
+  type: HumanDesignType;
+  authority: HumanDesignAuthority;
+  definition: HumanDesignDefinition;
+};
+
+/** 从一组已激活的门推导通道、中心、类型、权威与定义（本人盘与合图共用）。 */
+export const deriveHumanDesignDesign = (gates: Set<number>): HumanDesignDesign => {
+  const channels = HD_CHANNELS.filter((channel) => gates.has(channel.gates[0]) && gates.has(channel.gates[1]));
+  const defined = new Set(channels.flatMap((channel) => channel.centers));
+  const adjacency = buildAdjacency(channels);
+  const fromThroat = reachableFrom("喉咙", adjacency);
+  const motorReachesThroat = MOTOR_CENTERS.some((motor) => defined.has(motor) && fromThroat.has(motor));
+  const type = deriveType(defined, motorReachesThroat);
+
+  return {
+    channels,
+    defined,
+    type,
+    authority: deriveAuthority(type, defined, (center) => defined.has(center) && fromThroat.has(center)),
+    definition: deriveDefinition(defined, adjacency),
+  };
+};
+
 export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDesignChart => {
   const latitude = profile.original.location?.latitude ?? null;
   const longitude = profile.original.location?.longitude ?? null;
@@ -130,16 +156,7 @@ export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDes
 
   const activations = Object.fromEntries(PLANETS.map((key) => [key, { personality: toActivation(chart.planets[key].p), design: toActivation(chart.planets[key].d) }]));
   const gates = new Set(Object.values(activations).flatMap((value) => [value.personality.gate, value.design.gate]));
-  const channels = HD_CHANNELS.filter((channel) => gates.has(channel.gates[0]) && gates.has(channel.gates[1]));
-
-  const defined = new Set(channels.flatMap((channel) => channel.centers));
-  const adjacency = buildAdjacency(channels);
-  const fromThroat = reachableFrom("喉咙", adjacency);
-  const motorReachesThroat = MOTOR_CENTERS.some((motor) => defined.has(motor) && fromThroat.has(motor));
-
-  const type = deriveType(defined, motorReachesThroat);
-  const authority = deriveAuthority(type, defined, (center) => defined.has(center) && fromThroat.has(center));
-  const definition = deriveDefinition(defined, adjacency);
+  const { channels, defined, type, authority, definition } = deriveHumanDesignDesign(gates);
 
   const centers = CENTERS.map((name) => ({
     name,
@@ -181,4 +198,10 @@ export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDes
     disclaimer:
       "研究性人类图：类型、策略、权威、Profile、定义、中心与通道由公开通道映射从 hd-chart-engine 的激活结果推导；行星激活为地心坐标，不依赖出生地；不代表认证排盘、医学或心理诊断。" + warning,
   };
+};
+
+/** 便捷入口：只给公历时间与时区（人类图不需要出生地）。 */
+export const buildHumanDesignChartFromDatetime = (datetime: string, timeZone: string): HumanDesignChart => {
+  const profile: ProfileInput = { calendarMode: "solar", datetime, timeZone, gender: "male", timeBasis: "civil" };
+  return buildHumanDesignChart(normalizeProfileInput(profile));
 };

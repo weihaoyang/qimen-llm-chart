@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { AstroChart } from "@/lib/astro/types";
+import { buildHumanDesignChartFromDatetime } from "@/lib/human-design/chart";
+import { buildHumanDesignComposite, type HumanDesignComposite } from "@/lib/human-design/composite";
 import type { HumanDesignChart } from "@/lib/human-design/types";
 import { buildHumanDesignTransit, type HumanDesignTransit } from "@/lib/human-design/transit";
 import type { TarotReading, TarotSpreadId } from "@/lib/tarot/types";
@@ -20,6 +22,8 @@ const planetLabels: Record<string, string> = { sun: "太阳", earth: "地球", m
 export function DivinationPanel(props: Props) {
   const { kind, value } = props;
   const [transit, setTransit] = useState<HumanDesignTransit | null>(null);
+  const [partnerDatetime, setPartnerDatetime] = useState("");
+  const [composite, setComposite] = useState<HumanDesignComposite | null>(null);
   if (kind === "astro") {
     return <section className="divination-panel divination-panel--astro" aria-label="星盘">
       <div className="divination-panel__topline"><span>OBSERVATORY / 01</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "CALCULATED" : "INPUT REQUIRED"}</span></div>
@@ -51,6 +55,11 @@ export function DivinationPanel(props: Props) {
       <p className="divination-panel__note"><span>人生主题</span>{value.incarnationCross ?? "待推导"} · 精度 gate {value.precision?.gate ?? "—"}</p>
       {hdVariableLine ? <p className="divination-panel__note"><span>四变量</span>{hdVariableLine}</p> : null}
       {transit ? <p className="divination-panel__note"><span>流日 {transit.at}</span>激活门 {transit.gates.join(" / ")} · 流日通道 {transit.channels.map((channel) => channel.gates.join("-")).join("、") || "无"} · 叠加后新增通道 {transit.overlay.newChannels.map((channel) => `${channel.gates.join("-")} ${channel.name}`).join("、") || "无"} · 新增中心 {transit.overlay.newCenters.join("、") || "无"}</p> : null}
+      <div className="divination-panel__composite">
+        <label><span>合图对方出生时间</span><input type="datetime-local" value={partnerDatetime} onChange={(event) => setPartnerDatetime(event.target.value)} aria-label="合图对方出生时间" /></label>
+        <button type="button" className="divination-panel__action" disabled={!partnerDatetime} onClick={() => { try { setComposite(buildHumanDesignComposite(value, buildHumanDesignChartFromDatetime(partnerDatetime, value.input.timeZone))); } catch { setComposite(null); } }}>生成合图</button>
+      </div>
+      {composite ? <p className="divination-panel__note"><span>合图</span>{composite.type} · {composite.authority} · 定义 {composite.definition} · 通道 {composite.channels.length}（新增 {composite.newChannels.map((channel) => channel.gates.join("-")).join("、") || "无"}） · 新增中心 {composite.newCenters.join("、") || "无"} · 门 {composite.gates.length}</p> : null}
       <p className="divination-panel__note"><span>BOUNDARY</span>{value.disclaimer}</p>
     </section>;
   }
