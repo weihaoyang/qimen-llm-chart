@@ -416,6 +416,7 @@ html body .page-shell.product-chart .platform-account__error {
 .birth-library-tools > button:disabled { opacity: 0.45; cursor: not-allowed; }
 .birth-library-status { flex-basis: 100%; color: var(--paipan-slate); font-size: 11px; }
 .birth-library-search { display: block; width: 100%; margin: 4px 0 2px; border: 1px solid var(--paipan-ink); padding: 5px; background: var(--paipan-paper); color: var(--paipan-ink); }
+.birth-library-confirm { flex: 1; min-width: 0; color: var(--paipan-slate); font-size: 11px; line-height: 1.4; }
 .birth-library-item { display: flex; gap: 4px; margin-top: 5px; }
 .birth-library-item > button:first-child { display: flex; flex: 1; justify-content: space-between; text-align: left; background: var(--paipan-ground); }
 .birth-library-item small { color: var(--paipan-slate); }

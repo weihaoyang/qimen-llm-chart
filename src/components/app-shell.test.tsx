@@ -211,4 +211,28 @@ describe("AppShell", () => {
     const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
     expect(stored.map((item) => item.name)).toEqual(["乙", "甲"]);
   }, 60000);
+
+  it("overwrites a saved 生日库 profile with the current chart input", async () => {
+    localStorage.setItem("qmdj-birth-library", JSON.stringify([
+      { id: "o-1", name: "待更新", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
+    ]));
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "更新待更新" }));
+    expect(screen.getByText(/用当前盘面资料覆盖/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "覆盖" }));
+
+    expect(screen.getByText(/已用当前盘面资料更新「待更新」/)).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string; profile: { datetime: string } }>;
+    expect(stored[0]?.name).toBe("待更新");
+    expect(stored[0]?.profile.datetime).not.toBe("1990-01-01T12:00");
+    expect(stored[0]?.profile.datetime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+  }, 60000);
 });
