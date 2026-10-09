@@ -94,47 +94,57 @@
 
 @media (max-width: 1140px) and (min-width: 721px) {
   html body .page-shell.product-chart .observatory-hero {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto auto !important;
-    grid-template-rows: auto auto !important;
-    gap: 8px 12px !important;
-    min-height: 84px !important;
-    padding: 10px 14px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px 10px !important;
+    min-height: 0 !important;
+    padding: 8px 12px !important;
     background: var(--paipan-paper) !important;
     border: 2px solid var(--paipan-ink) !important;
     border-radius: 4px !important;
     box-shadow: var(--paipan-shadow-lg) !important;
-    align-items: center !important;
   }
   html body .page-shell.product-chart .observatory-hero__copy {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    gap: 1px !important;
+    order: 1 !important;
+    flex: 0 0 auto !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .observatory-hero__materials {
+    order: 2 !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
   }
   html body .page-shell.product-chart .observatory-hero .platform-account {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    justify-self: end !important;
+    order: 3 !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
     position: static !important;
     transform: none !important;
   }
+  /* Keep the status from crowding the action row out on short screens. */
+  html body .page-shell.product-chart .observatory-hero .platform-account__status {
+    max-width: 96px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
   html body .page-shell.product-chart .observatory-hero .hero-action {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
+    order: 4 !important;
+    flex: 0 0 auto !important;
     display: inline-flex !important;
     align-items: center !important;
-    justify-self: end !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .birth-library-control {
+    order: 5 !important;
+    flex: 0 0 auto !important;
   }
   html body .page-shell.product-chart .observatory-hero .workbench-tabs {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
+    order: 6 !important;
+    flex: 1 1 100% !important;
     width: 100% !important;
+    min-width: 0 !important;
     display: flex !important;
     align-items: center !important;
     overflow-x: auto !important;
@@ -143,11 +153,19 @@
   html body .page-shell.product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
     display: none !important;
   }
+  html body .page-shell.product-chart .observatory-hero__agent-entry {
+    display: none !important;
+  }
+}
 
-  html body .page-shell.product-chart .observatory-hero .observatory-hero__materials {
-    grid-column: 3 !important;
-    grid-row: 2 !important;
-    justify-self: end !important;
+/* Narrow landscape: shave the account status so the masthead keeps two rows. */
+
+@media (max-width: 900px) and (min-width: 721px) {
+  html body .page-shell.product-chart .observatory-hero .platform-account__status {
+    max-width: 72px !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .platform-account {
+    gap: 6px !important;
   }
 }
 
