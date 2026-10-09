@@ -13,6 +13,8 @@
     "css:clean": "node ops/prune-css.mjs src/app/globals.css src/app/platform-views.css src/app/paipan/paipan.css src/app/paipan/bazi.css src/app/paipan/research.css src/app/paipan/ziwei.css src/app/paipan/workbench-responsive.css src/app/paipan/analysis-panels.css src/app/paipan/workbench-shell.css src/app/paipan/qimen-workbench.css --write && node ops/dedupe-css.mjs src/app/globals.css src/app/platform-views.css src/app/paipan/paipan.css src/app/paipan/bazi.css src/app/paipan/research.css src/app/paipan/ziwei.css src/app/paipan/workbench-responsive.css src/app/paipan/analysis-panels.css src/app/paipan/workbench-shell.css src/app/paipan/qimen-workbench.css --write",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run typecheck && eslint src && npm test && npm run build",
     "test": "vitest run",
     "test:concurrency": "vitest run src/lib/db/concurrency.test.ts",
     "deploy": "node ops/deploy/cli.mjs"

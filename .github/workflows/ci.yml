@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck / lint / test / build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: qmdj
+    steps:
+      # @singularity-sequence/web-sdk is declared in package.json as a file:
+      # dependency on the private platform repo:
+      #   file:../singularity-sequence-consumer-platform/packages/web-sdk
+      # Both checkouts must therefore sit side by side under $GITHUB_WORKSPACE
+      # so that this relative path resolves during `npm ci`.
+      - name: Checkout 知几 (qmdj)
+        uses: actions/checkout@v4
+        with:
+          path: qmdj
+
+      # The platform repo is private. Until the PLATFORM_REPO_TOKEN repo secret
+      # exists, skip the SDK-dependent steps with a warning instead of failing
+      # every push. Add the secret to enable the full pipeline.
+      - name: Detect platform token
+        id: platform
+        working-directory: .
+        env:
+          PLATFORM_REPO_TOKEN: ${{ secrets.PLATFORM_REPO_TOKEN }}
+        run: |
+          if [ -n "${PLATFORM_REPO_TOKEN:-}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::PLATFORM_REPO_TOKEN is not set; skipping the SDK-dependent CI steps. Add the repo secret (read access to the platform repo) to enable full CI."
+          fi
+
+      - name: Checkout platform (web-sdk source)
+        if: steps.platform.outputs.available == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: weihaoyang/singularity-sequence-consumer-platform
+          ref: main
+          path: singularity-sequence-consumer-platform
+          token: ${{ secrets.PLATFORM_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Setup Node
+        if: steps.platform.outputs.available == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: qmdj/package-lock.json
+
+      - name: Install dependencies
+        if: steps.platform.outputs.available == 'true'
+        run: npm ci
+
+      # packages/web-sdk/dist is gitignored in the platform repo, so a fresh
+      # checkout has only src/. Build it here with 知几's own TypeScript before
+      # tsc/next resolve the package's `main`/`types` (dist/index.*).
+      - name: Build @singularity-sequence/web-sdk
+        if: steps.platform.outputs.available == 'true'
+        working-directory: singularity-sequence-consumer-platform/packages/web-sdk
+        run: node ../../../qmdj/node_modules/typescript/bin/tsc -p tsconfig.json
+
+      - name: Typecheck / lint / test / build
+        if: steps.platform.outputs.available == 'true'
+        run: npm run ci
