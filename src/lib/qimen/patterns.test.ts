@@ -11,6 +11,7 @@ const palace = (position: number, overrides: Record<string, unknown> = {}) => ({
   deity: "无神",
   gatePressure: "无",
   fiveElements: "土",
+  status: { star: "相", gate: "相" },
   isZhiFu: false,
   liuYiJiXing: { hasJiXing: false },
   ...overrides,
@@ -168,16 +169,23 @@ describe("evaluateQimenPatterns", () => {
     expect(statusOf(reversed, "fu_yin_gate")).toBe("未成立");
   });
 
-  it("detects 值符伏吟 / 反吟 from the 值符 palace stems", () => {
-    const fuYin = evaluateQimenPatterns(
-      chartWith([palace(3, { heavenlyStem: "戊", earthlyStem: "戊" })], { zhiFu: 3 }),
+  it("grades formed patterns by the palace 旺衰 and counts the bands", () => {
+    const strong = evaluateQimenPatterns(
+      chartWith([palace(3, { heavenlyStem: "戊", earthlyStem: "丙", status: { star: "旺", gate: "旺" } })]),
     );
-    expect(statusOf(fuYin, "fu_yin_zhi_fu")).toBe("成立");
+    expect(strong.checks.find((check) => check.id === "qing_long_fan_shou")?.strength).toBe("有力");
+    expect(strong.strengthCounts.有力).toBeGreaterThan(0);
 
-    const fanYin = evaluateQimenPatterns(
-      chartWith([palace(3, { heavenlyStem: "甲", earthlyStem: "庚" })], { zhiFu: 3 }),
+    const weak = evaluateQimenPatterns(
+      chartWith([palace(3, { heavenlyStem: "戊", earthlyStem: "丙", status: { star: "死", gate: "死" } })]),
     );
-    expect(statusOf(fanYin, "fan_yin_zhi_fu")).toBe("成立");
-    expect(statusOf(fanYin, "fu_yin_zhi_fu")).toBe("未成立");
+    expect(weak.checks.find((check) => check.id === "qing_long_fan_shou")?.strength).toBe("无力");
+    expect(weak.strengthCounts.无力).toBeGreaterThan(0);
+  });
+
+  it("leaves global patterns and unformed patterns without a strength band", () => {
+    const report = evaluateQimenPatterns(chartWith([palace(1)], { wuBuYuShi: true }));
+    expect(report.checks.find((check) => check.id === "wu_bu_yu_shi")?.strength).toBeUndefined();
+    expect(report.checks.find((check) => check.id === "qing_long_fan_shou")?.strength).toBeUndefined();
   });
 });

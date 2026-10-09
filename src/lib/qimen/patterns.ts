@@ -63,6 +63,14 @@ const placedGates = (chart: NormalizedQimenChart) =>
     .map((palace) => ({ palace, native: GATE_NATIVE[palace.gate as string] }))
     .filter((entry) => typeof entry.native === "number");
 
+// 旺衰权重：把 `palace.status`（门/星 的 旺相休囚废死）折算成分数，用于给
+// 「成立」的格局再分「有力 / 中平 / 无力」。中宫无门，按 0 计。
+const STATUS_SCORE: Record<string, number> = { 旺: 3, 相: 2, 休: 1, 囚: 0, 死: -1, 废: -1 };
+const statusScore = (value: string | undefined) => (value ? STATUS_SCORE[value] ?? 0 : 0);
+const palaceScore = (palace: Palace) => statusScore(palace.status?.gate) + statusScore(palace.status?.star);
+const gradeFromScore = (score: number): QimenPatternStrength => (score >= 4 ? "有力" : score >= 1 ? "中平" : "无力");
+const statusText = (value: string | undefined) => (value && value !== "无" ? value : "—");
+
 const hasHeaven = (palace: Palace, ...stems: string[]) =>
   valuesOf(palace.heavenlyStem).some((stem) => stems.includes(stem));
 const hasEarth = (palace: Palace, ...stems: string[]) =>
@@ -80,6 +88,8 @@ const gateEvidence = (palace: Palace) =>
 
 export type QimenPatternKind = "吉格" | "凶格";
 export type QimenPatternGroup = "九遁" | "三诈五假" | "常用吉格" | "常用凶格" | "伏吟反吟" | "全局";
+/** 成立格局的旺衰档位：由落宫的门/星旺相休囚废死综合而来。 */
+export type QimenPatternStrength = "有力" | "中平" | "无力";
 
 type CatalogEntry = {
   id: string;
@@ -376,6 +386,10 @@ export type QimenPatternCheck = {
   status: "成立" | "未成立";
   positions: Position[];
   evidence: string[];
+  /** 仅「成立」的宫位格局有旺衰档位；全局格局（伏吟反吟等）不评。 */
+  strength?: QimenPatternStrength;
+  /** 旺衰依据，如「第 3 宫：门旺 · 星相」。 */
+  strengthNote?: string;
 };
 
 export type QimenPatternReport = {
@@ -384,23 +398,34 @@ export type QimenPatternReport = {
   formed: QimenPatternCheck[];
   failed: QimenPatternCheck[];
   registered: number;
+  /** 成立格局按旺衰分档计数（全局格局不计入）。 */
+  strengthCounts: Record<QimenPatternStrength, number>;
 };
 
 export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPatternReport => {
   const checks = QIMEN_PATTERN_CATALOG.map((entry): QimenPatternCheck => {
     const evidence: string[] = [];
     const positions: Position[] = [];
+    let strength: QimenPatternStrength | undefined;
+    let strengthNote: string | undefined;
 
     if (entry.scope === "global") {
       const hit = entry.match(chart.raw.palaces[0], chart);
       if (hit) evidence.push(hit);
     } else {
+      let best: { score: number; palace: Palace } | null = null;
       for (const palace of chart.raw.palaces) {
         const hit = entry.match(palace, chart);
         if (hit) {
           evidence.push(hit);
           positions.push(palace.position);
+          const score = palaceScore(palace);
+          if (!best || score > best.score) best = { score, palace };
         }
+      }
+      if (best) {
+        strength = gradeFromScore(best.score);
+        strengthNote = `${palaceLabel(best.palace.position)}：门${statusText(best.palace.status?.gate)} · 星${statusText(best.palace.status?.star)}`;
       }
     }
 
@@ -414,13 +439,22 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
       status: evidence.length > 0 ? "成立" : "未成立",
       positions,
       evidence,
+      strength,
+      strengthNote,
     };
   });
 
+  const formed = checks.filter((check) => check.status === "成立");
+  const strengthCounts: Record<QimenPatternStrength, number> = { 有力: 0, 中平: 0, 无力: 0 };
+  for (const check of formed) {
+    if (check.strength) strengthCounts[check.strength] += 1;
+  }
+
   return {
     checks,
-    formed: checks.filter((check) => check.status === "成立"),
+    formed,
     failed: checks.filter((check) => check.status === "未成立"),
     registered: checks.length,
+    strengthCounts,
   };
 };

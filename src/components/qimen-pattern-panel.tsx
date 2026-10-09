@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { evaluateQimenPatterns, type QimenPatternCheck, type QimenPatternGroup } from "@/lib/qimen/patterns";
+import { evaluateQimenPatterns, type QimenPatternCheck, type QimenPatternGroup, type QimenPatternStrength } from "@/lib/qimen/patterns";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 
 type PatternFilter = "all" | "formed" | "failed";
@@ -13,6 +13,8 @@ const FILTERS: Array<{ key: PatternFilter; label: string }> = [
 ];
 
 const GROUP_ORDER: QimenPatternGroup[] = ["九遁", "三诈五假", "常用吉格", "常用凶格", "伏吟反吟", "全局"];
+
+const STRENGTH_KEY: Record<QimenPatternStrength, string> = { 有力: "strong", 中平: "medium", 无力: "weak" };
 
 const matchesFilter = (check: QimenPatternCheck, filter: PatternFilter) =>
   filter === "all" ? true : filter === "formed" ? check.status === "成立" : check.status === "未成立";
@@ -57,6 +59,11 @@ export function QimenPatternPanel({
                 登记 {report.registered} 项 · 成立 <b className="is-good">{report.formed.length}</b> · 未成立{" "}
                 <b className="is-bad">{report.failed.length}</b>
               </span>
+              <span className="qimen-pattern-head__strength">
+                有力 <b className="is-strong">{report.strengthCounts.有力}</b> · 中平{" "}
+                <b className="is-medium">{report.strengthCounts.中平}</b> · 无力{" "}
+                <b className="is-weak">{report.strengthCounts.无力}</b>
+              </span>
               <div className="qimen-pattern-filter" role="group" aria-label="格局筛选">
                 {FILTERS.map((item) => (
                   <button
@@ -88,6 +95,11 @@ export function QimenPatternPanel({
                       <div className="qimen-pattern-item__head">
                         <b>{check.kind}</b>
                         <strong>{check.name}</strong>
+                        {check.strength ? (
+                          <span className={`qimen-pattern-item__strength is-${STRENGTH_KEY[check.strength]}`}>
+                            {check.strength}
+                          </span>
+                        ) : null}
                         <span className={`qimen-pattern-item__status is-${check.status === "成立" ? "formed" : "failed"}`}>
                           {check.status}
                         </span>
@@ -97,6 +109,12 @@ export function QimenPatternPanel({
                         <dd>{check.requirement}</dd>
                         <dt>提示</dt>
                         <dd>{check.hint}</dd>
+                        {check.strengthNote ? (
+                          <>
+                            <dt>旺衰</dt>
+                            <dd>{check.strengthNote}</dd>
+                          </>
+                        ) : null}
                         {check.evidence.length > 0 ? (
                           <>
                             <dt>落宫</dt>
