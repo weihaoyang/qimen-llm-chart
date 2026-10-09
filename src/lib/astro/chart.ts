@@ -26,21 +26,56 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
   const [year, month, day, hour, minute] = parse(profile.normalized.datetime);
   const latitude = profile.original.location?.latitude ?? null;
   const longitude = profile.original.location?.longitude ?? null;
+  const hasPlace = latitude !== null && longitude !== null;
   const input = { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone, latitude, longitude };
-  if (latitude === null || longitude === null) {
-    return { format: "qmdj-astro-chart-v1", input, sun: emptyPoint("太阳"), moon: emptyPoint("月亮"), ascendant: emptyPoint("上升"), points: [], angles: { ascendant: emptyPoint("上升"), midheaven: emptyPoint("中天"), descendant: emptyPoint("下降"), imumCoeli: emptyPoint("天底") }, houses: [], aspects: [], aspectSummary: {}, patterns: [], complete: false, disclaimer: "缺少出生地经纬度，无法完成宫位与上升点计算。请补充城市或经纬度；当前不使用默认坐标。" };
-  }
-  const chart = calculateChart({ year, month, day, hour, minute, second: 0, timezone: offsetMinutes(profile.normalized.datetime, profile.normalized.timeZone) / 60, latitude, longitude });
+
+  // Planets and their aspects are geocentric, so the birth place never changes
+  // them; only the ascendant, midheaven and house cusps depend on it. Compute
+  // with a neutral origin and leave just the place-dependent fields absent when
+  // no location was given.
+  const chart = calculateChart({ year, month, day, hour, minute, second: 0, timezone: offsetMinutes(profile.normalized.datetime, profile.normalized.timeZone) / 60, latitude: latitude ?? 0, longitude: longitude ?? 0 });
+
   const toPoint = (planet: { name: string; longitude: number; signName: string; house?: number }): AstroPoint => {
     const signIndex = EN_SIGNS.indexOf(planet.signName);
-    return { name: PLANET_NAMES[planet.name] ?? planet.name, longitude: Number(planet.longitude.toFixed(6)), sign: SIGNS[signIndex] ?? "未知", degree: Number((planet.longitude % 30).toFixed(2)), house: planet.house ?? null };
+    return { name: PLANET_NAMES[planet.name] ?? planet.name, longitude: Number(planet.longitude.toFixed(6)), sign: SIGNS[signIndex] ?? "未知", degree: Number((planet.longitude % 30).toFixed(2)), house: hasPlace ? planet.house ?? null : null };
   };
   const points = chart.planets.filter((planet) => PLANET_NAMES[planet.name]).map(toPoint);
-  const asc = chart.angles.ascendant;
-  const ascendant = toPoint({ name: "上升", longitude: asc.longitude, signName: asc.signName });
-  const angles = { ascendant, midheaven: toPoint({ name: "中天", longitude: chart.angles.midheaven.longitude, signName: chart.angles.midheaven.signName }), descendant: toPoint({ name: "下降", longitude: chart.angles.descendant.longitude, signName: chart.angles.descendant.signName }), imumCoeli: toPoint({ name: "天底", longitude: chart.angles.imumCoeli.longitude, signName: chart.angles.imumCoeli.signName }) };
-  const aspects: AstroAspect[] = chart.aspects.all.map((aspect) => ({ body1: PLANET_NAMES[aspect.body1] ?? aspect.body1, body2: PLANET_NAMES[aspect.body2] ?? aspect.body2, type: aspect.type, symbol: aspect.symbol, separation: Number(aspect.separation.toFixed(2)), deviation: Number(aspect.deviation.toFixed(2)), strength: aspect.strength, isApplying: aspect.isApplying }));
-  const patterns: AstroPattern[] = chart.patterns.map((pattern) => ({ type: pattern.type, bodies: pattern.bodies.map((body) => PLANET_NAMES[body] ?? body), description: pattern.description }));
-  const houses: AstroHouseCusp[] = chart.houses.cusps.map((cusp) => ({ house: cusp.house, longitude: Number(cusp.longitude.toFixed(6)), sign: SIGNS[cusp.sign] ?? "未知", degree: Number((cusp.longitude % 30).toFixed(2)) }));
-  return { format: "qmdj-astro-chart-v1", input, sun: points.find((point) => point.name === "太阳") ?? emptyPoint("太阳"), moon: points.find((point) => point.name === "月亮") ?? emptyPoint("月亮"), ascendant, points, angles, houses, aspects, aspectSummary: chart.aspects.summary, patterns, complete: true, disclaimer: "研究性星盘：行星、宫位、四轴、相位与模式由 Celestine 天文计算引擎生成；结果不替代专业天文历表校核或现实决策。" };
+  const ascendant = hasPlace ? toPoint({ name: "上升", longitude: chart.angles.ascendant.longitude, signName: chart.angles.ascendant.signName }) : emptyPoint("上升");
+  const angles = hasPlace
+    ? {
+        ascendant,
+        midheaven: toPoint({ name: "中天", longitude: chart.angles.midheaven.longitude, signName: chart.angles.midheaven.signName }),
+        descendant: toPoint({ name: "下降", longitude: chart.angles.descendant.longitude, signName: chart.angles.descendant.signName }),
+        imumCoeli: toPoint({ name: "天底", longitude: chart.angles.imumCoeli.longitude, signName: chart.angles.imumCoeli.signName }),
+      }
+    : { ascendant: emptyPoint("上升"), midheaven: emptyPoint("中天"), descendant: emptyPoint("下降"), imumCoeli: emptyPoint("天底") };
+
+  const aspects: AstroAspect[] = chart.aspects.all
+    .filter((aspect) => PLANET_NAMES[aspect.body1] && PLANET_NAMES[aspect.body2])
+    .map((aspect) => ({ body1: PLANET_NAMES[aspect.body1] ?? aspect.body1, body2: PLANET_NAMES[aspect.body2] ?? aspect.body2, type: aspect.type, symbol: aspect.symbol, separation: Number(aspect.separation.toFixed(2)), deviation: Number(aspect.deviation.toFixed(2)), strength: aspect.strength, isApplying: aspect.isApplying }));
+  const patterns: AstroPattern[] = chart.patterns
+    .filter((pattern) => pattern.bodies.every((body) => PLANET_NAMES[body]))
+    .map((pattern) => ({ type: pattern.type, bodies: pattern.bodies.map((body) => PLANET_NAMES[body] ?? body), description: pattern.description }));
+  const houses: AstroHouseCusp[] = hasPlace ? chart.houses.cusps.map((cusp) => ({ house: cusp.house, longitude: Number(cusp.longitude.toFixed(6)), sign: SIGNS[cusp.sign] ?? "未知", degree: Number((cusp.longitude % 30).toFixed(2)) })) : [];
+  const aspectSummary = hasPlace
+    ? chart.aspects.summary
+    : aspects.reduce<Record<string, number>>((acc, aspect) => ({ ...acc, [aspect.type]: (acc[aspect.type] ?? 0) + 1 }), {});
+
+  return {
+    format: "qmdj-astro-chart-v1",
+    input,
+    sun: points.find((point) => point.name === "太阳") ?? emptyPoint("太阳"),
+    moon: points.find((point) => point.name === "月亮") ?? emptyPoint("月亮"),
+    ascendant,
+    points,
+    angles,
+    houses,
+    aspects,
+    aspectSummary,
+    patterns,
+    complete: hasPlace,
+    disclaimer: hasPlace
+      ? "研究性星盘：行星、宫位、四轴、相位与模式由 Celestine 天文计算引擎生成；结果不替代专业天文历表校核或现实决策。"
+      : "行星与相位按地心坐标计算，不依赖出生地；上升、中天与宫位需要出生地经纬度，当前未计算。请补充城市或经纬度后查看四轴与宫位。",
+  };
 };

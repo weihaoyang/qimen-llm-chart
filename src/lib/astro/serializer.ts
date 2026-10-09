@@ -1,13 +1,19 @@
-import type { AstroChart } from "./types";
+import type { AstroChart, AstroPoint } from "./types";
+
+const formatPoint = (point: AstroPoint) =>
+  `${point.name}：${point.sign} ${point.degree ?? "—"}°${point.house === null ? " · 宫位未计算" : ` · 第${point.house}宫`}`;
+
 export const serializeAstroToStructuredText = (chart: AstroChart) => [
-  "星盘（研究性计算）", `出生资料：${chart.input.datetime} / ${chart.input.timeZone}`,
-  ...(chart.complete ? [] : ["状态：缺少出生地经纬度，星盘未完成；以下落点不可解读。"]),
-  `太阳：${chart.sun.sign} ${chart.sun.degree}° · 第${chart.sun.house}宫`,
-  `月亮：${chart.moon.sign} ${chart.moon.degree}° · 第${chart.moon.house}宫`,
-  `上升：${chart.ascendant.sign} ${chart.ascendant.degree}°`,
-  ...chart.points.slice(2).map((point) => `${point.name}：${point.sign} ${point.degree}° · 第${point.house}宫`),
+  "星盘（研究性计算）",
+  `出生资料：${chart.input.datetime} / ${chart.input.timeZone}`,
+  ...(chart.complete ? [] : ["状态：未提供出生地，行星与相位按地心坐标计算（不依赖出生地）；上升、中天与宫位未计算。"]),
+  formatPoint(chart.sun),
+  formatPoint(chart.moon),
+  `${chart.ascendant.name}：${chart.ascendant.sign} ${chart.ascendant.degree ?? "—"}°`,
+  ...chart.points.slice(2).map((point) => formatPoint(point)),
   `相位：${chart.aspects.slice(0, 8).map((aspect) => `${aspect.symbol}${aspect.body1}/${aspect.body2} ${aspect.strength}%`).join("、") || "暂无"}`,
   `模式：${chart.patterns.map((pattern) => pattern.type).join("、") || "暂无"}`,
   `边界：${chart.disclaimer}`,
 ].join("\n");
+
 export const serializeAstroToCompactJson = (chart: AstroChart) => JSON.stringify(chart);

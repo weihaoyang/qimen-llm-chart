@@ -25,11 +25,33 @@ describe("astro chart", () => {
     expect(JSON.parse(serializeAstroToCompactJson(first)).format).toBe("qmdj-astro-chart-v1");
   });
 
-  it("fails closed when coordinates are absent", () => {
+  it("computes planets without a birth place but leaves the angles open", () => {
     const input = getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai");
     delete input.location;
     const profile = normalizeProfileInput(input);
-    expect(buildAstroChart(profile).complete).toBe(false);
-    expect(buildAstroChart(profile).ascendant.longitude).toBeNull();
+    const chart = buildAstroChart(profile);
+
+    // Planets and aspects are geocentric, so they still resolve.
+    expect(chart.complete).toBe(false);
+    expect(chart.points).toHaveLength(10);
+    expect(chart.sun.longitude).toBeGreaterThan(279);
+    expect(chart.sun.longitude).toBeLessThan(281);
+    expect(chart.sun.house).toBeNull();
+    expect(chart.aspects.length).toBeGreaterThan(0);
+
+    // Place-dependent parts stay absent.
+    expect(chart.ascendant.longitude).toBeNull();
+    expect(chart.angles.midheaven.longitude).toBeNull();
+    expect(chart.houses).toHaveLength(0);
+
+    // Located and unlocated charts agree on the planets.
+    const locatedInput = getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai");
+    locatedInput.location = { city: "上海", timeZone: "Asia/Shanghai", latitude: 31.2304, longitude: 121.4737 };
+    const located = buildAstroChart(normalizeProfileInput(locatedInput));
+    expect(chart.points.map((point) => point.longitude)).toEqual(located.points.map((point) => point.longitude));
+
+    const text = serializeAstroToStructuredText(chart);
+    expect(text).toContain("宫位未计算");
+    expect(text).toContain("行星与相位按地心坐标计算");
   });
 });
