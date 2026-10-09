@@ -3,6 +3,7 @@ import type { ProfileInput } from "@/lib/profile";
 import {
   BIRTH_LIBRARY_FORMAT,
   MAX_BIRTH_PROFILES,
+  formatBirthProfileMeta,
   mergeBirthProfiles,
   parseBirthLibrary,
   serializeBirthLibrary,
@@ -61,5 +62,16 @@ describe("birth library import/export", () => {
 
     const many = Array.from({ length: MAX_BIRTH_PROFILES + 5 }, (_, index) => entry(`id-${index}`, `名${index}`));
     expect(mergeBirthProfiles([], many)).toHaveLength(MAX_BIRTH_PROFILES);
+  });
+
+  it("formats the secondary profile meta line", () => {
+    expect(formatBirthProfileMeta(profile("1990-01-01T12:00"))).toBe("1990-01-01 12:00 · 男 · Asia/Shanghai");
+    expect(formatBirthProfileMeta({
+      ...profile("1990-01-01T12:00"),
+      calendarMode: "lunar",
+      gender: "female",
+      timeBasis: "true-solar",
+      location: { city: "上海" },
+    })).toBe("1990-01-01 12:00 · 女 · 农历 · 真太阳时 · 上海");
   });
 });

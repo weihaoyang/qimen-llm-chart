@@ -17,6 +17,18 @@ export const MAX_BIRTH_PROFILES = 50;
 
 export const BIRTH_LIBRARY_FORMAT = "qmdj-birth-library-v1";
 
+/** 生日库条目的次要信息：`1990-01-01 12:00 · 男 · 农历 · 真太阳时 · 上海`。 */
+const GENDER_LABEL: Record<string, string> = { male: "男", female: "女" };
+export const formatBirthProfileMeta = (profile: ProfileInput): string => {
+  const parts = [profile.datetime.replace("T", " ")];
+  if (profile.gender) parts.push(GENDER_LABEL[profile.gender] ?? profile.gender);
+  if (profile.calendarMode === "lunar") parts.push("农历");
+  if (profile.timeBasis === "true-solar") parts.push("真太阳时");
+  const place = profile.location?.city || profile.timeZone;
+  if (place) parts.push(place);
+  return parts.join(" · ");
+};
+
 /**
  * 读取文件文本：优先用 `Blob.text()`；在缺少该 API 的运行环境
  * （如测试用 jsdom）回退到 `FileReader`。

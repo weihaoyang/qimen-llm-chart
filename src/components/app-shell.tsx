@@ -43,7 +43,7 @@ import {
   type NormalizedProfileInput,
   type ProfileInput,
 } from "@/lib/profile";
-import { mergeBirthProfiles, parseBirthLibrary, readFileText, serializeBirthLibrary, type BirthProfileEntry } from "@/lib/birth-library";
+import { mergeBirthProfiles, parseBirthLibrary, readFileText, serializeBirthLibrary, formatBirthProfileMeta, type BirthProfileEntry } from "@/lib/birth-library";
 import { getDefaultSequenceInput } from "@/lib/qimen/defaults";
 import { buildQimenChartFromProfile } from "@/lib/qimen/chart";
 import { DEFAULT_QIMEN_SETTINGS, type QimenSettings } from "@/lib/qimen/settings";
@@ -2356,7 +2356,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         </div>
       ) : (
         <div className="birth-library-item" key={item.id}>
-          <button type="button" onClick={() => loadBirthProfile(item)}>{item.name}<small>{item.profile.datetime.replace("T", " ")}</small></button>
+          <button type="button" onClick={() => loadBirthProfile(item)}>{item.name}<small>{formatBirthProfileMeta(item.profile)}</small></button>
           <button type="button" aria-label={`重命名${item.name}`} onClick={() => startRenameBirthProfile(item.id, item.name)}>✎</button>
           <button type="button" aria-label={`更新${item.name}`} onClick={() => { setConfirmingDeleteId(null); setConfirmingOverwriteId(item.id); }}>⟳</button>
           <button type="button" aria-label={`删除${item.name}`} onClick={() => { setConfirmingOverwriteId(null); setConfirmingDeleteId(item.id); }}>×</button>
