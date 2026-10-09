@@ -6,6 +6,7 @@ import type {
 } from "3meta";
 import type { ChartSequenceItem } from "./sequence";
 import type { NormalizedQimenChart } from "./types";
+import { evaluateQimenPatterns } from "./patterns";
 
 const formatValue = (value: unknown): string => {
   if (value === undefined || value === null || value === "") {
@@ -89,6 +90,30 @@ const normalizePatterns = (
 const joinPillar = (pillar: { stem: string; branch: string }) =>
   `${pillar.stem}${pillar.branch}`;
 
+/**
+ * 登记格局（`patterns.ts`）的判定结果，供 AI 上下文使用。
+ * `3meta` 只给「已成立」的格局；这里补上「未成立」的名单与旺衰分档，
+ * 让模型知道哪些经典格局被**正面否掉**、哪些成立且有力。
+ */
+const summarizeRegisteredPatterns = (chart: NormalizedQimenChart) => {
+  const report = evaluateQimenPatterns(chart);
+  return {
+    registered: report.registered,
+    formedCount: report.formed.length,
+    failedCount: report.failed.length,
+    strengthCounts: report.strengthCounts,
+    formed: report.formed.map((check) => ({
+      name: check.name,
+      kind: check.kind,
+      group: check.group,
+      strength: check.strength ?? "无",
+      positions: check.positions,
+      evidence: check.evidence,
+    })),
+    failed: report.failed.map((check) => check.name),
+  };
+};
+
 const formatPalace = (
   palace: Palace,
   hiddenStem: string | undefined,
@@ -141,6 +166,7 @@ export const serializeChartToStructuredText = (
   chart: NormalizedQimenChart,
   selectedPosition: Position | null = null,
 ) => {
+  const registeredPatterns = summarizeRegisteredPatterns(chart);
   const overviewLines = [
     "### 总览",
     `输入时间: ${chart.input.datetime}`,
@@ -170,6 +196,9 @@ export const serializeChartToStructuredText = (
     `五不遇时: ${formatValue(chart.raw.specialPatterns.wuBuYuShi ?? "无")}`,
     `全局吉格列表: ${formatPatterns(chart.raw.specialPatterns.auspiciousPatterns)}`,
     `全局凶格列表: ${formatPatterns(chart.raw.specialPatterns.inauspiciousPatterns)}`,
+    `登记格局_统计: 登记 ${registeredPatterns.registered} · 成立 ${registeredPatterns.formedCount}（有力 ${registeredPatterns.strengthCounts.有力} / 中平 ${registeredPatterns.strengthCounts.中平} / 无力 ${registeredPatterns.strengthCounts.无力}）· 未成立 ${registeredPatterns.failedCount}`,
+    `登记格局_成立: ${JSON.stringify(registeredPatterns.formed)}`,
+    `登记格局_未成立: ${JSON.stringify(registeredPatterns.failed)}`,
   ];
 
   const palaceBlocks = chart.raw.palaces.map((palace) =>
@@ -195,6 +224,7 @@ const buildCompactSchema = () => {
     "驿马",
     "暗干表",
     "全局特殊格局",
+    "登记格局判定",
   ];
 
   const palaceFields = [
@@ -251,6 +281,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       normalizeValue(chart.raw.postHorse),
       normalizeValue(chart.hiddenStemsByPalace),
       normalizeValue(chart.raw.specialPatterns),
+      summarizeRegisteredPatterns(chart),
     ],
     palaces: chart.raw.palaces.map((palace) => [
       palace.position,

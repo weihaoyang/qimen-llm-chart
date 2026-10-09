@@ -33,6 +33,8 @@ describe("serializeChartToStructuredText", () => {
     expect(result).toContain("是否值符宫: ");
     expect(result).toContain("空亡: [");
     expect(result).toContain("吉格列表: ");
+    expect(result).toContain("登记格局_统计: ");
+    expect(result).toContain("登记格局_未成立: [");
   });
 
   it("serializes a compact unambiguous JSON payload for LLM input", () => {
@@ -52,6 +54,7 @@ describe("serializeChartToStructuredText", () => {
     expect(result).not.toContain("\n");
     expect(parsed.format).toBe("qmdj-llm-compact-v1");
     expect(parsed.legend.chart).toContain("时间信息");
+    expect(parsed.legend.chart).toContain("登记格局判定");
     expect(parsed.legend.palace).toContain("十干克应");
     expect(parsed.chart).toHaveLength(parsed.legend.chart.length);
     expect(parsed.palaces).toHaveLength(9);
