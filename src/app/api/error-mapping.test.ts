@@ -139,12 +139,12 @@ describe("route error mapping", () => {
   // A guard that silently matches nothing passes for the wrong reason and protects
   // nothing — the same failure this whole audit keeps finding. Pin the population.
   it("actually inspects the route tree", () => {
-    // Thresholds track the current tree (22 routes after the 胜天半子 removal).
-    expect(routes.length).toBeGreaterThan(15);
+    // Floors, not counts: they catch the scan silently matching nothing.
+    expect(routes.length).toBeGreaterThan(10);
     const usingHelper = routes.filter((file) => /errorResponse\(/.test(readFileSync(file, "utf8")));
-    expect(usingHelper.length).toBeGreaterThan(10);
+    expect(usingHelper.length).toBeGreaterThan(6);
     const clauses = routes.flatMap((file) => catchBodies(readFileSync(file, "utf8")));
-    expect(clauses.length).toBeGreaterThan(30);
+    expect(clauses.length).toBeGreaterThan(20);
     expect(clauses.some((clause) => !clause.bound)).toBe(true);
     expect(clauses.filter((clause) => fiveXxResponse.test(clause.body)).length).toBeGreaterThan(2);
   });

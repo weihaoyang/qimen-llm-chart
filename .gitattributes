@@ -1,0 +1,9 @@
+# ops/migrate.mjs hashes migration file bytes and refuses to run when an applied
+# file's checksum changed. The committed *.sql blobs are CRLF and the ledger
+# checksums were recorded against those bytes, so *.sql must never be
+# line-ending-normalized on checkout or add.
+*.sql -text
+
+# Shell scripts run on the Linux host under bash; a CRLF checkout breaks them
+# ("set: pipefail: invalid option name"). Force LF.
+*.sh text eol=lf

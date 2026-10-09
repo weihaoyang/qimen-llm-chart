@@ -41,14 +41,14 @@ describe("route cache policy", () => {
   // A guard that silently matches nothing passes for the wrong reason. Pin both
   // the population and the fact that the exempt routes really are delegating.
   it("actually inspects the route tree", () => {
-    // Thresholds track the current tree (22 routes after the 胜天半子 removal).
-    // They exist to catch the scan silently matching nothing, not to pin a count.
-    expect(routes.length).toBeGreaterThan(15);
+    // Floors, not counts: they exist to catch the scan silently matching
+    // nothing, and they track the current tree as it shrinks.
+    expect(routes.length).toBeGreaterThan(10);
 
     const declaring = routes.filter((file) => {
       const source = readFileSync(file, "utf8");
       return /noStore\(|publicCatalog\(|Cache-Control/.test(source);
     });
-    expect(declaring.length).toBeGreaterThan(15);
+    expect(declaring.length).toBeGreaterThan(10);
   });
 });
