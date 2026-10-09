@@ -568,7 +568,10 @@ body .product-chart[data-mode="qimen"] .qimen-pattern-empty { padding: 16px; col
 body .product-chart[data-mode="qimen"] .qimen-pattern-disclaimer { display: block; padding: 0 14px 14px; color: var(--paipan-slate); font: 800 10px/1.6 var(--paipan-font-mono); }
 
 @media (max-width: 720px) {
-  body .product-chart[data-mode="qimen"] .qimen-pattern-list { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 10px 12px 12px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-item { gap: 6px; padding: 8px 9px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-item__head > strong { font-size: 13px; }
+  body .product-chart[data-mode="qimen"] .qimen-pattern-item dl { font-size: 11px; line-height: 1.5; }
   body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__mark { display: none; }
   body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure > summary { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__hint { grid-column: 1; grid-row: 2; font-size: 9px; }
