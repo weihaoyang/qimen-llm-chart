@@ -97,7 +97,7 @@ describe("AppShell", () => {
     // population first: the five chart modes plus the two classic boards.
     const tabKeys = [...container.querySelectorAll("[data-tabkey]")]
       .map((node) => node.getAttribute("data-tabkey") ?? "");
-    expect(tabKeys).toHaveLength(11);
+    expect(tabKeys).toHaveLength(12);
     expect(tabKeys.filter((key) => /kline|decision|agent/i.test(key))).toEqual([]);
 
     // The retired surface's panes must not come back.

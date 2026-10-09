@@ -118,6 +118,7 @@ import { ZiweiPanel } from "./ziwei-panel";
 import { CombinedMap } from "./combined-map";
 import { DivinationPanel } from "./divination-panel";
 import { FourthWayPanel } from "./fourth-way-panel";
+import { HarmonicPanel } from "./harmonic-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -125,6 +126,8 @@ import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "@/l
 import type { AstroChart } from "@/lib/astro/types";
 import { FOURTH_WAY_CONTENT } from "@/lib/fourth-way/content";
 import { serializeFourthWayToCompactJson, serializeFourthWayToStructuredText } from "@/lib/fourth-way/serializer";
+import { buildHarmonicChart } from "@/lib/harmonic/chart";
+import { serializeHarmonicToCompactJson, serializeHarmonicToStructuredText } from "@/lib/harmonic/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -277,6 +280,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  harmonic: {
+    question: DEFAULT_AGENT_QUESTIONS.harmonic,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -323,6 +331,7 @@ const MODE_META: Record<
   "human-design": { label: "人类图结构", title: "人类图", description: "类型 / 权威 / 中心 / 闸门" },
   tarot: { label: "塔罗三张牌", title: "塔罗牌", description: "主题 / 阻力 / 下一步" },
   "fourth-way": { label: "葛吉夫第四道", title: "第四道", description: "三律 / 七律 / 九型图" },
+  harmonic: { label: "谐波占星", title: "泛音星盘", description: "第 n 谐波 / 叠合 / 折算" },
 };
 
 const buildWorkbenchCharts = (
@@ -523,8 +532,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -970,6 +979,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const humanDesignStructuredText = useMemo(() => serializeHumanDesignToStructuredText(humanDesignChart), [humanDesignChart]);
   const tarotStructuredText = useMemo(() => serializeTarotToStructuredText(tarotReading), [tarotReading]);
   const fourthWayStructuredText = useMemo(() => serializeFourthWayToStructuredText(FOURTH_WAY_CONTENT), []);
+  const [harmonic, setHarmonic] = useState(5);
+  const harmonicChart = useMemo(() => buildHarmonicChart(normalizedProfile, harmonic), [normalizedProfile, harmonic]);
+  const harmonicStructuredText = useMemo(() => serializeHarmonicToStructuredText(harmonicChart), [harmonicChart]);
 
   const researchData = useMemo<ResearchWorkspaceData | null>(() => {
     try {
@@ -1102,6 +1114,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return tarotStructuredText;
       case "fourth-way":
         return fourthWayStructuredText;
+      case "harmonic":
+        return harmonicStructuredText;
     }
   }, [
     mode,
@@ -1117,6 +1131,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     humanDesignStructuredText,
     tarotStructuredText,
     fourthWayStructuredText,
+    harmonicStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1163,8 +1178,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeTarotToCompactJson(tarotReading);
       case "fourth-way":
         return serializeFourthWayToCompactJson(FOURTH_WAY_CONTENT);
+      case "harmonic":
+        return serializeHarmonicToCompactJson(harmonicChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1218,6 +1235,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       "human-design": { ...current["human-design"], content: "", model: null, error: null, loading: false },
       tarot: { ...current.tarot, content: "", model: null, error: null, loading: false },
       "fourth-way": { ...current["fourth-way"], content: "", model: null, error: null, loading: false },
+      harmonic: { ...current.harmonic, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
   };
@@ -2061,6 +2079,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onSpreadChange={(next) => { setTarotSpreadId(next); setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onRedraw={() => { setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "fourth-way" ? <FourthWayPanel content={FOURTH_WAY_CONTENT} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "harmonic" ? <HarmonicPanel value={harmonicChart} onHarmonicChange={(next) => { setHarmonic(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

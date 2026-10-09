@@ -23,6 +23,7 @@ const MODE_OPTIONS: Array<{
   { value: "human-design", label: "人类图" },
   { value: "tarot", label: "塔罗牌" },
   { value: "fourth-way", label: "第四道" },
+  { value: "harmonic", label: "泛音星盘" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

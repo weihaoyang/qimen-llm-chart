@@ -237,6 +237,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   "human-design": "请基于已计算的人类图说明类型、策略、权威、Profile、定义、中心与通道，并区分计算字段与象征解释。",
   tarot: "请基于当前三张塔罗牌解释主题、阻力和下一步，作为反思提示而非确定预测，并提出可验证的现实行动。",
   "fourth-way": "请基于当前第四道材料，说明三律与七律各自回答什么问题、如何在九型图上叠加，并把要点对应到现实中的自我观察。",
+  harmonic: "请基于当前谐波盘，说明第 n 谐波把哪些母盘次要相位叠成了合相，并逐一折算回母盘角度。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -466,6 +467,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "两条法则", question: "请说明三律与七律各自回答什么问题，以及它们如何在九型图上叠加。", description: "先把两条法则讲清，再谈它们的关系。", evidence: ["三律：主动/被动/中和", "七律：八度与两个断点", "九型图的 3-6-9 与 1-4-2-8-5-7"] },
     { label: "实践对应", question: "请把自我观察、记住自己与八度断点的「冲击」对应到日常可执行的观察动作。", description: "把体系概念转成可复盘的自我观察。", evidence: ["自我观察", "记住自己", "断点与冲击"] },
   ],
+  harmonic: [
+    { label: "谐波方法", question: "请说明当前谐波数下哪些母盘角度会被叠成合相，以及折算回母盘的容许度。", description: "先讲清算术，再读结果。", evidence: ["谐波数 n", "合相与其谐波容许度", "折算母盘角度 360°/n"] },
+    { label: "优先叠合", question: "请列出当前容许度内最紧的几组合相，并指出它们对应的母盘次要相位。", description: "按紧密度排序读叠合。", evidence: ["最紧合相", "对应母盘相位", "母盘容许度"] },
+  ],
 };
 
 /**
@@ -506,6 +511,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   "human-design": ["请解释类型、权威与定义是怎么从中心连通推导出来的。", "请指出哪些推断仍属流派解释、不是计算字段。"],
   tarot: ["请把牌面提示转成一个本周可验证的小行动。", "当前解读可能被什么现实信息推翻？"],
   "fourth-way": ["请用一个日常例子说明 mi→fa 与 si→do 两个断点为什么需要「冲击」。", "请把当前要点整理成三条可执行的自我观察练习。"],
+  harmonic: ["请把当前合相折算回母盘的度数与容许度。", "换一个谐波数后，哪些叠合会消失或出现？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -523,6 +529,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   "human-design": "人类图",
   tarot: "塔罗牌",
   "fourth-way": "第四道",
+  harmonic: "谐波占星（泛音星盘）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -604,6 +611,12 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "涉及现实时，把概念转成可复盘的自我观察与行动，并标明这是反思框架。",
     "建议结构：## 两条法则 / ## 图上关系 / ## 人的结构 / ## 实践对应 / ## 边界。",
   ].join("\n"),
+  harmonic: [
+    "【谐波占星边界】第 n 谐波把每个黄经乘以 n 并取模 360；母盘中相隔 360°/n 及其倍数的两点会在谐波盘上叠成合相。",
+    "只使用载荷中给出的谐波数、行星星座度数、合相与母盘折算角度；不得补造相位权重、性格结论或现实预测。",
+    "读法：先讲谐波算术，再按合相紧密度列出叠合，并把每个谐波合相折算回母盘角度；不要把谐波盘当成独立的一张新盘去算命。",
+    "建议结构：## 谐波方法 / ## 叠合清单 / ## 折算回母盘 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -640,6 +653,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   "human-design": "只引用载荷中已计算的人格与设计激活；不得推断未计算的类型、策略、权威、人生角色或中心。",
   tarot: "只引用本次抽出的牌、方向和关键词；不得声称预测确定事件，行动建议应低风险且可以复盘。",
   "fourth-way": "只引用载荷中的三律/七律、九型图、中心与自我观察等概念；不得补造书籍引文、页码或未来预测。",
+  harmonic: "只引用载荷中的谐波数与叠合结果；折算母盘角度时必须说明这是算术折算，不得据此预测事件。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [
