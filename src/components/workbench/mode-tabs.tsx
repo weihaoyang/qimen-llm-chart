@@ -24,6 +24,7 @@ const MODE_OPTIONS: Array<{
   { value: "tarot", label: "塔罗牌" },
   { value: "fourth-way", label: "第四道" },
   { value: "harmonic", label: "泛音星盘" },
+  { value: "huangji", label: "皇极经世" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {
