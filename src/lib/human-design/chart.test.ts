@@ -59,12 +59,26 @@ describe("human design chart", () => {
     expect(unlocated.channels.map((channel) => channel.gates)).toEqual(located.channels.map((channel) => channel.gates));
   });
 
+  it("derives the four variables from the design/personality Sun and nodes", () => {
+    const chart = chartFor("2026-01-01T00:00:00Z");
+    expect(chart.variables).toBeTruthy();
+    expect(chart.variables?.digestion.color).toBe(chart.activations.sun.design.color);
+    expect(chart.variables?.digestion.tone).toBe(chart.activations.sun.design.tone);
+    expect(chart.variables?.digestion.base).toBe(chart.activations.sun.design.base);
+    expect(chart.variables?.motivation.color).toBe(chart.activations.sun.personality.color);
+    expect(chart.variables?.environment.color).toBe(chart.activations.north_node.design.color);
+    expect(chart.variables?.perspective.color).toBe(chart.activations.north_node.personality.color);
+    expect(chart.variables?.digestion.source).toBe("设计太阳");
+    expect(chart.variables?.environment.source).toBe("设计北交点");
+  });
+
   it("serializes the derived fields into the structured text", () => {
     const text = serializeHumanDesignToStructuredText(chartFor("1990-05-20T08:30:00+08:00"));
     expect(text).toContain("类型：");
     expect(text).toContain("Profile：");
     expect(text).toContain("定义：");
     expect(text).toContain("人生主题");
+    expect(text).toContain("四变量");
     expect(text).toContain("通道（");
   });
 });

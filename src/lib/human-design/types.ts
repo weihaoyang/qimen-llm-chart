@@ -4,6 +4,9 @@ export type HumanDesignAuthority = "情绪权威" | "骶骨权威" | "脾权威"
 /** 定义：已定义中心之间的连接分量数。 */
 export type HumanDesignDefinition = "无定义" | "单一" | "二分" | "三分" | "四分";
 export type HumanDesignActivation = { gate: number; line: number; color: number; tone: number; base: number };
+/** 四变量：色/音/基 + 依据的天体侧。语义标签（如 PHS 分类）不作推导。 */
+export type HumanDesignVariable = { source: string; color: number; tone: number; base: number };
+export type HumanDesignVariables = { digestion: HumanDesignVariable; environment: HumanDesignVariable; perspective: HumanDesignVariable; motivation: HumanDesignVariable };
 export type HumanDesignCenter = { name: string; defined: boolean; gates: number[] };
 export type HumanDesignChannel = { gates: [number, number]; name: string; centers: [string, string] };
 export type HumanDesignChart = {
@@ -16,6 +19,7 @@ export type HumanDesignChart = {
   definition: HumanDesignDefinition | null;
   incarnationCross: string | null;
   incarnationCrossType: "右角度" | "并列" | "左角度" | null;
+  variables: HumanDesignVariables | null;
   centers: HumanDesignCenter[];
   channels: HumanDesignChannel[];
   activations: Record<string, { personality: HumanDesignActivation; design: HumanDesignActivation }>;

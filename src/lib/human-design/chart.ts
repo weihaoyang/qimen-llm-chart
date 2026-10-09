@@ -1,6 +1,6 @@
 import { calculateChart } from "hd-chart-engine";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import type { HumanDesignAuthority, HumanDesignChart, HumanDesignDefinition, HumanDesignType } from "./types";
+import type { HumanDesignAuthority, HumanDesignChart, HumanDesignDefinition, HumanDesignType, HumanDesignVariable } from "./types";
 
 const PLANETS = ["sun", "earth", "moon", "north_node", "south_node", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"] as const;
 const CENTERS = ["头", "阿基那", "喉咙", "G中心", "意志力", "脾", "情绪", "骶骨", "根部"];
@@ -152,6 +152,15 @@ export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDes
   const incarnationCrossType = CROSS_BY_PROFILE[profileLabel] ?? null;
   const incarnationCross = `${incarnationCrossType ?? "角度未知"} · 人格太阳/地球 ${chart.planets.sun.p.g}/${chart.planets.earth.p.g} · 设计太阳/地球 ${chart.planets.sun.d.g}/${chart.planets.earth.d.g}`;
 
+  // 四变量：消化=设计太阳、环境=设计北交点、视角=人格北交点、动机=人格太阳。
+  const variable = (source: string, value: { c: number; t: number; b: number }): HumanDesignVariable => ({ source, color: value.c, tone: value.t, base: value.b });
+  const variables = {
+    digestion: variable("设计太阳", chart.planets.sun.d),
+    environment: variable("设计北交点", chart.planets.north_node.d),
+    perspective: variable("人格北交点", chart.planets.north_node.p),
+    motivation: variable("人格太阳", chart.planets.sun.p),
+  };
+
   const warning = chart.warnings.length ? " 警告：" + chart.warnings.join("；") : "";
   return {
     format: "qmdj-human-design-v1",
@@ -163,6 +172,7 @@ export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDes
     definition,
     incarnationCross,
     incarnationCrossType,
+    variables,
     centers,
     channels,
     activations,
