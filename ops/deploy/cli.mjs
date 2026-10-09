@@ -127,7 +127,7 @@ Config (env overridable):
 
     ok("repo root", existsSync(resolve(ROOT, "package.json")), ROOT);
     ok("node", capture("node", ["-v"]).length > 0 || existsSync(resolve(config.nodeBin, "node")), config.nodeBin);
-    ok("docker", capture("docker", ["version", "--format", "{{.Server.Version}}"]).length > 0 || capture("sudo", ["docker", "version", "--format", "{{.Server.Version}}"]).length > 0);
+    ok("docker", dockerCapture(["version", "--format", "{{.Server.Version}}"]).length > 0);
     ok("rsync", capture("rsync", ["--version"]).length > 0);
     ok("compose file", existsSync(config.composeFile), config.composeFile);
     ok("release script", existsSync(config.releaseScript), config.releaseScript);
