@@ -98,7 +98,7 @@ const releaseScript = (id, extraEnv = {}) => {
   const env = {
     ...process.env,
     RELEASE_ID: id,
-    QMDJ_RELEASE_COMMIT: gitShort(),
+    QMDJ_RELEASE_COMMIT: process.env.QMDJ_RELEASE_COMMIT ?? (id.match(/^\d{8}-(.+)$/)?.[1] ?? gitShort()),
     QMDJ_ENV_FILE: config.envFile,
     QMDJ_NODE_BIN: config.nodeBin,
     QMDJ_BUILD_DIR: config.buildDir,
