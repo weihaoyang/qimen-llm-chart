@@ -1,0 +1,15 @@
+ARG NODE_VERSION=24.16.0
+FROM node:${NODE_VERSION}-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0 \
+    PORT=3000
+# Packaging-only image. The standalone server and its traced node_modules are
+# built on the host by ops/deploy/release.sh (which reuses a persistent
+# node_modules and the host npm cache, so a release is one `next build`, not a
+# fresh `npm ci` inside a container). This layer just wraps that output, so the
+# image build itself is seconds.
+COPY standalone ./
+COPY static ./.next/static
+EXPOSE 3000
+CMD ["node", "server.js"]

@@ -3,24 +3,31 @@ set -Eeuo pipefail
 
 # Immutable-image release for the 知几 workbench.
 #
-# Run on the production host from the release checkout:
 #   RELEASE_ID=20261009-abcdef0 QMDJ_RELEASE_COMMIT=abcdef0 bash ops/deploy/release.sh
 #
-# Contract, modelled on the platform's deploy-shadow-release.sh:
-#   build once -> tag by release id -> recreate the compose service -> health gate
-#   -> automatic rollback to the previous image on any failure.
+# Shape (chosen for this host, where disk is tight and Docker layer caching is
+# unreliable): build the Next standalone on the host against a *persistent*
+# node_modules and npm cache, then wrap that output in a thin image. A release
+# is therefore one `next build` (~minutes) instead of a full `npm ci` inside a
+# container (~15 min), and the image step is seconds.
 #
-# The first cutover (systemd -> container) is a one-off: stop and disable the
-# old qmdj.service, then run this. After that, rollback is an image swap.
+# Contract, mirroring the platform's deploy-shadow-release.sh:
+#   lock -> build -> tag by release id -> recreate the compose service -> health
+#   gate -> roll back to the previous image on failure.
+#
+# QMDJ_BUILD_ONLY=true stops after the image is built (lets a cutover pre-build
+# while the old container still holds the port).
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 RELEASE_ID="${RELEASE_ID:?RELEASE_ID is required}"
 [[ "$RELEASE_ID" =~ ^[0-9A-Za-z][0-9A-Za-z._-]+$ ]] || { echo "invalid release id" >&2; exit 2; }
 
 IMAGE="${QMDJ_IMAGE:-qmdj:${RELEASE_ID}}"
+BUILD_DIR="${QMDJ_BUILD_DIR:-$(dirname "$SRC")/qmdj-build}"
 SDK_SRC="${QMDJ_SDK_SRC:-$(dirname "$SRC")/singularity-sequence-consumer-platform/packages/web-sdk}"
+NPM_CACHE="${QMDJ_NPM_CACHE:-/srv/qmdj-npm-cache}"
+NODE_BIN="${QMDJ_NODE_BIN:-/home/ubuntu/.nvm/versions/node/v24.16.0/bin}"
 ENV_FILE="${QMDJ_ENV_FILE:-/srv/qmdj/.env.local}"
-NPM_REGISTRY="${QMDJ_NPM_REGISTRY:-https://mirrors.tencentyun.com/npm}"
 HEALTH_URL="${QMDJ_HEALTH_URL:-http://127.0.0.1:3002/api/version}"
 HEALTH_EXPECT="${QMDJ_HEALTH_EXPECT:-$RELEASE_ID}"
 PROJECT="${QMDJ_COMPOSE_PROJECT:-qmdj}"
@@ -32,20 +39,49 @@ flock -n 9 || { echo "release lock is held" >&2; exit 20; }
 
 test -d "$SDK_SRC" || { echo "missing web-sdk at $SDK_SRC" >&2; exit 3; }
 test -f "$ENV_FILE" || { echo "missing env file $ENV_FILE" >&2; exit 4; }
-df -Pk "$SRC" | awk 'NR==2 { if ($4 < 3145728) exit 41 }' || { echo "low disk (<3GB free)" >&2; exit 41; }
+command -v rsync >/dev/null || { echo "rsync is required" >&2; exit 5; }
+df -Pk "$BUILD_DIR" 2>/dev/null | awk 'NR==2 { if ($4 < 2097152) exit 41 }' || { echo "low disk (<2GB free)" >&2; exit 41; }
 
 PREVIOUS_IMAGE="$(docker inspect -f '{{.Config.Image}}' qmdj 2>/dev/null || true)"
 echo "previous_image=${PREVIOUS_IMAGE:-none}"
 
-# Assemble the build context: this checkout plus the file: SDK at the path the
-# Dockerfile expects it under.
-CTX="$(mktemp -d /tmp/qmdj-release-XXXXXX)"
-cleanup() { rm -rf "$CTX"; }
+# 1. Sync the release source into the persistent build dir (keeping node_modules
+#    and .next so the build is incremental).
+mkdir -p "$BUILD_DIR"
+rsync -a --delete \
+  --exclude node_modules --exclude .next --exclude .git \
+  --exclude release-manifest.json --exclude .env.local \
+  "$SRC/" "$BUILD_DIR/"
+
+# 2. Dependencies: only when the lock changes.
+LOCK_HASH="$(sha256sum "$BUILD_DIR/package-lock.json" | awk '{print $1}')"
+if [ ! -d "$BUILD_DIR/node_modules" ] || [ "$(cat "$BUILD_DIR/.qmdj-lock-hash" 2>/dev/null || true)" != "$LOCK_HASH" ]; then
+  echo "installing dependencies ($LOCK_HASH)"
+  mkdir -p "$NPM_CACHE"
+  ( export PATH="$NODE_BIN:$PATH"; cd "$BUILD_DIR"; npm ci --ignore-scripts --cache "$NPM_CACHE" )
+  echo "$LOCK_HASH" > "$BUILD_DIR/.qmdj-lock-hash"
+fi
+
+# 3. Build the standalone on the host.
+echo "building standalone"
+( export PATH="$NODE_BIN:$PATH"; cd "$BUILD_DIR"; npm run build )
+
+# 4. Wrap the output in a thin image.
+PKG="$(mktemp -d /tmp/qmdj-pkg-XXXXXX)"
+cleanup() { rm -rf "$PKG"; }
 trap cleanup EXIT
-cp -a "$SRC/." "$CTX/"
-rm -rf "$CTX/.git" "$CTX/node_modules" "$CTX/.next"
-mkdir -p "$CTX/singularity-sequence-consumer-platform/packages"
-cp -a "$SDK_SRC" "$CTX/singularity-sequence-consumer-platform/packages/web-sdk"
+cp -a "$BUILD_DIR/.next/standalone" "$PKG/standalone"
+mkdir -p "$PKG/static"
+cp -a "$BUILD_DIR/.next/static/." "$PKG/static/"
+
+echo "packaging $IMAGE"
+docker build -f "$SRC/ops/deploy/Dockerfile.release" -t "$IMAGE" "$PKG"
+IMAGE_ID="$(docker image inspect -f '{{.Id}}' "$IMAGE")"
+
+if [ "${QMDJ_BUILD_ONLY:-false}" = "true" ]; then
+  echo "BUILD_OK=$RELEASE_ID IMAGE=$IMAGE"
+  exit 0
+fi
 
 cat > "$SRC/release-manifest.json" <<EOF
 {
@@ -68,18 +104,6 @@ rollback() {
   fi
 }
 trap rollback ERR
-
-echo "building $IMAGE"
-docker build \
-  --build-arg NPM_REGISTRY="$NPM_REGISTRY" \
-  -t "$IMAGE" -f "$CTX/Dockerfile" "$CTX"
-IMAGE_ID="$(docker image inspect -f '{{.Id}}' "$IMAGE")"
-
-# Lets the cutover pre-build the image while the old service still owns the port.
-if [ "${QMDJ_BUILD_ONLY:-false}" = "true" ]; then
-  echo "BUILD_OK=$RELEASE_ID IMAGE=$IMAGE"
-  exit 0
-fi
 
 echo "recreating $PROJECT"
 QMDJ_IMAGE="$IMAGE" \
