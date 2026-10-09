@@ -14,7 +14,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:concurrency": "vitest run src/lib/db/concurrency.test.ts"
+    "test:concurrency": "vitest run src/lib/db/concurrency.test.ts",
+    "deploy": "node ops/deploy/cli.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.47",
