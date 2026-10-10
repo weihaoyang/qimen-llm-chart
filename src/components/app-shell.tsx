@@ -126,6 +126,7 @@ import { RunesPanel } from "./runes-panel";
 import { UranianPanel } from "./uranian-panel";
 import { MayaPanel } from "./maya-panel";
 import { VedicPanel } from "./vedic-panel";
+import { LiurenPanel } from "./liuren-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -150,6 +151,8 @@ import { buildMayaChart } from "@/lib/maya/chart";
 import { serializeMayaToCompactJson, serializeMayaToStructuredText } from "@/lib/maya/serializer";
 import { buildVedicChart } from "@/lib/vedic/chart";
 import { serializeVedicToCompactJson, serializeVedicToStructuredText } from "@/lib/vedic/serializer";
+import { buildLiurenChart } from "@/lib/liuren/chart";
+import { serializeLiurenToCompactJson, serializeLiurenToStructuredText } from "@/lib/liuren/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -342,6 +345,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  liuren: {
+    question: DEFAULT_AGENT_QUESTIONS.liuren,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -396,6 +404,7 @@ const MODE_META: Record<
   uranian: { label: "汉堡学派", title: "汉堡学派", description: "天王星系统 / 八虚星 / 90° 盘" },
   maya: { label: "玛雅历法", title: "玛雅历法", description: "长纪年 / 卓尔金 / 13:20" },
   vedic: { label: "吠陀分盘", title: "吠陀分盘", description: "Lahiri / 九曜 / D1–D60" },
+  liuren: { label: "大六壬", title: "大六壬", description: "天地盘 / 四课三传" },
 };
 
 const buildWorkbenchCharts = (
@@ -596,8 +605,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", liuren: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], liuren: [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1071,6 +1080,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [vedicVarga, setVedicVarga] = useState("D9");
   const vedicChart = useMemo(() => buildVedicChart(normalizedProfile), [normalizedProfile]);
   const vedicStructuredText = useMemo(() => serializeVedicToStructuredText(vedicChart), [vedicChart]);
+  const liurenChart = useMemo(() => buildLiurenChart(normalizedProfile), [normalizedProfile]);
+  const liurenStructuredText = useMemo(() => serializeLiurenToStructuredText(liurenChart), [liurenChart]);
   useEffect(() => {
     setMayaDate(normalizedProfile.normalized.datetime.slice(0, 10));
   }, [normalizedProfile]);
@@ -1225,6 +1236,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return mayaStructuredText;
       case "vedic":
         return vedicStructuredText;
+      case "liuren":
+        return liurenStructuredText;
     }
   }, [
     mode,
@@ -1248,6 +1261,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     uranianStructuredText,
     mayaStructuredText,
     vedicStructuredText,
+    liurenStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1310,8 +1324,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeMayaToCompactJson(mayaChart);
       case "vedic":
         return serializeVedicToCompactJson(vedicChart);
+      case "liuren":
+        return serializeLiurenToCompactJson(liurenChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, liurenChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1372,6 +1388,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       uranian: { ...current.uranian, content: "", model: null, error: null, loading: false },
       maya: { ...current.maya, content: "", model: null, error: null, loading: false },
       vedic: { ...current.vedic, content: "", model: null, error: null, loading: false },
+      liuren: { ...current.liuren, content: "", model: null, error: null, loading: false },
       runes: { ...current.runes, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
@@ -2224,6 +2241,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "uranian" ? <UranianPanel chart={uranianChart} onModulusChange={(modulus) => { setUranianSettings((current) => ({ ...current, modulus })); setCopyState("idle"); }} onOrbChange={(orb) => { setUranianSettings((current) => ({ ...current, orb })); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "maya" ? <MayaPanel chart={mayaChart} dateInput={mayaDate} onDateChange={(value) => { setMayaDate(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "liuren" ? <LiurenPanel chart={liurenChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

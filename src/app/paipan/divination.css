@@ -277,3 +277,41 @@
 .vedic-matrix__row.is-active > b { color: var(--paipan-red); }
 .vedic-matrix__row > span.is-vargottama { background: var(--paipan-accent); box-shadow: inset 0 0 0 1.5px var(--panel-ink); }
 @media (max-width: 850px) { .vedic-layout { grid-template-columns: 1fr; } .vedic-matrix__row { grid-template-columns: 62px repeat(9, minmax(28px, 1fr)); } }
+
+/* 大六壬（天地盘 · 四课三传） */
+.divination-panel--liuren::before { background: #1f6f8b; }
+.liuren-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.liuren-facts > div { display: flex; flex-direction: column; gap: 3px; padding: 10px; border: 1px solid var(--panel-line); }
+.liuren-facts span { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.liuren-facts b { font-size: 15px; }
+.liuren-facts em { color: var(--panel-muted); font-size: 10.5px; font-style: normal; }
+.liuren-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 1.05fr); gap: 26px; align-items: start; margin-bottom: 20px; }
+.liuren-plate { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px; aspect-ratio: 1; padding: 2px; background: var(--panel-ink); border: 2px solid var(--panel-ink); }
+.liuren-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px 2px; background: var(--paipan-paper); text-align: center; min-width: 0; }
+.liuren-cell__jiang { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); font-style: normal; }
+.liuren-cell__tian { display: flex; align-items: baseline; gap: 2px; font: 900 17px var(--paipan-font); }
+.liuren-cell__tian small { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.liuren-cell__di { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.liuren-cell__di i { margin-left: 3px; font-style: normal; }
+.liuren-cell.is-day { background: #d8ecf3; box-shadow: inset 0 0 0 2px #1f6f8b; }
+.liuren-center { grid-row: 2 / 4; grid-column: 2 / 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: var(--paipan-ground); }
+.liuren-center b { font-size: 18px; }
+.liuren-center span, .liuren-center em { color: var(--panel-muted); font: 700 10px var(--paipan-font-mono); font-style: normal; }
+.liuren-note { margin: 8px 0 0; color: var(--panel-muted); font-size: 11px; line-height: 1.5; }
+.liuren-lessons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.liuren-lesson, .liuren-transmission { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px; border: 1.5px solid var(--panel-ink); box-shadow: 2px 2px 0 var(--panel-ink); background: var(--paipan-paper); text-align: center; }
+.liuren-lesson small, .liuren-transmission small { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); }
+.liuren-lesson strong, .liuren-transmission strong { font-size: 19px; }
+.liuren-lesson span { color: var(--panel-muted); font: 700 11px var(--paipan-font-mono); }
+.liuren-lesson em, .liuren-transmission em { font: 800 10px var(--paipan-font-mono); font-style: normal; }
+.liuren-lesson i, .liuren-transmission i { color: var(--panel-muted); font-size: 10px; font-style: normal; }
+.liuren-transmissions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.liuren-transmission:nth-child(1) { background: #e6f2f6; }
+.liuren-table { display: grid; gap: 1px; }
+.liuren-table__row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; padding: 3px 0; border-bottom: 1px solid var(--panel-line); text-align: center; font-size: 12.5px; }
+.liuren-table__row > * { display: grid; place-items: center; padding: 3px 2px; background: var(--paipan-ground); }
+.liuren-table__row--head { border-bottom: 2px solid var(--panel-ink); cursor: default; }
+.liuren-table__row--head > b { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.liuren-table__row.is-active > b { background: #d8ecf3; }
+@media (max-width: 850px) { .liuren-layout { grid-template-columns: 1fr; } .liuren-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .liuren-lessons { grid-template-columns: repeat(2, minmax(0, 1fr)); } .liuren-cell__tian { font-size: 15px; } }

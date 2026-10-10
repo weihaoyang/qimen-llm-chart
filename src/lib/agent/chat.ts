@@ -245,6 +245,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   uranian: "请基于当前汉堡学派 90° 盘，说明八虚星的位置、被占据的中点与行星图景，并区分盘面几何事实与该体系的象征解释。",
   maya: "请基于当前玛雅历换算，说明长纪年、卓尔金、哈布与 13:20 的 Kin，并区分历法换算事实与该体系的象征解释。",
   vedic: "请基于当前吠陀盘，说明上升、九曜的恒星黄经与宿位，以及所选分盘（D1–D60）中各曜落宫的含义；区分计算事实与经典解释。",
+  liuren: "请基于当前六壬盘，说明四课与三传如何由天地盘推出，逐位说明三传的神、将、六亲、遁干，并区分课式结构与断语解释。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -506,6 +507,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "命盘与宿位", question: "请说明上升（Lagna）、九曜的宫位与宿位（含 pada 与宿主），并指出罗睺/计都的平交点约定。", description: "先讲位置，再讲含义。", evidence: ["Lahiri 岁差与恒星黄经", "27 宿与四足", "上升与九曜落宫"] },
     { label: "分盘判读", question: "请说明所选分盘（如 D9 婚姻、D60 前世业）的划分规则，以及其中各曜落宫与 D1 的异同（含 Vargottama）。", description: "规则是事实，判读是解释。", evidence: ["分盘划分规则", "各曜在分盘中的宫位", "与 D1 的异同"] },
   ],
+  liuren: [
+    { label: "课式结构", question: "请说明月将加时如何排出天地盘、四课如何取上下神，并复述发用（九宗门）与三传的取法。", description: "先盘后课再传。", evidence: ["月将与占时", "四课的上下神", "发用与课体"] },
+    { label: "三传神将", question: "请逐位说明三传（初中末）的神、将、六亲与遁干，并指出它与日干、日支的关系。", description: "神将是事实，断语是解释。", evidence: ["三传地支与天将", "六亲与遁干", "与日干支的关系"] },
+  ],
 };
 
 /**
@@ -554,6 +559,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   uranian: ["请把最紧的三条中点或行星图景翻译成可验证的现实观察。", "换用 45° 或 22.5° 盘时，哪些结构会消失或出现？"],
   maya: ["请逐年核对 13:20 计数，说明哪些年份的 Kin 会因闰日而“不推进”。", "这套系统里哪些是可验证的算术，哪些只是命名与象征？"],
   vedic: ["请对比 D1 与 D9，指出哪些曜改变了宫位或变成了 Vargottama。", "换用 Raman 或 KP 岁差时，哪些宫的归属会改变？"],
+  liuren: ["请把三传的六亲关系与日干串成一条因果链。", "如果占时换一个时辰，天地盘与三传会怎样整体平移？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -579,6 +585,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   uranian: "汉堡学派（Uranian / 天王星系统）",
   maya: "玛雅历法与卓尔金（Tzolkin / 13:20）",
   vedic: "吠陀占星分盘（Shodashavarga）",
+  liuren: "大六壬（天地盘 · 四课三传）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -713,6 +720,14 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "无出生地时未计算上升（Lagna），分盘只列行星、不含命宫；不得据行星落宫推断具体事件、健康、婚姻或命运。",
     "建议结构：## 上升与九曜 / ## 宿与分盘 / ## 经典解释 / ## 边界。",
   ].join("\n"),
+  liuren: [
+    "【大六壬边界】天地盘以「月将加时」起（月将按太阳过宫），四课依干寄宫，三传按「日干支＋干上神」查表（移植自 Apache-2.0 的 liuren-ts-lib），天将依昼夜贵人与顺逆。",
+    "只使用载荷中的四柱、月将、天地盘、四课、三传、天将、六亲、遁干、旬空、驿马与课体；不得补造未在载荷中的神煞、古籍引文或具体应期。",
+    "读法：先讲盘（天地盘与偏移）、再讲课（四课上下神）、再讲传（发用九宗门与课体），最后才谈断语，并明确标注哪些是结构、哪些是解释。",
+    "天将的昼夜贵人取通行口诀（壬癸昼卯夜巳），个别流派互乙；换流派会整体改变天将，必须说明所用口径。",
+    "不得据课式推断具体事件、吉凶、时间或人物；结论只能是研究性提示。",
+    "建议结构：## 天地盘与四课 / ## 三传与课体 / ## 断语解释 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -757,6 +772,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   uranian: "只引用载荷中的黄经、盘面位置、中点与和点；八虚星不是真实行星，禁止据盘面推断具体事件或命运。",
   maya: "只引用载荷中的历法换算数值；相关系数与闰日约定必须保持口径一致，禁止据历法推断具体事件或命运。",
   vedic: "只引用载荷中的恒星黄经、宫位、宿与分盘宫序；禁止据分盘推断具体事件、健康、婚姻或命运。",
+  liuren: "只引用载荷中的四课三传、天将、六亲、遁干与课体；禁止据课式推断具体事件、吉凶或应期。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [

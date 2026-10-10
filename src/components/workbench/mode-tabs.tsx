@@ -31,6 +31,7 @@ const MODE_OPTIONS: Array<{
   { value: "uranian", label: "汉堡学派" },
   { value: "maya", label: "玛雅历法" },
   { value: "vedic", label: "吠陀分盘" },
+  { value: "liuren", label: "大六壬" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {
