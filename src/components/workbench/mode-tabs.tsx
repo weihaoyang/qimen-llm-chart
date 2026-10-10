@@ -34,6 +34,7 @@ const MODE_OPTIONS: Array<{
   { value: "liuren", label: "大六壬" },
   { value: "qabalah", label: "赫尔墨斯卡巴拉" },
   { value: "taiyi", label: "太乙神数" },
+  { value: "akasha", label: "阿卡西 · 全息" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

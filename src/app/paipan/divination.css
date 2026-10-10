@@ -424,3 +424,49 @@
 .taiyi-general > span { color: var(--panel-muted); font-size: 10.5px; }
 .taiyi-general p { margin: 0; font-size: 11.5px; line-height: 1.5; }
 @media (max-width: 850px) { .taiyi-layout { grid-template-columns: 1fr; } .taiyi-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 阿卡西记录 · 全息宇宙 */
+.divination-panel--akasha::before { background: #0f766e; }
+.akasha-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 18px; }
+.akasha-controls > label { display: inline-flex; align-items: center; gap: 8px; font: 800 11px var(--paipan-font-mono); }
+.akasha-controls input { width: 130px; padding: 6px 8px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); font: 800 11px var(--paipan-font-mono); }
+.akasha-controls .rune-selector { margin: 0; }
+.akasha-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.akasha-facts > div { display: flex; flex-direction: column; gap: 3px; padding: 10px; border: 1px solid var(--panel-line); }
+.akasha-facts span { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.akasha-facts b { font: 800 13px var(--paipan-font-mono); word-break: break-all; }
+.akasha-facts em { color: var(--panel-muted); font-size: 10.5px; font-style: normal; }
+.akasha-table { display: grid; gap: 1px; overflow-x: auto; margin-bottom: 18px; }
+.akasha-table__row { display: grid; grid-template-columns: minmax(80px, .8fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr); gap: 1px; padding: 3px 0; border-bottom: 1px solid var(--panel-line); font-size: 11.5px; }
+.akasha-table__row > * { display: flex; flex-direction: column; justify-content: center; padding: 6px; background: var(--paipan-ground); }
+.akasha-table__row > span small { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.akasha-table__row--head { border-bottom: 2px solid var(--panel-ink); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.akasha-table__row--head > b { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.akasha-table__row--wide { grid-template-columns: minmax(110px, .9fr) minmax(80px, .7fr) minmax(100px, .9fr) minmax(0, 2fr); }
+.akasha-demo { display: grid; gap: 12px; margin-bottom: 18px; }
+.akasha-bars { display: flex; flex-direction: column; gap: 5px; padding: 10px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); }
+.akasha-bars__head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.akasha-bars__head b { font-size: 12px; }
+.akasha-bars__head em { color: var(--panel-muted); font: 700 10px var(--paipan-font-mono); font-style: normal; }
+.akasha-bars__row { display: flex; align-items: flex-end; gap: 1px; height: 54px; }
+.akasha-bars__row > span { flex: 1 1 0; min-width: 0; background: #0f766e; }
+.akasha-note { margin: 0; color: var(--panel-muted); font-size: 11.5px; line-height: 1.6; }
+.akasha-concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.akasha-concept { display: flex; flex-direction: column; gap: 5px; padding: 12px; border: 1.5px solid var(--panel-ink); box-shadow: 2px 2px 0 var(--panel-ink); background: var(--paipan-paper); }
+.akasha-concept header { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; border-bottom: 1px solid var(--panel-line); padding-bottom: 5px; }
+.akasha-concept header b { font-size: 14px; }
+.akasha-concept header em { color: var(--panel-muted); font: 700 10px var(--paipan-font-mono); font-style: normal; }
+.akasha-concept > span { color: var(--panel-muted); font-size: 10.5px; }
+.akasha-concept p { margin: 0; font-size: 11.5px; line-height: 1.55; }
+.akasha-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-bottom: 18px; }
+.akasha-steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; font-size: 11.5px; }
+.akasha-steps b { display: block; }
+.akasha-steps span { color: var(--panel-muted); }
+.akasha-timeline { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; }
+.akasha-timeline > div { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--panel-line); }
+.akasha-timeline b { font: 800 10px var(--paipan-font-mono); }
+.akasha-timeline span { color: var(--panel-muted); }
+.akasha-ethics ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; }
+.akasha-analogy { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 12px; border: 1.5px solid var(--paipan-red); background: #fdf1f1; }
+.akasha-analogy p { margin: 0; font-size: 11.5px; line-height: 1.6; }
+@media (max-width: 850px) { .akasha-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .akasha-two { grid-template-columns: 1fr; } }
