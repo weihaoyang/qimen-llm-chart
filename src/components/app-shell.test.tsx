@@ -95,11 +95,21 @@ describe("AppShell", () => {
 
     // A scan that silently matches nothing is worse than no scan, so pin the
     // population first: the chart modes plus the classic 大六壬 board.
-    const tabKeys = [...container.querySelectorAll("[data-tabkey]")]
-      .map((node) => node.getAttribute("data-tabkey") ?? "");
+    // 标签条现在是翻页按钮，因此逐页收集 data-tabkey 再断言总数与唯一性。
+    const tabKeySet = new Set<string>();
+    const prevPage = screen.getByRole("button", { name: "上一页体系标签" });
+    while (!(prevPage as HTMLButtonElement).disabled) fireEvent.click(prevPage);
+    for (;;) {
+      container.querySelectorAll("[data-tabkey]").forEach((node) => {
+        tabKeySet.add(node.getAttribute("data-tabkey") ?? "");
+      });
+      const nextPage = screen.getByRole("button", { name: "下一页体系标签" }) as HTMLButtonElement;
+      if (nextPage.disabled) break;
+      fireEvent.click(nextPage);
+    }
+    const tabKeys = [...tabKeySet];
     expect(tabKeys).toHaveLength(22);
-    // 每个标签的 itemKey 必须唯一：semi-ui 的 TabBar 内部以 `${key}-bar` 生成 key，
-    // 重复 itemKey 会让 React 报 duplicate key（并可能漏渲染标签）。
+    // 每个标签的 key 必须唯一：重复会让 React 报 duplicate key（并可能漏渲染标签）。
     expect(new Set(tabKeys).size).toBe(tabKeys.length);
     expect(tabKeys.filter((key) => /kline|decision|agent/i.test(key))).toEqual([]);
 

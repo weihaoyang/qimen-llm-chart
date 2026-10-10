@@ -115,10 +115,6 @@ body .product-chart .observatory-hero__copy {
   gap: 1px !important;
 }
 
-body .product-chart .workspace-kicker {
-  display: block !important;
-}
-
 body .product-chart .observatory-hero__copy h1 {
   margin: 0 !important;
   color: var(--paipan-ink) !important;
@@ -199,4 +195,108 @@ body .product-chart .qmdj-footer__compact {
 
 body .product-chart .qmdj-footer__compact a {
   color: var(--paipan-red) !important;
+}
+
+/* ---- 体系标签条：翻页按钮（‹ ›）而非横向滚动 ---------------------------- */
+
+/* 双类名提高特异性，稳赢上面各处的 `overflow-x: auto !important`。 */
+body .product-chart .observatory-hero .workbench-tabs.workbench-tabs,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs.workbench-tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  scrollbar-width: none !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__list,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__list {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__tab,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__tab {
+  display: inline-flex !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  min-height: 30px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px 8px !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-ground) !important;
+  box-shadow: var(--paipan-shadow-sm) !important;
+  color: var(--paipan-ink) !important;
+  font-family: var(--paipan-font) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+  outline: none !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__tab.is-active,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__tab.is-active {
+  background: var(--paipan-accent) !important;
+  font-weight: 900 !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__tab:focus-visible,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__tab:focus-visible,
+body .product-chart .observatory-hero .workbench-tabs__page:focus-visible,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__page:focus-visible {
+  outline: 3px solid var(--paipan-red) !important;
+  outline-offset: 1px !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__page,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__page {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border: 2px solid var(--paipan-ink) !important;
+  border-radius: 3px !important;
+  background: var(--paipan-paper) !important;
+  color: var(--paipan-ink) !important;
+  font: 900 14px/1 var(--paipan-font-mono) !important;
+  cursor: pointer !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__page:disabled,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__page:disabled {
+  opacity: .35 !important;
+  cursor: not-allowed !important;
+}
+
+body .product-chart .observatory-hero .workbench-tabs__indicator,
+html body .page-shell.product-chart .mobile-hero .workbench-tabs__indicator {
+  flex: 0 0 auto !important;
+  color: var(--paipan-slate) !important;
+  font: 700 10px var(--paipan-font-mono) !important;
+  letter-spacing: .04em !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 640px) {
+  body .product-chart .observatory-hero .workbench-tabs__tab,
+  html body .page-shell.product-chart .mobile-hero .workbench-tabs__tab {
+    min-height: 28px !important;
+    padding: 4px 6px !important;
+    font-size: 12px !important;
+  }
 }
