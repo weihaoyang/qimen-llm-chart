@@ -8,6 +8,8 @@
  * 本仓只采用 lahiri 体系；其余体系（raman / kp / fagan_bradley）保留基准值以便扩展。
  */
 
+import { ephemeris } from "celestine";
+
 const J2000 = 2451545;
 const ARCSEC = 1 / 3600;
 
@@ -77,3 +79,26 @@ export const meanNodeLongitude = (jde: number) => {
   const value = 125.04452 - 1934.136261 * t + 0.0020708 * t * t + t * t * t / 450000;
   return ((value % 360) + 360) % 360;
 };
+
+/**
+ * 真交点（true node）的黄经（当日黄道、回归口径）。
+ *
+ * 直接复用 MIT 许可的 `celestine`（(c) 2025 Anonyfox）已发布的实现，避免自造公式：
+ *   `node_modules/celestine/dist/index.js:2245-2260` 的 `getTrueNodeLongitude`
+ *   （平交点项 125.0445479 − 1934.1362891T + … 加 17 项月球交点摄动，
+ *   D / M / M′ / F 均取 Meeus《Astronomical Algorithms》第 47 章级数）。
+ * 该函数以 TT（JDE）为自变量，故与 `meanNodeLongitude` 一样传入 `jdToJDE(jd)`。
+ */
+export const trueNodeLongitude = (jde: number) => {
+  const value = ephemeris.getTrueNodeLongitude(jde) % 360;
+  return value < 0 ? value + 360 : value;
+};
+
+/** 罗睺 / 计都的口径：平交点或真交点。 */
+export type NodeMode = "mean" | "true";
+
+export const NODE_MODE_LABELS: Record<NodeMode, string> = { mean: "平交点（Mean Node）", true: "真交点（True Node）" };
+
+/** 按口径取北交点黄经；计都为其中点 180°。 */
+export const nodeLongitude = (jde: number, mode: NodeMode = "mean") =>
+  mode === "true" ? trueNodeLongitude(jde) : meanNodeLongitude(jde);

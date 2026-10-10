@@ -67,6 +67,6 @@ export const buildQabalahReading = (input: string): QabalahReading => {
     atbash: substitute(input, "atbash"),
     albam: substitute(input, "albam"),
     disclaimer:
-      "赫尔墨斯卡巴拉研究盘：十辉与二十二字母的名称、数值与三分法出自《创造之书》（公共领域）；「四界 / 十辉」的神名、天使与天使序，以及「字母 ↔ 塔罗 / 元素 / 行星 / 星座」对照为赫尔墨斯传统（Golden Dawn 一系）的通行对应。数术（gematria）十三法移植自 MIT 的 `mispar`。数根 → 辉位的对应为该体系的对照，不是等式或预测。",
+      "赫尔墨斯卡巴拉研究盘：十辉与二十二字母的名称、数值与三分法出自《创造之书》（公共领域）；「四界 / 十辉」的神名、天使与天使序，以及「字母 ↔ 塔罗 / 元素 / 行星 / 星座」对照为赫尔墨斯传统（Golden Dawn 一系）的通行对应。数术（gematria）十三法移植自 MIT 的 `mispar`。数根 → 辉位的对应为该体系的对照，不是等式或预测。`katan-mispari` 只作用于总和，故其逐字入口与上游 `mispar` 一致地抛错。",
   };
 };

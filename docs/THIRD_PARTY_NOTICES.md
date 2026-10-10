@@ -78,7 +78,7 @@ SOFTWARE.
   - 来源：<https://github.com/oshimish/dreamspell-math>（`@oshimishi/dreamspell-math`，MIT，(c) oshimish）
   - 来源：<https://github.com/joyozhang333-lgtm/mayan-kin>（MIT，参考日 2013-07-26 = Kin 164 与「闰日不推进」约定）
   - 位置：`src/lib/maya/dreamspell.ts`
-  - 采用部分：13:20 计数与闰日约定、印章/调性/颜色/波符/神谕（高我五位）推导、十三月历（13×28 + 无时间日）的月日与四周划分。
+  - 采用部分：13:20 计数与闰日约定、印章/调性/颜色/波符/神谕（高我五位）推导、十三月历（13×28 + 无时间日）的月日与四周划分，以及**银河门户 `PORTALS_MATRIX`（260 值）与神秘柱（第 7 列，kin 121–140）**（来源 `src/Kin.ts:6-27`、`76-91`）。
   - 命名说明：印章与调性名称（红龙、磁性…）出自 José Argüelles 的 Dreamspell / 13 Moon Calendar 体系，此处按上述开源实现转写，属该体系的通行命名与象征解释。
 
 ### 吠陀占星分盘（Vedic / Shodashavarga）
@@ -88,7 +88,7 @@ SOFTWARE.
 - 位置：`src/lib/vedic/data.ts`、`src/lib/vedic/varga.ts`、`src/lib/vedic/ayanamsa.ts`、`src/lib/vedic/chart.ts`
 - 采用部分：
   - 16 分盘定义（Shodashavarga）与各分盘的 `vargaSign` 换算规则（含 D30 Trimsamsa 阳/阴宫分段表、D2 Hora 的日月时划分、各盘的起点规则）。
-  - Lahiri（Chitrapaksha）岁差：J2000 基准值 23.853064° 与 J2000 起的岁差多项式；ΔT（Espenak–Meeus 分段式）；平交点（mean node）公式。
+  - Lahiri（Chitrapaksha）岁差：J2000 基准值 23.853064° 与 J2000 起的岁差多项式；ΔT（Espenak–Meeus 分段式）；平交点（mean node）公式；**真交点**改用 celestine `getTrueNodeLongitude`（MIT，`dist/index.js:2245-2260`，Meeus 级数含 17 项摄动），界面可切平/真。
   - 12 宫（rashi）与 27 宿（nakshatra）名称、宿的宿主循环序列。
 - 未采用部分：该库自带的简易行星 / 月亮 / 太阳星历；本仓改用已有的 Celestine 星历（回归黄经）再减岁差得到恒星黄经。
 - 自撰部分：中文名对照（宫名、九曜、分盘主管领域）与界面文案；分盘「主管领域」为古典文献所述意义。
@@ -164,12 +164,15 @@ SOFTWARE.
   - **文本著作权未决**：条文断词很可能转录自现代在版权书籍（铁板神数一系）；仓库的 Apache-2.0 属「仓库/代码」层面，不能自动覆盖文本内容。
   - 该仓库自述其索引链「不代表唯一正解」。
   - **建议**：上线前由产品负责人二择一——取得条文文本的明确授权，或撤下 `data/*.json` 只保留索引骨架与导入接口（`importTieshenTiaowen`，本仓已实现空库降级，不抛错）。在此之前本页只作研究用途。
-- **邵子神数**：未找到宽松许可的条文源，故只实现索引骨架与导入接口，界面与载荷明写「未接条文源，不生成条文」。六亲条文字号、太玄数/洛书换算为未实现项。
+- **铁板神数 · 功能完整并已与上游逐键比对**：索引链全通（四柱→先天命数→五音→日命/时运→本命数→分刻考刻→终局条文数→卦名→后天命数→五数寄宫→八卦加则）、14-10 本命条文、流年 1–108 三口径。与上游 `js/db-data.js` 逐键比对（12000 条断词、1493 条校正映射、726/1499 卦表、DESTINY_DATA 288 等）**0 处不符**。
+- **面板空白＝上游表缺口（非本仓偏差）**：14-8 简表在 181–930 内缺 24 个本命数（约占 2.1% 组合）；14-14 中 106/108 岁无任何字母行（默认例命中 100/108，41472 例网格均 98.52/108）。界面已逐行标注原因。另记上游一处内部不一致：14-9/14-13 首列只有「初刻/正刻」，其代码却查八刻名/刻干数折半——若无来源确认「刻别＝考刻 Initial/Main」，本仓不擅改。
+- **邵子神数 · 未实现（如实声明）**：条文文本与「生辰→编号」规则均**未找到**许可允许且可核验的来源（AGPL / 无 LICENSE / 仅在版权书籍与商业站）。本仓**不编规则、不编条文**，只把编号空间做全（1111–12888 · 6144 条 · 12 集×512，可校验、可导入）。六亲条文字号同因无来源未实现。
+- **太玄数 / 洛书 · 已实现为对照取数**：太玄配数诀、天干/地支配卦、洛书数＝后天卦数（来源：上游 Apache-2.0 `main.py`「4. 太玄数」＋公有领域歌诀，两处逐字一致）；未接「取数→条文编号」链（无该环节的可核验规则）。
 - 已排除（许可不允许）：`x3747991-ship-it/tieban-shenshu-skillpack`、`xaminxan/tiebanshenshu`、`kentang2017/kinastro`、`kentang2017/kinqimen`（均**无 LICENSE**）、`Horace-Maxwell/horosa-skill`（**AGPL-3.0**）、古籍扫描/OCR（版权状态不明）。
 
 ## 界面上可查阅的出处（`src/lib/provenance/`）
 
-除本文件外，**每个体系面板底部都有「出处与原文 · 供查阅」区块**，直接列出该体系在本站所据的**逐字引文、来源链接、许可、异说与未核项**（登记册：`src/lib/provenance/registry.ts`；组件：`src/components/provenance-block.tsx`）。状态标签含义：`已核`＝有一手出处并逐字/逐值核对；`异说`＝文献互异、本仓并列；`未核`＝已采用但未获一手核对；`本仓自撰`＝无外部出处的本仓启发式。
+除本文件外，**每个体系面板底部都有「出处与原文 · 供查阅」区块**，直接列出该体系在本站所据的**逐字引文、来源链接、许可、异说与未核项**，并可**二级展开查阅资料本体**（整段古籍原文、整张数值表、源码原行，如《太乙金鏡式經》卷三各格局全文、二十八宿逐值全表、Astrolog/celestine 源码行）（登记册：`src/lib/provenance/registry.ts`；组件：`src/components/provenance-block.tsx`）。状态标签含义：`已核`＝有一手出处并逐字/逐值核对；`异说`＝文献互异、本仓并列；`未核`＝已采用但未获一手核对；`本仓自撰`＝无外部出处的本仓启发式。
 
 ## 运行时依赖（直接调用，未修改其源码）
 
@@ -203,9 +206,10 @@ SOFTWARE.
 - **星盘**（`src/lib/astro/*`）：宫位沿用 `celestine` 默认的 Placidus（盘面与载荷已标注宫制；高纬约 |φ|>66° 时库内会自动回退，已在宫制说明中提示）。相位与图形已覆盖 10 行星 + 凯龙 + 谷神/智神/婚神/灶神 + 黄白交点 + 莉莉丝（不再截断为十大行星）；**未纳入**阿拉伯点（lots）与恒星。
 - **人类图**（`src/lib/human-design/chart.ts`）：激活为权威算法；但 `incarnationCross` 只给角度类型与四个门，**不给十字名**（免责声明已声明该限制）；`tone/base` 为估值（上游 `hd-chart-engine` 自带 `precision` 字段已透出）。
 - **七政四余**：二十八宿为等分近似、紫气为脚本约定虚星（详见上文该条）。
-- **玛雅 Dreamspell**（`src/lib/maya/dreamspell.ts`）：已移植 13:20 计数、闰日约定、印章/调性/波符/神谕/十三月历；上游的**银河门户（PORTALS_MATRIX）与神秘柱**未移植，属章节缺失（非算错）。
-- **吠陀**（`src/lib/vedic/*`）：罗睺/计都仅取**平交点**（无真交点选项）；岁差为「J2000 常量 + 一般岁差多项式」，非 Spica 锚定的严格 Chitrapaksha（差异在角秒级）。
-- **卡巴拉**（`src/lib/qabalah/gematria.ts`）：十三法与上游 `mispar` 逐行等价，但 `letterValues` 逐字入口对 `katan-mispari` 返回标准值，而上游对该法直接抛错——语义与上游不严格一致。「数根 → 辉位」对照链为本仓所加（界面标注为对照而非等式）。
+- **泛音（谐波）盘**（`src/lib/harmonic/chart.ts`）：把黄经按 ×n 折算后**只判合相**——这是 Addey 一系谐波盘的通行读取口径（如 Astrodienst：「In the harmonic chart, these planets form conjunctions」），属**取值口径而非简化**；谐波盘专属的四轴反推做法（部分流派由谐波中天反推上升）未实现（无统一规则，不新造）。
+- **玛雅 Dreamspell**（`src/lib/maya/dreamspell.ts`）：已移植 13:20 计数、闰日约定、印章/调性/波符/神谕/十三月历，以及**银河门户 `PORTALS_MATRIX` 与神秘柱**（来源 `oshimish/dreamspell-math` `src/Kin.ts:6-27`、`76-91`，MIT）。上游未提供「门户日名称/含义」数据，故未新增。
+- **吠陀**（`src/lib/vedic/*`）：罗睺/计都**可切平/真交点**（默认平；真交点取 celestine 的 Meeus 级数实现）；岁差为「J2000 常量 + 一般岁差多项式」，非 Spica 锚定的严格 Chitrapaksha（差异在角秒级）。
+- **卡巴拉**（`src/lib/qabalah/gematria.ts`）：十三法与上游 `mispar` 逐行等价；`letterValues` 逐字入口对 `katan-mispari` **已按上游一致抛 `RangeError`**（该法归约作用在总和上，逐字拆解无定义；来源 `mispar` `src/index.ts:257-264`）。「数根 → 辉位」对照链为本仓所加（界面标注为对照而非等式）。
 - **神圣几何**（`src/lib/sacred-geometry/patterns.ts`）：图形按几何构造分层生成（非写死坐标）；`PHI` 为上游导出但本仓未使用的死常量。
 - **汉堡学派**（`src/lib/uranian/elements.ts`）：轨道要素与开普勒解算忠实移植 Astrolog；未做周年光行差（差约 0.006°，远小于 1.5° 容许度）。盘面支持 90°/45°/22.5° 切换，并实现中点（A/B=C）、和点（A+B=C）、差点（A−B=C）与和点等式（A+B=C+D）四类检索。
 - **太乙神数**：格局未收「击/迫/提挟/四郭固」；「上和/次和/下和」按本仓口径合成（详见上文该条）。

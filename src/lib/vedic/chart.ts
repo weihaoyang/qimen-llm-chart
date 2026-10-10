@@ -1,7 +1,7 @@
 import { calculateChart } from "celestine";
 import { offsetMinutes } from "@/lib/astro/chart";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { ayanamsa, jdToJDE, meanNodeLongitude } from "./ayanamsa";
+import { ayanamsa, jdToJDE, nodeLongitude, NODE_MODE_LABELS, type NodeMode } from "./ayanamsa";
 import { GRAHAS, GRAHA_ZH, NAKSHATRAS, NAKSHATRA_LORDS, RASHIS, VARGA_CODES, VARGA_DEFINITIONS, type Rashi } from "./data";
 import { vargaSign } from "./varga";
 
@@ -53,10 +53,17 @@ export type VedicLagna = Omit<VedicGraha, "id" | "zh" | "iast" | "abbr" | "retro
 
 export type VedicVarga = { code: string; divisions: number; iast: string; zh: string; lagnaRashi: number | null; positions: Record<string, number> };
 
+/** 罗睺 / 计都在某种交点口径下的完整落位。 */
+export type VedicNodeVariant = { mode: NodeMode; label: string; rahu: VedicGraha; ketu: VedicGraha };
+
 export type VedicChart = {
   format: "qmdj-vedic-v1";
   input: { datetime: string; timeZone: string; julianDay: number; hasPlace: boolean };
   ayanamsa: number;
+  /** 本盘 grahas 中罗睺 / 计都实际采用的口径（默认平交点）。 */
+  nodeMode: NodeMode;
+  /** 平 / 真两种口径下罗睺与计都的完整落位，供界面切换显示。 */
+  nodes: Record<NodeMode, VedicNodeVariant>;
   lagna: VedicLagna | null;
   grahas: VedicGraha[];
   vargas: VedicVarga[];
@@ -67,15 +74,17 @@ export type VedicChart = {
 const vargaSignsFor = (rashi: number, degreeInRashi: number) =>
   Object.fromEntries(VARGA_CODES.map((code) => [code, vargaSign(rashi, degreeInRashi, code)]));
 
-export const buildVedicChart = (profile: NormalizedProfileInput): VedicChart => {
+export const buildVedicChart = (profile: NormalizedProfileInput, options: { nodeMode?: NodeMode } = {}): VedicChart => {
   const datetime = profile.normalized.datetime;
   const timeZone = profile.normalized.timeZone;
   const latitude = profile.original.location?.latitude ?? null;
   const longitude = profile.original.location?.longitude ?? null;
   const hasPlace = latitude !== null && longitude !== null;
+  const nodeMode: NodeMode = options.nodeMode === "true" ? "true" : "mean";
 
   const jd = julianDayForProfile(datetime, timeZone);
   const ayan = ayanamsa(jd);
+  const jde = jdToJDE(jd);
 
   const chart = calculateChart({
     year: Number(datetime.slice(0, 4)),
@@ -89,24 +98,36 @@ export const buildVedicChart = (profile: NormalizedProfileInput): VedicChart => 
     longitude: longitude ?? 0,
   });
 
-  const tropical = new Map(chart.planets.map((planet) => [planet.name, planet]));
-  const grahas: VedicGraha[] = GRAHAS.map((graha) => {
-    let tropicalLongitude: number;
-    let retrograde = false;
-    if (graha.id === "Rahu") {
-      tropicalLongitude = meanNodeLongitude(jdToJDE(jd));
-      retrograde = true;
-    } else if (graha.id === "Ketu") {
-      tropicalLongitude = norm360(meanNodeLongitude(jdToJDE(jd)) + 180);
-      retrograde = true;
-    } else {
-      const planet = tropical.get(graha.id);
-      tropicalLongitude = planet?.longitude ?? 0;
-      retrograde = planet?.isRetrograde ?? false;
-    }
+  const toGraha = (meta: (typeof GRAHAS)[number], tropicalLongitude: number, retrograde: boolean): VedicGraha => {
     const sidereal = norm360(tropicalLongitude - ayan);
     const { rasi, rashi, degreeInRashi } = rashiOf(sidereal);
-    return { id: graha.id, zh: graha.zh, iast: graha.iast, abbr: graha.abbr, longitude: sidereal, rasi, rashi, degreeInRashi, nakshatra: nakshatraOf(sidereal), retrograde, vargas: vargaSignsFor(rasi, degreeInRashi) };
+    return { id: meta.id, zh: meta.zh, iast: meta.iast, abbr: meta.abbr, longitude: sidereal, rasi, rashi, degreeInRashi, nakshatra: nakshatraOf(sidereal), retrograde, vargas: vargaSignsFor(rasi, degreeInRashi) };
+  };
+
+  const tropical = new Map(chart.planets.map((planet) => [planet.name, planet]));
+  const rahuMeta = GRAHAS.find((graha) => graha.id === "Rahu")!;
+  const ketuMeta = GRAHAS.find((graha) => graha.id === "Ketu")!;
+  // 罗睺 / 计都：上游 celestine 亦以「交点恒逆行」处理（`dist/index.js:2241-2242`）。
+  const nodes = Object.fromEntries(
+    (["mean", "true"] as const).map((mode) => {
+      const north = nodeLongitude(jde, mode);
+      return [
+        mode,
+        {
+          mode,
+          label: NODE_MODE_LABELS[mode],
+          rahu: toGraha(rahuMeta, north, true),
+          ketu: toGraha(ketuMeta, norm360(north + 180), true),
+        },
+      ];
+    }),
+  ) as Record<NodeMode, VedicNodeVariant>;
+
+  const grahas: VedicGraha[] = GRAHAS.map((graha) => {
+    if (graha.id === "Rahu") return nodes[nodeMode].rahu;
+    if (graha.id === "Ketu") return nodes[nodeMode].ketu;
+    const planet = tropical.get(graha.id);
+    return toGraha(graha, planet?.longitude ?? 0, planet?.isRetrograde ?? false);
   });
 
   const lagna: VedicLagna | null = hasPlace
@@ -126,16 +147,19 @@ export const buildVedicChart = (profile: NormalizedProfileInput): VedicChart => 
     positions: Object.fromEntries(grahas.map((graha) => [graha.id, graha.vargas[definition.code]])),
   }));
 
+  const nodeNote = `罗睺/计都取${NODE_MODE_LABELS[nodeMode]}（可切换，平交点为默认）`;
   return {
     format: "qmdj-vedic-v1",
     input: { datetime, timeZone, julianDay: Number(jd.toFixed(6)), hasPlace },
     ayanamsa: Number(ayan.toFixed(6)),
+    nodeMode,
+    nodes,
     lagna,
     grahas,
     vargas,
     vargottama: grahas.filter((graha) => graha.vargas.D1 === graha.vargas.D9).map((graha) => graha.id),
     disclaimer: hasPlace
-      ? "吠陀占星研究盘：采用 Lahiri（Chitrapaksha）岁差，行星为 Celestine 回归黄经减去岁差所得恒星黄经；罗睺/计都取平交点。分盘规则按 Parashara 体系的十六分盘（Shodashavarga）。结果仅供研究，不构成预测或现实裁决。"
-      : "吠陀占星研究盘：采用 Lahiri 岁差，行星为恒星黄经、罗睺/计都取平交点。当前无出生地，未计算上升（Lagna），故分盘只列行星、不含命宫。结果仅供研究，不构成预测或现实裁决。",
+      ? `吠陀占星研究盘：采用 Lahiri（Chitrapaksha）岁差，行星为 Celestine 回归黄经减去岁差所得恒星黄经；${nodeNote}（真交点公式直接复用 celestine 的 getTrueNodeLongitude）。分盘规则按 Parashara 体系的十六分盘（Shodashavarga）。结果仅供研究，不构成预测或现实裁决。`
+      : `吠陀占星研究盘：采用 Lahiri 岁差，行星为恒星黄经、${nodeNote}（真交点公式直接复用 celestine 的 getTrueNodeLongitude）。当前无出生地，未计算上升（Lagna），故分盘只列行星、不含命宫。结果仅供研究，不构成预测或现实裁决。`,
   };
 };

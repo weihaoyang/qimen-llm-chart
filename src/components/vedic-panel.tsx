@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { VedicChart } from "@/lib/vedic/chart";
+import type { NodeMode } from "@/lib/vedic/ayanamsa";
 import { GRAHAS, RASHIS, VARGA_DEFINITIONS } from "@/lib/vedic/data";
 import { ProvenanceBlock } from "./provenance-block";
 
@@ -43,9 +45,20 @@ export function VedicPanel({
   const varga = chart.vargas.find((item) => item.code === definition.code) ?? chart.vargas[0];
   const lagnaRashi = varga.lagnaRashi;
 
+  // 罗睺 / 计都的平 / 真交点口径：图内切换只影响显示（两种口径的完整落位都已随
+  // chart.nodes 一同算出，来自同一套公式，不重新引入星历）。
+  const [nodeMode, setNodeMode] = useState<NodeMode>(chart.nodeMode);
+  const nodeVariant = chart.nodes[nodeMode];
+  const grahas = chart.grahas.map((graha) => (graha.id === "Rahu" ? nodeVariant.rahu : graha.id === "Ketu" ? nodeVariant.ketu : graha));
+  const nodeLabel = (grahaId: string) =>
+    grahaId === "Rahu" ? nodeVariant.rahu.vargas : grahaId === "Ketu" ? nodeVariant.ketu.vargas : null;
+  const positionOf = (code: string, grahaId: string) => nodeLabel(grahaId)?.[code] ?? chart.vargas.find((item) => item.code === code)?.positions[grahaId];
+  // D1 与 D9 同宫即 Vargottama；随交点口径切换重算（其余行星不受影响）。
+  const vargottamaList = GRAHAS.filter((graha) => positionOf("D1", graha.id) === positionOf("D9", graha.id)).map((graha) => graha.id);
+
   const grahasByRashi = new Map<number, string[]>();
   for (const graha of GRAHAS) {
-    const rasi = varga.positions[graha.id];
+    const rasi = positionOf(definition.code, graha.id);
     if (!rasi) continue;
     grahasByRashi.set(rasi, [...(grahasByRashi.get(rasi) ?? []), graha.abbr]);
   }
@@ -109,8 +122,16 @@ export function VedicPanel({
 
         <div className="vedic-side">
           <div className="divination-section-heading"><span>九曜 · D1 恒星位置</span><small>Lahiri {chart.ayanamsa.toFixed(2)}°</small></div>
+          <div className="vedic-selector" role="group" aria-label="罗睺 / 计都交点口径">
+            {(["mean", "true"] as const).map((mode) => (
+              <button key={mode} type="button" className={mode === nodeMode ? "is-active" : undefined} aria-pressed={mode === nodeMode} onClick={() => setNodeMode(mode)} title={chart.nodes[mode].label}>
+                {mode === "mean" ? "平交点" : "真交点"}
+                <small>{mode === "mean" ? "Mean" : "True"}</small>
+              </button>
+            ))}
+          </div>
           <div className="vedic-table">
-            {chart.grahas.map((graha) => (
+            {grahas.map((graha) => (
               <div className="vedic-row" key={graha.id}>
                 <b>{graha.abbr}</b>
                 <span>{graha.zh}<small>{graha.iast}</small></span>
@@ -120,11 +141,11 @@ export function VedicPanel({
               </div>
             ))}
           </div>
-          <p className="vedic-chart__note">罗睺 / 计都取平交点（mean node）。宿为 27 宿，每宿四足（pada）。</p>
+          <p className="vedic-chart__note">罗睺 / 计都取{nodeVariant.label}（可切换，平交点为默认）；真交点公式直接复用 MIT 的 <code>celestine</code>。宿为 27 宿，每宿四足（pada）。</p>
         </div>
       </div>
 
-      <div className="divination-section-heading"><span>十六分盘矩阵 · 各曜落宫</span><small>{chart.vargottama.length ? `Vargottama：${chart.vargottama.join("、")}` : "无 Vargottama"}</small></div>
+      <div className="divination-section-heading"><span>十六分盘矩阵 · 各曜落宫</span><small>{vargottamaList.length ? `Vargottama：${vargottamaList.join("、")}` : "无 Vargottama"}</small></div>
       <div className="vedic-matrix">
         <div className="vedic-matrix__row vedic-matrix__row--head">
           <b>盘</b>
@@ -132,24 +153,21 @@ export function VedicPanel({
             <b key={graha.id} title={graha.zh}>{graha.abbr}</b>
           ))}
         </div>
-        {VARGA_DEFINITIONS.map((item) => {
-          const row = chart.vargas.find((vargaItem) => vargaItem.code === item.code);
-          return (
-            <div className={`vedic-matrix__row${item.code === definition.code ? " is-active" : ""}`} key={item.code} onClick={() => onVargaChange?.(item.code)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onVargaChange?.(item.code); }}>
-              <b>{item.code}<small>{item.zh}</small></b>
-              {GRAHAS.map((graha) => {
-                const rasi = row?.positions[graha.id];
-                const vargottama = rasi && row?.code !== "D1" && rasi === chart.grahas.find((entry) => entry.id === graha.id)?.vargas.D1;
-                return (
-                  <span key={graha.id} className={vargottama ? "is-vargottama" : undefined}>{rasi ? RASHIS[rasi - 1].abbr : "—"}</span>
-                );
-              })}
-            </div>
-          );
-        })}
+        {VARGA_DEFINITIONS.map((item) => (
+          <div className={`vedic-matrix__row${item.code === definition.code ? " is-active" : ""}`} key={item.code} onClick={() => onVargaChange?.(item.code)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onVargaChange?.(item.code); }}>
+            <b>{item.code}<small>{item.zh}</small></b>
+            {GRAHAS.map((graha) => {
+              const rasi = positionOf(item.code, graha.id);
+              const vargottama = rasi && item.code !== "D1" && rasi === positionOf("D1", graha.id);
+              return (
+                <span key={graha.id} className={vargottama ? "is-vargottama" : undefined}>{rasi ? RASHIS[rasi - 1].abbr : "—"}</span>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
-      <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}分盘规则出自 Parashara 体系的十六分盘（Shodashavarga），本仓按 MIT 许可的开源实现移植（`vedic-kundali` / `vedic-panchanga`）。</p>
+      <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}分盘规则出自 Parashara 体系的十六分盘（Shodashavarga），本仓按 MIT 许可的开源实现移植（`vedic-kundali` / `vedic-panchanga` / `celestine`）。</p>
       <ProvenanceBlock system="vedic" />
     </section>
   );

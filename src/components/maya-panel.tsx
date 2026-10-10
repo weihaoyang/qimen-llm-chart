@@ -101,6 +101,10 @@ export function MayaPanel({
                 <span>{d.color} · 颜色族群</span>
                 <span>第 {d.wavespell} 条波符（起于 Kin {d.wavespellStartKin} {d.wavespellSealName}）· 第 {d.wavespellPosition} 位</span>
                 <span>第 {d.castle} 城堡（每 52 kin）</span>
+                <span>
+                  Zolkin 第 {d.portals.row} 行 · 第 {d.portals.column} 列
+                  {d.portals.isGalacticPortal ? " · 银河门户（Galactic Portal）" : d.portals.isMysticColumn ? " · 神秘柱（Mystic Column）" : ""}
+                </span>
               </div>
               <div className="maya-kin__keywords">
                 <span>印记：{d.sealKeywords}</span>

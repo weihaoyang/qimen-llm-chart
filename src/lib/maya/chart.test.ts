@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildMayaChart } from "./chart";
-import { buildDreamspell, dreamspellKin, moonDate } from "./dreamspell";
+import { buildDreamspell, dreamspellKin, moonDate, PORTALS_MATRIX, zolkinPortal } from "./dreamspell";
 import { serializeMayaToCompactJson, serializeMayaToStructuredText } from "./serializer";
 import { buildTraditionalCalendar, HAAB_MONTHS, julianDayNumber, KICHE_DAY_SIGNS, YUCATEC_DAY_SIGNS } from "./traditional";
 
@@ -90,6 +90,74 @@ describe("dreamspell 13:20", () => {
     expect(challenge.seal).toBe(14);
     expect(occult.seal).toBe(17);
     expect(occult.tone).toBe(6);
+  });
+});
+
+describe("dreamspell galactic portals and mystic column", () => {
+  // 向量逐条取自上游 `@oshimishi/dreamspell-math` 的 `__tests__/Kin-spec.ts`
+  // （「Should get a correct galactic portals」「Should get a correct ccentral rows」
+  // 「Zolkin rows should be 1 based and correct」与矩阵计数三例）。
+  it("uses the upstream PORTALS_MATRIX shape (260 / 52 portals / 20 mystic)", () => {
+    expect(PORTALS_MATRIX).toHaveLength(260);
+    expect(PORTALS_MATRIX.filter((value) => value === 1)).toHaveLength(52);
+    expect(PORTALS_MATRIX.filter((value) => value === 2)).toHaveLength(20);
+  });
+
+  it("matches the upstream galactic portal vectors", () => {
+    const portal = (kin: number) => zolkinPortal(kin).isGalacticPortal;
+    expect(portal(1)).toBe(true);
+    expect(portal(2)).toBe(false);
+    expect(portal(39)).toBe(true);
+    expect(portal(40)).toBe(false);
+    expect(portal(211)).toBe(true);
+    expect(portal(259)).toBe(false);
+    expect(portal(260)).toBe(true);
+  });
+
+  it("matches the upstream mystic column vectors", () => {
+    const mystic = (kin: number) => zolkinPortal(kin).isMysticColumn;
+    expect(mystic(1)).toBe(false);
+    expect(mystic(120)).toBe(false);
+    expect(mystic(121)).toBe(true);
+    expect(mystic(131)).toBe(true);
+    expect(mystic(139)).toBe(true);
+    expect(mystic(140)).toBe(true);
+    expect(mystic(260)).toBe(false);
+    // 神秘柱恰为 Zolkin 中央第 7 列的 20 个 kin（kin 121–140）
+    for (let kin = 121; kin <= 140; kin += 1) expect(zolkinPortal(kin).isMysticColumn).toBe(true);
+  });
+
+  it("matches the upstream Zolkin row/column vectors", () => {
+    const rc: Array<[number, number, number]> = [
+      [1, 1, 1],
+      [20, 20, 1],
+      [21, 1, 2],
+      [120, 20, 6],
+      [121, 1, 7],
+      [140, 20, 7],
+      [141, 1, 8],
+      [240, 20, 12],
+      [241, 1, 13],
+      [260, 20, 13],
+    ];
+    for (const [kin, row, column] of rc) expect([kin, zolkinPortal(kin).row, zolkinPortal(kin).column]).toEqual([kin, row, column]);
+  });
+
+  it("flags the reference date 2013-07-26 (Kin 164) from the upstream matrix", () => {
+    // Kin 164 → Zolkin 第 4 行第 9 列，矩阵索引 47（`src/Kin.ts:88`），取值为 0。
+    const value = buildDreamspell("2013-07-26");
+    expect(value.kin).toBe(164);
+    expect(value.portals).toEqual({ row: 4, column: 9, value: 0, isGalacticPortal: false, isMysticColumn: false });
+  });
+
+  it("flags Kin 39 (2013-03-23) as a galactic portal through the calendar", () => {
+    // 2013-07-26（Kin 164）前 125 天（无闰日跨越）= Kin 39；上游 Kin-spec 断言 39 为门户。
+    expect(dreamspellKin("2013-03-23")).toBe(39);
+    const chart = buildMayaChart("2013-03-23");
+    expect(chart.dreamspell.portals.isGalacticPortal).toBe(true);
+    expect(serializeMayaToStructuredText(chart)).toContain("银河门户（Galactic Portal）");
+    const payload = JSON.parse(serializeMayaToCompactJson(chart)) as { dreamspell: { portals: number[] } };
+    expect(payload.dreamspell.portals).toEqual([19, 2, 1, 0]);
   });
 });
 

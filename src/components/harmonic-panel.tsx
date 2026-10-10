@@ -15,7 +15,9 @@ export function HarmonicPanel({ value, onHarmonicChange, onCopyJson, jsonCopied 
         <div>
           <p className="divination-panel__kicker">HARMONIC / OVERTONE CHART</p>
           <h2>泛音星盘</h2>
-          <p className="divination-panel__subhead">h = (黄经 × {value.harmonic}) mod 360：把母盘中相隔 360°/{value.harmonic}（≈{(360 / value.harmonic).toFixed(2)}°）的点拉直成合相。</p>
+          <p className="divination-panel__subhead">
+            h = (黄经 × {value.harmonic}) mod 360：把母盘中相隔 360°/{value.harmonic}（≈{(360 / value.harmonic).toFixed(2)}°）的点拉直成合相。谐波盘按 Addey 一系通行做法只读合相（容许度 {value.orb}°）。
+          </p>
         </div>
         <div className="divination-panel__header-actions">
           {onCopyJson ? <button type="button" className="divination-panel__export" onClick={onCopyJson}>复制 JSON <span>{jsonCopied ? "✓" : "⧉"}</span></button> : null}
@@ -35,7 +37,7 @@ export function HarmonicPanel({ value, onHarmonicChange, onCopyJson, jsonCopied 
         <aside className="bodygraph-inspector">
           <span className="visual-kicker">HARMONIC READOUT</span>
           <h3>第 {value.harmonic} 谐波</h3>
-          <p className="visual-copy">在 H{value.harmonic} 里，母盘相隔 {Number((360 / value.harmonic).toFixed(3))}° 及其倍数的两点会叠成合相；这是把 quintile / septile 这类次要相位拉直来看的方法。</p>
+          <p className="visual-copy">在 H{value.harmonic} 里，母盘相隔 {Number((360 / value.harmonic).toFixed(3))}° 及其倍数的两点会叠成合相；这是把 quintile / septile 这类次要相位拉直来看的方法。本仓只判合相（Addey 一系的通行读取口径）；盘内其它相位属复合解读、无统一容许度规则，未实现。参与点位 {all.length} 个（含凯龙、小行星、真交点与莉莉丝）。</p>
           <div className="visual-aspects">
             {value.conjunctions.slice(0, 8).map((item) => (
               <div key={`${item.a}-${item.b}`}><b>{item.a} / {item.b}</b><span>{item.harmonicOrb}° · 母盘 {item.natalAngle}° ±{item.natalOrb}°</span></div>

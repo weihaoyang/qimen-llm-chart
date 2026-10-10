@@ -2,9 +2,10 @@
  * 神数（铁板神数 / 邵子神数）条文库与索引表。
  *
  * 硬约束：本仓**不得自造条文内容**，也不得接入许可不明（无 license / AGPL / 扫描件 OCR）的数据。
- * 因此这里只放两样东西：
+ * 因此这里只放三样东西：
  *   1. 来自 `ForceMind/Tieban-Shenshu`（Apache-2.0）的铁板神数索引表与 12000 条条文断词；
- *   2. 除此之外既不补条文，也不补编号规则——没有来源的部分一律走 `rules.ts` 里的 TODO 与空库降级。
+ *   2. 由上游表**推出**的缺口/投影（如 `TIEBAN_HEXAGRAM_HOLES`、`deriveCorrectionMaps`），不手工录入；
+ *   3. 邵子神数的**编号空间与导入校验**（`SHAOZI_SHENSHU_SOURCE` 等）——仅登记结构，不含条文、不含编号规则。
  *
  * 数据文件的来源、许可与"未接入项"见 `./data/SOURCE.md`。
  */
@@ -69,6 +70,24 @@ export const TIEBAN_HEXAGRAM_TABLE = rulesJson.hexagramMap as unknown as Record<
 export const TIEBAN_HEXAGRAM_DETAIL_TABLE = rulesJson.hexagramDetailMap as unknown as Record<string, string>;
 export const TIEBAN_DESTINY_TABLE = rulesJson.destinyData as unknown as Record<string, TieshenDestinyRow>;
 
+/**
+ * 14-8 简表（`HEXAGRAM_MAP`）在其本命数范围 181–930 内缺行的本命数（由上游表推出，非手工录入）。
+ *
+ * 上游缺口，非本仓偏差：14-8 共 726 键，181–930 共 750 个本命数，缺 24 个；14-9 详表只登记
+ * 「初刻 / 正刻」两栏，一刻…六刻时详表落空、退到 14-8，落在这些缺口上即"卦名未匹配"。
+ */
+export const TIEBAN_HEXAGRAM_HOLES: readonly number[] = (() => {
+  const covered = new Set(Object.keys(TIEBAN_HEXAGRAM_TABLE).map(Number));
+  const numbers = [...covered];
+  if (!numbers.length) return [];
+  const min = Math.min(...numbers);
+  const max = Math.max(...numbers);
+  const holes: number[] = [];
+  for (let n = min; n <= max; n += 1) if (!covered.has(n)) holes.push(n);
+  return holes;
+})();
+
+
 export const TIEBAN_LIUNIAN_START_TABLE = liunianJson.liunianStart as unknown as Record<string, number>;
 export const TIEBAN_LIUNIAN_SEQ_TABLE = liunianJson.liunianSeq as unknown as Record<string, string[]>;
 export const TIEBAN_MARKER_TABLE = liunianJson.markerTable as unknown as Record<string, Record<string, string>>;
@@ -104,12 +123,57 @@ export const TIEBAN_CORRECTION_LETTER_TABLE: Record<string, string> = correction
 /** 十二集名，与条文编号区间 1001–13000 一一对应（每集 1000 条）。 */
 export const TIESHEN_VOLUMES = ["子集", "丑集", "寅集", "卯集", "辰集", "巳集", "午集", "未集", "申集", "酉集", "戌集", "亥集"] as const;
 
+// ---------------------------------------------------------------------------
+// 邵子神数：编号空间（条文源未接入，只登记空间与导入校验）
+// ---------------------------------------------------------------------------
+
+/**
+ * 邵子神数条文编号空间（**不含条文本体，也不含编号规则**）。
+ *
+ * 结构属事实性描述，可核验来源：
+ * - 「邵子条文数从 1111 起至 12888 结束，总共 6144 条」；十二部集按千位分：子集 1000 / 丑集 2000 /
+ *   … / 亥集 12000，每集 512 条，又以先天八卦乾一兑二离三震四巽五坎六艮七坤八为序分八类，每类 64 条。
+ *   见《陈抟神数秘旨 · 正统邵子神数》公开演算讲义，与周通新《邵子神數》（2018）图书简介。
+ * - 本仓**没有**接入任何邵子条文：未找到宽松许可（MIT/ISC/Apache-2.0/CC0/公共领域）的条文本体，
+ *   也未获得可核验的「生辰 → 编号」推算法来源，故只登记编号空间与导入通道（`importTieshenTiaowen`）。
+ */
+export const SHAOZI_SHENSHU_SOURCE = {
+  name: "邵子神数（6144 条谱）",
+  firstNumber: 1111,
+  lastNumber: 12888,
+  count: 6144,
+  volumes: 12,
+  perVolume: 512,
+  /** 结构描述来源（非条文本体）。 */
+  structureSources: [
+    "《陈抟神数秘旨 · 正统邵子神数》演算讲义（公开网页）：「邵子条文数从 1111 起至 12888 结束，总共 6144 条」",
+    "周通新《邵子神數》（2018）图书简介：十二部集 子集1000…亥集12000，每集 512 条",
+  ],
+  /** 条文本体与编号规则均未获得可用来源。 */
+  licenseBlocked: true as const,
+} as const;
+
+export const SHAOZI_SHENSHU_FIRST_NUMBER = SHAOZI_SHENSHU_SOURCE.firstNumber;
+export const SHAOZI_SHENSHU_LAST_NUMBER = SHAOZI_SHENSHU_SOURCE.lastNumber;
+export const SHAOZI_SHENSHU_COUNT = SHAOZI_SHENSHU_SOURCE.count;
+
+/** 邵子集名：与铁板同用十二集名，但按千位 1→子集 … 12→亥集（区间 1111–12888）。 */
+export const volumeOfShaoziTiaowen = (number: number) => {
+  const index = Math.floor(number / 1000) - 1;
+  return TIESHEN_VOLUMES[index] ?? "";
+};
+
+/** 邵子条文号是否落在登记区间内（区间是外框，6144 条并非区间内每个整数）。 */
+export const isShaoziShenshuNumber = (number: number) =>
+  Number.isInteger(number) && number >= SHAOZI_SHENSHU_FIRST_NUMBER && number <= SHAOZI_SHENSHU_LAST_NUMBER;
+
 export type TieshenTiaowenEntry = {
   number: number;
   volume: string;
   age: string;
   text: string;
 };
+
 
 export type TieshenTiaowenLibrary = {
   id: string;
@@ -145,29 +209,47 @@ export type TieshenTiaowenPayload = {
 export const createTieshenTiaowenLibrary = (
   input: Pick<TieshenTiaowenLibrary, "id" | "name" | "license" | "repository" | "commit"> & {
     entries: Iterable<{ number: number; text: string; age?: string }>;
+    /** 集名换算（缺省用铁板 1001–13000 口径；邵子等异本可传自己的换算）。 */
+    volumeOf?: (number: number) => string;
   },
 ): TieshenTiaowenLibrary => {
   if (!PERMISSIVE_DATA_LICENSES.includes(input.license as (typeof PERMISSIVE_DATA_LICENSES)[number])) {
     throw new Error(`条文库 ${input.id} 的许可 ${input.license} 不在允许列表内，拒绝导入。`);
   }
+  const { entries: rawEntries, volumeOf = volumeOfTiaowen, ...meta } = input;
   const entries = new Map<number, TieshenTiaowenEntry>();
-  for (const row of input.entries) {
+  for (const row of rawEntries) {
     if (!Number.isFinite(row.number) || row.number <= 0) continue;
     entries.set(row.number, {
       number: row.number,
-      volume: volumeOfTiaowen(row.number),
+      volume: volumeOf(row.number),
       age: row.age ?? "",
       text: row.text ?? "",
     });
   }
-  return { ...input, size: entries.size, entries };
+  return { ...meta, size: entries.size, entries };
 };
+
+/**
+ * 邵子神数条文库构建：与铁板同一导入通道，但集名按 1111–12888 / 千位 1→子集…12→亥集 换算，
+ * 并校验条文号落在登记区间内（区间外的条目直接丢弃，不猜测、不改造）。
+ */
+export const createShaoziShenshuLibrary = (
+  input: Omit<Parameters<typeof createTieshenTiaowenLibrary>[0], "volumeOf">,
+): TieshenTiaowenLibrary =>
+  createTieshenTiaowenLibrary({
+    ...input,
+    volumeOf: volumeOfShaoziTiaowen,
+    entries: [...input.entries].filter((row) => isShaoziShenshuNumber(row.number)),
+  });
+
 
 /**
  * 条文库导入接口：把一份 `qmdj-tieshen-tiaowen-v1` 载荷转成本仓的条文库。
  *
- * 目前**没有**可合法使用的邵子神数条文源，所以这个接口只被内置铁板条文库与测试使用；
- * 一旦拿到宽松许可的条文源（或用户自有数据），面板可直接把解析结果传给 `buildTieshenChart`。
+ * 邵子神数**没有**可合法使用的条文源，所以这个接口目前只被内置铁板条文库与测试使用；一旦拿到
+ * 宽松许可的条文源（或用户自有数据），可直接调用本接口，或对邵子编号空间用 `createShaoziShenshuLibrary`
+ * （自动按 1111–12888 校验并换算集名），把结果传给 `buildTieshenChart`。
  */
 export const importTieshenTiaowen = (payload: unknown): TieshenTiaowenLibrary => {
   if (!payload || typeof payload !== "object") throw new Error("条文库载荷必须是对象。");

@@ -2,8 +2,11 @@
  * 13:20 频率系统（Dreamspell / 十三月历的卓尔金计数）。
  *
  * 口径移植自两个 MIT 许可的开源实现，并以它们的测试向量校验：
- *  - `@oshimishi/dreamspell-math`（MIT，(c) oshimish）：印章 / 调性 / 波符 /
- *    颜色 / 神谕（高我五位）/ 十三月历（月、日、等离子、周）与闰日不推进的约定。
+ *  - `@oshimishi/dreamspell-math`（MIT，(c) 2018 oshimish；仓库
+ *    https://github.com/oshimish/dreamspell-math，发布名 `@oshimishi/dreamspell-math`
+ *    0.3.2）：印章 / 调性 / 波符 / 颜色 / 神谕（高我五位）/ 十三月历
+ *    （月、日、等离子、周）与闰日不推进的约定，以及银河门户 / 神秘柱矩阵。
+ *    逐字段出处见各处注释的 `文件:行`。
  *  - `joyozhang333-lgtm/mayan-kin`（MIT）：参考日 2013-07-26 = Kin 164 与
  *    「闰日跳过」的 13:20 计数。
  *
@@ -26,6 +29,51 @@ export const TONES_EN = ["Magnetic", "Lunar", "Electric", "Self-Existing", "Over
 export const TONE_KEYWORDS = ["统一 · 吸引 · 目的", "极化 · 挑战 · 稳定", "激活 · 连接 · 服务", "定义 · 形式 · 测量", "赋权 · 指挥 · 辐射", "平衡 · 组织 · 等同", "通道 · 启发 · 调谐", "和谐 · 整合 · 模范", "意图 · 脉动 · 实现", "显化 · 完美 · 产出", "溶解 · 释放 · 解放", "合作 · 奉献 · 普遍化", "持久 · 超越 · 存在"];
 export const COLORS = ["红", "白", "蓝", "黄"];
 export const PLASMAS = ["Dali", "Seli", "Gamma", "Kali", "Alpha", "Limi", "Silio"];
+
+/**
+ * 银河门户 / 神秘柱矩阵（Zolkin 13×20 网格，13 列 × 20 行，行主序）。
+ * 0 = 普通日，1 = 银河门户（Galactic Portal，52 个/轮），2 = 神秘柱（Mystic Column，
+ * 即 Zolkin 中央第 7 列，20 个/轮）。
+ *
+ * 逐值照搬 `@oshimishi/dreamspell-math@0.3.2` 的 `src/Kin.ts:6-27`
+ * （MIT，(c) 2018 oshimish；仓库 https://github.com/oshimish/dreamspell-math）。
+ * 上游测试 `__tests__/Kin-spec.ts` 亦固定：矩阵长 260、含 52 个 1、20 个 2。
+ */
+export const PORTALS_MATRIX: number[] = [
+  1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, // 1
+  0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0,
+  0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0,
+  0, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 0,
+  0, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, // 7
+  0, 0, 0, 0, 1, 1, 2, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 1, 0, 1, 2, 1, 0, 1, 0, 0, 0,
+  0, 0, 1, 0, 0, 1, 2, 1, 0, 0, 1, 0, 0,
+  0, 0, 1, 0, 0, 1, 2, 1, 0, 0, 1, 0, 0,
+  0, 0, 0, 1, 0, 1, 2, 1, 0, 1, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 2, 1, 1, 0, 0, 0, 0, // 13
+  0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0, 0,
+  0, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 0,
+  0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0,
+  0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0,
+  1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, // 20
+];
+
+export type ZolkinPortal = {
+  /** Zolkin 13×20 网格中的行（1 基；`src/Kin.ts:76-79`）。 */
+  row: number;
+  /** Zolkin 13×20 网格中的列（1 基；`src/Kin.ts:80-83`）。 */
+  column: number;
+  /** 矩阵取值：0 普通 / 1 银河门户 / 2 神秘柱。 */
+  value: number;
+  /** 银河门户（`src/Kin.ts:90`）。 */
+  isGalacticPortal: boolean;
+  /** 神秘柱（`src/Kin.ts:91`）。 */
+  isMysticColumn: boolean;
+};
 
 const isLeapYear = (year: number) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 const compare = (a: DateParts, b: DateParts) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
@@ -69,6 +117,19 @@ const guideOffset = (tone: number) => {
 const mod = (value: number, modulus: number) => ((value % modulus) + modulus) % modulus;
 const wrap1 = (value: number, modulus: number) => mod(value - 1, modulus) + 1;
 
+/**
+ * Zolkin 网格位置与门户判定。
+ * 行 / 列换算与上游 `src/Kin.ts:76-83` 等价（这里用 0 基再 +1 的同余写法）；
+ * 矩阵索引 `col-1 + (row-1)*13` 与 `src/Kin.ts:88` 一致。
+ */
+export const zolkinPortal = (kin: number): ZolkinPortal => {
+  const index = wrap1(Math.round(kin), 260);
+  const row = ((index - 1) % 20) + 1;
+  const column = Math.floor((index - 1) / 20) + 1;
+  const value = PORTALS_MATRIX[column - 1 + (row - 1) * 13];
+  return { row, column, value, isGalacticPortal: value === 1, isMysticColumn: value === 2 };
+};
+
 export type MoonDate = { moon: number; day: number; week: number; dayOfWeek: number; plasma: string; dayOfYear: number; yearStart: string; outOfTime: boolean };
 
 /** 十三月历：13 × 28 天 + 无时间日（7 月 25 日）；闰年 2 月 29 日不占月序。 */
@@ -111,6 +172,8 @@ export type DreamspellChart = {
   wavespellSealName: string;
   wavespellPosition: number;
   castle: number;
+  /** 银河门户 / 神秘柱（Zolkin 网格位置）。 */
+  portals: ZolkinPortal;
   oracle: OraclePosition[];
   moon: MoonDate;
 };
@@ -124,6 +187,11 @@ export const buildDreamspell = (iso: string): DreamspellChart => {
   const wavespellStartKin = (wavespell - 1) * 13 + 1;
   const wavespellSeal = wrap1(wavespellStartKin, 20);
 
+  // 神谕五方与上游 `src/Oracle.ts:19-45`（analog/driver/antipod/occult）逐式一致：
+  //   analog  = 19 - seal（mod 20）
+  //   driver  = seal + {0,-8,+8,+4,-4}，取决于 tone 的点数（`src/Kin.ts` Tone.dots）
+  //   antipod = kin + 130（等价于 seal + 10，tone 不变，因 130 = 10×13）
+  //   occult  = 1 - kin（mod 260）
   const support = wrap1(19 - seal, 20);
   const challenge = wrap1(seal + 10, 20);
   const occultSeal = wrap1(21 - seal, 20);
@@ -158,6 +226,7 @@ export const buildDreamspell = (iso: string): DreamspellChart => {
     wavespellSealName: SEALS[wavespellSeal - 1],
     wavespellPosition: wrap1(kin, 13),
     castle: Math.floor((kin - 1) / 52) + 1,
+    portals: zolkinPortal(kin),
     oracle: [
       position("主印记", "Kin", seal, tone),
       position("支持", "Analog", support, tone),

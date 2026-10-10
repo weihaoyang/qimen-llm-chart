@@ -16,6 +16,7 @@ export const serializeVedicToStructuredText = (chart: VedicChart) => {
   return [
     "吠陀占星 · 分盘（Vedic / Shodashavarga）",
     `时刻：${chart.input.datetime}（${chart.input.timeZone}）· 儒略日 ${chart.input.julianDay} · Lahiri 岁差 ${fmt(chart.ayanamsa, 4)}°`,
+    `罗睺 / 计都口径：${chart.nodes[chart.nodeMode].label}`,
     lagnaLine,
     "",
     "九曜（恒星黄经 / 宫 / 宿）：",
@@ -39,9 +40,11 @@ export const serializeVedicToCompactJson = (chart: VedicChart) =>
     format: "qmdj-vedic-v1",
     input: chart.input,
     ayanamsa: chart.ayanamsa,
+    nodeMode: chart.nodeMode,
+    nodeLongitudes: { mean: fmt(chart.nodes.mean.rahu.longitude, 4), true: fmt(chart.nodes.true.rahu.longitude, 4) },
     lagna: chart.lagna ? [chart.lagna.longitude, chart.lagna.rasi, chart.lagna.nakshatra.index, chart.lagna.nakshatra.pada] : null,
     grahas: chart.grahas.map((graha) => [graha.id, fmt(graha.longitude, 4), graha.rasi, fmt(graha.degreeInRashi, 2), graha.nakshatra.index, graha.nakshatra.pada, graha.nakshatra.lord, graha.retrograde ? 1 : 0]),
     vargas: chart.vargas.map((varga) => [varga.code, varga.lagnaRashi, chart.grahas.map((graha) => varga.positions[graha.id])]),
     vargottama: chart.vargottama,
-    boundary: "Lahiri 岁差、平交点；分盘按 Parashara 十六分盘。仅研究用，不作预测。",
+    boundary: `Lahiri 岁差；罗睺/计都取${chart.nodes[chart.nodeMode].label}。分盘按 Parashara 十六分盘。仅研究用，不作预测。`,
   });

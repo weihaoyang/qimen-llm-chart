@@ -22,6 +22,75 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     url: "https://zh.wikisource.org/wiki/太乙金鏡式經_(四庫全書本)/卷03",
     quote:
       "撃法：「太乙所在宫，客目在太乙前一辰為前擊，在太乙後一辰為後撃；在太乙前一宫為外宫擊，在太乙後一宫為内宫撃。」／迫法：「前為外迫，後為内迫，為上下二目、主客大小四将在太乙左右為迫。王希明曰：上目無迫，若下目在太乙前一辰為外辰迫，在後一辰為内辰迫，在太乙前一宫為外宫迫，後一宫為内宫迫。宫迫災㣲緩，辰迫災急疾。」／四郭固：「文昌將囚太乙宫，至大將參將又相闗，或客目臨之，或客大小將相闗，皆四郭固也。」／四郭杜：「為客參將與文昌將并，主大將與客大將并，兼之掩迫關格提挾。」／提挟（李淳風）：「客主兩将或一将而共太乙，挟客主目或大小將扵正宫者為提挟；若客主二目臨間神，客主二將共太乙挟二目扵間神，謂之挟閉。自一至四為内宫……自九至六為外宫。」",
+    documents: [
+      {
+        title: "推掩法",
+        lines: [
+          "經曰始擊將臨太乙宫謂之掩嵗計遇之王綱失序臣張君弱宜修徳以禳之盖掩襲刼殺之義若掩太乙在陽絶之地君凶隂絶之地臣誅掩主大將主人筭和吉不和凶參擊之勝",
+        ],
+      },
+      {
+        title: "推撃法",
+        lines: [
+          "經曰太乙所在宫客目在太乙前一辰為前擊在太乙後一辰為後撃在太乙前一宫為外宫擊在太乙後一宫為内宫撃所為撃者臣凌君卑凌尊下凌上僭也嵗計遇之將相相伐之義也",
+        ],
+      },
+      {
+        title: "推迫法",
+        lines: [
+          "經曰前為外迫後為内迫為上下二目主客大小四將在太乙左右為迫王希明曰上目無迫若下目在太乙前一辰為外辰迫在後一辰為内辰迫在太乙前一宫為外宫迫後一宫為内宫迫宫迫災㣲緩辰迫災急疾嵗計遇迫人君慎之",
+        ],
+      },
+      {
+        title: "推囚法",
+        lines: [
+          "經曰囚者簒戮之義也若文昌將并主客大小四將俱與太乙同宫總名曰囚若在陽氣絶氣之地大凶若在絶陽絶隂之地自敗臣受誅若諸將與太乙同宫或近大將謀在同類近參將謀在内也筭和者利筭不和者謀不成也",
+        ],
+      },
+      {
+        title: "推闗法",
+        lines: [
+          "經曰客主大小將目相宫齊為闗王希明曰闗之為義但將相怕忌之事不及於君也主客大小將同宫數齊皆為闗日",
+        ],
+      },
+      {
+        title: "推格法",
+        lines: [
+          "經曰客目大小將與太乙對宫為格言政事上下格也若在陽絶之地又與嵗計遇格不利有為所格者格易之義也若格太乙者盜侮其君主客筭不和者必敗",
+        ],
+      },
+      {
+        title: "推對法",
+        lines: [
+          "經曰下目文昌將與太乙衝而相當者為對若下目相對之時皆為大臣懐二心君逐良將兇奸生下臣欺上",
+        ],
+      },
+      {
+        title: "推四郭固法",
+        lines: [
+          "經曰四郭固者文昌將囚大乙宫至大將參將又相闗或客目臨之或客大小將相闗皆四郭固也主人勝固者憑勝不利先起四郭之固嵗計遇之主簒廢之禍利以修徳禳之也",
+        ],
+      },
+      {
+        title: "郭杜法",
+        lines: [
+          "經曰四郭杜者為客參將與文昌將并主大將與客大將并兼之掩迫關格提挾以出兵為閉杜不通及謀諸事不成嵗計遇之無大祸也",
+        ],
+      },
+      {
+        title: "推執提法",
+        lines: [
+          "經曰執提者為開生二門合衝皆為不利名為執提對為提格嵗計遇之不可舉事　所謂開生二門合衝者假令開門為直事不可與開門合衝生門為直事不可與生門合衝大凶　伍子胥曰三門皆不可與太乙相衝",
+        ],
+      },
+      {
+        title: "推提挾法",
+        lines: [
+          "李淳風云客主兩将或一将而共太乙挟客主目或大小將扵正宫者為提挟若客主二目臨問神客主二將共太乙挟二目扵間神謂之挟閉主人雖見提挟而在内猶可戰　自一至四為内宫　若囚死在陽絶氣者雖在外亦凶　客雖提挾而在外猶可戰　自九至六為外宫　若在囚死及陽絶之地者雖在内亦凶嵗計遇提挟凶客主有内外迫者不利先起張良云",
+          "客目大將參將挟主目客勝挟太乙先勝後敗主計目囚迫太乙客勝",
+        ],
+      },
+    ],
     note:
       "本仓 11 类格局的判据逐条照此实现。「提挟」的几何（左右邻宫／邻辰）为依《太乙秘書》岁计算例反推，非原文显式定义；「执提」以开/生二门合冲为断，本仓未排八门，故未实现。",
   },
@@ -35,6 +104,15 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     license: "公共领域（PD-old）",
     url: "https://zh.wikisource.org/wiki/太乙金鏡式經_(四庫全書本)/卷02",
     quote: "若筭得十四、十八、三十三為上和，二十三、二十九、三十二為次和，十二、十六、二十七、三十四、三十八為下和。",
+    documents: [
+      {
+        title: "推陰陽和不和（全段）",
+        lines: [
+          "張良經曰隂陽和不和者謂太乙及上下二目就筭數以相配下目立正宫為陽立間神為隂立陽筭得竒為重陽立隂筭得偶為重隂則不和上目所臨陽宫筭得重陽為重臨正二宫筭得竒也臨隂宫筭得隂為重隂為臨間神筭得偶也若在陽筭得偶隂筭得竒為隂陽和和則吉筭十一十三十七十九三十一三十三三十七三十九為陽數目臨為重陽筭中隂陽若筭得二十二二十四二十六二十八為隂皆不和也太乙在陽宫筭得竒者為重陽之數八三四九為陽宫太乙隂宫筭得偶者為重隂之數二七六一為隂宫皆不和若太乙在隂宫陽竒筭得偶數者為隂陽和也王希明曰三九寅辰為純陽二八巳丑為雜陽二十六未亥為純隂七一戌申為雜隂三十三三十九為重陽二十二二十六為重隂二十四二十八為雜隂十三十九三十一三十七為雜陽皆以次凶尤甚太乙天目在隂位筭得純隂在陽位筭得純陽為内外有謀在純者勝太乙天目在隂位筭得重陽為内有謀若筭得十四十八三十三為上和二十三二十九三十二為次和十二十六二十七三十四三十八為下和若太乙天目立隂陽位而筭陽多者利為客隂多者利為主更須考其深淺以明勝負也",
+        ],
+        note: "四庫全書本原文無句讀，此為維基文庫逐字轉錄（未加標點）。上和/次和/下和三表即在本段之末。",
+      },
+    ],
     note: "本仓按**算值**查此表（不是「主客两算俱和」那类合成口径）。",
   },
   {
@@ -140,6 +218,43 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     license: "公共领域",
     quote:
       "该表按二十八距星给出黄道经度（如「斗初宫五度五十分」、「觜五宫十九度二十二分」），并注「乃历元甲子年之黄道经纬度分……经度则每岁东行五十一秒，所谓岁差也」。",
+    documents: [
+      {
+        title: "二十八宿黄道经度（《二十八宿黄道经纬度钤》逐宿全表）",
+        lines: [
+          "斗初宮五度五十分　＝　5°50′",
+          "牛初宮二十九度三十七分　＝　29°37′",
+          "女一宮七度二十三分　＝　7°23′",
+          "虛一宮十九度一分　＝　19°01′",
+          "危一宮二十九度　＝　29°00′",
+          "室二宮十九度七分　＝　19°07′",
+          "壁三宮四度四十八分　＝　4°48′",
+          "奎三宮十七度五十四分　＝　17°54′",
+          "婁三宮二十九度三十三分　＝　29°33′",
+          "胃四宮十二度三十三分　＝　12°33′",
+          "昴四宮二十四度四十八分　＝　24°48′",
+          "畢五宮四度三分　＝　4°03′",
+          "參五宮十八度一分　＝　18°01′",
+          "觜五宮十九度二十二分　＝　19°22′",
+          "井六宮零度五十五分　＝　0°55′",
+          "鬼七宮一度二十分　＝　1°20′",
+          "柳七宮五度五十六分　＝　5°56′",
+          "星七宮二十二度五十六分　＝　22°56′",
+          "張八宮一度十九分　＝　1°19′",
+          "翼八宮十九度二十三分　＝　19°23′",
+          "軫九宮六度二十三分　＝　6°23′",
+          "角九宮十九度二十六分　＝　19°26′",
+          "亢十宮零度三分　＝　0°03′",
+          "氐十宮十度四十一分　＝　10°41′",
+          "房十宮二十八度三十一分　＝　28°31′",
+          "心十一宮三度二十一分　＝　3°21′",
+          "尾十一宮十度五十四分　＝　10°54′",
+          "箕十一宮二十六度五十分　＝　26°50′",
+        ],
+        note:
+          "逐值取自本仓 `src/lib/qizheng/chart.ts` 的 `MANSION_TABLE_QING`（即《钤》原表逐值）；原文以「宿名＋宫次＋度分」体例列出黄道经度（黄道纬度本仓未用，从略），此处照该体例转写、中国数字按原表，并附现代读数。宫次自「初宮」起（初宮 0°＝星纪初＝冬至点＝回归黄经 270°），十二宫次依序为星纪/玄枵/娵訾/降娄/大梁/实沈/鹑首/鹑火/鹑尾/寿星/大火/析木。序为「参前觜后」旧测口径。",
+      },
+    ],
     details: [
       "宿界＝距星：角宿起点取角宿一（室女座α／Spica），J2000 赤经 201.29825°、赤纬 −11.16132° 折 1684 回归黄经 ≈199.43°，与该表「角九宫十九度二十六分」≈199.4333° 相差 0.003°。",
       "《清史稿》康熙甲子「黄道十二次初度值宿」与该表 12 条中 10 条完全吻合，2 条差 0.07°/0.17°。",
@@ -171,6 +286,21 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     url: "https://zh.wikisource.org/wiki/革象新書_(四庫全書本)/卷2",
     quote:
       "赵友钦：「月道與黄道相交處，在二交之始强名曰羅㬋，交之中强名曰計都。……李淳風有推步月孛法，謂六十二日行七度，六十二年七周天……孛之所在，太陰所行最遲。」；沈括：「交初謂之羅睺，交中謂之計都。」；旧译系《七曜攘灾决》：「羅睺……一名蝕神頭……常逆行於天，十八年一周天」「計都……一名蝕神尾……常順行於天，凡九年一周天」。",
+    documents: [
+      {
+        title: "《革象新書》卷二·月有九行（羅㬋 / 計都 原段）",
+        lines: [
+          "月行不由黄道亦不由赤道乃出入黄道之内外也北有紫㣲垣帝座居之故北曰内南曰外所謂九行者止是一道其道與黄道相交如赤道然黄赤道兩環相逺處二十三度九十分月道之逺於黄道處止距六度二分而已月道與黄道相交處在二交之始强名曰羅㬋交之中强名曰計都自交初至於交中月在黄道外名曰陽厯乃背羅向計之處也自交中至於交初月在黄道内名曰陰厯乃背計向羅之處也月道比水路日道比旱路羅計比橋羅計漸移是猶橋道年年改異亦太陽嵗差捲絘之理也",
+        ],
+      },
+      {
+        title: "《革象新書》卷二·日月盈縮（月孛 原段）",
+        lines: [
+          "李淳風有推步月孛法謂六十二日行七度六十二年七周天所謂孛者乃彗星之一種光芒偏掃者則謂之彗光芒四出如圓暈者乃謂之孛然孛以月為名者葢有説焉孛之所在太陰所行最遲太陰在孛星對衝處則所行最疾孛星不常見止以太陰所行最遲處測之",
+        ],
+        note: "末句后原文接四庫館臣案語「案月行遲疾古以規法旋轉順逆明其故……孛非星也以彗孛之孛附㑹尤謬」，即赵友钦已驳「月孛＝彗孛」之说。",
+      },
+    ],
     details: [
       "罗睺/计都的方向命名各派相反（旧译系以罗睺＝交点、计都＝月远地点；沈括/赵友钦系以交初/交中分罗计），属古法新法之争，无统一定论。",
       "月孛＝「太阴所行最迟处」（月球远地点一派），《革象新书》已驳「彗孛」之说。",
@@ -230,7 +360,29 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     url: "https://zh.wikisource.org/wiki/奇門遁甲統宗",
     quote:
       "「五日一元，遇甲己日為氣交，而非甲己則以超接之，即拆局補局之法。」／置闰法：「……十六日甲子不作夏至上局，而為芒種閏奇上局……斯乃謂之接氣。」",
-    note: "「茅山道人法」（不拆不闰）本轮未获古籍逐字原文，仅坊间转述——故本仓不实现它。",
+    documents: [
+      {
+        title: "遁甲起例·拆局補局之法",
+        lines: [
+          "五日一元，遇甲己日为气交，而非甲己则以超接之，即拆局补局之法。假如庚寅大雪节，自己卯至庚寅已超十二日，是过旬也，余无再造之理，至此合用闰。闰者，何也？自甲午至戊申十五日重复大雪局奇，惟十七日乙巳方用冬至节上局奇，是谓之接也。自此以后而用接闰之法矣。",
+        ],
+      },
+      {
+        title: "論超接之法",
+        lines: [
+          "超者，超过也。神者，日辰也。接者，承接也。气者，诸节也。节气未至而日辰先到，则复节气为主而超越用未来之节气，此之谓超。又有节气已至而日辰未到，则伏辰为主而待日辰至方接承节。盖其气来则日辰未至，而奇星常用于前节，此之谓接也。如丙午年四月十三日壬申交立夏节，然四月初五日甲子日。甲己是四仲日，已在立夏前九日矣，则合超，超先于甲子日，下用立夏上局奇，己巳后用甲局，此乃先得奇后得节，凡作用取效为速。",
+        ],
+      },
+      {
+        title: "置閏法",
+        lines: [
+          "置闰之法，在芒种、大雪二节之后，冬至、夏至二至之前。他节虽超至十日，不可置闰，然他节亦无至八日九日十日者。",
+          "假如康熙五十六年五月十三日丙寅夜子初二刻交夏至节，而十一日甲子即为夏至符头，已超三日，至十一月二十日庚午寅正时节交冬至节，去符头甲午日共超七日。至五十七年五月二十四日壬申卯初二度交夏至节，十六日即为甲子上元，乃超过九日矣，宜先于芒种节上置闰。盖五月初一己酉即为芒种上局，初六日为芒种中局，十一日为芒种下局。至十六日为芒种上中下三局已足矣。自十六甲子至二十四壬申，已超九日，为期大远。故十六日甲子不作夏至上局，而为芒种闰奇上局，二十一日己巳作芒种闰奇中局，二十六日甲戌作芒种闰奇下局。至六月初一日戊寅闰奇方终，六月初二日己卯始得为夏至上局。斯乃谓之接气。直至康熙五十八年六月二十三日立秋，而甲子符头恰当日，是为正授，本日即是阴遁二局。上元至七月初九日庚辰处暑即超一日矣。凡闰奇，三候一终即为接气，接气乃换正授，正授渐移乃换超局，超遇九日十日或十一日则仍置闰。",
+        ],
+      },
+    ],
+    note:
+      "「茅山道人法」（不拆不闰）本轮未获古籍逐字原文，仅坊间转述——故本仓不实现它。资料本体照维基文库该页原样（该页为**标点简体**转录本，非四库影本行款；古籍原本无句读），故此处「拆局補局」等原文呈简体加标点形；引句栏则作繁体对应。",
   },
 
   /* ───────────────────────── 星盘 / 汉堡学派 ───────────────────────── */
@@ -255,6 +407,20 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     citation: "celestine `dist/index.js:7529-7573`（calculatePartOfFortune / getPartOfFortune / calculatePartOfSpirit）、`:7645-7655`（calculateLots）、`:8670-8704`（ChartLot 组装）",
     license: "MIT",
     quote: "福点：昼盘 `ASC + Moon − Sun`，夜盘 `ASC + Sun − Moon`；精神点取福点之反。sect（昼夜）由太阳相对上升的位置判定（:8533-8541）。",
+    documents: [
+      {
+        title: "celestine dist/index.js · 福点与精神点原码",
+        lines: [
+          ":7529  function calculatePartOfFortune(sunLon, moonLon, ascendant, isDayChart) {",
+          ":7530-7535  let pof; if (isDayChart) { pof = ascendant + moonLon - sunLon; } else { pof = ascendant + sunLon - moonLon; }",
+          ":7540  function getPartOfFortune(jd, ascendant, options = {}) {",
+          ":7571-7572  function calculatePartOfSpirit(sunLon, moonLon, ascendant, isDayChart) { return calculatePartOfFortune(sunLon, moonLon, ascendant, !isDayChart); }",
+          ":8682  const formula = isDaytime ? \"ASC + Moon - Sun\" : \"ASC + Sun - Moon\";",
+          ":8693  const formula = isDaytime ? \"ASC + Sun - Moon\" : \"ASC + Moon - Sun\";",
+        ],
+        note: "行号为本仓安装的 `celestine@0.2.1` dist/index.js 实际行号（对应源文件 src/ephemeris/lots.ts）。",
+      },
+    ],
     note: "故本仓只输出这两个点，不自行补婚姻点/爱欲点等（否则需另引 Paulus 一系公式源）。lots 含上升点，故无出生地时不输出。",
   },
   {
@@ -281,6 +447,18 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
       "matrix.cpp:640：`aber = 0.0057756 * RLength3(XS, YS, ZS) * ret[i];  // Aberration`；calc.cpp:937：`planet[ind] = Mod(DFromR(ang) - aber + is.rSid);`（0.0057756＝1 AU 的光行时，天/AU；ret[i] 为该天体地心黄经的日变化）。",
     note:
       "本仓按同一式子实现，并额外输出 geometricLongitude / aberration 以便核对；量级 ~0.006°，远小于汉堡通行容许度（默认 1.5°）。物理上「光行差」只对真实发光/反光天体成立，八虚星为假想体，此处施加只为与参考实现同口径，可在代码中关闭。",
+    documents: [
+      {
+        title: "Astrolog matrix.cpp:640 与 calc.cpp:937（原码行）",
+        lines: [
+          "matrix.cpp:640  aber = 0.0057756 * RLength3(XS, YS, ZS) * ret[i];  // Aberration",
+          "calc.cpp:937  planet[ind] = Mod(DFromR(ang) - aber + is.rSid);",
+          "matrix.cpp:637-638  ret[i] = DFromR((XS*(helioy[i]-helioy[ind])-YS*(heliox[i]-heliox[ind])) /",
+          "               (XS*XS + YS*YS));",
+        ],
+        note: "取自 CruiserOne/Astrolog 仓库（GPL-2.0-or-later）；0.0057756＝1 AU 的光行时（天/AU），ret[i] 为该天体地心黄经的日变化。",
+      },
+    ],
   },
 
   /* ───────────────────────── 吠陀 / 玛雅 / 卢恩 / 卡巴拉 / 神圣几何 / 塔罗 ───────────────────────── */
@@ -294,7 +472,7 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     license: "MIT",
     quote: "J2000 基准岁差 `AYANAMSA_AT_J2000.lahiri = 23.853064`，其后用一般岁差多项式（5028.796195″·t + …）；分盘 D30 Trimsamsa 阴阳分段表、D2 Hora 日月时分等与上游逐值一致。",
     note:
-      "星历改用真星历（celestine 回归黄经 − 岁差 = 恒星黄经），不用上游的简易近似。罗睺/计都仅取平交点（无真交点选项）；岁差为「J2000 常量 + 一般岁差多项式」，非 Spica 锚定的严格 Chitrapaksha（差在角秒级）。",
+      "星历改用真星历（celestine 回归黄经 − 岁差 = 恒星黄经），不用上游的简易近似。罗睺/计都**可切换平/真交点**（默认平；真交点直接用 celestine 的 `getTrueNodeLongitude`，MIT，`dist/index.js:2245-2260`，Meeus 级数含 17 项摄动，最大摆动 ≤1.5°）；岁差为「J2000 常量 + 一般岁差多项式」，非 Spica 锚定的严格 Chitrapaksha（差在角秒级）。",
   },
   {
     id: "maya-sources",
@@ -306,7 +484,8 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     license: "MIT",
     url: "https://github.com/oshimish/dreamspell-math",
     quote: "13:20 计数与「闰日不推进」约定、印章/调性/颜色/波符/神谕（高我五位）、十三月历（13×28＋无时间日）与上游逐式一致；锚点 2013-07-26 = Kin 164，另以 1983-09-16 = 1 Bʼatzʼ 校验传统口径。",
-    note: "上游的「银河门户（PORTALS_MATRIX）」与「神秘柱」本仓未移植（属章节缺失，非算错）；印章/调性名称出自 Argüelles 体系。",
+    note:
+      "银河门户（PORTALS_MATRIX，260 值）与神秘柱（第 7 列，kin 121–140）**已逐字段移植**（来源：`oshimish/dreamspell-math` `src/Kin.ts:6-27`、`76-91`，MIT）。上游无「门户日名称/含义」等额外数据，故未新增。印章/调性名称出自 Argüelles 体系。",
   },
   {
     id: "runes-source",
@@ -317,6 +496,29 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     citation: "evoluteur/rune-reading `js/runes-data.js`",
     license: "MIT",
     url: "https://github.com/evoluteur/rune-reading",
+    documents: [
+      {
+        title: "24 符文名与字形（runes-data.js 逐条，传统次序）",
+        lines: [
+          "Fehu ᚠ／Uruz ᚢ／Thurisaz ᚦ／Ansuz ᚨ／Raidho ᚱ／Kaunan ᚲ／Gebo ᚷ／Wunjo ᚹ",
+          "Hagalaz ᚺ／Nauthiz ᚾ／Isa ᛁ／Jera ᛃ／Eihwaz ᛇ／Perthro ᛈ／Algiz ᛉ／Sowilo ᛊ",
+          "Tiwaz ᛏ／Berkano ᛒ／Ehwaz ᛖ／Mannaz ᛗ／Laguz ᛚ／Ingwaz ᛜ／Dagaz ᛞ／Othala ᛟ",
+        ],
+      },
+      {
+        title: "三 aettir 与来源自述（runes-data.js 头部）",
+        lines: [
+          "// Rune data -- the 24 runes of the Elder Futhark, in traditional order.",
+          "// The names, sounds and division into three aettir (families of eight) are",
+          "// the traditional ones. The keywords, meanings and advice below are original,",
+          "// concise wording written for this app.",
+          "{ name: \"Freyr's aett\", theme: \"Life, resources and human nature\" },",
+          "{ name: \"Heimdall's aett\", theme: \"Forces of fate, change and the natural world\" },",
+          "{ name: \"Tyr's aett\", theme: \"Society, spirit and the wider cycle\" },",
+        ],
+        note: "上游自述：符文名、读音与三 aett 划分为传统；关键词/牌义/建议为其自撰（「original, concise wording written for this app」），非古籍原文。",
+      },
+    ],
     note: "本仓改写为 TypeScript 并保留 40×64 SVG 笔画路径；「北欧九界」为 Yggdrasil 三层九界的通行说法整理（公共神话事实）。符文无「正逆位」的九个不可逆符文恒作正位。",
   },
   {
@@ -330,7 +532,7 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     url: "https://github.com/moshejs/mispar",
     quote: "hechrachi / gadol / katan / siduri / katan-mispari / perati(=v²) / meshulash(=v³) / kidmi(累进) / boneeh / haakhor / milui / atbash / albam 与上游逐行等价。",
     note:
-      "十辉与二十二字母的名称、数值、三分法（3 母/7 双/12 单）出自《创造之书》（Sepher Yetzirah）；「字母↔塔罗/元素/行星/星座」为 Golden Dawn 一系通行对应。「数根→辉位」对照链为本仓所加（界面标注为对照而非等式）。例外：本仓 `letterValues` 逐字入口对 `katan-mispari` 返回标准值，而上游对该法直接抛错——语义与上游不严格一致。",
+      "十辉与二十二字母的名称、数值、三分法（3 母/7 双/12 单）出自《创造之书》（Sepher Yetzirah）；「字母↔塔罗/元素/行星/星座」为 Golden Dawn 一系通行对应。「数根→辉位」对照链为本仓所加（界面标注为对照而非等式）。已与上游对齐：`letterValues` 逐字入口对 `katan-mispari` **按上游一致抛 `RangeError`**（该法把归约作用在总和上，逐字拆解无定义；来源 `mispar` `src/index.ts:257-264`，MIT）。",
   },
   {
     id: "sacred-geometry-source",
@@ -341,6 +543,18 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     citation: "evoluteur/sacred-geometry `patterns.js`",
     license: "MIT",
     url: "https://github.com/evoluteur/sacred-geometry",
+    documents: [
+      {
+        title: "patterns.js · PHI 常量与原码",
+        lines: [
+          ":16  const PHI = (1 + Math.sqrt(5)) / 2;",
+          ":93-94  // Triangular lattice of circle centers, keeping everything within \"rings\"",
+          "        const lattice = (rings) => {",
+          ":101    if (Math.hypot(x, y) <= rings + 1e-9) pts.push([x, y]);",
+          ":204    \"The Seed of Life continued outward on a triangular lattice. Two rings give the classic nineteen-circle flower carved on the Osirion at Abydos; keep going and the rosettes tile the plane forever.\"",
+        ],
+      },
+    ],
     note: "本仓按几何分层生成（非写死坐标），如 Vesica 圆心距＝半径、Flower 为三角格子（rings=2 得 19 圆）、Metatron 为 13 圆的 C(13,2)=78 线。`PHI` 为上游导出但本仓未使用的常量。",
   },
   {
@@ -399,6 +613,23 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     citation: "npm `taibu-core@3.5.0`（daliuren 域，MIT）→ 底层 `liuren-ts-lib@1.9.0`（Apache-2.0）",
     license: "MIT / Apache-2.0",
     url: "https://github.com/hhszzzz/taibu",
+    documents: [
+      {
+        title: "taibu-core types.d.ts · 课体字段原码",
+        lines: [
+          "/** 课体信息 */",
+          "export interface KetiInfo {",
+          "    /** 取传课体（贼克/比用/涉害/遥克/昴星/伏吟/返吟/别责/八专） */",
+          "    method: string;",
+          "    /** 细分课体名（蒿失/弹射/元首/重审等） */",
+          "    subTypes: string[];",
+          "    /** 第二维度课体（三交/六仪/铸印等） */",
+          "    extraTypes: string[];",
+          "}",
+        ],
+        note: "取自本仓安装的 `taibu-core@3.5.0` dist/domains/daliuren/types.d.ts:105-113。",
+      },
+    ],
     note: "本仓不自行重写六壬算法；历史自研副本（含 720 组三传查表）已删除，只保留上游这一份。",
   },
   {
@@ -424,15 +655,17 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     license: "仓库根 LICENSE 标注 Apache-2.0（**文本内容的原始著作权状态待核**）",
     url: "https://github.com/ForceMind/Tieban-Shenshu",
     details: [
-      "编号 1001–13000，十二集各 1000，字段：集／条文数／年龄／吉凶断词；本仓仅取数据并重排为 JSON，未复制其算法代码，条文原文照录未改写。",
-      "⚠ **许可自相矛盾（第一手复核）**：仓库根 `LICENSE` 为 Apache-2.0（GitHub 侧栏亦标 “Apache-2.0 license”），但**同一仓库 README 的「许可证」一节写「本项目仅供学习交流使用。」**——宽松授权与限制性声明冲突，不宜只取利己一条。",
-      "⚠ **文本著作权未决**：条文断词很可能转录自现代在版权书籍；仓库的 Apache-2.0 是「仓库/代码」层面声明，不能自动覆盖文本内容。",
-      "上游自述其索引链「不代表唯一正解」；本仓按上游方法文档实现分刻口径，并记录上游 JS 与文档相反之处（`hour%2`）。",
-      "`src/lib/tieshen/rules.ts` 的六十甲子纳音表为本仓手写（属通用常识表，未标具体出处）；其余索引表与断词均来自上游仓库。",
+      "**铁板神数 · 功能完整**：12000 条条文库（编号 1001–13000，十二集各 1000）、四柱→先天命数→五音→日命/时运→本命数→分刻考刻→终局条文数→卦名→后天命数→五数寄宫→八卦加则、14-10 本命条文、流年 1–108 三口径（原条文／校正后／铁板公式）。",
+      "**已与上游逐键比对（0 处不符）**：12000 条断词、1493 条校正映射（`deriveCorrectionMaps` 同键取末次）、726/1499 卦表、DESTINY_DATA 288、LIUNIAN_* 等全部一致。",
+      "**面板上的空白＝上游表缺口，不是本仓偏差**：14-8 简表在 181–930 内缺 24 个本命数（约占 2.1% 组合）；14-14 中 106/108 岁**无任何字母行**（默认例命中 100/108，41472 例网格均 98.52/108）。界面已改为逐行给出具体原因（14-13／14-14／条文库范围外）。",
+      "⚠ 上游一处内部不一致：14-9/14-13 首列只有「初刻/正刻」，而其代码查 14-9 传八刻名、查 14-13 传刻干数折半——若确认「刻别＝考刻 Initial/Main」语义可消掉那 24 洞，但**无明确来源前本仓不擅改**。",
+      "**邵子神数 · 未能实现（如实声明）**：条文文本与「生辰→编号」规则均未找到许可允许且可核验的来源（`Horace-Maxwell/horosa-skill` 为 AGPL-3.0；`taozi9999/Divination`、`tieban-shenshu-skillpack` 无 LICENSE；维基文库/识典/ctext 无全文；规则只见于在版权书籍与商业站）。本仓**不编规则、不编条文**，只把编号空间做全（1111–12888 · 6144 条 · 12 集×512，可校验、可导入）。六亲条文字号同因无来源未实现。",
+      "**太玄数 / 洛书 · 已实现为对照取数**：太玄配数诀、天干/地支配卦、洛书数＝后天卦数（来源：上游 Apache-2.0 `main.py`「4. 太玄数」＋公有领域歌诀，两处逐字一致）；**未接**「取数→条文编号」链（该环节无可核验规则）。",
+      "⚠ **许可自相矛盾（第一手复核）**：仓库根 `LICENSE` 为 Apache-2.0（GitHub 侧栏亦标 “Apache-2.0 license”），但**同一仓库 README 的「许可证」一节写「本项目仅供学习交流使用。」**；且条文断词很可能转录自现代在版权书籍——Apache-2.0 属「仓库/代码」层面声明，不能自动覆盖文本内容。",
       "**建议**：上线前由产品负责人二择一——取得条文文本授权，或撤下 `data/*.json` 只留索引骨架与导入接口（本仓已实现空库降级）。",
     ],
     note:
-      "邵子神数**未找到**宽松许可条文源，故只做索引骨架与导入接口，界面与载荷明写「未接条文源，不生成条文」。六亲条文字号、太玄数/洛书换算为明确未实现项。",
+      "本仓按上游方法文档实现分刻口径，并记录上游 JS 与文档相反之处（`hour%2`）；`rules.ts` 的六十甲子纳音表为本仓手写（通用常识表）。文本可分发性未决，故整条状态为「未核」。",
   },
 
   /* ───────────────────────── 第四道 / 阿卡西 / 研究 ───────────────────────── */
@@ -480,7 +713,18 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     license: "MIT",
     url: "https://github.com/domalhambra/hd-chart-engine",
     quote:
-      "上游用固定天轮起点（WHEEL_START 223.25）、门宽 6.625°、88° 设计弧与真交点计算行星激活；本仓依公开的 36 通道 / 64 门→9 中心映射推导类型、权威、定义与 Profile。",
+      "上游用固定天轮起点（WHEEL_START 223.25）、门宽 5.625°（＝360/64）、88° 设计弧与真交点计算行星激活；本仓依公开的 36 通道 / 64 门→9 中心映射推导类型、权威、定义与 Profile。",
+    documents: [
+      {
+        title: "hd-chart-engine dist/index.js · 天轮与门宽原码",
+        lines: [
+          ":61-66  var WHEEL_START = 223.25; var GATE_WIDTH = 5.625; var LINE_WIDTH = GATE_WIDTH / 6; var COLOR_WIDTH = LINE_WIDTH / 6; var TONE_WIDTH = COLOR_WIDTH / 6; var BASE_WIDTH = TONE_WIDTH / 5;",
+          ":137-138  const offset = (lon - WHEEL_START + 360) % 360; const wheelIndex = Math.floor(offset / GATE_WIDTH);",
+          ":155  const targetLon = ((pSunLon - 88) % 360 + 360) % 360;",
+        ],
+        note: "取自 npm `hd-chart-engine@0.1.1` 的 dist 打包行号。门宽为 5.625°（360/64）；固定起点 223.25°＝13°15′ 天蝎（黄经）。",
+      },
+    ],
     note:
       "行星激活为地心坐标、不依赖出生地。**未给** Incarnation Cross 的十字名（只给角度类型与四个门）；`tone/base` 为估值（上游 precision 字段已透出）。本仓只改作研究性呈现，不代表认证排盘或医学/心理诊断。",
   },
@@ -491,9 +735,9 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     status: "本仓自撰",
     title: "泛音（谐波）星盘：黄经×n 折算与合相判定",
     citation: "泛音占星为 20 世纪通行做法（Addey 一系）；本仓 `src/lib/harmonic/chart.ts` 自实现",
-    quote: "折算：`h = (黄经 × n) mod 360`；本仓只判合相（固定容许度），点位沿用本仓星盘（celestine）的输出。",
+    quote: "折算：`h = (黄经 × n) mod 360`；本仓只判合相（固定容许度），点位沿用本仓星盘（celestine）的输出（现为 18 项，自动纳入）。",
     note:
-      "本仓**未逐条对照原始文献**：分盘口径（哪些相位、容许度如何随 n 变化）为自定；也不含谐波盘专属的四轴反推做法（部分流派由谐波中天反推上升）。故本页只作研究参照。",
+      "「谐波盘以**合相**为读取口径」为 Addey 一系的通行做法（如 Astrodienst：In the harmonic chart, these planets form conjunctions；谐波盘内其它相位虽可研究，但解释会迅速复合、须更谨慎），故本仓此举是**取值口径而非简化**。谐波盘专属的四轴反推做法（部分流派由谐波中天反推上升）未实现——无统一规则，不新造。",
   },
   {
     id: "combined-aggregate",
@@ -539,8 +783,9 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
       "七政四余：紫气非古典虚星；岁差用 Lahiri 近似；宫位为等分十二次（未做斜升）。",
       "星盘：宫制固定 Placidus（高纬回退）；未含阿拉伯点以外的 lots 与恒星。",
       "人类图：Incarnation Cross 只给角度与四门、不给十字名；tone/base 为估值。",
-      "玛雅：未移植 Dreamspell 的银河门户与神秘柱。",
-      "吠陀：仅平交点；岁差非严格 Chitrapaksha。",
+      "玛雅：银河门户与神秘柱**已移植**（来源 `oshimish/dreamspell-math` `src/Kin.ts`，MIT）；上游无门户日名称/含义数据。",
+      "吠陀：罗睺/计都可切平/真交点（真交点用 celestine 的 Meeus 级数实现）；岁差仍非严格 Chitrapaksha。",
+      "泛音：只判合相为 Addey 一系通行读取口径（非简化）；谐波四轴反推未实现。",
       "汉堡：光行差按 Astrolog 口径施加（物理上对假想体非必然）；未做周年光行差的地球速度口径。",
     ],
   },

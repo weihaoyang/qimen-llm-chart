@@ -2,19 +2,26 @@ import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { buildTieshenChart, type TieshenSettings } from "./chart";
 import {
+  createShaoziShenshuLibrary,
   createTieshenTiaowenLibrary,
   deriveCorrectionMaps,
   getTiebanTiaowenLibrary,
   importTieshenTiaowen,
+  isShaoziShenshuNumber,
   lookupTiaowen,
   PERMISSIVE_DATA_LICENSES,
+  SHAOZI_SHENSHU_COUNT,
+  SHAOZI_SHENSHU_FIRST_NUMBER,
+  SHAOZI_SHENSHU_LAST_NUMBER,
   TIEBAN_CORRECTION_ROW_TABLE,
   TIEBAN_DATA_SOURCE,
   TIEBAN_DESTINY_TABLE,
+  TIEBAN_HEXAGRAM_HOLES,
   TIEBAN_LETTER_ROW_TABLE,
   TIEBAN_TIAOWEN_COUNT,
   TIEBAN_TIAOWEN_SAMPLE,
   TIESHEN_VOLUMES,
+  volumeOfShaoziTiaowen,
   volumeOfTiaowen,
 } from "./data";
 import {
@@ -22,13 +29,19 @@ import {
   congNumberOf,
   correctionOf,
   groupOf,
+  guaOfGan,
+  guaOfZhi,
   keGanNumberOf,
   keOfHourMinute,
   liunianLetterOf,
+  luoShuNumberOfGua,
+  qushuOfPillar,
   sanYuanOf,
+  taixuanNumberOf,
   wuShuJiGongHexagramOf,
   KE_NAMES,
-  TIESHEN_UNIMPLEMENTED,
+  TAIXUAN_NUMBER,
+  TIESHEN_BOUNDARY_NOTES,
   TONE_NUMBERS,
 } from "./rules";
 import { serializeTieshenToCompactJson, serializeTieshenToStructuredText } from "./serializer";
@@ -99,6 +112,53 @@ describe("tieshen data sources", () => {
     expect(() => importTieshenTiaowen({ ...base, format: "qmdj-shaozi-tiaowen-v1" })).toThrow(/format/);
     expect(() => importTieshenTiaowen({ ...base, license: "CC0-1.0" })).not.toThrow();
     expect(importTieshenTiaowen({ ...base, license: "MIT" }).size).toBe(1);
+  });
+
+  it("registers the 邵子神数 number space without shipping any 邵子 text or rule", () => {
+    expect(SHAOZI_SHENSHU_FIRST_NUMBER).toBe(1111);
+    expect(SHAOZI_SHENSHU_LAST_NUMBER).toBe(12888);
+    expect(SHAOZI_SHENSHU_COUNT).toBe(6144);
+    expect(volumeOfShaoziTiaowen(1111)).toBe("子集");
+    expect(volumeOfShaoziTiaowen(2000)).toBe("丑集");
+    expect(volumeOfShaoziTiaowen(12000)).toBe("亥集");
+    expect(volumeOfShaoziTiaowen(12888)).toBe("亥集");
+    expect(isShaoziShenshuNumber(1110)).toBe(false);
+    expect(isShaoziShenshuNumber(1111)).toBe(true);
+    expect(isShaoziShenshuNumber(12888)).toBe(true);
+    expect(isShaoziShenshuNumber(12889)).toBe(false);
+    expect(isShaoziShenshuNumber(1.5)).toBe(false);
+  });
+
+  it("accepts an externally imported 邵子 library only inside 1111–12888 with 邵子 集名", () => {
+    const library = createShaoziShenshuLibrary({
+      id: "shaozi-import",
+      name: "邵子神数条文（外部导入·测试）",
+      license: "CC0-1.0",
+      repository: "",
+      commit: "",
+      entries: [
+        { number: 1111, text: "测试一" },
+        { number: 12888, text: "测试二" },
+        // 区间外 / 非法编号一律丢弃，不猜测、不改造
+        { number: 1001, text: "铁板编号，非邵子区间" },
+        { number: 20000, text: "越界" },
+      ],
+    });
+    expect(library.size).toBe(2);
+    expect(library.entries.get(1111)?.volume).toBe("子集");
+    expect(library.entries.get(12888)?.volume).toBe("亥集");
+    expect(library.entries.has(1001)).toBe(false);
+    // 许可校验沿用同一通道
+    expect(() =>
+      createShaoziShenshuLibrary({
+        id: "shaozi-agpl",
+        name: "AGPL 邵子（测试）",
+        license: "AGPL-3.0",
+        repository: "",
+        commit: "",
+        entries: [],
+      }),
+    ).toThrow(/许可/);
   });
 });
 
@@ -264,11 +324,73 @@ describe("tieshen chart", () => {
   it("states plainly that 邵子神数 and 六亲条文 are not wired", () => {
     expect(chart.coverage.shaoziShenshu.available).toBe(false);
     expect(chart.coverage.shaoziShenshu.licenseBlocked).toBe(true);
-    expect(chart.coverage.shaoziShenshu.reason).toContain("AGPL");
+    expect(chart.coverage.shaoziShenshu.numberSpace.count).toBe(SHAOZI_SHENSHU_COUNT);
+    expect(chart.coverage.shaoziShenshu.numberSpace.first).toBe(SHAOZI_SHENSHU_FIRST_NUMBER);
+    expect(chart.coverage.shaoziShenshu.numberSpace.last).toBe(SHAOZI_SHENSHU_LAST_NUMBER);
+    expect(chart.coverage.shaoziShenshu.reason).toContain("6144");
     expect(chart.coverage.sixQin.available).toBe(false);
     expect(chart.coverage.sixQin.reason).toContain("未获");
-    expect(chart.todo).toEqual(TIESHEN_UNIMPLEMENTED);
+    expect(chart.boundaries).toEqual(TIESHEN_BOUNDARY_NOTES);
     expect(chart.disclaimer).toContain("邵子神数条文源未接入");
+  });
+
+  it("marks every 流年 blank as an upstream table gap, never as invented text", () => {
+    const blank = chart.liunian.filter((row) => row.textSource === "none");
+    expect(blank.length).toBe(chart.coverage.liunian.uncoveredAges.length);
+    expect(chart.coverage.liunian.resolved + blank.length).toBe(108);
+    for (const row of blank) {
+      expect(row.gap).not.toBeNull();
+      expect(row.originalText || row.correctedText || row.tiebanText).toBe("");
+      // 缺口只能来自上游表：字母缺登记、14-14 缺行、或条文号出库
+      expect(["letter", "fortune", "library"]).toContain(row.gap);
+    }
+    for (const row of chart.liunian.filter((item) => item.textSource !== "none")) {
+      expect(row.gap).toBeNull();
+    }
+    const { letter, fortune, library } = chart.coverage.liunian.gapCounts;
+    expect(letter + fortune + library).toBe(blank.length);
+    expect(chart.coverage.liunian.uncoveredAges).toEqual(blank.map((row) => row.age));
+  });
+
+  it("pins the 上游 14-14 gap set for the fixed 1990-05-20 08:30 男 case", () => {
+    // 逐键比对上游 db-data.js 后确认：这些岁在 14-14 明细表中无对应行（上游缺口，非本仓偏差）
+    expect(chart.coverage.liunian.resolved).toBe(100);
+    expect(chart.coverage.liunian.uncoveredAges).toEqual([88, 99, 100, 102, 104, 105, 106, 108]);
+    expect(chart.coverage.liunian.gapCounts).toEqual({ letter: 0, fortune: 8, library: 0 });
+  });
+
+  it("exposes the 14-8 简表 holes only when the 卦名 really falls in one", () => {
+    expect(TIEBAN_HEXAGRAM_HOLES).toHaveLength(24);
+    expect(TIEBAN_HEXAGRAM_HOLES).toContain(199);
+    expect(chart.coverage.hexagram.holes).toBe(TIEBAN_HEXAGRAM_HOLES);
+    if (chart.keys.hexagramSource === "unmatched") {
+      expect(chart.coverage.hexagram.gap).toBe("simple-table-hole");
+      expect(TIEBAN_HEXAGRAM_HOLES).toContain(chart.keys.mainNumber);
+    } else {
+      expect(chart.coverage.hexagram.gap).toBe("none");
+      // 本命数恒落在 181–930，未匹配只可能来自 14-8 缺行
+      expect(chart.keys.mainNumber).toBeGreaterThanOrEqual(181);
+      expect(chart.keys.mainNumber).toBeLessThanOrEqual(930);
+    }
+  });
+
+  it("exposes 太玄取数 / 配卦 / 洛书数 as a traceable cross-check, not a 条文 chain", () => {
+    expect(TAIXUAN_NUMBER["甲"]).toBe(9);
+    expect(TAIXUAN_NUMBER["亥"]).toBe(4);
+    expect(taixuanNumberOf("甲子")).toBe(18);
+    expect(taixuanNumberOf("癸亥")).toBe(9);
+    expect(guaOfGan("壬")).toBe("乾");
+    expect(guaOfGan("丁")).toBe("兑");
+    expect(guaOfZhi("子")).toBe("坎");
+    expect(guaOfZhi("戌")).toBe("巽");
+    expect(luoShuNumberOfGua("离")).toBe(9);
+
+    expect(chart.qushu.pillars.map((pillar) => pillar.label)).toEqual(["年柱", "月柱", "日柱", "时柱"]);
+    for (const pillar of chart.qushu.pillars) {
+      expect(pillar).toEqual({ label: pillar.label, ...qushuOfPillar(pillar.ganZhi) });
+      expect(pillar.sum).toBe(pillar.ganTaixuan + pillar.zhiTaixuan);
+    }
+    expect(chart.qushu.note).toContain("未接入");
   });
 
   it("degrades to an empty library without throwing or inventing text", () => {

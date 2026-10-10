@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
-import { ayanamsa, jdToJDE, meanNodeLongitude } from "./ayanamsa";
+import { ayanamsa, jdToJDE, meanNodeLongitude, nodeLongitude, trueNodeLongitude } from "./ayanamsa";
 import { buildVedicChart, julianDayForProfile, nakshatraOf, rashiOf } from "./chart";
 import { NAKSHATRAS, NAKSHATRA_LORDS, RASHIS, VARGA_CODES, VARGA_DEFINITIONS } from "./data";
 import { serializeVedicToCompactJson, serializeVedicToStructuredText } from "./serializer";
@@ -36,6 +36,19 @@ describe("lahiri ayanamsa", () => {
     const node = meanNodeLongitude(jdToJDE(2451545));
     expect(node).toBeGreaterThanOrEqual(0);
     expect(node).toBeLessThan(360);
+  });
+
+  it("adds the true node from celestine within the +/-1.5 deg oscillation band", () => {
+    const jde = jdToJDE(2451545);
+    const mean = meanNodeLongitude(jde);
+    const trueNode = trueNodeLongitude(jde);
+    // J2000.0（T = 0）处 celestine getTrueNodeLongitude 的定值：124.2102°。
+    expect(trueNode).toBeCloseTo(124.2102, 3);
+    // celestine 自述真交点相对平交点的最大摆动为 1.5°（dist/index.js:2297）。
+    expect(Math.abs(((trueNode - mean + 540) % 360) - 180)).toBeLessThanOrEqual(1.5);
+    // nodeLongitude 默认平交点，可切真交点。
+    expect(nodeLongitude(jde)).toBeCloseTo(mean, 9);
+    expect(nodeLongitude(jde, "true")).toBeCloseTo(trueNode, 9);
   });
 });
 
@@ -152,6 +165,21 @@ describe("vedic chart", () => {
     expect((rahu!.longitude + 180) % 360).toBeCloseTo(ketu!.longitude, 3);
   });
 
+  it("exposes both node modes and lets the caller pick one", () => {
+    const meanChart = buildVedicChart(profile());
+    expect(meanChart.nodeMode).toBe("mean");
+    const rahuMean = meanChart.grahas.find((graha) => graha.id === "Rahu")!;
+    expect(rahuMean.longitude).toBeCloseTo(meanChart.nodes.mean.rahu.longitude, 9);
+    expect((meanChart.nodes.true.rahu.longitude + 180) % 360).toBeCloseTo(meanChart.nodes.true.ketu.longitude, 6);
+    expect(meanChart.nodes.true.rahu.longitude).not.toBeCloseTo(rahuMean.longitude, 3);
+
+    const trueChart = buildVedicChart(profile(), { nodeMode: "true" });
+    expect(trueChart.nodeMode).toBe("true");
+    expect(trueChart.grahas.find((graha) => graha.id === "Rahu")!.longitude).toBeCloseTo(trueChart.nodes.true.rahu.longitude, 9);
+    // 其余行星不受口径影响。
+    expect(trueChart.grahas.filter((graha) => graha.id !== "Rahu" && graha.id !== "Ketu")).toEqual(meanChart.grahas.filter((graha) => graha.id !== "Rahu" && graha.id !== "Ketu"));
+  });
+
   it("skips the lagna when there is no birth place", () => {
     const chart = buildVedicChart(profile(false));
     expect(chart.input.hasPlace).toBe(false);
@@ -166,8 +194,11 @@ describe("vedic chart", () => {
     expect(text).toContain("吠陀占星");
     expect(text).toContain("D60");
     expect(text).toContain("罗睺");
-    const payload = JSON.parse(serializeVedicToCompactJson(chart)) as { format: string; grahas: unknown[]; vargas: unknown[] };
+    const payload = JSON.parse(serializeVedicToCompactJson(chart)) as { format: string; grahas: unknown[]; vargas: unknown[]; nodeMode: string; nodeLongitudes: { mean: number; true: number } };
     expect(payload.format).toBe("qmdj-vedic-v1");
+    expect(payload.nodeMode).toBe("mean");
+    expect(payload.nodeLongitudes.true).not.toBeCloseTo(payload.nodeLongitudes.mean, 3);
+    expect(text).toContain("平交点（Mean Node）");
     expect(payload.grahas).toHaveLength(9);
     expect(payload.vargas).toHaveLength(16);
   });

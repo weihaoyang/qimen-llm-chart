@@ -40,6 +40,29 @@ describe("harmonic chart", () => {
     }
   });
 
+  it("carries all 18 astro points (planets, Chiron, asteroids, true nodes, Lilith)", () => {
+    const chart = buildHarmonicChart(profile(), 1);
+    // celestine 默认：10 行星 + 凯龙 + 四小行星 + 真交点南北 + 莉莉丝 = 18（astro/chart.ts:7-31）。
+    expect(chart.points).toHaveLength(18);
+    const names = chart.points.map((point) => point.name);
+    expect(names).toContain("凯龙星");
+    expect(names).toContain("北交点");
+    expect(names).toContain("南交点");
+    expect(names).toContain("莉莉丝");
+    expect(names).toContain("谷神星");
+    // 4 个角（上升/中天/下降/天底）另计，仅在完整盘时纳入。
+    expect(chart.angles.map((point) => point.name)).toEqual(["上升", "中天", "下降", "天底"]);
+    // 复合盘全量参与合相扫描：每个点位都会被算一次谐波黄经。
+    expect(chart.points.every((point) => point.longitude >= 0 && point.longitude < 360)).toBe(true);
+  });
+
+  it("documents the conjunction-only reading as the sourced convention", () => {
+    const chart = buildHarmonicChart(profile(), 7);
+    expect(chart.disclaimer).toContain("Addey");
+    expect(chart.disclaimer).toContain("18 个点位");
+    expect(chart.disclaimer).toContain("合相");
+  });
+
   it("is deterministic and serializes the method", () => {
     const chart = buildHarmonicChart(profile(), 7);
     expect(buildHarmonicChart(profile(), 7)).toEqual(chart);

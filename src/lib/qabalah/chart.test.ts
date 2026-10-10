@@ -83,6 +83,21 @@ describe("gematria", () => {
     expect(values.map((entry) => entry.value)).toEqual([1, 40, 400]);
     expect(values.map((entry) => entry.base)).toEqual(["א", "מ", "ת"]);
   });
+
+  it("rejects katan-mispari in letterValues, matching upstream mispar", () => {
+    // 上游 mispar/src/index.ts:262-264 对 katan-mispari 直接抛 RangeError：
+    // 该法把归约作用在总和上，逐字拆解无定义。
+    expect(() => letterValues("אמת", "katan-mispari")).toThrow(RangeError);
+    expect(() => letterValues("אמת", "katan-mispari")).toThrow('"katan-mispari" reduces the total');
+    // 逐字标准值之和（441）不等于数根（9），故不能以「逐字标准值」冒充该法。
+    expect(letterValues("אמת").reduce((sum, entry) => sum + entry.value, 0)).toBe(441);
+    expect(gematria("אמת", "katan-mispari")).toBe(9);
+    // 其余十二法仍可逐字拆解。
+    for (const method of METHODS) {
+      if (method === "katan-mispari") continue;
+      expect(letterValues("אמת", method).length).toBe(3);
+    }
+  });
 });
 
 describe("qabalah reading", () => {

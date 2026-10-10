@@ -150,8 +150,20 @@ const perLetterValue = (ch: string, method: GematriaMethod): number => {
   }
 };
 
-/** 逐字数值（与 mispar 的 letterValues 一致）。 */
+/**
+ * 逐字数值（与 mispar 的 letterValues 一致）。
+ *
+ * 语义对齐：上游 `mispar`（MIT，(c) 2026 Moshe Malka，
+ * https://github.com/moshejs/mispar）的 `src/index.ts:257-264` 对
+ * `katan-mispari` **直接抛 RangeError** —— 该法把归约作用在「总和」上，
+ * 逐字拆解无定义（逐字标准值之和 ≠ 数根）。本仓原先对 katan-mispari 返回
+ * 逐字标准值，会让人误以为可以逐字相加得到数根，故按上游语义改为抛错。
+ * 需要 katan-mispari 的数值时请调用 `gematria(text, "katan-mispari")`。
+ */
 export const letterValues = (text: string, method: GematriaMethod = "hechrachi") => {
+  if (method === "katan-mispari") {
+    throw new RangeError('"katan-mispari" reduces the total — no per-letter values');
+  }
   const words = tokenize(text);
   const out: Array<{ letter: string; base: string; value: number }> = [];
   let running = 0;
@@ -163,8 +175,6 @@ export const letterValues = (text: string, method: GematriaMethod = "hechrachi")
         value = running;
       } else if (method === "haakhor") {
         value = standardValue(ch) * (index + 1);
-      } else if (method === "katan-mispari") {
-        value = standardValue(ch);
       } else {
         value = perLetterValue(ch, method);
       }

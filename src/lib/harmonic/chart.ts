@@ -5,8 +5,25 @@
  * 母盘中相隔 360°/n（及其整数倍）的两点，在 n 谐波里会叠成合相，所以谐波盘
  * 用来把 quintile(72°)、septile(~51.43°) 这类次要相位「拉直」来看。
  *
+ * 口径说明（有据，非本仓简化）：「谐波盘主要以合相来读」是 Addey 一系的通行做法。
+ *   - Addey 理论（Harmonics in Astrology, 1976）与 Astrodienst 的说明即以此为
+ *     读取方式：「In the harmonic chart, these planets form conjunctions.」
+ *     （https://www.astro.com/astrology/in_harmon_e.htm，检索快照）。
+ *   - 现代综述亦如此描述：「The most important feature of a harmonic chart is
+ *     usually conjunction: planetary separations belonging to that harmonic family
+ *     are compressed into conjunctions… Other aspects inside harmonic charts can
+ *     also be studied, but their interpretation becomes increasingly compound and
+ *     should be handled with greater caution.」
+ *     （https://zodiacroots.com/harmonics-in-astrology/）。
+ *   因此本仓只判合相（固定容许度 HARMONIC_ORB）；盘内其它相位属「复合解读」，
+ *   无统一容许度规则，本仓不自行发明，未实现。
+ *
  * 行星黄经复用既有 celestine 星盘结果（地心坐标，不依赖出生地）；上升/中天只在
- * 有出生地时才有意义，因此仅在完整盘时纳入。
+ * 有出生地时才有意义，因此仅在完整盘时纳入。合相扫描对 `astro.points` 全量生效，
+ * 因而自动包含星盘已扩到的 18 个点位（十大行星 + 凯龙 + 四小行星 + 真交点南北 +
+ * 莉莉丝），见 `@/lib/astro/chart.ts` 的 PLANET_NAMES 与 celestine 默认配置
+ * （`dist/index.js:7305-7316`：includeAsteroids / includeChiron / includeNodes:"true" /
+ * includeLilith:"mean"）。
  */
 import { buildAstroChart } from "@/lib/astro/chart";
 import type { AstroPoint } from "@/lib/astro/types";
@@ -102,6 +119,6 @@ export const buildHarmonicChart = (profile: NormalizedProfileInput, harmonicInpu
     angles,
     conjunctions,
     complete: points.length > 0,
-    disclaimer: `研究性谐波盘：h = (黄经 × ${harmonic}) mod 360，行星星历与星盘共用同一引擎；${astro.complete ? "上升/中天已纳入。" : "未提供出生地，上升/中天未纳入。"}谐波盘只重组角度关系，不引入新的星历，也不作现实预测。`,
+    disclaimer: `研究性谐波盘：h = (黄经 × ${harmonic}) mod 360，行星星历与星盘共用同一引擎（含凯龙、小行星、真交点与莉莉丝共 18 个点位）；${astro.complete ? "上升/中天已纳入。" : "未提供出生地，上升/中天未纳入。"}按 Addey 一系通行做法，谐波盘以合相（容许度 ${HARMONIC_ORB}°）为读取口径；盘内其它相位属复合解读、无统一容许度规则，本仓不自行发明，故不输出。谐波盘只重组角度关系，不引入新的星历，也不作现实预测。`,
   };
 };

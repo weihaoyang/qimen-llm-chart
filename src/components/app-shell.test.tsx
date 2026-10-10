@@ -134,7 +134,9 @@ describe("AppShell", () => {
     // 未接条文源必须在界面上写清，而不是留白
     expect(screen.getAllByText(/未接邵子神数条文源/).length).toBeGreaterThan(0);
     expect(screen.getByText(/条文库 12000 条/)).toBeInTheDocument();
-    expect(screen.getByText(/未实现（不生成条文）/)).toBeInTheDocument();
+    // 成品形态：邵子以「编号空间」正面呈现，不再挂 TODO / 未实现清单
+    expect(screen.getByText("邵子神数")).toBeInTheDocument();
+    expect(screen.queryByText(/未实现（不生成条文）/)).not.toBeInTheDocument();
   }, 60000);
 
   it("renames a saved 生日库 profile", async () => {

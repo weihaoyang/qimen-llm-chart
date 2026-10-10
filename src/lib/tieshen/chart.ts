@@ -1,10 +1,11 @@
 /**
- * 铁板神数（含邵子神数占位）——条文索引盘。
+ * 铁板神数（含邵子神数）——条文索引盘。
  *
- * `buildTieshenChart(profile, settings)` 只做两件事：
+ * `buildTieshenChart(profile, settings)` 只做三件事：
  *   1. 用 `rules.ts` 里**有据可依**的铁板索引链把生辰算到条文编号；
- *   2. 用内置的 12000 条条文库（Apache-2.0，见 `data/SOURCE.md`）把编号翻成断词。
- * 邵子神数条文与六亲条文字号未获可核验来源，本盘不生成——`coverage` 与 `todo` 会如实写出。
+ *   2. 用内置的 12000 条条文库（Apache-2.0，见 `data/SOURCE.md`）把编号翻成断词；
+ *   3. 如实标出**上游表缺口**（14-8 简表缺行、14-14 未登记岁）。
+ * 邵子神数条文与六亲条文字号未获可核验来源，本盘不生成——`coverage` 与 `boundaries` 会如实写出。
  */
 
 import { Lunar, Solar } from "lunar-typescript";
@@ -12,7 +13,9 @@ import type { NormalizedProfileInput } from "@/lib/profile";
 import {
   getTiebanTiaowenLibrary,
   lookupTiaowen,
+  SHAOZI_SHENSHU_SOURCE,
   TIEBAN_DATA_SOURCE,
+  TIEBAN_HEXAGRAM_HOLES,
   type TieshenTiaowenLibrary,
 } from "./data";
 import {
@@ -41,15 +44,17 @@ import {
   mainNumberOf,
   markerOf,
   momentOf,
+  qushuOfPillar,
   sanYuanOf,
   timeLuckNumberOf,
   toneOf,
   toneNumberOf,
   wuShuJiGongHexagramOf,
   HOU_TIAN_GUA_NUMBER,
-  TIESHEN_UNIMPLEMENTED,
+  TIESHEN_BOUNDARY_NOTES,
   type KeName,
 } from "./rules";
+
 
 export type TieshenSettings = {
   /** 求测时间（公历 `YYYY-MM-DDTHH:mm`）。缺省取当前盘面时间。 */
@@ -86,8 +91,27 @@ export type TieshenLiunianRow = {
   tiebanText: string;
   /** 落定条文取用顺序：校正后 → 原条文 → 铁板公式条文。 */
   textSource: "corrected" | "original" | "formula" | "none";
+  /**
+   * 未落定条文时的原因（`textSource === "none"` 时非 null），全部是**上游表缺口**：
+   * - `letter`：该（刻别 / 奇偶 / 五音 / 标记）组合在 14-13 字母表中无登记；
+   * - `fortune`：字母已定，但（字母，岁数）未登记在 14-14（常见于高龄段）；
+   * - `library`：条文号算出来了，但落在条文库 1001–13000 之外。
+   */
+  gap: "letter" | "fortune" | "library" | null;
   jiaze: { result: number | null; stopped: boolean };
 };
+
+export type TieshenQushu = {
+  ganZhi: string;
+  ganTaixuan: number;
+  zhiTaixuan: number;
+  sum: number;
+  ganGua: string;
+  zhiGua: string;
+  ganLuoShu: number;
+  zhiLuoShu: number;
+};
+
 
 export type TieshenChart = {
   format: "qmdj-tieshen-v1";
@@ -134,14 +158,44 @@ export type TieshenChart = {
   benming: { table: { base: number; seq: number } | null; hits: TieshenTiaowenHit[] };
   /** 流年条文 1–108 岁（三种口径并列：原条文 / 校正后 / 铁板公式）。 */
   liunian: TieshenLiunianRow[];
+  /** 太玄取数 / 配卦 / 洛书数（对照呈现；未接入条文编号链）。 */
+  qushu: { note: string; pillars: Array<{ label: string } & TieshenQushu> };
   library: { id: string; name: string; license: string; repository: string; commit: string; size: number };
   coverage: {
     ruleSource: { repository: string; license: string; commit: string };
     benming: "ready" | "missing-destiny-row";
-    liunian: { total: number; resolved: number };
-    shaoziShenshu: { available: false; licenseBlocked: true; reason: string };
+    liunian: {
+      total: number;
+      resolved: number;
+      /** 未落定条文的岁（上游表缺口，升序）。 */
+      uncoveredAges: number[];
+      gapCounts: { letter: number; fortune: number; library: number };
+    };
+    hexagram: {
+      source: "detail" | "simple" | "unmatched";
+      /** `unmatched` 只可能来自 14-8 简表缺行（本命数恒在 181–930）。 */
+      gap: "none" | "simple-table-hole";
+      /** 14-8 简表缺行的本命数集合（上游表缺口，由表推出）。 */
+      holes: readonly number[];
+    };
+    shaoziShenshu: {
+      available: false;
+      licenseBlocked: true;
+      numberSpace: {
+        first: number;
+        last: number;
+        count: number;
+        volumes: number;
+        perVolume: number;
+        structureSources: readonly string[];
+      };
+      reason: string;
+    };
     sixQin: { available: false; reason: string };
   };
+  /** 数据边界与未接入项（细目；面板只留一行克制说明）。 */
+  boundaries: readonly string[];
+  /** `boundaries` 的兼容别名（旧载荷/代理提示词沿用 `todo` 字段名）。 */
   todo: readonly string[];
   disclaimer: string;
 };
@@ -280,6 +334,8 @@ export const buildTieshenChart = (
     const correctedText = correctedFortune === null ? "" : lookupTiaowen(correctedFortune, library)?.text ?? "";
     const tiebanText = tiebanFortune === null ? "" : lookupTiaowen(tiebanFortune, library)?.text ?? "";
     const textSource = correctedText ? "corrected" : originalText ? "original" : tiebanText ? "formula" : "none";
+    const gap: TieshenLiunianRow["gap"] =
+      textSource !== "none" ? null : !letter ? "letter" : !row ? "fortune" : "library";
 
     const jiazeRow = correctedFortune === null || hexagram.source === "unmatched"
       ? { result: null, stopped: false }
@@ -303,11 +359,18 @@ export const buildTieshenChart = (
       correctedText,
       tiebanText,
       textSource,
+      gap,
       jiaze: jiazeRow,
     });
   }
 
-  const resolved = liunian.filter((row) => row.textSource !== "none").length;
+  const uncoveredAges = liunian.filter((row) => row.textSource === "none").map((row) => row.age);
+  const resolved = liunian.length - uncoveredAges.length;
+  const gapCounts = {
+    letter: liunian.filter((row) => row.gap === "letter").length,
+    fortune: liunian.filter((row) => row.gap === "fortune").length,
+    library: liunian.filter((row) => row.gap === "library").length,
+  };
 
   return {
     format: "qmdj-tieshen-v1",
@@ -359,6 +422,15 @@ export const buildTieshenChart = (
       : null,
     benming: { table: destinyRow ? { base: destinyRow.base, seq: destinyRow.seq } : null, hits },
     liunian,
+    qushu: {
+      note: "太玄数 / 配卦 / 洛书数为对照取数（来源：上游 Apache-2.0 main.py 与传统《太玄配数诀》《天干配卦》《地支配卦》），未获「取数 → 条文编号」的可核验规则，故未接入条文链。",
+      pillars: ([
+        ["年柱", birthPillars.year],
+        ["月柱", birthPillars.month],
+        ["日柱", birthPillars.day],
+        ["时柱", birthPillars.time],
+      ] as const).map(([label, ganzhi]) => ({ label, ...qushuOfPillar(ganzhi) })),
+    },
     library: {
       id: library.id,
       name: library.name,
@@ -374,19 +446,33 @@ export const buildTieshenChart = (
         commit: TIEBAN_DATA_SOURCE.commit,
       },
       benming: destinyRow ? "ready" : "missing-destiny-row",
-      liunian: { total: 108, resolved },
+      liunian: { total: 108, resolved, uncoveredAges, gapCounts },
+      hexagram: {
+        source: hexagram.source,
+        gap: hexagram.source === "unmatched" ? "simple-table-hole" : "none",
+        holes: TIEBAN_HEXAGRAM_HOLES,
+      },
       shaoziShenshu: {
         available: false,
         licenseBlocked: true,
-        reason: "未找到宽松许可的邵子神数条文源：检索到的实现为 AGPL-3.0，公共领域古籍均为版权状态不明的民间抄本，故本盘不生成邵子条文。",
+        numberSpace: {
+          first: SHAOZI_SHENSHU_SOURCE.firstNumber,
+          last: SHAOZI_SHENSHU_SOURCE.lastNumber,
+          count: SHAOZI_SHENSHU_SOURCE.count,
+          volumes: SHAOZI_SHENSHU_SOURCE.volumes,
+          perVolume: SHAOZI_SHENSHU_SOURCE.perVolume,
+          structureSources: SHAOZI_SHENSHU_SOURCE.structureSources,
+        },
+        reason: "邵子神数 6144 条（1111–12888）的条文本体与「生辰 → 编号」推算法均未获宽松许可或可核验来源，本盘不生成邵子条文；条文可经导入通道加载。",
       },
       sixQin: {
         available: false,
         reason: "父母宫/兄弟宫等六亲条文字号未获可核验的公开编号规则，本仓不采用上游的关键词启发式分类，故不生成六亲条文。",
       },
     },
-    todo: TIESHEN_UNIMPLEMENTED,
+    boundaries: TIESHEN_BOUNDARY_NOTES,
+    todo: TIESHEN_BOUNDARY_NOTES,
     disclaimer:
-      "铁板神数研究盘（条文索引链 + 条文库检索），非预测。索引链按 Apache-2.0 开源实现 `ForceMind/Tieban-Shenshu` 的方法文档与代码实现：先天命数＝月份表(闰月 +1)+3−时辰表；五音命数由先天命数与年干干组查表；本命数＝(五音数×5+日命数+时运数−[和值≤6?1:6])×30+农历日；终局条文数＝本命数+刻干数×48；卦名按刻别+本命数取详表、未命中取简表；后天命数＝(先天命数+本命数) mod 8 且为 0 记 8，得 5 则按三元九运寄宫；八卦加则按乾 36、兑 3、其余 30 起，遇十不用、六八即止。分刻以方法文档表格（初刻＝时辰内第 0–15 分钟）为准，与上游 JS 对非子时的 hour%2 口径相反，差异已记录。**邵子神数条文源未接入，六亲条文字号与太玄数换算未获公开规则，本盘不生成这些条文**；条文断词一律取自条文库原文，本仓不新增、不改写、不做吉凶断语。仅供研究，不构成预测或现实裁决。",
+      "铁板神数研究盘（条文索引链 + 条文库检索），非预测。索引链按 Apache-2.0 开源实现 `ForceMind/Tieban-Shenshu` 的方法文档与代码实现：先天命数＝月份表(闰月 +1)+3−时辰表；五音命数由先天命数与年干干组查表；本命数＝(五音数×5+日命数+时运数−[和值≤6?1:6])×30+农历日；终局条文数＝本命数+刻干数×48；卦名按八刻刻名+本命数取 14-9 详表、未命中取 14-8 简表；后天命数＝(先天命数+本命数) mod 8 且为 0 记 8，得 5 则按三元九运寄宫；八卦加则按乾 36、兑 3、其余 30 起，遇十不用、六八即止。分刻以方法文档表格（初刻＝时辰内第 0–15 分钟）为准，与上游 JS 对非子时的 hour%2 口径相反，差异已记录。卦名与流年的空白来自**上游表缺口**（14-8 简表缺行、14-14 未登记岁），非本仓偏差，面板与载荷均如实标出。**邵子神数条文源未接入**；六亲条文字号未获公开规则；太玄数/配卦/洛书数仅作对照取数、未接入条文链。条文断词一律取自条文库原文，本仓不新增、不改写、不做吉凶断语。仅供研究，不构成预测或现实裁决。",
   };
 };

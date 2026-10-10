@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { TieshenChart } from "@/lib/tieshen/chart";
-import { KE_NAMES, SIX_QIN_PILLARS } from "@/lib/tieshen/rules";
+import { KE_NAMES } from "@/lib/tieshen/rules";
 import { ProvenanceBlock } from "./provenance-block";
 
 /** 岁段窗口：每次只渲染 10 岁，避免一次铺 108 行。 */
@@ -13,6 +13,13 @@ const textSourceLabel: Record<TieshenChart["liunian"][number]["textSource"], str
   original: "原条文",
   formula: "铁板公式",
   none: "—",
+};
+
+/** 未落定条文的原因（全部指向上游表缺口，不是本盘推导偏差）。 */
+const gapLabel: Record<NonNullable<TieshenChart["liunian"][number]["gap"]>, string> = {
+  letter: "上游 14-13 未登记该（刻别/奇偶/五音/标记）组合",
+  fortune: "上游 14-14 未登记该（字母，岁）",
+  library: "条文号落在条文库 1001–13000 之外",
 };
 
 export function TieshenPanel({
@@ -35,6 +42,7 @@ export function TieshenPanel({
   const [windowStart, setWindowStart] = useState<number>(1);
   const rows = chart.liunian.filter((row) => row.age >= windowStart && row.age <= windowStart + 9);
   const resolved = chart.coverage.liunian.resolved;
+  const hexagramGap = chart.keys.hexagramSource === "unmatched";
 
   return (
     <section className="divination-panel divination-panel--taiyi" aria-label="铁板神数 · 邵子神数">
@@ -46,7 +54,7 @@ export function TieshenPanel({
       </div>
       <header className="divination-panel__header">
         <div>
-          <p className="divination-panel__kicker">条文索引盘 · 未接邵子神数条文源</p>
+          <p className="divination-panel__kicker">条文索引盘 · 内接铁板 12000 条条文库</p>
           <h2>铁板神数 · 邵子神数</h2>
           <p className="divination-panel__subhead">
             先天命数 {chart.keys.congNumber} · 五音 {chart.keys.tone}
@@ -148,11 +156,15 @@ export function TieshenPanel({
         <div>
           <span>卦名 / 后天命数</span>
           <b>
-            {chart.keys.hexagram || "未匹配"} · {chart.keys.houTianNumber}
+            {chart.keys.hexagram || "上游表未覆盖"} · {chart.keys.houTianNumber}
           </b>
           <em>
-            {chart.keys.hexagramSource === "detail" ? "14-9 详表" : chart.keys.hexagramSource === "simple" ? "14-8 简表" : "未匹配"} · 三元{" "}
-            {chart.keys.sanYuan}
+            {chart.keys.hexagramSource === "detail"
+              ? "14-9 详表"
+              : chart.keys.hexagramSource === "simple"
+                ? "14-8 简表"
+                : `本命数 ${chart.keys.mainNumber} 未在 14-8 简表中登记`}{" "}
+            · 三元 {chart.keys.sanYuan}
             {chart.keys.wuShuJiGong ? ` · 五数寄宫 ${chart.keys.wuShuJiGong.hexagram}` : ""}
           </em>
         </div>
@@ -199,7 +211,7 @@ export function TieshenPanel({
         <small>
           终局 {chart.keys.finalFortuneNumber}
           {chart.native ? "" : "（小于条文库起始 1001，无断词）"} · 所选岁段 {windowStart}–
-          {Math.min(windowStart + 9, 108)}
+          {Math.min(windowStart + 9, 108)} · 全盘命中 {resolved}/108
         </small>
       </div>
       <div className="rune-selector">
@@ -233,15 +245,18 @@ export function TieshenPanel({
             <span>{row.marker || "—"}</span>
             <span>{row.letter || "—"}</span>
             <em>
-              {row.correctedText || row.originalText || row.tiebanText || "本岁末未落到条文（字母/条文编号未覆盖）"}
-              {row.textSource === "none" ? "" : `｜${textSourceLabel[row.textSource]}`}
+              {row.correctedText || row.originalText || row.tiebanText
+                ? `${row.correctedText || row.originalText || row.tiebanText}｜${textSourceLabel[row.textSource]}`
+                : row.gap
+                  ? gapLabel[row.gap]
+                  : "—"}
             </em>
           </div>
         ))}
       </div>
       <p className="taiyi-note">
         三种口径并列：原条文（字母 + 虚岁直接查得）、校正后条文（按年龄施加条文校正后查得，一般以此为落定）、铁板公式条文（原条文数 +
-        刻干数 × 48）。字母为空表示该岁的五音 / 标记组合未在 14-13 中登记，本页不补造。
+        刻干数 × 48）。标出「14-14 未登记」等字样的岁，是上游 14-14 明细表本身缺行（多见于 88 岁以后与部分偶数岁），本页照缺呈现、不补造。
       </p>
 
       <div className="divination-section-heading">
@@ -272,30 +287,57 @@ export function TieshenPanel({
         <article className="taiyi-general">
           <header>
             <b>邵子神数</b>
-            <em>未接入</em>
+            <em>编号空间</em>
           </header>
-          <span>无论文源接入</span>
-          <p>{chart.coverage.shaoziShenshu.reason}</p>
-        </article>
-        <article className="taiyi-general">
-          <header>
-            <b>六亲条文</b>
-            <em>未实现</em>
-          </header>
-          <span>{Object.entries(SIX_QIN_PILLARS).map(([pillar, palace]) => `${pillar}=${palace}`).join(" · ")}</span>
-          <p>{chart.coverage.sixQin.reason}</p>
+          <span>
+            {chart.coverage.shaoziShenshu.numberSpace.first}–{chart.coverage.shaoziShenshu.numberSpace.last} ·{" "}
+            {chart.coverage.shaoziShenshu.numberSpace.count} 条 · {chart.coverage.shaoziShenshu.numberSpace.volumes} 集
+          </span>
+          <p>本站未接邵子条文源，条文可经导入通道加载；编号空间已登记，规则与条文本体均未获可核验来源。</p>
         </article>
       </div>
 
       <div className="divination-section-heading">
-        <span>未实现（不生成条文）</span>
-        <small>TODO</small>
+        <span>太玄取数 / 配卦 · 对照</span>
+        <small>未接入条文编号链</small>
       </div>
-      {chart.todo.map((item) => (
-        <p className="taiyi-note" key={item}>
-          — {item}
-        </p>
-      ))}
+      <div className="taiyi-table">
+        <div className="taiyi-table__row taiyi-table__row--head">
+          <b>柱</b>
+          <b>干支</b>
+          <b>太玄数</b>
+          <b>配卦</b>
+          <b>洛书数</b>
+        </div>
+        {chart.qushu.pillars.map((pillar) => (
+          <div className="taiyi-table__row" key={pillar.label}>
+            <b>{pillar.label}</b>
+            <span>{pillar.ganZhi}</span>
+            <span>
+              {pillar.ganTaixuan}+{pillar.zhiTaixuan}={pillar.sum}
+            </span>
+            <span>
+              {pillar.ganGua || "—"}/{pillar.zhiGua || "—"}
+            </span>
+            <span>
+              {pillar.ganLuoShu || "—"}/{pillar.zhiLuoShu || "—"}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="taiyi-note">{chart.qushu.note}</p>
+
+      <div className="divination-section-heading">
+        <span>{hexagramGap ? "上游表缺口" : "数据边界"}</span>
+        <small>上游表未覆盖项</small>
+      </div>
+      <p className="taiyi-note">
+        本站未接邵子神数条文源，条文可通过导入通道加载；邵子编号规则与六亲条文字号均未获可核验来源，不推算、不生成。
+        {hexagramGap
+          ? `本盘卦名空白来自上游 14-8 简表缺行（本命数 ${chart.keys.mainNumber}），缺口共 ${chart.coverage.hexagram.holes.length} 个本命数。`
+          : `流年空白来自上游 14-14 明细表未登记岁（本盘 ${chart.coverage.liunian.uncoveredAges.length} 岁）。`}
+        细节见下方「出处与原文」。
+      </p>
 
       <p className="divination-panel__note">
         <span>BOUNDARY</span>
