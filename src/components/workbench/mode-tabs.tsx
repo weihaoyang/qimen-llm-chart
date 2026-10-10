@@ -25,6 +25,7 @@ const MODE_OPTIONS: Array<{
   { value: "fourth-way", label: "第四道" },
   { value: "harmonic", label: "泛音星盘" },
   { value: "huangji", label: "皇极经世" },
+  { value: "qizheng", label: "七政四余" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

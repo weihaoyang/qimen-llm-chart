@@ -33,6 +33,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+### 七政四余（框架与表格）
+
+- 来源：<https://github.com/dglijin-oss/chinese-metaphysics-skills>（`qizheng-siyu-skill`）
+- 许可：MIT License — Copyright (c) 2026 天工长老
+- 位置：`src/lib/qizheng/chart.ts`
+- 采用部分：十二宫名与顺序、二十八宿序、庙旺陷表、命宫公式、七政/四余五行与吉凶表、宫/宿的等分口径。
+- 未采用部分：该脚本的简化天文（太阳/月亮/五星线性近似）与「月孛=太阴+90°、紫气=太阴−90°」约定；本仓改用真星历（celestine）与经典四余定义，详见 `src/lib/qizheng/chart.ts` 头部说明与文件内注释。
+
 ## 运行时依赖
 
 见 `package.json` 的 `dependencies` / `devDependencies`；各包的许可随其发布物提供。

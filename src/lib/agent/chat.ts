@@ -239,6 +239,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   "fourth-way": "请基于当前第四道材料，说明三律与七律各自回答什么问题、如何在九型图上叠加，并把要点对应到现实中的自我观察。",
   harmonic: "请基于当前谐波盘，说明第 n 谐波把哪些母盘次要相位叠成了合相，并逐一折算回母盘角度。",
   huangji: "请基于当前元会运世坐标，说明目标年份落在第几元/会/运/世、世内第几年与年干支，并说明这套纪年的边界。",
+  qizheng: "请基于当前七政四余盘，说明七政与四余各自落在哪一宫、宿、庙旺，以及它们与命宫的关系。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -476,6 +477,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "纪年坐标", question: "请说明当前年份的元、会、运、世、世内年与年干支，并给出距纪元的年数序号。", description: "只做层级坐标换算。", evidence: ["元/会/运/世层级", "世内年", "年干支与距纪元序号"] },
     { label: "尺度对照", question: "请说明一元 129600 年、一会 10800 年、一运 360 年、一世 30 年的换算，以及当前坐标对应的历史尺度。", description: "把大数与现实年代尺度对齐。", evidence: ["层级年数", "当前元内进度", "边界与不可推演的部分"] },
   ],
+  qizheng: [
+    { label: "星曜落宫", question: "请列出七政与四余各自的黄经、宫位、宿度与庙旺，并说明取用口径。", description: "按星曜逐条落到宫与宿。", evidence: ["七政落宫", "四余落宫", "庙旺与宿度"] },
+    { label: "命宫与十二宫", question: "请说明命宫如何定出，以及十二宫与星曜的对应关系。", description: "先定命宫，再看星曜分布。", evidence: ["命宫地支", "十二宫顺序", "星曜与命宫的关系"] },
+  ],
 };
 
 /**
@@ -518,6 +523,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   "fourth-way": ["请用一个日常例子说明 mi→fa 与 si→do 两个断点为什么需要「冲击」。", "请把当前要点整理成三条可执行的自我观察练习。"],
   harmonic: ["请把当前合相折算回母盘的度数与容许度。", "换一个谐波数后，哪些叠合会消失或出现？"],
   huangji: ["请把当前坐标换成一个更早或更晚的年份，并说明层级如何变化。", "这套纪年能支持与不能支持哪些推断？"],
+  qizheng: ["请说明罗睺/计都采用哪种交点约定，以及它对结果的影响。", "这套排盘哪些字段是精确计算，哪些是约定或等分口径？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -537,6 +543,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   "fourth-way": "第四道",
   harmonic: "谐波占星（泛音星盘）",
   huangji: "皇极经世（元会运世）",
+  qizheng: "七政四余",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -630,6 +637,12 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "先给层级坐标，再解释每个层级的年数尺度；把它当作纪年框架，不要写成对现实事件或个人的预测。",
     "建议结构：## 当前坐标 / ## 尺度换算 / ## 干支与序号 / ## 边界。",
   ].join("\n"),
+  qizheng: [
+    "【七政四余边界】七政＝日月与水金火木土五星；四余＝罗睺、计都、月孛、紫气。",
+    "只使用载荷中给出的黄经、宫位、宿度、庙旺与四余约定；不得补造断语、格局条文、流年预言或书籍引文。",
+    "口径：罗睺/计都为黄白交点（默认果老旧法，罗睺=降交点），月孛为平月远地点，紫气为约定虚星（非经典定义）；十二宫与二十八宿为等分口径。",
+    "建议结构：## 盘面事实 / ## 星曜落宫 / ## 命宫与十二宫 / ## 口径与边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -668,6 +681,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   "fourth-way": "只引用载荷中的三律/七律、九型图、中心与自我观察等概念；不得补造书籍引文、页码或未来预测。",
   harmonic: "只引用载荷中的谐波数与叠合结果；折算母盘角度时必须说明这是算术折算，不得据此预测事件。",
   huangji: "只引用载荷中的元会运世坐标与干支；不得据纪年坐标推演治乱、朝代或个人命运。",
+  qizheng: "只引用载荷中的黄经、宫位、宿度与约定字段；不得据星曜落宫推演吉凶祸福或具体事件。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [

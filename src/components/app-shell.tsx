@@ -120,6 +120,7 @@ import { DivinationPanel } from "./divination-panel";
 import { FourthWayPanel } from "./fourth-way-panel";
 import { HarmonicPanel } from "./harmonic-panel";
 import { HuangjiPanel } from "./huangji-panel";
+import { QizhengPanel } from "./qizheng-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -131,6 +132,8 @@ import { buildHarmonicChart } from "@/lib/harmonic/chart";
 import { serializeHarmonicToCompactJson, serializeHarmonicToStructuredText } from "@/lib/harmonic/serializer";
 import { calculateHuangjiChronology, parseHistoricalYear } from "@/lib/huangji/chronology";
 import { serializeHuangjiToCompactJson, serializeHuangjiToStructuredText } from "@/lib/huangji/serializer";
+import { buildQizhengChart } from "@/lib/qizheng/chart";
+import { serializeQizhengToCompactJson, serializeQizhengToStructuredText } from "@/lib/qizheng/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -293,6 +296,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  qizheng: {
+    question: DEFAULT_AGENT_QUESTIONS.qizheng,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -341,6 +349,7 @@ const MODE_META: Record<
   "fourth-way": { label: "葛吉夫第四道", title: "第四道", description: "三律 / 七律 / 九型图" },
   harmonic: { label: "谐波占星", title: "泛音星盘", description: "第 n 谐波 / 叠合 / 折算" },
   huangji: { label: "皇极经世", title: "皇极经世", description: "元会运世 / 干支 / 纪元序号" },
+  qizheng: { label: "七政四余", title: "七政四余", description: "七政 / 四余 / 宫宿庙旺" },
 };
 
 const buildWorkbenchCharts = (
@@ -541,8 +550,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1001,6 +1010,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   }, [normalizedProfile]);
   const huangjiValue = huangjiChronology ?? huangjiFallback;
   const huangjiStructuredText = useMemo(() => serializeHuangjiToStructuredText(huangjiValue), [huangjiValue]);
+  const qizhengChart = useMemo(() => buildQizhengChart(normalizedProfile), [normalizedProfile]);
+  const qizhengStructuredText = useMemo(() => serializeQizhengToStructuredText(qizhengChart), [qizhengChart]);
 
   const researchData = useMemo<ResearchWorkspaceData | null>(() => {
     try {
@@ -1137,6 +1148,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return harmonicStructuredText;
       case "huangji":
         return huangjiStructuredText;
+      case "qizheng":
+        return qizhengStructuredText;
     }
   }, [
     mode,
@@ -1154,6 +1167,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     fourthWayStructuredText,
     harmonicStructuredText,
     huangjiStructuredText,
+    qizhengStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1204,8 +1218,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeHarmonicToCompactJson(harmonicChart);
       case "huangji":
         return serializeHuangjiToCompactJson(huangjiValue);
+      case "qizheng":
+        return serializeQizhengToCompactJson(qizhengChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1261,6 +1277,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       "fourth-way": { ...current["fourth-way"], content: "", model: null, error: null, loading: false },
       harmonic: { ...current.harmonic, content: "", model: null, error: null, loading: false },
       huangji: { ...current.huangji, content: "", model: null, error: null, loading: false },
+      qizheng: { ...current.qizheng, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
   };
@@ -2106,6 +2123,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "fourth-way" ? <FourthWayPanel content={FOURTH_WAY_CONTENT} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "harmonic" ? <HarmonicPanel value={harmonicChart} onHarmonicChange={(next) => { setHarmonic(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "huangji" ? <HuangjiPanel value={huangjiValue} yearInput={huangjiYear} yearError={!huangjiChronology} onYearChange={(next) => { setHuangjiYear(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "qizheng" ? <QizhengPanel value={qizhengChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

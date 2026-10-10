@@ -10,7 +10,7 @@ const parse = (value: string) => {
   if (!match) throw new Error("出生时间格式无效。");
   return match.slice(1).map(Number) as [number, number, number, number, number];
 };
-const offsetMinutes = (datetime: string, timeZone: string) => {
+export const offsetMinutes = (datetime: string, timeZone: string) => {
   const [date, time] = datetime.split("T");
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
