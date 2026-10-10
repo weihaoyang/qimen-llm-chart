@@ -29,6 +29,7 @@ const MODE_OPTIONS: Array<{
   { value: "sacred-geometry", label: "神圣几何" },
   { value: "runes", label: "卢恩符文" },
   { value: "uranian", label: "汉堡学派" },
+  { value: "maya", label: "玛雅历法" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

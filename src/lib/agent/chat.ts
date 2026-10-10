@@ -243,6 +243,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   "sacred-geometry": "请基于当前神圣几何图形，说明它的构造方式、层数，以及其中出现的几何比例，并区分几何事实与象征解读。",
   runes: "请基于当前卢恩符文牌阵，逐位说明符文、正逆位与其含义，并给出可验证的现实行动；不要当作确定预测。",
   uranian: "请基于当前汉堡学派 90° 盘，说明八虚星的位置、被占据的中点与行星图景，并区分盘面几何事实与该体系的象征解释。",
+  maya: "请基于当前玛雅历换算，说明长纪年、卓尔金、哈布与 13:20 的 Kin，并区分历法换算事实与该体系的象征解释。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -496,6 +497,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "八虚星位置", question: "请逐颗说明八虚星（Cupido…Poseidon）落在哪个星座度数、盘面位置，以及它在汉堡体系中的原则。", description: "先讲位置，再讲原则。", evidence: ["地心黄经与盘面位置", "八虚星原则", "与真实行星的相对关系"] },
     { label: "中点与图景", question: "请说明当前被占据的中点与行星图景（A/B=C、A+B=C、A+B=C+D），并区分盘面几何与被解释出来的意义。", description: "几何是事实，意义是解释。", evidence: ["中点轴与容许度", "和点与等式", "哪些是象征解释"] },
   ],
+  maya: [
+    { label: "历法换算", question: "请复述长纪年、卓尔金（含日名）、哈布、夜之主与历法轮的换算过程，并说明采用的相关系数。", description: "先讲换算，再讲含义。", evidence: ["GMT 相关系数", "长纪年进位", "卓尔金与哈布的组合"] },
+    { label: "13:20 与神谕", question: "请说明 Kin、印记、调性、波符与神谕五方的关系，并区分计数事实与 Dreamspell 的象征解释。", description: "计数是事实，含义是解释。", evidence: ["13:20 计数与闰日约定", "印章与调性", "神谕五方的位置"] },
+  ],
 };
 
 /**
@@ -542,6 +547,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   "sacred-geometry": ["请把当前图形的构造步骤按顺序复述一遍。", "这个图形里哪些是几何事实，哪些只是象征解读？"],
   runes: ["请把每枚符文的建议转成一个本周可验证的小行动。", "这组符文可能被什么现实信息推翻？"],
   uranian: ["请把最紧的三条中点或行星图景翻译成可验证的现实观察。", "换用 45° 或 22.5° 盘时，哪些结构会消失或出现？"],
+  maya: ["请逐年核对 13:20 计数，说明哪些年份的 Kin 会因闰日而“不推进”。", "这套系统里哪些是可验证的算术，哪些只是命名与象征？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -565,6 +571,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   "sacred-geometry": "神圣几何（生命之花）",
   runes: "卢恩符文（Elder Futhark）",
   uranian: "汉堡学派（Uranian / 天王星系统）",
+  maya: "玛雅历法与卓尔金（Tzolkin / 13:20）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -685,6 +692,13 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "不得据盘面结构预测具体事件、健康、财运或命运；结论只能是研究性提示。",
     "建议结构：## 八虚星位置 / ## 中点与行星图景 / ## 象征解释 / ## 边界。",
   ].join("\n"),
+  maya: [
+    "【玛雅历边界】传统部分采用 GMT 相关系数 584283（0.0.0.0.0 = 4 Ajaw 8 Kumkʼu），学界另有 584285 / 584286 等口径；13:20 部分为 Dreamspell / 十三月历的通行算法（闰日不推进 kin）。两套系统的口径不同，不得混用。",
+    "只使用载荷中给出的长纪年、卓尔金、哈布、夜之主、历法轮与 Kin / 印章 / 调性 / 波符 / 神谕数值；不得补造未在载荷中的铭文、碑文出处或考古结论。",
+    "读法：先把算术换算讲清楚（进位、相关系数、闰日约定），再讲该体系的象征含义，并明确标注哪些是解释。",
+    "印章、调性与神谕名称属 Dreamspell 体系的命名与象征解释；不得据历法推算预测事件、健康、婚配或命运。",
+    "建议结构：## 历法换算 / ## 卓尔金与 13:20 / ## 象征解释 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -727,6 +741,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   "sacred-geometry": "只引用载荷中的形状描述与几何比例；象征解读必须标注为解读，不得当作事实或预测。",
   runes: "只引用载荷中的符文、正逆位与含义；不得声称预测确定事件，行动建议应低风险且可复盘。",
   uranian: "只引用载荷中的黄经、盘面位置、中点与和点；八虚星不是真实行星，禁止据盘面推断具体事件或命运。",
+  maya: "只引用载荷中的历法换算数值；相关系数与闰日约定必须保持口径一致，禁止据历法推断具体事件或命运。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [

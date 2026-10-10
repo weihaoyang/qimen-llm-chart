@@ -186,3 +186,54 @@
 .uranian-list__hits small { margin-left: 4px; color: var(--panel-muted); font-weight: 600; }
 @media (max-width: 850px) { .uranian-layout { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .uranian-row { grid-template-columns: 26px minmax(0, 1fr) auto; grid-template-areas: "code name dial" "principles principles principles"; } .uranian-list__item { grid-template-columns: 46px minmax(0, auto) auto minmax(0, 1fr); font-size: 12px; } }
+
+/* 玛雅历法与卓尔金（Tzolkin）· 13:20 频率系统 */
+.divination-panel--maya::before { background: #1f9d8b; }
+.maya-date { display: inline-flex; align-items: center; gap: 8px; font: 800 11px var(--paipan-font-mono); }
+.maya-date input { padding: 6px 8px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); font: 800 11px var(--paipan-font-mono); }
+.maya-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+.maya-column { min-width: 0; }
+.maya-hero { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.maya-hero__block { display: flex; flex-direction: column; gap: 6px; min-height: 120px; padding: 14px; border: 1.5px solid var(--panel-ink); box-shadow: 3px 3px 0 var(--panel-ink); background: var(--paipan-ground); }
+.maya-hero__block--tzolkin { background: #d9efe9; }
+.maya-hero__block small { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .1em; }
+.maya-hero__block strong { font-size: clamp(19px, 2.2vw, 26px); letter-spacing: -.03em; }
+.maya-hero__block em { margin-top: auto; color: var(--panel-muted); font-size: 11px; font-style: normal; }
+.maya-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.maya-facts > div { display: flex; flex-direction: column; gap: 3px; padding: 10px; border: 1px solid var(--panel-line); }
+.maya-facts span { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.maya-facts b { font: 800 15px var(--paipan-font-mono); }
+.maya-facts em { color: var(--panel-muted); font-size: 10.5px; font-style: normal; }
+.maya-signs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.maya-sign { display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 6px; padding: 7px 8px; border: 1px solid var(--panel-line); }
+.maya-sign > b { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); }
+.maya-sign > span { display: flex; flex-direction: column; font-weight: 800; font-size: 12.5px; }
+.maya-sign > span small { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.maya-sign > em { grid-column: 2; color: var(--panel-muted); font-size: 10.5px; font-style: normal; }
+.maya-sign.is-active { border-color: var(--panel-ink); border-width: 2px; background: #1f9d8b; color: #fff; }
+.maya-sign.is-active > b, .maya-sign.is-active > span small, .maya-sign.is-active > em { color: rgba(255, 255, 255, .82); }
+.maya-kin { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 14px; padding: 14px; border: 2px solid var(--panel-ink); box-shadow: 5px 5px 0 var(--panel-ink); background: #eef6f2; margin-bottom: 8px; }
+.maya-kin__number { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px solid var(--panel-ink); background: var(--paipan-accent); }
+.maya-kin__number small { font: 800 9px var(--paipan-font-mono); letter-spacing: .12em; }
+.maya-kin__number strong { font-size: 40px; line-height: 1; letter-spacing: -.05em; }
+.maya-kin__number em { font-size: 10px; font-style: normal; color: var(--panel-muted); }
+.maya-kin__body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.maya-kin__name { margin: 0; font-size: clamp(20px, 2.4vw, 27px); font-weight: 900; letter-spacing: -.03em; }
+.maya-kin__name span { display: block; color: var(--panel-muted); font: 800 10px var(--paipan-font-mono); letter-spacing: .06em; }
+.maya-kin__meta { display: flex; flex-direction: column; gap: 3px; color: var(--panel-muted); font-size: 11.5px; }
+.maya-kin__keywords { display: flex; flex-direction: column; gap: 3px; padding-top: 8px; border-top: 1px solid var(--panel-line); font-size: 11.5px; }
+.maya-oracle { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.maya-oracle__card { display: flex; flex-direction: column; gap: 5px; padding: 11px; border: 1.5px solid var(--panel-ink); box-shadow: 2px 2px 0 var(--panel-ink); background: var(--paipan-paper); }
+.maya-oracle__card small { display: flex; justify-content: space-between; gap: 6px; color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.maya-oracle__card small em { font-style: normal; }
+.maya-oracle__card strong { font-size: 15px; letter-spacing: -.02em; }
+.maya-oracle__card span { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); }
+.maya-moons { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1.5px solid var(--panel-ink); background: var(--paipan-ground); }
+.maya-moons__row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.maya-moons__row span { font-weight: 800; font-size: 12.5px; }
+.maya-moons__row em { color: var(--panel-muted); font-size: 10.5px; font-style: normal; text-align: right; }
+.maya-moons__grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; }
+.maya-moons__grid i { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid var(--panel-line); color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); font-style: normal; }
+.maya-moons__grid i.is-active { background: #1f9d8b; border-color: var(--panel-ink); color: #fff; font-weight: 900; }
+@media (max-width: 850px) { .maya-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .maya-hero { grid-template-columns: 1fr; } .maya-hero__block { min-height: 0; } .maya-kin { grid-template-columns: 1fr; } .maya-kin__number { padding: 8px; } .maya-moons__grid { grid-template-columns: repeat(7, 1fr); } }
