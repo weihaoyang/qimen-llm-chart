@@ -75,9 +75,7 @@ body .product-chart :is(#qimen-agent .agent-surface--chart,
 }
 
 body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) [data-slot="tabs-trigger"],
-body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) .semi-tabs-tab {
+.agent-surface--chart) [data-slot="tabs-trigger"] {
   display: inline-flex !important;
   min-width: 0 !important;
   min-height: 38px !important;
@@ -93,23 +91,14 @@ body .product-chart :is(#qimen-agent .agent-surface--chart,
 }
 
 body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) [data-slot="tabs-trigger"]:last-child,
-body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) .semi-tabs-tab:last-child {
+.agent-surface--chart) [data-slot="tabs-trigger"]:last-child {
   border-right: 0 !important;
 }
 
 body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) [data-slot="tabs-trigger"][data-state="active"],
-body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) .semi-tabs-tab-active {
+.agent-surface--chart) [data-slot="tabs-trigger"][data-state="active"] {
   background: var(--paipan-yellow) !important;
   box-shadow: 2px 2px 0 var(--paipan-ink) !important;
-}
-
-body .product-chart :is(#qimen-agent .agent-surface--chart,
-.agent-surface--chart) .semi-tabs-ink-bar {
-  display: none !important;
 }
 
 body .product-chart :is(#qimen-agent .agent-surface--chart,
@@ -505,14 +494,6 @@ body .product-chart :is(#qimen-agent .agent-surface--chart,
   body .product-chart .observatory-hero .workbench-tabs {
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
-    overflow-x: auto !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
-    width: max-content !important;
-    min-width: 100% !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
-    min-width: 58px !important;
   }
   body .product-chart .observatory-hero .hero-action {
     grid-column: 2 !important;
@@ -639,9 +620,6 @@ body .product-chart :is(#qimen-agent .agent-surface--chart,
     font: 950 20px/1 ui-sans-serif, system-ui, sans-serif !important;
   }
   body .product-chart .chart-analysis-drawer .sidebar-panel,
-  body .product-chart .chart-analysis-drawer .semi-tabs-content,
-  body .product-chart .chart-analysis-drawer .semi-tabs-pane-active,
-  body .product-chart .chart-analysis-drawer .semi-tabs-pane-motion-overlay,
   body .product-chart .chart-analysis-drawer .inspector-tabs__content {
     min-height: 0 !important;
   }
@@ -652,9 +630,6 @@ body .product-chart :is(#qimen-agent .agent-surface--chart,
     border: 0 !important;
     background: var(--paipan-paper) !important;
   }
-  body .product-chart .chart-analysis-drawer .semi-tabs-content,
-  body .product-chart .chart-analysis-drawer .semi-tabs-pane-active,
-  body .product-chart .chart-analysis-drawer .semi-tabs-pane-motion-overlay,
   body .product-chart .chart-analysis-drawer .inspector-tabs__content {
     display: flex !important;
     height: 100% !important;
@@ -732,32 +707,6 @@ body .product-chart :is(#qimen-agent .agent-surface--chart,
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
     min-width: 0 !important;
-    overflow-x: auto !important;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--paipan-slate) var(--paipan-paper);
-  }
-  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
-    height: 4px;
-  }
-  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-thumb {
-    background: var(--paipan-slate);
-    border-radius: 2px;
-  }
-  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar-track {
-    background: var(--paipan-paper);
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
-    min-width: max-content !important;
-    width: max-content !important;
-    height: 40px !important;
-    padding: 2px !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
-    min-width: 46px !important;
-    min-height: 32px !important;
-    padding: 4px 7px !important;
-    font-size: 11px !important;
   }
   body .product-chart .observatory-hero .hero-action {
     grid-column: 2 !important;

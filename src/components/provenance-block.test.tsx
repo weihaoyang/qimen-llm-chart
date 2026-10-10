@@ -64,6 +64,18 @@ describe("provenance registry", () => {
       }
     }
   });
+
+  it("never lists a source without also carrying the material itself", () => {
+    // 不允许「只有书名/仓库名 + 外链」的条目：每条都必须至少带
+    // quote（短引句）或 documents/details（资料本体）之一。
+    const bare = PROVENANCE.filter(
+      (entry) => !entry.quote && (entry.documents?.length ?? 0) === 0 && (entry.details?.length ?? 0) === 0,
+    );
+    expect(
+      bare.map((entry) => entry.id),
+      "以下条目只挂了出处/链接，未把材料本体放进产品（缺 quote / documents / details）：",
+    ).toEqual([]);
+  });
 });
 
 describe("ProvenanceBlock", () => {

@@ -36,19 +36,6 @@
     grid-row: 2 !important;
     width: 100% !important;
   }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
-    width: max-content !important;
-    min-width: 100% !important;
-    height: 36px !important;
-    padding: 2px !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
-    min-width: 58px !important;
-    min-height: 30px !important;
-    padding: 4px 8px !important;
-    font-size: 11px !important;
-    line-height: 1 !important;
-  }
   body .product-chart .observatory-hero .hero-action {
     grid-column: 2 !important;
     grid-row: 3 !important;
@@ -128,31 +115,6 @@ body .product-chart .observatory-hero .workbench-tabs {
   min-width: 0 !important;
 }
 
-body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
-  border: none !important;
-  background: transparent !important;
-}
-
-body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
-  background: var(--paipan-ground) !important;
-  border: 2px solid var(--paipan-ink) !important;
-  border-radius: 3px !important;
-  box-shadow: var(--paipan-shadow-sm) !important;
-  color: var(--paipan-ink) !important;
-  font-weight: 700 !important;
-  outline: none !important;
-}
-
-body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab-active {
-  background: var(--paipan-accent) !important;
-  color: var(--paipan-ink) !important;
-  border: 2px solid var(--paipan-ink) !important;
-  box-shadow: var(--paipan-shadow-sm) !important;
-  font-weight: 900 !important;
-  outline: none !important;
-}
-
-body .product-chart .observatory-hero .workbench-tabs .semi-tabs-ink-bar,
 body .product-chart .observatory-hero__agent-entry {
   display: none !important;
 }
@@ -207,7 +169,6 @@ html body .page-shell.product-chart .mobile-hero .workbench-tabs.workbench-tabs 
   gap: 6px !important;
   min-width: 0 !important;
   overflow: visible !important;
-  scrollbar-width: none !important;
 }
 
 body .product-chart .observatory-hero .workbench-tabs__list,

@@ -425,7 +425,7 @@
   html body .page-shell.product-chart[data-mode="qimen"] { display: grid !important; grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) !important; width: 100vw !important; max-width: 100vw !important; height: 100dvh !important; min-width: 0 !important; min-height: 0 !important; padding: 6px !important; overflow: hidden !important; }
   html body .page-shell.product-chart[data-mode="qimen"] > .observatory-hero { display: grid !important; grid-template: 32px 36px 32px / minmax(0, 1fr) auto !important; width: 100% !important; min-width: 0 !important; gap: 6px !important; padding: 8px !important; }
   .product-chart[data-mode="qimen"] .observatory-hero__copy { grid-area: 1 / 1; min-width: 0 !important; }
-  .product-chart[data-mode="qimen"] .observatory-hero .workbench-tabs { grid-area: 2 / 1 / 3 / -1; min-width: 0; overflow-x: auto; }
+  .product-chart[data-mode="qimen"] .observatory-hero .workbench-tabs { grid-area: 2 / 1 / 3 / -1; min-width: 0; }
   .product-chart[data-mode="qimen"] .observatory-hero .platform-account { grid-area: 1 / 2; min-width: 0; }
   .product-chart[data-mode="qimen"] .observatory-hero .hero-action { grid-area: 3 / 2; min-height: 32px; margin: 0; padding: 4px 8px; }
   .product-chart[data-mode="qimen"] .observatory-hero__agent-entry { display: none !important; }

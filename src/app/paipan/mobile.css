@@ -146,53 +146,6 @@
   html body .page-shell.product-chart .mobile-hero .workbench-tabs {
     min-width: 0;
     margin: 0;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: none;
-  }
-
-  html body .page-shell.product-chart .mobile-hero .workbench-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  html body .page-shell.product-chart .mobile-hero .workbench-tabs .semi-tabs-bar {
-    display: flex !important;
-    width: max-content !important;
-    min-width: 100% !important;
-    height: 34px !important;
-    align-items: center !important;
-    gap: 6px !important;
-    padding: 1px 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-  }
-
-  html body .page-shell.product-chart .mobile-hero .workbench-tabs .semi-tabs-tab {
-    display: inline-flex !important;
-    min-width: 0 !important;
-    min-height: 28px !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 4px 11px !important;
-    border: 2px solid var(--paipan-ink) !important;
-    border-radius: 999px !important;
-    background: var(--paipan-ground) !important;
-    box-shadow: none !important;
-    color: var(--paipan-ink) !important;
-    font-family: var(--paipan-font) !important;
-    font-size: 12px !important;
-    font-weight: 750 !important;
-    white-space: nowrap !important;
-  }
-
-  html body .page-shell.product-chart .mobile-hero .workbench-tabs .semi-tabs-tab-active {
-    background: var(--paipan-accent) !important;
-    color: var(--paipan-ink) !important;
-    font-weight: 950 !important;
-  }
-
-  html body .page-shell.product-chart .mobile-hero .workbench-tabs .semi-tabs-ink-bar {
-    display: none !important;
   }
 
   /* ---- Fixed action bar ------------------------------------------------ */

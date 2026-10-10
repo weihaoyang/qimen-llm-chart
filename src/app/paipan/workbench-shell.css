@@ -5,21 +5,6 @@
     gap: 6px !important;
     padding: 8px !important;
   }
-  body .product-chart .observatory-hero .workbench-tabs {
-    scrollbar-width: none !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
-    display: none !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-bar {
-    height: 34px !important;
-  }
-  body .product-chart .observatory-hero .workbench-tabs .semi-tabs-tab {
-    min-width: 56px !important;
-    min-height: 28px !important;
-    padding-inline: 7px !important;
-    font-size: 10px !important;
-  }
 }
 
 /* Desktop shell geometry. */
@@ -147,11 +132,6 @@
     min-width: 0 !important;
     display: flex !important;
     align-items: center !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-  }
-  html body .page-shell.product-chart .observatory-hero .workbench-tabs::-webkit-scrollbar {
-    display: none !important;
   }
   html body .page-shell.product-chart .observatory-hero__agent-entry {
     display: none !important;
@@ -255,70 +235,6 @@ html body .page-shell.product-chart .observatory-hero__copy h1 {
   line-height: 1.1 !important;
   color: var(--paipan-ink) !important;
   padding: 0 !important;
-}
-
-/* ModeTabs: physical keyboard / index key aesthetic */
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-bar {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  height: auto !important;
-  gap: 6px !important;
-  display: flex !important;
-  align-items: center !important;
-}
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab {
-  background: var(--paipan-ground) !important;
-  border: 2px solid var(--paipan-ink) !important;
-  border-radius: 3px !important;
-  box-shadow: var(--paipan-shadow-sm) !important;
-  color: var(--paipan-ink) !important;
-  font-family: var(--paipan-font) !important;
-  font-weight: 700 !important;
-  font-size: 13px !important;
-  padding: 5px 13px !important;
-  min-height: 34px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease !important;
-  outline: none !important;
-}
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab strong {
-  color: inherit !important;
-  font-weight: inherit !important;
-}
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:hover {
-  background: var(--paipan-paper) !important;
-  transform: translate(-1px, -1px) !important;
-  box-shadow: var(--paipan-shadow) !important;
-}
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active {
-  background: var(--paipan-accent) !important;
-  color: var(--paipan-ink) !important;
-  border: 2px solid var(--paipan-ink) !important;
-  box-shadow: var(--paipan-shadow-sm) !important;
-  font-weight: 900 !important;
-  transform: none !important;
-  outline: none !important;
-}
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:focus,
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab:focus-visible,
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active:focus,
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab-active:focus-visible {
-  outline: none !important;
-}
-
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-ink-bar {
-  display: none !important;
 }
 
 /* Account Info & Buttons */
@@ -444,45 +360,9 @@ html body .page-shell.product-chart .platform-account__error {
 .birth-library-history-title { display: block; margin-top: 10px; padding-top: 8px; border-top: 1px solid #c7c0ae; }
 .birth-library-history { display: block; width: 100%; margin-top: 4px; text-align: left; background: var(--paipan-ground) !important; }
 
-/* ---------------------------------------------------------------------------
-   Mode tabs: 22 tabs no longer fit a single row on wide desktop, so the strip
-   must always be a horizontal scroll container instead of overflowing/clipping.
-   Keep the tabs at their natural width (never shrink into each other) and let
-   the bar grow to max-content inside the scroller.
-   --------------------------------------------------------------------------- */
 html body .page-shell.product-chart .workbench-tabs {
   min-width: 0 !important;
   max-width: 100% !important;
-  overflow-x: auto !important;
   overflow-y: hidden !important;
-  overscroll-behavior-inline: contain;
-}
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-bar {
-  flex-wrap: nowrap !important;
-  width: max-content !important;
-  min-width: max-content !important;
-}
-html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab {
-  flex: 0 0 auto !important;
-  white-space: nowrap !important;
 }
 
-/* Wide desktop is where the strip previously had no scroller: give it a slim,
-   visible bar so the overflow is discoverable. */
-@media (min-width: 1141px) {
-  html body .page-shell.product-chart .workbench-tabs {
-    scrollbar-width: thin !important;
-    scrollbar-color: var(--paipan-slate) var(--paipan-paper);
-  }
-  html body .page-shell.product-chart .workbench-tabs::-webkit-scrollbar {
-    display: block !important;
-    height: 6px !important;
-  }
-  html body .page-shell.product-chart .workbench-tabs::-webkit-scrollbar-thumb {
-    background: var(--paipan-slate);
-    border-radius: 3px;
-  }
-  html body .page-shell.product-chart .workbench-tabs::-webkit-scrollbar-track {
-    background: var(--paipan-paper);
-  }
-}
