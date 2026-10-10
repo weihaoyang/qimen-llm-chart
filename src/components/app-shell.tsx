@@ -121,6 +121,7 @@ import { FourthWayPanel } from "./fourth-way-panel";
 import { HarmonicPanel } from "./harmonic-panel";
 import { HuangjiPanel } from "./huangji-panel";
 import { QizhengPanel } from "./qizheng-panel";
+import { SacredGeometryPanel } from "./sacred-geometry-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -134,6 +135,7 @@ import { calculateHuangjiChronology, parseHistoricalYear } from "@/lib/huangji/c
 import { serializeHuangjiToCompactJson, serializeHuangjiToStructuredText } from "@/lib/huangji/serializer";
 import { buildQizhengChart } from "@/lib/qizheng/chart";
 import { serializeQizhengToCompactJson, serializeQizhengToStructuredText } from "@/lib/qizheng/serializer";
+import { serializeSacredGeometryToCompactJson, serializeSacredGeometryToStructuredText } from "@/lib/sacred-geometry/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -301,6 +303,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  "sacred-geometry": {
+    question: DEFAULT_AGENT_QUESTIONS["sacred-geometry"],
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -350,6 +357,7 @@ const MODE_META: Record<
   harmonic: { label: "谐波占星", title: "泛音星盘", description: "第 n 谐波 / 叠合 / 折算" },
   huangji: { label: "皇极经世", title: "皇极经世", description: "元会运世 / 干支 / 纪元序号" },
   qizheng: { label: "七政四余", title: "七政四余", description: "七政 / 四余 / 宫宿庙旺" },
+  "sacred-geometry": { label: "神圣几何", title: "神圣几何", description: "生命之花 / 元立方 / 黄金螺旋" },
 };
 
 const buildWorkbenchCharts = (
@@ -550,8 +558,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1012,6 +1020,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const huangjiStructuredText = useMemo(() => serializeHuangjiToStructuredText(huangjiValue), [huangjiValue]);
   const qizhengChart = useMemo(() => buildQizhengChart(normalizedProfile), [normalizedProfile]);
   const qizhengStructuredText = useMemo(() => serializeQizhengToStructuredText(qizhengChart), [qizhengChart]);
+  const [sacredPatternId, setSacredPatternId] = useState("flower");
+  const [sacredSteps, setSacredSteps] = useState(2);
+  const sacredStructuredText = useMemo(() => serializeSacredGeometryToStructuredText(sacredPatternId, sacredSteps), [sacredPatternId, sacredSteps]);
 
   const researchData = useMemo<ResearchWorkspaceData | null>(() => {
     try {
@@ -1150,6 +1161,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return huangjiStructuredText;
       case "qizheng":
         return qizhengStructuredText;
+      case "sacred-geometry":
+        return sacredStructuredText;
     }
   }, [
     mode,
@@ -1168,6 +1181,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     harmonicStructuredText,
     huangjiStructuredText,
     qizhengStructuredText,
+    sacredStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1220,8 +1234,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeHuangjiToCompactJson(huangjiValue);
       case "qizheng":
         return serializeQizhengToCompactJson(qizhengChart);
+      case "sacred-geometry":
+        return serializeSacredGeometryToCompactJson(sacredPatternId, sacredSteps);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1278,6 +1294,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       harmonic: { ...current.harmonic, content: "", model: null, error: null, loading: false },
       huangji: { ...current.huangji, content: "", model: null, error: null, loading: false },
       qizheng: { ...current.qizheng, content: "", model: null, error: null, loading: false },
+      "sacred-geometry": { ...current["sacred-geometry"], content: "", model: null, error: null, loading: false },
     }));
     setError(null);
   };
@@ -2124,6 +2141,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "harmonic" ? <HarmonicPanel value={harmonicChart} onHarmonicChange={(next) => { setHarmonic(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "huangji" ? <HuangjiPanel value={huangjiValue} yearInput={huangjiYear} yearError={!huangjiChronology} onYearChange={(next) => { setHuangjiYear(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "qizheng" ? <QizhengPanel value={qizhengChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "sacred-geometry" ? <SacredGeometryPanel patternId={sacredPatternId} steps={sacredSteps} onPatternChange={(id) => { setSacredPatternId(id); setSacredSteps(2); setCopyState("idle"); }} onStepsChange={(next) => { setSacredSteps(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

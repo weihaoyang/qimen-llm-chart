@@ -26,6 +26,7 @@ const MODE_OPTIONS: Array<{
   { value: "harmonic", label: "泛音星盘" },
   { value: "huangji", label: "皇极经世" },
   { value: "qizheng", label: "七政四余" },
+  { value: "sacred-geometry", label: "神圣几何" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

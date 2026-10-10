@@ -240,6 +240,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   harmonic: "请基于当前谐波盘，说明第 n 谐波把哪些母盘次要相位叠成了合相，并逐一折算回母盘角度。",
   huangji: "请基于当前元会运世坐标，说明目标年份落在第几元/会/运/世、世内第几年与年干支，并说明这套纪年的边界。",
   qizheng: "请基于当前七政四余盘，说明七政与四余各自落在哪一宫、宿、庙旺，以及它们与命宫的关系。",
+  "sacred-geometry": "请基于当前神圣几何图形，说明它的构造方式、层数，以及其中出现的几何比例，并区分几何事实与象征解读。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -481,6 +482,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "星曜落宫", question: "请列出七政与四余各自的黄经、宫位、宿度与庙旺，并说明取用口径。", description: "按星曜逐条落到宫与宿。", evidence: ["七政落宫", "四余落宫", "庙旺与宿度"] },
     { label: "命宫与十二宫", question: "请说明命宫如何定出，以及十二宫与星曜的对应关系。", description: "先定命宫，再看星曜分布。", evidence: ["命宫地支", "十二宫顺序", "星曜与命宫的关系"] },
   ],
+  "sacred-geometry": [
+    { label: "构造与层数", question: "请说明当前图形由哪些圆与直线构成、层数如何改变图形，以及构造圆与半径的关系。", description: "先讲几何构造，再谈象征。", evidence: ["构造圆与半径", "层数对应的圆数", "构造线与图形线"] },
+    { label: "比例与象征", question: "请指出图形中出现的比例（如 √2/√3、φ、1/7 周期等），并区分几何事实与象征解读。", description: "比例是事实，象征需标注为解读。", evidence: ["几何比例", "柏拉图立体投影", "象征解读的边界"] },
+  ],
 };
 
 /**
@@ -524,6 +529,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   harmonic: ["请把当前合相折算回母盘的度数与容许度。", "换一个谐波数后，哪些叠合会消失或出现？"],
   huangji: ["请把当前坐标换成一个更早或更晚的年份，并说明层级如何变化。", "这套纪年能支持与不能支持哪些推断？"],
   qizheng: ["请说明罗睺/计都采用哪种交点约定，以及它对结果的影响。", "这套排盘哪些字段是精确计算，哪些是约定或等分口径？"],
+  "sacred-geometry": ["请把当前图形的构造步骤按顺序复述一遍。", "这个图形里哪些是几何事实，哪些只是象征解读？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -544,6 +550,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   harmonic: "谐波占星（泛音星盘）",
   huangji: "皇极经世（元会运世）",
   qizheng: "七政四余",
+  "sacred-geometry": "神圣几何（生命之花）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -643,6 +650,12 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "口径：罗睺/计都为黄白交点（默认果老旧法，罗睺=降交点），月孛为平月远地点，紫气为约定虚星（非经典定义）；十二宫与二十八宿为等分口径。",
     "建议结构：## 盘面事实 / ## 星曜落宫 / ## 命宫与十二宫 / ## 口径与边界。",
   ].join("\n"),
+  "sacred-geometry": [
+    "【神圣几何边界】图形只由圆与直线在单位空间（构造圆半径 = 1）构造；图案定义来自开源实现，不是命盘，也不含出生数据。",
+    "只使用载荷中给出的形状描述、层数、extent 与构造线/图形线计数；不得补造文献引文、历史上手稿出处或未在载荷中的比例。",
+    "读法：先讲构造（哪些圆、半径关系、如何逐层延展），再指出可验证的几何比例（如 vesica 中的 √2/√3、梅塔特隆立方体含五个柏拉图立体投影、黄金螺旋的 φ），最后才谈象征，并明确标注哪些是象征解读。",
+    "建议结构：## 构造 / ## 比例与事实 / ## 象征解读 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -682,6 +695,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   harmonic: "只引用载荷中的谐波数与叠合结果；折算母盘角度时必须说明这是算术折算，不得据此预测事件。",
   huangji: "只引用载荷中的元会运世坐标与干支；不得据纪年坐标推演治乱、朝代或个人命运。",
   qizheng: "只引用载荷中的黄经、宫位、宿度与约定字段；不得据星曜落宫推演吉凶祸福或具体事件。",
+  "sacred-geometry": "只引用载荷中的形状描述与几何比例；象征解读必须标注为解读，不得当作事实或预测。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [

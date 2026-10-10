@@ -41,6 +41,13 @@ SOFTWARE.
 - 采用部分：十二宫名与顺序、二十八宿序、庙旺陷表、命宫公式、七政/四余五行与吉凶表、宫/宿的等分口径。
 - 未采用部分：该脚本的简化天文（太阳/月亮/五星线性近似）与「月孛=太阴+90°、紫气=太阴−90°」约定；本仓改用真星历（celestine）与经典四余定义，详见 `src/lib/qizheng/chart.ts` 头部说明与文件内注释。
 
+### 神圣几何（图案定义）
+
+- 来源：<https://github.com/evoluteur/sacred-geometry>（`patterns.js`；npm 包 `sacred-geometry-generator`）
+- 许可：MIT License — (c) 2026 Olivier Giulieri
+- 位置：`src/lib/sacred-geometry/patterns.ts`
+- 采用部分：Vesica Piscis、Seed of Life、Flower of Life、Metatron's Cube、Golden Spiral 的**图案定义与几何构造**（单位空间、构造圆半径 = 1，返回形状描述符）；本仓只改写为 TypeScript 并自行渲染 SVG。
+
 ## 运行时依赖
 
 见 `package.json` 的 `dependencies` / `devDependencies`；各包的许可随其发布物提供。
