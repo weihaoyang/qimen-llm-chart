@@ -123,6 +123,7 @@ import { HuangjiPanel } from "./huangji-panel";
 import { QizhengPanel } from "./qizheng-panel";
 import { SacredGeometryPanel } from "./sacred-geometry-panel";
 import { RunesPanel } from "./runes-panel";
+import { UranianPanel } from "./uranian-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -140,6 +141,9 @@ import { serializeSacredGeometryToCompactJson, serializeSacredGeometryToStructur
 import type { SpreadId } from "@/lib/runes/data";
 import { buildRuneReading } from "@/lib/runes/draw";
 import { serializeRunesToCompactJson, serializeRunesToStructuredText } from "@/lib/runes/serializer";
+import type { DialSettings } from "@/lib/uranian/dial";
+import { buildUranianChart } from "@/lib/uranian/chart";
+import { serializeUranianToCompactJson, serializeUranianToStructuredText } from "@/lib/uranian/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -317,6 +321,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  uranian: {
+    question: DEFAULT_AGENT_QUESTIONS.uranian,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -368,6 +377,7 @@ const MODE_META: Record<
   qizheng: { label: "七政四余", title: "七政四余", description: "七政 / 四余 / 宫宿庙旺" },
   "sacred-geometry": { label: "神圣几何", title: "神圣几何", description: "生命之花 / 元立方 / 黄金螺旋" },
   runes: { label: "卢恩符文", title: "卢恩符文", description: "Elder Futhark / 抽符 / 九界" },
+  uranian: { label: "汉堡学派", title: "汉堡学派", description: "天王星系统 / 八虚星 / 90° 盘" },
 };
 
 const buildWorkbenchCharts = (
@@ -568,8 +578,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1037,6 +1047,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [runeSpreadId, setRuneSpreadId] = useState<SpreadId>("three");
   const runeReading = useMemo(() => buildRuneReading(runeSeed, runeSpreadId), [runeSeed, runeSpreadId]);
   const runesStructuredText = useMemo(() => serializeRunesToStructuredText(runeReading), [runeReading]);
+  const [uranianSettings, setUranianSettings] = useState<DialSettings>({ modulus: 90, orb: 1.5 });
+  const uranianChart = useMemo(() => buildUranianChart(normalizedProfile, astroChart, uranianSettings), [normalizedProfile, astroChart, uranianSettings]);
+  const uranianStructuredText = useMemo(() => serializeUranianToStructuredText(uranianChart), [uranianChart]);
 
   const researchData = useMemo<ResearchWorkspaceData | null>(() => {
     try {
@@ -1179,6 +1192,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return sacredStructuredText;
       case "runes":
         return runesStructuredText;
+      case "uranian":
+        return uranianStructuredText;
     }
   }, [
     mode,
@@ -1199,6 +1214,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     qizhengStructuredText,
     sacredStructuredText,
     runesStructuredText,
+    uranianStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1255,8 +1271,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeSacredGeometryToCompactJson(sacredPatternId, sacredSteps);
       case "runes":
         return serializeRunesToCompactJson(runeReading);
+      case "uranian":
+        return serializeUranianToCompactJson(uranianChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1314,6 +1332,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       huangji: { ...current.huangji, content: "", model: null, error: null, loading: false },
       qizheng: { ...current.qizheng, content: "", model: null, error: null, loading: false },
       "sacred-geometry": { ...current["sacred-geometry"], content: "", model: null, error: null, loading: false },
+      uranian: { ...current.uranian, content: "", model: null, error: null, loading: false },
       runes: { ...current.runes, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
@@ -2163,6 +2182,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "qizheng" ? <QizhengPanel value={qizhengChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "sacred-geometry" ? <SacredGeometryPanel patternId={sacredPatternId} steps={sacredSteps} onPatternChange={(id) => { setSacredPatternId(id); setSacredSteps(2); setCopyState("idle"); }} onStepsChange={(next) => { setSacredSteps(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "runes" ? <RunesPanel reading={runeReading} onSpreadChange={(id) => { setRuneSpreadId(id); setCopyState("idle"); }} onRedraw={() => { setRuneSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "uranian" ? <UranianPanel chart={uranianChart} onModulusChange={(modulus) => { setUranianSettings((current) => ({ ...current, modulus })); setCopyState("idle"); }} onOrbChange={(orb) => { setUranianSettings((current) => ({ ...current, orb })); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

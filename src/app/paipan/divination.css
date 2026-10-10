@@ -147,3 +147,42 @@
 @media (max-width: 850px) { .rune-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rune-card { grid-column: auto !important; grid-row: auto !important; } }
 @media (max-width: 620px) { .rune-board { grid-template-columns: 1fr; } .rune-card { min-height: 0; } }
 @media (prefers-reduced-motion: reduce) { .rune-card { animation: none !important; } }
+
+/* 汉堡学派 · 90° 盘（Uranian / 天王星系统） */
+.divination-panel--uranian::before { background: #8d6fc9; }
+.uranian-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.uranian-controls .rune-selector { margin: 8px 0; }
+.uranian-orb { display: inline-flex; align-items: center; gap: 6px; font: 800 11px var(--paipan-font-mono); }
+.uranian-orb input { width: 64px; padding: 4px 6px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); font: 800 11px var(--paipan-font-mono); }
+.uranian-orb em { font-style: normal; color: var(--panel-muted); }
+.uranian-layout { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 26px; align-items: start; margin-bottom: 22px; }
+.uranian-stage { display: grid; place-items: center; gap: 8px; padding: 12px; border: 2px solid var(--panel-ink); background: var(--paipan-paper); }
+.uranian-dial { width: min(100%, 380px); height: auto; overflow: visible; }
+.uranian-dial__rim { fill: none; stroke: var(--panel-ink); stroke-width: 2; }
+.uranian-dial__inner { fill: none; stroke: var(--panel-line); stroke-width: 1; }
+.uranian-dial__tick { stroke: var(--panel-muted); stroke-width: 1; }
+.uranian-dial__tick.is-major { stroke: var(--panel-ink); stroke-width: 1.5; }
+.uranian-dial__ticklabel { fill: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.uranian-marker__stem { stroke: var(--panel-line); stroke-width: 1; }
+.uranian-marker__dot { fill: var(--panel-ink); }
+.uranian-marker__label { fill: var(--panel-ink); font: 800 11px var(--paipan-font-mono); }
+.uranian-marker--tnp .uranian-marker__dot { fill: var(--paipan-red); }
+.uranian-marker--tnp .uranian-marker__label { fill: var(--paipan-red); }
+.uranian-marker--angle .uranian-marker__dot { fill: #6f86c9; }
+.uranian-stage__note { margin: 0; color: var(--panel-muted); font-size: 11px; line-height: 1.5; text-align: center; }
+.uranian-table { border-top: 1px solid var(--panel-ink); }
+.uranian-row { display: grid; grid-template-columns: 30px minmax(96px, 1fr) auto auto; grid-template-areas: "code name zodiac dial" "principles principles principles principles"; align-items: center; gap: 4px 10px; padding: 9px 4px; border-bottom: 1px solid var(--panel-line); font-size: 12.5px; }
+.uranian-row > b { grid-area: code; font: 800 11px var(--paipan-font-mono); }
+.uranian-row > span { grid-area: name; display: flex; flex-direction: column; }
+.uranian-row > span small { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.uranian-row > strong { grid-area: zodiac; font: 800 11px var(--paipan-font-mono); white-space: nowrap; }
+.uranian-row > em { grid-area: dial; color: var(--panel-muted); font: 800 11px var(--paipan-font-mono); font-style: normal; white-space: nowrap; }
+.uranian-row > p { grid-area: principles; margin: 0; color: var(--panel-muted); font-size: 11px; }
+.uranian-list { display: grid; gap: 0; border-top: 1px solid var(--panel-ink); }
+.uranian-list__item { display: grid; grid-template-columns: 58px minmax(0, auto) auto minmax(0, 1fr); align-items: baseline; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--panel-line); font-size: 12.5px; }
+.uranian-list__axis { color: var(--panel-muted); font: 800 11px var(--paipan-font-mono); }
+.uranian-list__hits { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.uranian-list__hits em { font-style: normal; font-weight: 800; }
+.uranian-list__hits small { margin-left: 4px; color: var(--panel-muted); font-weight: 600; }
+@media (max-width: 850px) { .uranian-layout { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .uranian-row { grid-template-columns: 26px minmax(0, 1fr) auto; grid-template-areas: "code name dial" "principles principles principles"; } .uranian-list__item { grid-template-columns: 46px minmax(0, auto) auto minmax(0, 1fr); font-size: 12px; } }

@@ -242,6 +242,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   qizheng: "请基于当前七政四余盘，说明七政与四余各自落在哪一宫、宿、庙旺，以及它们与命宫的关系。",
   "sacred-geometry": "请基于当前神圣几何图形，说明它的构造方式、层数，以及其中出现的几何比例，并区分几何事实与象征解读。",
   runes: "请基于当前卢恩符文牌阵，逐位说明符文、正逆位与其含义，并给出可验证的现实行动；不要当作确定预测。",
+  uranian: "请基于当前汉堡学派 90° 盘，说明八虚星的位置、被占据的中点与行星图景，并区分盘面几何事实与该体系的象征解释。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -491,6 +492,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "逐位解读", question: "请按牌阵位置逐一说明每枚符文的名称、正逆位、关键词与含义，并说明它们之间的呼应。", description: "先逐位，再连读。", evidence: ["牌阵位置与问题", "符文与正逆位", "关键词与实际含义"] },
     { label: "九界参照", question: "请结合北欧九界的层次说明这组符文可能对应的处境，并区分神话象征与现实推断。", description: "九界只作象征参照。", evidence: ["九界三层", "符文与九界的关联", "现实可验证的部分"] },
   ],
+  uranian: [
+    { label: "八虚星位置", question: "请逐颗说明八虚星（Cupido…Poseidon）落在哪个星座度数、盘面位置，以及它在汉堡体系中的原则。", description: "先讲位置，再讲原则。", evidence: ["地心黄经与盘面位置", "八虚星原则", "与真实行星的相对关系"] },
+    { label: "中点与图景", question: "请说明当前被占据的中点与行星图景（A/B=C、A+B=C、A+B=C+D），并区分盘面几何与被解释出来的意义。", description: "几何是事实，意义是解释。", evidence: ["中点轴与容许度", "和点与等式", "哪些是象征解释"] },
+  ],
 };
 
 /**
@@ -536,6 +541,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   qizheng: ["请说明罗睺/计都采用哪种交点约定，以及它对结果的影响。", "这套排盘哪些字段是精确计算，哪些是约定或等分口径？"],
   "sacred-geometry": ["请把当前图形的构造步骤按顺序复述一遍。", "这个图形里哪些是几何事实，哪些只是象征解读？"],
   runes: ["请把每枚符文的建议转成一个本周可验证的小行动。", "这组符文可能被什么现实信息推翻？"],
+  uranian: ["请把最紧的三条中点或行星图景翻译成可验证的现实观察。", "换用 45° 或 22.5° 盘时，哪些结构会消失或出现？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -558,6 +564,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   qizheng: "七政四余",
   "sacred-geometry": "神圣几何（生命之花）",
   runes: "卢恩符文（Elder Futhark）",
+  uranian: "汉堡学派（Uranian / 天王星系统）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -670,6 +677,14 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "北欧九界只作象征参照（Yggdrasil 三层），不得据此推断现实事件、健康或命运。",
     "建议结构：## 逐位解读 / ## 相互呼应 / ## 现实行动 / ## 边界。",
   ].join("\n"),
+  uranian: [
+    "【汉堡学派边界】八虚星（Cupido、Hades、Zeus、Kronos、Apollon、Admetos、Vulkanus、Poseidon）是汉堡学派的名义天体，并非已确认的真实行星；其黄经按 Neely/Matrix 要素表与开普勒解算得到，不具天文学上的真实性。",
+    "只使用载荷中给出的黄经、盘面位置、中点、和点与等式；不得补造未在载荷中的星历、文献引文或汉堡学派典籍出处。",
+    "读法：先讲盘面几何（谁在中点上、哪些和点重合、容许度多少），再讲该体系的象征解释，并明确标注哪些是解释。",
+    "90°/45°/22.5° 盘是同一批黄经的算术投影；换盘只改变聚合，不改变原始黄经，必须说明这一点。",
+    "不得据盘面结构预测具体事件、健康、财运或命运；结论只能是研究性提示。",
+    "建议结构：## 八虚星位置 / ## 中点与行星图景 / ## 象征解释 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -711,6 +726,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   qizheng: "只引用载荷中的黄经、宫位、宿度与约定字段；不得据星曜落宫推演吉凶祸福或具体事件。",
   "sacred-geometry": "只引用载荷中的形状描述与几何比例；象征解读必须标注为解读，不得当作事实或预测。",
   runes: "只引用载荷中的符文、正逆位与含义；不得声称预测确定事件，行动建议应低风险且可复盘。",
+  uranian: "只引用载荷中的黄经、盘面位置、中点与和点；八虚星不是真实行星，禁止据盘面推断具体事件或命运。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [
