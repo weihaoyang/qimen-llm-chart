@@ -8,8 +8,7 @@ export type AgentSkillId =
   | "combined-compare"
   | "life-trend"
   | "algorithm-audit"
-  | "daliuren-classes"
-  | "taiyi-observation";
+  | "daliuren-classes";
 
 export type AgentSkillDefinition = {
   id: AgentSkillId;
