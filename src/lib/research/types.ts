@@ -3,7 +3,7 @@ import type { NormalizedProfileInput } from "@/lib/profile";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 import type { NormalizedZiweiChart } from "@/lib/ziwei/types";
 
-export type ResearchTool = "trend" | "verification" | "daliuren" | "taiyi";
+export type ResearchTool = "trend" | "verification" | "daliuren";
 
 export type LifeTrendSignal = {
   kind: "support" | "review";
@@ -65,11 +65,6 @@ export type ResearchWorkspaceData = {
   trend: LifeTrendData;
   verification: VerificationData;
   daliuren: {
-    text: string;
-    json: unknown;
-    referenceEngine: ReferenceEngineProvenance;
-  } | null;
-  taiyi: {
     text: string;
     json: unknown;
     referenceEngine: ReferenceEngineProvenance;

@@ -1,5 +1,4 @@
 import { calculateDaliuren, toDaliurenJson, toDaliurenText } from "taibu-core/daliuren";
-import { calculateTaiyi, toTaiyiJson, toTaiyiText } from "taibu-core/taiyi";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { TAIBU_CORE_REFERENCE } from "./provenance";
 
@@ -19,16 +18,4 @@ export const buildDaliurenResearch = (profile: NormalizedProfileInput) => {
     timezone: profile.normalized.timeZone,
   });
   return { text: toDaliurenText(result), json: toDaliurenJson(result), referenceEngine: TAIBU_CORE_REFERENCE };
-};
-
-export const buildTaiyiResearch = (profile: NormalizedProfileInput) => {
-  const parts = parseDateTime(profile.normalized.datetime);
-  const result = calculateTaiyi({
-    mode: "day",
-    date: `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`,
-    hour: parts.hour,
-    minute: parts.minute,
-    timezone: profile.normalized.timeZone,
-  });
-  return { text: toTaiyiText(result), json: toTaiyiJson(result), referenceEngine: TAIBU_CORE_REFERENCE };
 };

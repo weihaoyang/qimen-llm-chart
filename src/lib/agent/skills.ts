@@ -76,13 +76,6 @@ export const AGENT_SKILLS: readonly AgentSkillDefinition[] = [
     prompt: "大六壬分析必须先列天地盘、四课、三传、课体，再区分传统推断和现实验证，不把三传当作确定事件时间表。",
     modes: ["research"],
   },
-  {
-    id: "taiyi-observation",
-    label: "太乙九星",
-    description: "按年/月/日/时尺度解释太乙观测锚点。",
-    prompt: "太乙分析明确当前尺度（日盘等）、主星、五行、方位和判断歌诀来源；不得越过输入尺度推断个人宿命。",
-    modes: ["research"],
-  },
 ];
 
 export const selectAgentSkills = ({ mode, question = "", focus = "", tool = "" }: { mode: WorkbenchMode | string; question?: string; focus?: string; tool?: string }) => {
@@ -96,7 +89,6 @@ export const selectAgentSkills = ({ mode, question = "", focus = "", tool = "" }
     if (skill.id === "life-trend") return tool === "trend" || /趋势|大运|流年|k线/.test(text);
     if (skill.id === "algorithm-audit") return tool === "verification" || /核验|差异|算法|引擎/.test(text);
     if (skill.id === "daliuren-classes") return tool === "daliuren" || /六壬|四课|三传/.test(text);
-    if (skill.id === "taiyi-observation") return tool === "taiyi" || /太乙|九星观测/.test(text);
     return false;
   });
   return selected.length > 0 ? selected : [AGENT_SKILLS[0]];

@@ -102,7 +102,7 @@ import {
 } from "@/lib/platform/pending-analysis";
 import type { NormalizedZiweiChart } from "@/lib/ziwei/types";
 import { buildLifeTrendData, lifeTrendToKlineSeries } from "@/lib/research/trend";
-import { buildDaliurenResearch, buildTaiyiResearch } from "@/lib/research/extensions";
+import { buildDaliurenResearch } from "@/lib/research/extensions";
 import { buildQimenReferenceVerification, buildVerificationData } from "@/lib/research/verification";
 import type { ResearchTool, ResearchWorkspaceData, VerificationRow } from "@/lib/research/types";
 import { ChartForm } from "./chart-form";
@@ -126,7 +126,6 @@ import { RunesPanel } from "./runes-panel";
 import { UranianPanel } from "./uranian-panel";
 import { MayaPanel } from "./maya-panel";
 import { VedicPanel } from "./vedic-panel";
-import { LiurenPanel } from "./liuren-panel";
 import { QabalahPanel } from "./qabalah-panel";
 import { TaiyiPanel } from "./taiyi-panel";
 import { AkashaPanel } from "./akasha-panel";
@@ -155,8 +154,6 @@ import { buildMayaChart } from "@/lib/maya/chart";
 import { serializeMayaToCompactJson, serializeMayaToStructuredText } from "@/lib/maya/serializer";
 import { buildVedicChart } from "@/lib/vedic/chart";
 import { serializeVedicToCompactJson, serializeVedicToStructuredText } from "@/lib/vedic/serializer";
-import { buildLiurenChart } from "@/lib/liuren/chart";
-import { serializeLiurenToCompactJson, serializeLiurenToStructuredText } from "@/lib/liuren/serializer";
 import { buildQabalahReading } from "@/lib/qabalah/chart";
 import { serializeQabalahToCompactJson, serializeQabalahToStructuredText } from "@/lib/qabalah/serializer";
 import { buildTaiyiChart } from "@/lib/taiyi/chart";
@@ -357,11 +354,6 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
-  liuren: {
-    question: DEFAULT_AGENT_QUESTIONS.liuren,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
   qabalah: {
     question: DEFAULT_AGENT_QUESTIONS.qabalah,
     focus: "按问题综合取证",
@@ -436,7 +428,6 @@ const MODE_META: Record<
   uranian: { label: "汉堡学派", title: "汉堡学派", description: "天王星系统 / 八虚星 / 90° 盘" },
   maya: { label: "玛雅历法", title: "玛雅历法", description: "长纪年 / 卓尔金 / 13:20" },
   vedic: { label: "吠陀分盘", title: "吠陀分盘", description: "Lahiri / 九曜 / D1–D60" },
-  liuren: { label: "大六壬", title: "大六壬", description: "天地盘 / 四课三传" },
   qabalah: { label: "赫尔墨斯卡巴拉", title: "赫尔墨斯卡巴拉", description: "四界 / 十辉 / 22 字母 / 数术" },
   "taiyi-shenshu": { label: "太乙神数", title: "太乙神数", description: "十六神 / 八将 / 主客算 / 格局" },
   akasha: { label: "阿卡西 · 全息", title: "阿卡西记录 · 全息宇宙", description: "面积律 / 碎片重建 / 知识条目" },
@@ -588,7 +579,7 @@ function useIsMobileViewport(query = MOBILE_VIEWPORT_QUERY) {
 export function AppShell({ platformConfig }: AppShellProps) {
   const [initialState] = useState(() => getInitialState());
   const [mode, setMode] = useState<WorkbenchMode>("qimen");
-  const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | "taiyi" | null>(null);
+  const [classicWorkspace, setClassicWorkspace] = useState<"daliuren" | null>(null);
   const [formState, setFormState] = useState<ProfileInput>(initialState.defaultInput);
   const [birthProfiles, setBirthProfiles] = useState<BirthProfileEntry[]>(() => {
     if (typeof window === "undefined") return [];
@@ -641,8 +632,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", liuren: "free", qabalah: "free", "taiyi-shenshu": "free", akasha: "free", "ziwei-flying": "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], liuren: [], qabalah: [], "taiyi-shenshu": [], akasha: [], "ziwei-flying": [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", qabalah: "free", "taiyi-shenshu": "free", akasha: "free", "ziwei-flying": "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], qabalah: [], "taiyi-shenshu": [], akasha: [], "ziwei-flying": [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1116,8 +1107,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [vedicVarga, setVedicVarga] = useState("D9");
   const vedicChart = useMemo(() => buildVedicChart(normalizedProfile), [normalizedProfile]);
   const vedicStructuredText = useMemo(() => serializeVedicToStructuredText(vedicChart), [vedicChart]);
-  const liurenChart = useMemo(() => buildLiurenChart(normalizedProfile), [normalizedProfile]);
-  const liurenStructuredText = useMemo(() => serializeLiurenToStructuredText(liurenChart), [liurenChart]);
   const [qabalahInput, setQabalahInput] = useState("יהוה");
   const qabalahReading = useMemo(() => buildQabalahReading(qabalahInput), [qabalahInput]);
   const qabalahStructuredText = useMemo(() => serializeQabalahToStructuredText(qabalahReading), [qabalahReading]);
@@ -1179,7 +1168,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
         trend: buildLifeTrendData(normalizedProfile),
         verification: { ...verification, rows },
         daliuren: buildDaliurenResearch(normalizedProfile),
-        taiyi: buildTaiyiResearch(normalizedProfile),
       };
     } catch (nextError) {
       console.error("research workspace generation failed", nextError);
@@ -1231,8 +1219,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
       };
     }
     return {
-      text: researchTool === "daliuren" ? researchData.daliuren?.text ?? "" : researchData.taiyi?.text ?? "",
-      json: JSON.stringify(researchTool === "daliuren" ? researchData.daliuren?.json ?? {} : researchData.taiyi?.json ?? {}),
+      text: researchData.daliuren?.text ?? "",
+      json: JSON.stringify(researchData.daliuren?.json ?? {}),
     };
   }, [researchData, researchTool]);
 
@@ -1295,8 +1283,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return mayaStructuredText;
       case "vedic":
         return vedicStructuredText;
-      case "liuren":
-        return liurenStructuredText;
       case "qabalah":
         return qabalahStructuredText;
       case "taiyi-shenshu":
@@ -1328,7 +1314,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
     uranianStructuredText,
     mayaStructuredText,
     vedicStructuredText,
-    liurenStructuredText,
     qabalahStructuredText,
     taiyiStructuredText,
     akashaStructuredText,
@@ -1395,8 +1380,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeMayaToCompactJson(mayaChart);
       case "vedic":
         return serializeVedicToCompactJson(vedicChart);
-      case "liuren":
-        return serializeLiurenToCompactJson(liurenChart);
       case "qabalah":
         return serializeQabalahToCompactJson(qabalahReading);
       case "taiyi-shenshu":
@@ -1406,7 +1389,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       case "ziwei-flying":
         return serializeZiweiFlyingToCompactJson(ziweiFlyingChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, liurenChart, qabalahReading, taiyiChart, akashaChart, ziweiFlyingChart]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, qabalahReading, taiyiChart, akashaChart, ziweiFlyingChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1467,7 +1450,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
       uranian: { ...current.uranian, content: "", model: null, error: null, loading: false },
       maya: { ...current.maya, content: "", model: null, error: null, loading: false },
       vedic: { ...current.vedic, content: "", model: null, error: null, loading: false },
-      liuren: { ...current.liuren, content: "", model: null, error: null, loading: false },
       qabalah: { ...current.qabalah, content: "", model: null, error: null, loading: false },
       "taiyi-shenshu": { ...current["taiyi-shenshu"], content: "", model: null, error: null, loading: false },
       akasha: { ...current.akasha, content: "", model: null, error: null, loading: false },
@@ -1542,8 +1524,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
     setParametersOpen(false);
   };
 
-  const handleClassicWorkspaceOpen = (kind: "daliuren" | "taiyi") => {
-    // The two classic boards are research tools rather than a new Agent mode.
+  const handleClassicWorkspaceOpen = (kind: "daliuren") => {
+    // The classic board is a research tool rather than a new Agent mode.
     // Reuse the existing gated research Agent so its exact structured text and
     // compact JSON stay attached to the selected method.
     setMode("research");
@@ -2175,7 +2157,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const agentInspector = (
     <InspectorPanel
-      agentTitle={classicWorkspace === "daliuren" ? "大六壬 Agent 分析" : classicWorkspace === "taiyi" ? "太乙 Agent 分析" : "AI 分析"}
+      agentTitle={classicWorkspace === "daliuren" ? "大六壬 Agent 分析" : "AI 分析"}
       agentAngles={AGENT_ANALYSIS_ANGLES[mode]}
       agentError={agentState[mode].error}
       agentConversation={agentState[mode].conversation}
@@ -2324,7 +2306,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "uranian" ? <UranianPanel chart={uranianChart} onModulusChange={(modulus) => { setUranianSettings((current) => ({ ...current, modulus })); setCopyState("idle"); }} onOrbChange={(orb) => { setUranianSettings((current) => ({ ...current, orb })); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "maya" ? <MayaPanel chart={mayaChart} dateInput={mayaDate} onDateChange={(value) => { setMayaDate(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
-        {mode === "liuren" ? <LiurenPanel chart={liurenChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "qabalah" ? <QabalahPanel reading={qabalahReading} input={qabalahInput} onInputChange={(value) => { setQabalahInput(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "taiyi-shenshu" ? <TaiyiPanel chart={taiyiChart} yearInput={taiyiYear} cycle={taiyiCycle} dun={taiyiDun} ruJuInput={taiyiRuJu} onYearChange={(value) => { setTaiyiYear(value); setCopyState("idle"); }} onCycleChange={(value) => { setTaiyiCycle(value); setCopyState("idle"); }} onDunChange={(value) => { setTaiyiDun(value); setCopyState("idle"); }} onRuJuChange={(value) => { setTaiyiRuJu(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "akasha" ? <AkashaPanel chart={akashaChart} massInput={akashaMass} onMassChange={(value) => { setAkashaMass(value); setCopyState("idle"); }} sourceCount={akashaSources} onSourceCountChange={(value) => { setAkashaSources(value); setCopyState("idle"); }} fragment={akashaFragment} onFragmentChange={(value) => { setAkashaFragment(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
@@ -2795,9 +2776,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
       {error ? <p className="error-banner">{error}</p> : null}
 
       {classicWorkspace ? (
-        <main className="analysis-layout analysis-layout--classic" aria-label={classicWorkspace === "daliuren" ? "大六壬观测" : "太乙神数观测"}>
+        <main className="analysis-layout analysis-layout--classic" aria-label="大六壬观测">
           <ClassicObservatoryPanel kind={classicWorkspace} value={researchData?.[classicWorkspace] ?? null} />
-          <aside className="classic-agent-rail agent-surface-host" aria-label={`${classicWorkspace === "daliuren" ? "大六壬" : "太乙神数"} Agent 分析`}>
+          <aside className="classic-agent-rail agent-surface-host" aria-label="大六壬 Agent 分析">
             {agentInspector}
           </aside>
         </main>

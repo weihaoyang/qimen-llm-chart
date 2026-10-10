@@ -6,8 +6,8 @@ import type { WorkbenchMode } from "@/lib/workbench/types";
 type ModeTabsProps = {
   mode: WorkbenchMode;
   onChange: (mode: WorkbenchMode) => void;
-  classicActive?: "daliuren" | "taiyi" | null;
-  onClassicSelect?: (kind: "daliuren" | "taiyi") => void;
+  classicActive?: "daliuren" | null;
+  onClassicSelect?: (kind: "daliuren") => void;
 };
 
 const MODE_OPTIONS: Array<{
@@ -31,7 +31,6 @@ const MODE_OPTIONS: Array<{
   { value: "uranian", label: "汉堡学派" },
   { value: "maya", label: "玛雅历法" },
   { value: "vedic", label: "吠陀分盘" },
-  { value: "liuren", label: "大六壬" },
   { value: "qabalah", label: "赫尔墨斯卡巴拉" },
   { value: "taiyi-shenshu", label: "太乙神数" },
   { value: "akasha", label: "阿卡西 · 全息" },
@@ -44,7 +43,7 @@ export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect
       className="workbench-tabs"
       activeKey={classicActive ?? mode}
       onChange={(value) => {
-        if (value === "daliuren" || value === "taiyi") {
+        if (value === "daliuren") {
           onClassicSelect?.(value);
           return;
         }
@@ -59,8 +58,7 @@ export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect
           tab={<strong>{item.label}</strong>}
         />
       ))}
-      <Tabs.TabPane itemKey="daliuren" tab={<strong>大六壬·古典</strong>} />
-      <Tabs.TabPane itemKey="taiyi" tab={<strong>太乙·九星</strong>} />
+      <Tabs.TabPane itemKey="daliuren" tab={<strong>大六壬</strong>} />
     </Tabs>
   );
 }

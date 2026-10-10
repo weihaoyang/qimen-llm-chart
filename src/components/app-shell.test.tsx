@@ -94,10 +94,10 @@ describe("AppShell", () => {
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
 
     // A scan that silently matches nothing is worse than no scan, so pin the
-    // population first: the chart modes plus the two classic boards.
+    // population first: the chart modes plus the classic 大六壬 board.
     const tabKeys = [...container.querySelectorAll("[data-tabkey]")]
       .map((node) => node.getAttribute("data-tabkey") ?? "");
-    expect(tabKeys).toHaveLength(24);
+    expect(tabKeys).toHaveLength(22);
     // 每个标签的 itemKey 必须唯一：semi-ui 的 TabBar 内部以 `${key}-bar` 生成 key，
     // 重复 itemKey 会让 React 报 duplicate key（并可能漏渲染标签）。
     expect(new Set(tabKeys).size).toBe(tabKeys.length);
