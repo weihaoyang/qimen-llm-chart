@@ -470,3 +470,49 @@
 .akasha-analogy { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 12px; border: 1.5px solid var(--paipan-red); background: #fdf1f1; }
 .akasha-analogy p { margin: 0; font-size: 11.5px; line-height: 1.6; }
 @media (max-width: 850px) { .akasha-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .akasha-two { grid-template-columns: 1fr; } }
+
+/* 紫微飞星 · 河洛化象 */
+.divination-panel--ziwei-flying::before { background: #6d28d9; }
+.zf-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.zf-facts > div { display: flex; flex-direction: column; gap: 3px; padding: 10px; border: 1px solid var(--panel-line); }
+.zf-facts span { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.zf-facts b { font-size: 15px; }
+.zf-facts em { color: var(--panel-muted); font-size: 10.5px; font-style: normal; }
+.zf-natives { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.zf-native { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); }
+.zf-native b { font-size: 20px; }
+.zf-native span { font-weight: 800; }
+.zf-native em { margin-left: auto; color: var(--panel-muted); font-style: normal; font-size: 11px; }
+.zf-native--lu { background: #e8f5e9; }
+.zf-native--quan { background: #fdecea; }
+.zf-native--ke { background: #e8eef7; }
+.zf-native--ji { background: #ede9fe; }
+.zf-matrix { display: grid; gap: 1px; overflow-x: auto; }
+.zf-matrix__row { display: grid; grid-template-columns: 84px 44px 108px 132px repeat(4, minmax(96px, 1fr)) minmax(90px, .9fr); gap: 1px; padding: 3px 0; border-bottom: 1px solid var(--panel-line); font-size: 11.5px; }
+.zf-matrix__row > * { display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 5px 6px; background: var(--paipan-ground); }
+.zf-matrix__row > b small, .zf-matrix__row > span small { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.zf-matrix__row--head { border-bottom: 2px solid var(--panel-ink); }
+.zf-matrix__row--head > b { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .06em; }
+.zf-matrix__row.is-laiyin > b { background: var(--paipan-accent); }
+.zf-matrix__row.is-tianyi { box-shadow: inset 0 0 0 2px var(--paipan-red); }
+.zf-matrix__row span.is-self { background: #fdeaea; font-weight: 900; }
+.zf-incoming { color: var(--panel-muted); }
+.zf-note { margin: 8px 0 18px; color: var(--panel-muted); font-size: 11px; line-height: 1.6; }
+.zf-chains { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-bottom: 20px; }
+.zf-chain { display: grid; grid-template-columns: 62px 1fr; gap: 3px 8px; padding: 10px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); }
+.zf-chain b { grid-row: 1 / 4; align-self: center; font: 800 12px var(--paipan-font); }
+.zf-chain span { font-size: 12px; font-weight: 700; }
+.zf-chain em { color: var(--panel-muted); font-style: normal; font-size: 10.5px; }
+.zf-chain strong { font-size: 12px; }
+.zf-two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; margin-bottom: 20px; }
+.zf-table { display: grid; gap: 1px; margin-top: 6px; }
+.zf-table__row { display: grid; grid-template-columns: 28px repeat(4, minmax(0, 1fr)); gap: 1px; padding: 2px 0; border-bottom: 1px solid var(--panel-line); font-size: 11px; }
+.zf-table__row--narrow { grid-template-columns: 28px 1fr; }
+.zf-table__row > * { display: grid; place-items: center; padding: 4px; background: var(--paipan-ground); }
+.zf-techniques { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.zf-technique { display: flex; flex-direction: column; gap: 5px; padding: 12px; border: 1.5px solid var(--panel-ink); box-shadow: 2px 2px 0 var(--panel-ink); background: var(--paipan-paper); }
+.zf-technique header { border-bottom: 1px solid var(--panel-line); padding-bottom: 5px; }
+.zf-technique header b { font-size: 14px; }
+.zf-technique p { margin: 0; font-size: 11.5px; line-height: 1.55; }
+.zf-technique em { color: var(--panel-muted); font-size: 10.5px; font-style: normal; }
+@media (max-width: 850px) { .zf-facts, .zf-natives { grid-template-columns: repeat(2, minmax(0, 1fr)); } .zf-two { grid-template-columns: 1fr; } }

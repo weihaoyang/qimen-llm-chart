@@ -35,6 +35,7 @@ const MODE_OPTIONS: Array<{
   { value: "qabalah", label: "赫尔墨斯卡巴拉" },
   { value: "taiyi", label: "太乙神数" },
   { value: "akasha", label: "阿卡西 · 全息" },
+  { value: "ziwei-flying", label: "紫微飞星" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

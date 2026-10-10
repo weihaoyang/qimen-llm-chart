@@ -123,6 +123,23 @@ SOFTWARE.
   - 位置：`src/lib/akasha/holography.ts`、`src/lib/akasha/data.ts`
 - 校验：地球（5.9722e24 kg）r_s ≈ 8.87 mm、约 1e66 比特；太阳约 1e77；观测宇宙约 1e122；FFT 与朴素 DFT 逐点一致；碎片（25%）重建峰位与整幅一致、主峰幅值约降为 1/4、相关系数 0.755。
 
+### 紫微斗数排盘引擎（iztro）
+
+- 来源：<https://github.com/SylarLong/iztro>（npm `iztro`，MIT）
+- 位置：`src/lib/ziwei/chart.ts`（`astro.bySolar` / `astro.byLunar`）、`src/lib/ziwei-flying/chart.ts`（`getMutagensByHeavenlyStem`）
+- 采用部分：紫微斗数命盘排布（十二宫、宫干、十四主星与辅曜杂曜、生年四化、大限等）与「十干四化」工具函数。
+- 说明：本仓不修改该库；飞星（宫干飞化）、自化、来因宫、禄转忌/忌转忌、河洛数（洛书/河图）等表与算法为本仓依公共领域口诀与通行技法另写（见 `src/lib/ziwei-flying/data.ts`）。
+
+### 紫微飞星 · 河洛化象
+
+- 依据（公共领域口诀与通行技法，未移植第三方代码）：
+  - 十干四化口诀「甲廉破武阳，乙机梁紫阴，丙同机昌廉，丁阴同机巨，戊贪阴右机，己武贪梁曲，庚阳武阴同，辛巨阳曲昌，壬梁紫左武，癸破巨阴贪」。
+  - 飞化／自化（离心、向心化入）／来因宫／禄转忌·忌转忌，为飞星（飞宫）与北派通行技法。
+  - 天乙贵人口诀「甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸兔蛇藏，六辛逢马虎」。
+  - 洛书数（一白…九紫）依后天八卦配十二支；河图生成数（1·6、2·7、3·8、4·9、5·10）依卦位。
+- **「天乙飞星」一名未见统一文献术语**：本仓按「年干取天乙贵人宫 + 宫干飞化」组合呈现，并在界面与载荷中显式标注，不冒充既有成词技法。
+- 位置：`src/lib/ziwei-flying/data.ts`、`src/lib/ziwei-flying/chart.ts`
+
 ## 运行时依赖
 
 见 `package.json` 的 `dependencies` / `devDependencies`；各包的许可随其发布物提供。
