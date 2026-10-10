@@ -95,6 +95,17 @@ SOFTWARE.
 - 未采用部分：该库的行星/节气依赖（`tyme4ts`）与其天将贵人表；本仓改用 `3meta` 的四柱与节气、并按通行口诀自定昼夜贵人（该库将壬癸的昼夜贵人互乙）。
 - 自撰部分：天地盘、四课、天将、旬遁、旬空、六亲、驿马、建除、三合局与月将（太阳过宫）的算法，以及界面文案。
 
+### 赫尔墨斯卡巴拉（四界 · 十辉 · 二十二字母 · 数术）
+
+- 来源：<https://github.com/moshejs/mispar>（npm `mispar`，MIT，(c) Moshe Malka）
+- 位置：`src/lib/qabalah/gematria.ts`
+- 采用部分：希伯来字母数值表、终形（final form）处理、十三种 gematria 算法（hechrachi / gadol / katan / siduri / katan-mispari / perati / meshulash / kidmi / boneeh / haakhor / milui / atbash / albam）与「拼读（milui）」拼写表。算法本身为犹太数术的古典方法。
+- 未采用：`kaabalah`（AGPL-3.0）等被红线排除的库。
+- 自撰部分（依据公共领域古典内容，非本仓发明）：
+  - 十辉与二十二字母的名称、数值、三分法（3 母 / 7 双 / 12 单）出自《创造之书》（Sepher Yetzirah，中世纪）。
+  - 「四界 / 十辉」的神名、天使与天使序，以及「字母 ↔ 塔罗 / 元素 / 行星 / 星座」的对照为赫尔墨斯传统（Golden Dawn 一系）的通行对应。
+  - 中文名、面板文案与「数根 → 辉位」对照链为本仓所加，并在界面标注为对照而非等式。
+
 ## 运行时依赖
 
 见 `package.json` 的 `dependencies` / `devDependencies`；各包的许可随其发布物提供。

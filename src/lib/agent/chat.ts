@@ -246,6 +246,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   maya: "请基于当前玛雅历换算，说明长纪年、卓尔金、哈布与 13:20 的 Kin，并区分历法换算事实与该体系的象征解释。",
   vedic: "请基于当前吠陀盘，说明上升、九曜的恒星黄经与宿位，以及所选分盘（D1–D60）中各曜落宫的含义；区分计算事实与经典解释。",
   liuren: "请基于当前六壬盘，说明四课与三传如何由天地盘推出，逐位说明三传的神、将、六亲、遁干，并区分课式结构与断语解释。",
+  qabalah: "请基于当前卡巴拉对照，说明四界与十辉的神名、天使与天使序，以及输入词各字母的数值与十三法结果，并区分对照事实与象征解释。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -511,6 +512,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "课式结构", question: "请说明月将加时如何排出天地盘、四课如何取上下神，并复述发用（九宗门）与三传的取法。", description: "先盘后课再传。", evidence: ["月将与占时", "四课的上下神", "发用与课体"] },
     { label: "三传神将", question: "请逐位说明三传（初中末）的神、将、六亲与遁干，并指出它与日干、日支的关系。", description: "神将是事实，断语是解释。", evidence: ["三传地支与天将", "六亲与遁干", "与日干支的关系"] },
   ],
+  qabalah: [
+    { label: "四界与十辉", question: "请说明四界各自的神名、天使、天使序与对应辉位，并对照十辉的天使体系。", description: "对照是事实，含义是解释。", evidence: ["四界要素", "十辉神名与天使", "字母 ↔ 塔罗/元素/行星"] },
+    { label: "字母数术", question: "请逐字说明输入词的字母与数值，列出十三法结果，并说明数根与同值字母。", description: "先算术，再谈象征。", evidence: ["逐字数值", "十三法结果", "数根与同值字母"] },
+  ],
 };
 
 /**
@@ -560,6 +565,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   maya: ["请逐年核对 13:20 计数，说明哪些年份的 Kin 会因闰日而“不推进”。", "这套系统里哪些是可验证的算术，哪些只是命名与象征？"],
   vedic: ["请对比 D1 与 D9，指出哪些曜改变了宫位或变成了 Vargottama。", "换用 Raman 或 KP 岁差时，哪些宫的归属会改变？"],
   liuren: ["请把三传的六亲关系与日干串成一条因果链。", "如果占时换一个时辰，天地盘与三传会怎样整体平移？"],
+  qabalah: ["请核对输入词的十三法结果，指出哪些依赖终形或替换规则。", "这套对照里哪些是可验证的算术，哪些只是传统对应？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -586,6 +592,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   maya: "玛雅历法与卓尔金（Tzolkin / 13:20）",
   vedic: "吠陀占星分盘（Shodashavarga）",
   liuren: "大六壬（天地盘 · 四课三传）",
+  qabalah: "赫尔墨斯卡巴拉（四界 · 二十二字母 · 数术）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -728,6 +735,13 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "不得据课式推断具体事件、吉凶、时间或人物；结论只能是研究性提示。",
     "建议结构：## 天地盘与四课 / ## 三传与课体 / ## 断语解释 / ## 边界。",
   ].join("\n"),
+  qabalah: [
+    "【卡巴拉边界】十辉与二十二字母的名称、数值与三分法出自《创造之书》（公共领域）；「四界/十辉」的神名、天使与天使序，以及「字母 ↔ 塔罗 / 元素 / 行星 / 星座」对照为赫尔墨斯传统（Golden Dawn 一系）通行对应。数术十三法移植自 MIT 的 `mispar`。",
+    "只使用载荷中的四界、十辉、字母表、逐字数值与十三法结果；不得补造未在载荷中的经典引文、天使名录或更高阶对应（如 72 名、四字圣名置换表）。",
+    "读法：先讲算术（逐字数值、十三法、数根、同值字母、终形与替换规则），再讲该体系的对照（辉位、天使、塔罗），并明确标注哪些是对照、哪些是解释。",
+    "数根 → 辉位的对应是该体系的对照，不是等式；不得据数值相似推断事件、吉凶或命运。",
+    "建议结构：## 四界与十辉 / ## 字母与数值 / ## 对照解释 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -773,6 +787,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   maya: "只引用载荷中的历法换算数值；相关系数与闰日约定必须保持口径一致，禁止据历法推断具体事件或命运。",
   vedic: "只引用载荷中的恒星黄经、宫位、宿与分盘宫序；禁止据分盘推断具体事件、健康、婚姻或命运。",
   liuren: "只引用载荷中的四课三传、天将、六亲、遁干与课体；禁止据课式推断具体事件、吉凶或应期。",
+  qabalah: "只引用载荷中的数值与对照表；禁止据数值相似或「天使对应」推断具体事件、吉凶或命运。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [
