@@ -367,8 +367,8 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
-  taiyi: {
-    question: DEFAULT_AGENT_QUESTIONS.taiyi,
+  "taiyi-shenshu": {
+    question: DEFAULT_AGENT_QUESTIONS["taiyi-shenshu"],
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
@@ -438,7 +438,7 @@ const MODE_META: Record<
   vedic: { label: "吠陀分盘", title: "吠陀分盘", description: "Lahiri / 九曜 / D1–D60" },
   liuren: { label: "大六壬", title: "大六壬", description: "天地盘 / 四课三传" },
   qabalah: { label: "赫尔墨斯卡巴拉", title: "赫尔墨斯卡巴拉", description: "四界 / 十辉 / 22 字母 / 数术" },
-  taiyi: { label: "太乙神数", title: "太乙神数", description: "十六神 / 八将 / 主客算 / 格局" },
+  "taiyi-shenshu": { label: "太乙神数", title: "太乙神数", description: "十六神 / 八将 / 主客算 / 格局" },
   akasha: { label: "阿卡西 · 全息", title: "阿卡西记录 · 全息宇宙", description: "面积律 / 碎片重建 / 知识条目" },
   "ziwei-flying": { label: "紫微飞星", title: "紫微飞星 · 河洛化象", description: "宫干飞化 / 自化 / 来因宫" },
 };
@@ -641,8 +641,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", liuren: "free", qabalah: "free", taiyi: "free", akasha: "free", "ziwei-flying": "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], liuren: [], qabalah: [], taiyi: [], akasha: [], "ziwei-flying": [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", liuren: "free", qabalah: "free", "taiyi-shenshu": "free", akasha: "free", "ziwei-flying": "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], liuren: [], qabalah: [], "taiyi-shenshu": [], akasha: [], "ziwei-flying": [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1299,7 +1299,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return liurenStructuredText;
       case "qabalah":
         return qabalahStructuredText;
-      case "taiyi":
+      case "taiyi-shenshu":
         return taiyiStructuredText;
       case "akasha":
         return akashaStructuredText;
@@ -1399,7 +1399,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeLiurenToCompactJson(liurenChart);
       case "qabalah":
         return serializeQabalahToCompactJson(qabalahReading);
-      case "taiyi":
+      case "taiyi-shenshu":
         return serializeTaiyiToCompactJson(taiyiChart);
       case "akasha":
         return serializeAkashaToCompactJson(akashaChart);
@@ -1469,7 +1469,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       vedic: { ...current.vedic, content: "", model: null, error: null, loading: false },
       liuren: { ...current.liuren, content: "", model: null, error: null, loading: false },
       qabalah: { ...current.qabalah, content: "", model: null, error: null, loading: false },
-      taiyi: { ...current.taiyi, content: "", model: null, error: null, loading: false },
+      "taiyi-shenshu": { ...current["taiyi-shenshu"], content: "", model: null, error: null, loading: false },
       akasha: { ...current.akasha, content: "", model: null, error: null, loading: false },
       "ziwei-flying": { ...current["ziwei-flying"], content: "", model: null, error: null, loading: false },
       runes: { ...current.runes, content: "", model: null, error: null, loading: false },
@@ -2326,7 +2326,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "liuren" ? <LiurenPanel chart={liurenChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "qabalah" ? <QabalahPanel reading={qabalahReading} input={qabalahInput} onInputChange={(value) => { setQabalahInput(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
-        {mode === "taiyi" ? <TaiyiPanel chart={taiyiChart} yearInput={taiyiYear} cycle={taiyiCycle} dun={taiyiDun} ruJuInput={taiyiRuJu} onYearChange={(value) => { setTaiyiYear(value); setCopyState("idle"); }} onCycleChange={(value) => { setTaiyiCycle(value); setCopyState("idle"); }} onDunChange={(value) => { setTaiyiDun(value); setCopyState("idle"); }} onRuJuChange={(value) => { setTaiyiRuJu(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "taiyi-shenshu" ? <TaiyiPanel chart={taiyiChart} yearInput={taiyiYear} cycle={taiyiCycle} dun={taiyiDun} ruJuInput={taiyiRuJu} onYearChange={(value) => { setTaiyiYear(value); setCopyState("idle"); }} onCycleChange={(value) => { setTaiyiCycle(value); setCopyState("idle"); }} onDunChange={(value) => { setTaiyiDun(value); setCopyState("idle"); }} onRuJuChange={(value) => { setTaiyiRuJu(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "akasha" ? <AkashaPanel chart={akashaChart} massInput={akashaMass} onMassChange={(value) => { setAkashaMass(value); setCopyState("idle"); }} sourceCount={akashaSources} onSourceCountChange={(value) => { setAkashaSources(value); setCopyState("idle"); }} fragment={akashaFragment} onFragmentChange={(value) => { setAkashaFragment(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "ziwei-flying" ? <ZiweiFlyingPanel chart={ziweiFlyingChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
