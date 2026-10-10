@@ -33,6 +33,7 @@ const MODE_OPTIONS: Array<{
   { value: "vedic", label: "吠陀分盘" },
   { value: "liuren", label: "大六壬" },
   { value: "qabalah", label: "赫尔墨斯卡巴拉" },
+  { value: "taiyi", label: "太乙神数" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {

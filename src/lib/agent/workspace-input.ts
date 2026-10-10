@@ -1,4 +1,4 @@
-export const AGENT_WORKBENCH_MODES = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot", "fourth-way", "harmonic", "huangji", "qizheng", "sacred-geometry", "runes", "uranian", "maya", "vedic", "liuren", "qabalah"] as const;
+export const AGENT_WORKBENCH_MODES = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot", "fourth-way", "harmonic", "huangji", "qizheng", "sacred-geometry", "runes", "uranian", "maya", "vedic", "liuren", "qabalah", "taiyi"] as const;
 export const AGENT_INTERVIEW_PHASES = ["issue", "facts", "constraints", "options", "costs", "action"] as const;
 
 export const isAgentWorkspaceId = (value: unknown): value is string =>

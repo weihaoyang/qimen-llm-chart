@@ -19,7 +19,7 @@ import { readProviderUsage } from "@/lib/platform/ai-contract";
 import { reportPlatformTokenUsage } from "@/lib/platform/ai-platform-adapter";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
-const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot", "fourth-way", "harmonic", "huangji", "qizheng", "sacred-geometry", "runes", "uranian", "maya", "vedic", "liuren", "qabalah"];
+const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot", "fourth-way", "harmonic", "huangji", "qizheng", "sacred-geometry", "runes", "uranian", "maya", "vedic", "liuren", "qabalah", "taiyi"];
 const MAX_HISTORY_MESSAGES = 18;
 // These caps exist to bound the prompt — and therefore the token bill — per
 // charged analysis. The workbench only ever sends the *active* chart (a

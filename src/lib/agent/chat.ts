@@ -247,6 +247,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   vedic: "请基于当前吠陀盘，说明上升、九曜的恒星黄经与宿位，以及所选分盘（D1–D60）中各曜落宫的含义；区分计算事实与经典解释。",
   liuren: "请基于当前六壬盘，说明四课与三传如何由天地盘推出，逐位说明三传的神、将、六亲、遁干，并区分课式结构与断语解释。",
   qabalah: "请基于当前卡巴拉对照，说明四界与十辉的神名、天使与天使序，以及输入词各字母的数值与十三法结果，并区分对照事实与象征解释。",
+  taiyi: "请基于当前太乙盘，说明积年与入局数的推导、太乙所在宫，以及天目、计神、始击的求法，再说明主客算与格局，并区分规则与断语。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -516,6 +517,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "四界与十辉", question: "请说明四界各自的神名、天使、天使序与对应辉位，并对照十辉的天使体系。", description: "对照是事实，含义是解释。", evidence: ["四界要素", "十辉神名与天使", "字母 ↔ 塔罗/元素/行星"] },
     { label: "字母数术", question: "请逐字说明输入词的字母与数值，列出十三法结果，并说明数根与同值字母。", description: "先算术，再谈象征。", evidence: ["逐字数值", "十三法结果", "数根与同值字母"] },
   ],
+  taiyi: [
+    { label: "起局推演", question: "请复述积年 → 入纪元数 → 入局数 → 太乙宫的推导，并说明天目（文昌）、计神、始击各自如何求出。", description: "先讲推导链，再看盘。", evidence: ["积年与入局数", "太乙三年一宫不入中宫", "天目/计神/始击求法"] },
+    { label: "主客算与格局", question: "请说明主算与客算如何自二目顺数正宫至太乙前一宫，大将宫如何取，并指出命中的格局与长短数、和否。", description: "规则是事实，断语是解释。", evidence: ["主客算算法", "大将宫取个位/除九", "格局六格与长短数"] },
+  ],
 };
 
 /**
@@ -566,6 +571,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   vedic: ["请对比 D1 与 D9，指出哪些曜改变了宫位或变成了 Vargottama。", "换用 Raman 或 KP 岁差时，哪些宫的归属会改变？"],
   liuren: ["请把三传的六亲关系与日干串成一条因果链。", "如果占时换一个时辰，天地盘与三传会怎样整体平移？"],
   qabalah: ["请核对输入词的十三法结果，指出哪些依赖终形或替换规则。", "这套对照里哪些是可验证的算术，哪些只是传统对应？"],
+  taiyi: ["请说明元六纪周期取 360 或 365 时，太乙宫会差几宫，并给出两种结果。", "请核对主算与客算的每一步求和，指出哪些宫被计入。"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -593,6 +599,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   vedic: "吠陀占星分盘（Shodashavarga）",
   liuren: "大六壬（天地盘 · 四课三传）",
   qabalah: "赫尔墨斯卡巴拉（四界 · 二十二字母 · 数术）",
+  taiyi: "太乙神数（三式之首 · 岁计）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -742,6 +749,14 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "数根 → 辉位的对应是该体系的对照，不是等式；不得据数值相似推断事件、吉凶或命运。",
     "建议结构：## 四界与十辉 / ## 字母与数值 / ## 对照解释 / ## 边界。",
   ].join("\n"),
+  taiyi: [
+    "【太乙边界】按公共领域古籍《太乙金镜式经》《太乙全书》一系规则实现；本仓未采用任何开源太乙实现（检索到者实为九星换皮）。「元六纪周期」古籍作三百六十五，而据金镜复现的现代平台与三百六十吻合，故两者可切换；起元与阳阴遁亦有异说，入局数与遁可覆盖。",
+    "只使用载荷中的积年、入局数、太乙宫、天目/计神/始击方位、主客算与格局；不得补造未在载荷中的神将、古籍引文或具体应期。",
+    "读法：先讲推导链（积年 → 入纪元数 → 入局数 → 太乙宫 → 二目 → 主客算 → 格局），再谈断语，并明确标注哪些是规则、哪些是解释。",
+    "参数存在异说时必须显式说明所用口径（周期、遁、起元），不得把一种口径当作唯一真值。",
+    "不得据盘局推断具体事件、朝代、吉凶或时间；结论只能是研究性提示。",
+    "建议结构：## 起局推导 / ## 二目与主客算 / ## 格局断语 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -788,6 +803,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   vedic: "只引用载荷中的恒星黄经、宫位、宿与分盘宫序；禁止据分盘推断具体事件、健康、婚姻或命运。",
   liuren: "只引用载荷中的四课三传、天将、六亲、遁干与课体；禁止据课式推断具体事件、吉凶或应期。",
   qabalah: "只引用载荷中的数值与对照表；禁止据数值相似或「天使对应」推断具体事件、吉凶或命运。",
+  taiyi: "只引用载荷中的积年、入局数、宫位、主客算与格局；参数异说须标注口径，禁止据盘局推断具体事件或吉凶。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [
