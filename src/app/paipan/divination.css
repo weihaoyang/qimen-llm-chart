@@ -115,3 +115,35 @@
   letter-spacing: 0.14em;
 }
 .tarot-card > span[data-orientation="逆位"] { font-weight: 900; }
+
+/* 卢恩符文（Elder Futhark）· 北欧九界 */
+.divination-panel--runes::before { background: #6f86c9; }
+.rune-selector { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+.rune-selector > button { display: inline-flex; align-items: baseline; gap: 8px; padding: 6px 11px; border: 2px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); cursor: pointer; font: 800 12px var(--paipan-font); }
+.rune-selector > button small { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); }
+.rune-selector > button.is-active { background: var(--paipan-accent); }
+.rune-selector > button.is-active small { color: var(--panel-ink); }
+.rune-board { display: grid; grid-template-columns: repeat(var(--rune-cols, 3), minmax(0, 1fr)); gap: 13px; }
+.rune-card { display: flex; flex-direction: column; gap: 7px; min-height: 300px; padding: 15px; border: 2px solid var(--panel-ink); box-shadow: 5px 5px 0 var(--panel-ink); background: #dfe3f3; animation: row-enter .5s both; animation-delay: calc(var(--item-index, 0) * 90ms + 120ms); }
+.rune-card:nth-child(2n) { background: #ece6f2; }
+.rune-card__top { display: flex; justify-content: space-between; gap: 8px; color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .08em; }
+.rune-card__top small { color: var(--panel-ink); }
+.rune-card__glyph { width: 76px; height: auto; margin: 6px auto 2px; overflow: visible; }
+.rune-card__glyph path { fill: none; stroke: var(--panel-ink); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.rune-card.is-reversed .rune-card__glyph { opacity: .72; }
+.rune-card strong { font-size: 21px; letter-spacing: -.03em; }
+.rune-card strong b { margin-left: 5px; font-size: 26px; }
+.rune-card__meta { color: var(--panel-muted); font: 800 10px var(--paipan-font-mono); }
+.rune-card__keywords { margin: 4px 0 0; font: 800 11px var(--paipan-font-mono); letter-spacing: .04em; }
+.rune-card__meaning { margin: 4px 0 0; font-size: 12.5px; line-height: 1.55; }
+.rune-card__advice { margin: auto 0 0; padding-top: 9px; border-top: 1px solid var(--panel-line); color: var(--panel-muted); font-size: 11.5px; }
+.nine-worlds { display: grid; gap: 2px; }
+.nine-worlds__level { display: grid; grid-template-columns: 34px 1fr; align-items: start; gap: 10px; padding: 11px 4px; border-bottom: 1px solid var(--panel-line); }
+.nine-worlds__level > b { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid var(--panel-ink); background: var(--paipan-accent); font: 900 13px var(--paipan-font-mono); }
+.nine-worlds__level > div { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.nine-worlds__level span { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+.nine-worlds__level i { font-style: normal; font-weight: 800; font-size: 13px; }
+.nine-worlds__level small { color: var(--panel-muted); font-size: 11px; }
+@media (max-width: 850px) { .rune-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rune-card { grid-column: auto !important; grid-row: auto !important; } }
+@media (max-width: 620px) { .rune-board { grid-template-columns: 1fr; } .rune-card { min-height: 0; } }
+@media (prefers-reduced-motion: reduce) { .rune-card { animation: none !important; } }

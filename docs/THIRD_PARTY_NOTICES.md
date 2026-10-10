@@ -48,6 +48,15 @@ SOFTWARE.
 - 位置：`src/lib/sacred-geometry/patterns.ts`
 - 采用部分：Vesica Piscis、Seed of Life、Flower of Life、Metatron's Cube、Golden Spiral 的**图案定义与几何构造**（单位空间、构造圆半径 = 1，返回形状描述符）；本仓只改写为 TypeScript 并自行渲染 SVG。
 
+### 卢恩符文（Elder Futhark）
+
+- 来源：<https://github.com/evoluteur/rune-reading>（`js/runes-data.js`）
+- 许可：MIT License — (c) 2026 Olivier Giulieri
+- 位置：`src/lib/runes/data.ts`
+- 采用部分：24 符文的名称、Unicode 字符、读音、三个 aett 的划分、传统 lore、关键词、正/逆位含义与建议；四组牌阵（单符文 / 三女神 / 五符文十字 / 奥丁九符）的位置与问题。本仓改写为 TypeScript，并保留原项目的 40×64 SVG 笔画路径以便不依赖符文专用字体。
+- 未采用部分：无（数据整体移植并注明来源）。
+- 自撰部分：北欧九界（`src/lib/runes/nine-worlds.ts`）为北欧神话 Yggdrasil 三层九界的通行说法整理，属公共神话事实，不含受版权保护的文本。
+
 ## 运行时依赖
 
 见 `package.json` 的 `dependencies` / `devDependencies`；各包的许可随其发布物提供。

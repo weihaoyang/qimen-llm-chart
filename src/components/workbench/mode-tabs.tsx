@@ -27,6 +27,7 @@ const MODE_OPTIONS: Array<{
   { value: "huangji", label: "皇极经世" },
   { value: "qizheng", label: "七政四余" },
   { value: "sacred-geometry", label: "神圣几何" },
+  { value: "runes", label: "卢恩符文" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {
