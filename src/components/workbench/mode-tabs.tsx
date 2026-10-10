@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Tabs from "@douyinfe/semi-ui/lib/es/tabs";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
@@ -38,10 +39,23 @@ const MODE_OPTIONS: Array<{
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {
+  const activeKey = classicActive ?? mode;
+
+  // The tab strip scrolls horizontally once the modes outgrow one row, so keep
+  // the active tab in view after a mode change (deep links, restores, resets).
+  // `scrollIntoView` is absent in jsdom and in some embedded webviews.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll<HTMLElement>(".workbench-tabs").forEach((host) => {
+      const active = host.querySelector<HTMLElement>(".semi-tabs-tab-active");
+      if (typeof active?.scrollIntoView === "function") active.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+  }, [activeKey]);
+
   return (
     <Tabs
       className="workbench-tabs"
-      activeKey={classicActive ?? mode}
+      activeKey={activeKey}
       onChange={(value) => {
         if (value === "daliuren") {
           onClassicSelect?.(value);

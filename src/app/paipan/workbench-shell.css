@@ -443,3 +443,46 @@ html body .page-shell.product-chart .platform-account__error {
 .birth-library-item button:disabled { opacity: 0.45; cursor: not-allowed; }
 .birth-library-history-title { display: block; margin-top: 10px; padding-top: 8px; border-top: 1px solid #c7c0ae; }
 .birth-library-history { display: block; width: 100%; margin-top: 4px; text-align: left; background: var(--paipan-ground) !important; }
+
+/* ---------------------------------------------------------------------------
+   Mode tabs: 22 tabs no longer fit a single row on wide desktop, so the strip
+   must always be a horizontal scroll container instead of overflowing/clipping.
+   Keep the tabs at their natural width (never shrink into each other) and let
+   the bar grow to max-content inside the scroller.
+   --------------------------------------------------------------------------- */
+html body .page-shell.product-chart .workbench-tabs {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-inline: contain;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-bar {
+  flex-wrap: nowrap !important;
+  width: max-content !important;
+  min-width: max-content !important;
+}
+html body .page-shell.product-chart .workbench-tabs .semi-tabs-tab {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+/* Wide desktop is where the strip previously had no scroller: give it a slim,
+   visible bar so the overflow is discoverable. */
+@media (min-width: 1141px) {
+  html body .page-shell.product-chart .workbench-tabs {
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--paipan-slate) var(--paipan-paper);
+  }
+  html body .page-shell.product-chart .workbench-tabs::-webkit-scrollbar {
+    display: block !important;
+    height: 6px !important;
+  }
+  html body .page-shell.product-chart .workbench-tabs::-webkit-scrollbar-thumb {
+    background: var(--paipan-slate);
+    border-radius: 3px;
+  }
+  html body .page-shell.product-chart .workbench-tabs::-webkit-scrollbar-track {
+    background: var(--paipan-paper);
+  }
+}
