@@ -20,6 +20,7 @@ export type FlyingRow = {
   branchIndex: number;
   isInner: boolean;
   isLaiYin: boolean;
+  isYearStemPalace: boolean;
   isTianYi: boolean;
   luoShu: number;
   trigram: string;
@@ -33,7 +34,7 @@ export type ZiweiFlyingChart = {
   format: "qmdj-ziwei-flying-v1";
   input: { datetime: string; timeZone: string };
   year: { stem: string; branch: string; ganZhi: string };
-  laiYin: { palace: string; index: number } | null;
+  laiYin: { palace: string; index: number; isInner: boolean } | null;
   tianYi: { branches: string[]; palaces: string[] };
   natives: Array<{ mutagen: string; star: string; palace: string; index: number }>;
   rows: FlyingRow[];
@@ -64,9 +65,10 @@ export const buildZiweiFlyingChart = (profile: NormalizedProfileInput): ZiweiFly
     return { mutagen, star, palace: index >= 0 ? palaces[index].name : "—", index };
   });
 
-  // 来因宫（生年天干所在的六内宫）
+  // 来因宫（生年天干所在的六内宫）；若年干只落在六外宫，则退回该宫并标注非六内
   const candidates = palaces.filter((palace) => palace.heavenlyStem === yearStem);
-  const laiYinPalace = candidates.find((palace) => INNER_PALACES.includes(palace.name)) ?? candidates[0] ?? null;
+  const innerCandidate = candidates.find((palace) => INNER_PALACES.includes(palace.name));
+  const laiYinPalace = innerCandidate ?? candidates[0] ?? null;
 
   // 天乙贵人宫
   const tianYiBranches = TIAN_YI[yearStem] ?? ["", ""];
@@ -100,7 +102,8 @@ export const buildZiweiFlyingChart = (profile: NormalizedProfileInput): ZiweiFly
       branch: palace.earthlyBranch,
       branchIndex: palace.branchIndex,
       isInner: INNER_PALACES.includes(palace.name),
-      isLaiYin: laiYinPalace?.name === palace.name,
+      isLaiYin: laiYinPalace?.name === palace.name && INNER_PALACES.includes(palace.name),
+      isYearStemPalace: candidates.some((candidate) => candidate.name === palace.name),
       isTianYi: tianYiPalaceNames.has(palace.name),
       luoShu: luoShu?.number ?? 0,
       trigram: luoShu?.trigram ?? "",
@@ -128,7 +131,7 @@ export const buildZiweiFlyingChart = (profile: NormalizedProfileInput): ZiweiFly
     format: "qmdj-ziwei-flying-v1",
     input: { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone },
     year: { stem: yearStem, branch: yearBranch, ganZhi: `${yearStem}${yearBranch}` },
-    laiYin: laiYinPalace ? { palace: laiYinPalace.name, index: laiYinPalace.index } : null,
+    laiYin: laiYinPalace ? { palace: laiYinPalace.name, index: laiYinPalace.index, isInner: INNER_PALACES.includes(laiYinPalace.name) } : null,
     tianYi: { branches: tianYiBranches.filter(Boolean), palaces: tianYiPalaces },
     natives,
     rows,
@@ -137,6 +140,6 @@ export const buildZiweiFlyingChart = (profile: NormalizedProfileInput): ZiweiFly
       jiZhuanJi: jiAnchor ? ([follow(jiAnchor.palace, jiAnchor.index, jiAnchor.star)].filter(Boolean) as ZiweiFlyingChart["chains"]["jiZhuanJi"]) : [],
     },
     disclaimer:
-      "紫微斗数「飞星（飞化）· 自化 · 河洛化象」研究盘：十干四化依通行口诀（甲廉破武阳…癸破巨阴贪），宫位与星曜数据来自 iztro（MIT）；飞化、自化、来因宫、禄转忌/忌转忌为北派通行技法；洛书数（一白…九紫）依后天八卦配十二支、河图数（1·6、2·7…）依卦位配生成数，属对照呈现。注意：「天乙飞星」一名未见统一文献术语，本仓按「年干取天乙贵人宫 + 宫干飞化」组合呈现，并在界面标明；本页不作吉凶断语、不替现实决策。",
+      "紫微斗数「飞星（飞化）· 自化 · 河洛化象」研究盘：十干四化依通行口诀（甲廉破武阳…癸破巨阴贪），宫位与星曜数据来自 iztro（MIT）；飞化、自化、来因宫、禄转忌/忌转忌为北派通行技法；洛书数（一白…九紫）依后天八卦配十二支、河图数（1·6、2·7…）依卦位配生成数，属对照呈现。来因宫依定义为「生年天干所在的六内宫」；若生年天干只落在六外宫，本页改标为「生年干所在宫（六外）」而不称来因宫。注意：「天乙飞星」一名未见统一文献术语，本仓按「年干取天乙贵人宫 + 宫干飞化」组合呈现，并在界面标明；本页不作吉凶断语、不替现实决策。",
   };
 };

@@ -494,6 +494,7 @@
 .zf-matrix__row--head { border-bottom: 2px solid var(--panel-ink); }
 .zf-matrix__row--head > b { color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .06em; }
 .zf-matrix__row.is-laiyin > b { background: var(--paipan-accent); }
+.zf-matrix__row.is-yearstem > b { box-shadow: inset 0 0 0 2px var(--paipan-red); }
 .zf-matrix__row.is-tianyi { box-shadow: inset 0 0 0 2px var(--paipan-red); }
 .zf-matrix__row span.is-self { background: #fdeaea; font-weight: 900; }
 .zf-incoming { color: var(--panel-muted); }

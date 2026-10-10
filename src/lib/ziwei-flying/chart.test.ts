@@ -68,7 +68,12 @@ describe("ziwei flying chart", () => {
     expect(chart.laiYin).not.toBeNull();
     const laiYinRow = chart.rows.find((row) => row.palace === chart.laiYin?.palace);
     expect(laiYinRow?.stem).toBe(chart.year.stem);
-    expect(laiYinRow?.isInner).toBe(true);
+    // 来因宫必须是六内宫；若年干只在六外宫，则退回并标注 isInner=false
+    expect(chart.laiYin?.isInner).toBe(laiYinRow?.isInner);
+    const candidates = chart.rows.filter((row) => row.stem === chart.year.stem);
+    expect(candidates.some((row) => row.isInner)).toBe(chart.laiYin?.isInner ?? false);
+    expect(chart.rows.filter((row) => row.isLaiYin).length).toBe(chart.laiYin?.isInner ? 1 : 0);
+    expect(chart.rows.filter((row) => row.isYearStemPalace).length).toBe(candidates.length);
     expect(chart.tianYi.branches).toEqual(TIAN_YI[chart.year.stem]);
     for (const name of chart.tianYi.palaces) expect(name).not.toBe("—");
     expect(chart.rows.filter((row) => row.isTianYi).length).toBe(chart.tianYi.palaces.filter((name) => name !== "—").length);

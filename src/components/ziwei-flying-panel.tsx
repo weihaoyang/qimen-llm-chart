@@ -16,7 +16,7 @@ export function ZiweiFlyingPanel({
     <section className="divination-panel divination-panel--ziwei-flying" aria-label="紫微飞星与河洛化象">
       <div className="divination-panel__topline">
         <span>ZIWEI FLYING / HE-LUO</span>
-        <span className="status status--live">{chart.year.ganZhi} · 来因 {chart.laiYin?.palace ?? "—"}</span>
+        <span className="status status--live">{chart.year.ganZhi} · {chart.laiYin?.isInner ? "来因" : "年干宫"} {chart.laiYin?.palace ?? "—"}</span>
       </div>
       <header className="divination-panel__header">
         <div>
@@ -38,7 +38,7 @@ export function ZiweiFlyingPanel({
 
       <div className="zf-facts">
         <div><span>生年干支</span><b>{chart.year.ganZhi}</b><em>十干四化之「年干」</em></div>
-        <div><span>来因宫</span><b>{chart.laiYin?.palace ?? "—"}</b><em>生年天干所在六内宫</em></div>
+        <div><span>{chart.laiYin?.isInner ? "来因宫" : "生年干所在宫"}</span><b>{chart.laiYin?.palace ?? "—"}</b><em>{chart.laiYin?.isInner ? "生年天干所在六内宫" : "六外宫，非来因宫"}</em></div>
         <div><span>天乙贵人宫</span><b>{chart.tianYi.palaces.filter((name) => name !== "—").join("、") || "—"}</b><em>贵人支 {chart.tianYi.branches.join("、") || "—"}</em></div>
         <div><span>禄转忌 / 忌转忌</span><b>{chart.chains.luZhuanJi[0]?.to ?? "—"} / {chart.chains.jiZhuanJi[0]?.to ?? "—"}</b><em>北派转忌技法</em></div>
       </div>
@@ -62,7 +62,7 @@ export function ZiweiFlyingPanel({
           <b>向心</b>
         </div>
         {chart.rows.map((row) => (
-          <div className={`zf-matrix__row${row.isLaiYin ? " is-laiyin" : ""}${row.isTianYi ? " is-tianyi" : ""}`} key={row.index}>
+          <div className={`zf-matrix__row${row.isLaiYin ? " is-laiyin" : ""}${row.isYearStemPalace && !row.isLaiYin ? " is-yearstem" : ""}${row.isTianYi ? " is-tianyi" : ""}`} key={row.index}>
             <b>{row.palace}<small>{row.branch}{row.isInner ? "·内" : ""}</small></b>
             <span>{row.stem}</span>
             <span>{row.luoShu} {row.nineStar}<small>{row.trigram}</small></span>
@@ -79,7 +79,7 @@ export function ZiweiFlyingPanel({
           </div>
         ))}
       </div>
-      <p className="zf-note">标记说明：<b>is-laiyin</b> 底纹为来因宫，<b>is-tianyi</b> 边框为天乙贵人宫；「→宫名（自化）」表示该化星落回本宫，属离心自化；「向心」列为对宫宫干化入本宫的星。</p>
+      <p className="zf-note">标记说明：<b>is-laiyin</b> 底纹为来因宫（生年天干所在六内宫），<b>is-yearstem</b> 虚线框表示生年天干只落在六外宫（按定义不称来因宫）；<b>is-tianyi</b> 边框为天乙贵人宫；「→宫名（自化）」表示该化星落回本宫，属离心自化；「向心」列为对宫宫干化入本宫的星。</p>
 
       <div className="divination-section-heading"><span>转忌链</span><small>禄因忌果</small></div>
       <div className="zf-chains">
