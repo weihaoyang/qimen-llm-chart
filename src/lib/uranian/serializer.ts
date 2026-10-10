@@ -20,6 +20,9 @@ export const serializeUranianToStructuredText = (chart: UranianChart) => [
   `和点（A+B = C，共 ${chart.sums.length} 条）：`,
   ...chart.sums.map((entry) => `- ${entry.a.name}+${entry.b.name} = ${entry.occupied.map((hit) => `${hit.body.name}（±${fmt(hit.orb, 2)}°）`).join("、")}；和点 ${formatDial(entry.axis)}`),
   "",
+  `差点（A−B = C，共 ${chart.differences.length} 条）：`,
+  ...chart.differences.map((entry) => `- ${entry.a.name}−${entry.b.name} = ${entry.occupied.map((hit) => `${hit.body.name}（±${fmt(hit.orb, 2)}°）`).join("、")}；差点 ${formatDial(entry.axis)}`),
+  "",
   `和点等式（A+B = C+D，共 ${chart.equations.length} 条）：`,
   ...chart.equations.map((entry) => `- ${entry.left[0].name}+${entry.left[1].name} = ${entry.right[0].name}+${entry.right[1].name}（±${fmt(entry.orb, 2)}°）`),
   "",
@@ -35,6 +38,7 @@ export const serializeUranianToCompactJson = (chart: UranianChart) =>
     tnps: chart.tnps.map((row) => [row.code, row.nameZh, row.name, fmt(row.longitude, 4), fmt(row.dial90, 4), fmt(row.heliocentric, 4), fmt(row.distance, 6)]),
     midpoints: chart.midpoints.map((entry) => [entry.a.name, entry.b.name, fmt(entry.axis, 4), entry.occupied.map((hit) => [hit.body.name, fmt(hit.orb, 3)])]),
     sums: chart.sums.map((entry) => [entry.a.name, entry.b.name, fmt(entry.axis, 4), entry.occupied.map((hit) => [hit.body.name, fmt(hit.orb, 3)])]),
+    differences: chart.differences.map((entry) => [entry.a.name, entry.b.name, fmt(entry.axis, 4), entry.occupied.map((hit) => [hit.body.name, fmt(hit.orb, 3)])]),
     equations: chart.equations.map((entry) => [entry.left[0].name, entry.left[1].name, entry.right[0].name, entry.right[1].name, fmt(entry.orb, 3)]),
     boundary: "八虚星为汉堡学派名义天体（非真实行星）；盘面与图景为研究设定，不构成预测或现实裁决。",
   });

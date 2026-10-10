@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildAkashaChart, sourcePositions } from "./chart";
 import { AKASHA_CONCEPTS, AKASHA_ETHICS, FRACTALS, HOLOGRAM_CONCEPTS, MASS_PRESETS } from "./data";
-import { bekensteinBits, entropyBits, fft, hologramDemo, holographicReport, horizonArea, schwarzschildRadius, volumeLawBits } from "./holography";
+import { bekensteinBits, bekensteinNats, entropyBits, fft, hologramDemo, holographicReport, horizonArea, schwarzschildRadius, volumeLawBits } from "./holography";
 import { serializeAkashaToCompactJson, serializeAkashaToStructuredText } from "./serializer";
 
 describe("akasha knowledge tables", () => {
@@ -52,10 +52,14 @@ describe("holographic physics", () => {
     expect(entropyBits(4 * 1.616255e-35 ** 2)).toBeCloseTo(1, 6); // 4 个普朗克面积 = 1 比特
   });
 
-  it("computes the Bekenstein bound", () => {
+  it("computes the Bekenstein bound in nats and converts to bits (÷ ln 2)", () => {
+    const nats = bekensteinNats(1, 1 * 2.99792458e8 ** 2);
+    expect(nats).toBeGreaterThan(1.7e43);
+    expect(nats).toBeLessThan(1.9e43);
     const bits = bekensteinBits(1, 1 * 2.99792458e8 ** 2);
-    expect(bits).toBeGreaterThan(1.7e43);
-    expect(bits).toBeLessThan(1.9e43);
+    expect(bits).toBeCloseTo(nats / Math.LN2, 30);
+    expect(bits).toBeGreaterThan(2.4e43);
+    expect(bits).toBeLessThan(2.7e43);
     expect(volumeLawBits(1)).toBeGreaterThan(0);
   });
 });
@@ -70,6 +74,33 @@ describe("fft and hologram reconstruction", () => {
     expect(magnitude[1]).toBeCloseTo(Math.sqrt(8), 4);
     expect(magnitude[2]).toBeCloseTo(2, 4);
     expect(magnitude[3]).toBeCloseTo(Math.sqrt(8), 4);
+  });
+
+  it("matches a naive DFT pointwise at the demo size (N = 256)", () => {
+    const n = 256;
+    const re = new Float64Array(n);
+    const im = new Float64Array(n);
+    const signal = new Float64Array(n);
+    for (let i = 0; i < n; i += 1) {
+      signal[i] = Math.sin((2 * Math.PI * 5 * i) / n) + 0.5 * Math.cos((2 * Math.PI * 11 * i) / n);
+      re[i] = signal[i];
+    }
+    fft(re, im);
+    for (let k = 0; k < n; k += 1) {
+      let sumRe = 0;
+      let sumIm = 0;
+      for (let t = 0; t < n; t += 1) {
+        const angle = (-2 * Math.PI * k * t) / n;
+        sumRe += signal[t] * Math.cos(angle);
+        sumIm += signal[t] * Math.sin(angle);
+      }
+      expect(re[k]).toBeCloseTo(sumRe, 8);
+      expect(im[k]).toBeCloseTo(sumIm, 8);
+    }
+  });
+
+  it("quantifies the 25% fragment correlation (documented as 0.755)", () => {
+    expect(hologramDemo([-0.45, 0, 0.45], 0.25).correlation).toBeCloseTo(0.755, 2);
   });
 
   it("spreads the sources evenly and deterministically", () => {

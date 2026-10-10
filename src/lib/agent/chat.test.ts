@@ -224,7 +224,7 @@ describe("agent chat helpers", () => {
 
     expect(context).toContain("论大运");
     expect(context).toContain("大运看支");
-    expect(context).toContain("原始语料：八字 - 渊海子平.txt");
+    expect(context).toContain("摘录（未逐字校对）：八字 - 渊海子平.txt");
   });
 
   it("selects a Tai Sui excerpt for a current-year question", () => {
@@ -237,6 +237,9 @@ describe("agent chat helpers", () => {
 
     expect(context).toContain("《三命通会》｜论太岁");
     expect(context).toContain("逐年太岁游行十二宫");
+    // 现代编者话必须与古籍摘录分离，并被标注为不可引用
+    expect(context).not.toContain("不可只凭流年一个字作断");
+    expect(context).toContain("编者按（本仓现代说明，非原文，禁止作为古籍引用）：若五行有救、四柱有情，仍须结合原局与行运详审，不可只凭流年一字作断。");
   });
 
   it("weights the explicit question above serialized chart boilerplate", () => {

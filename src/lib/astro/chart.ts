@@ -4,7 +4,31 @@ import type { AstroChart, AstroAspect, AstroPoint, AstroPattern, AstroHouseCusp,
 
 const SIGNS: ZodiacSign[] = ["白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼"];
 const EN_SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
-const PLANET_NAMES: Record<string, string> = { Sun: "太阳", Moon: "月亮", Mercury: "水星", Venus: "金星", Mars: "火星", Jupiter: "木星", Saturn: "土星", Uranus: "天王", Neptune: "海王", Pluto: "冥王" };
+const PLANET_NAMES: Record<string, string> = {
+  Sun: "太阳",
+  Moon: "月亮",
+  Mercury: "水星",
+  Venus: "金星",
+  Mars: "火星",
+  Jupiter: "木星",
+  Saturn: "土星",
+  Uranus: "天王",
+  Neptune: "海王",
+  Pluto: "冥王",
+  // 小行星与凯龙（celestine 默认一并计算，本仓不再丢弃）
+  Chiron: "凯龙星",
+  Ceres: "谷神星",
+  Pallas: "智神星",
+  Juno: "婚神星",
+  Vesta: "灶神星",
+  // 黄白交点与莉莉丝（celestine 的 nodes / lilith 列表）
+  "True North Node": "北交点",
+  "True South Node": "南交点",
+  "Mean North Node": "北交点（平）",
+  "Mean South Node": "南交点（平）",
+  "Mean Lilith": "莉莉丝",
+  "True Lilith": "莉莉丝（真）",
+};
 const parse = (value: string) => {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!match) throw new Error("出生时间格式无效。");
@@ -39,7 +63,15 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
     const signIndex = EN_SIGNS.indexOf(planet.signName);
     return { name: PLANET_NAMES[planet.name] ?? planet.name, longitude: Number(planet.longitude.toFixed(6)), sign: SIGNS[signIndex] ?? "未知", degree: Number((planet.longitude % 30).toFixed(2)), house: hasPlace ? planet.house ?? null : null };
   };
-  const points = chart.planets.filter((planet) => PLANET_NAMES[planet.name]).map(toPoint);
+  // 交点与莉莉丝不在 chart.planets 内，但 celestine 已在同一坐标系下算出，
+  // 且与行星之间已有相位；一并纳入 points，避免「相位与图形丢一半」的简化。
+  const nodeLike = [
+    // 交点：celestine 的 name 只有 "North/South Node"，需拼上 type。
+    ...chart.nodes.map((node) => ({ name: `${node.type} ${node.name}`, longitude: node.longitude, signName: node.signName, house: node.house })),
+    // 莉莉丝：celestine 的 name 已含 "Mean/True" 前缀（aspect 里也如此），不能再拼 type。
+    ...chart.lilith.map((item) => ({ name: item.name, longitude: item.longitude, signName: item.signName, house: item.house })),
+  ];
+  const points = [...chart.planets, ...nodeLike].filter((planet) => PLANET_NAMES[planet.name]).map(toPoint);
   const ascendant = hasPlace ? toPoint({ name: "上升", longitude: chart.angles.ascendant.longitude, signName: chart.angles.ascendant.signName }) : emptyPoint("上升");
   const angles = hasPlace
     ? {
@@ -57,6 +89,12 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
     .filter((pattern) => pattern.bodies.every((body) => PLANET_NAMES[body]))
     .map((pattern) => ({ type: pattern.type, bodies: pattern.bodies.map((body) => PLANET_NAMES[body] ?? body), description: pattern.description }));
   const houses: AstroHouseCusp[] = hasPlace ? chart.houses.cusps.map((cusp) => ({ house: cusp.house, longitude: Number(cusp.longitude.toFixed(6)), sign: SIGNS[cusp.sign] ?? "未知", degree: Number((cusp.longitude % 30).toFixed(2)) })) : [];
+  const extremeLatitude = hasPlace && latitude !== null && Math.abs(latitude) > 66;
+  const houseSystem = hasPlace
+    ? extremeLatitude
+      ? "Placidus（celestine 默认；高纬约 |φ|>66° 时库内会自动回退，本页宫位可能为回退结果）"
+      : "Placidus（celestine 默认宫制，本仓未改）"
+    : "—（未提供出生地，宫位未计算）";
   const aspectSummary = hasPlace
     ? chart.aspects.summary
     : aspects.reduce<Record<string, number>>((acc, aspect) => ({ ...acc, [aspect.type]: (acc[aspect.type] ?? 0) + 1 }), {});
@@ -70,12 +108,13 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
     points,
     angles,
     houses,
+    houseSystem,
     aspects,
     aspectSummary,
     patterns,
     complete: hasPlace,
     disclaimer: hasPlace
-      ? "研究性星盘：行星、宫位、四轴、相位与模式由 Celestine 天文计算引擎生成；结果不替代专业天文历表校核或现实决策。"
-      : "行星与相位按地心坐标计算，不依赖出生地；上升、中天与宫位需要出生地经纬度，当前未计算。请补充城市或经纬度后查看四轴与宫位。",
+      ? `研究性星盘：行星、小行星（谷神/智神/婚神/灶神/凯龙）、黄白交点、莉莉丝、宫位、四轴、相位与模式由 Celestine 天文计算引擎生成；宫制：${houseSystem}。不含阿拉伯点（lots）与恒星。结果不替代专业天文历表校核或现实决策。`
+      : "行星、小行星、交点、莉莉丝与相位按地心坐标计算，不依赖出生地；上升、中天与宫位需要出生地经纬度，当前未计算。请补充城市或经纬度后查看四轴与宫位。",
   };
 };

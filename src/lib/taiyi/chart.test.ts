@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, buildTaiyiChart, countSum, generalPalace, harmonyLabel, jiShenPosition, lengthLabel, ruJuNumber, shiJiPosition, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, buildTaiyiChart, countSum, dunOf, generalPalace, generalSuPalace, harmonyCombined, harmonyLabel, jiShenPosition, lengthLabel, ruJuNumber, shiJiPosition, taiyiPalace, tianMuPosition } from "./chart";
 import { DEITIES, GENERALS, PALACES, PALACE_SEQUENCE, PATTERNS } from "./data";
 import { serializeTaiyiToCompactJson, serializeTaiyiToStructuredText } from "./serializer";
 
@@ -30,10 +30,18 @@ describe("accumulation and palaces", () => {
     expect(taiyiPalace(4)).toEqual({ palace: 2, block: 2 });
     expect(taiyiPalace(24)).toEqual({ palace: 9, block: 8 });
     expect(taiyiPalace(25)).toEqual({ palace: 1, block: 9 });
-    // 2024：入局 53 → 离 2 宫（与据金镜式经复现的现代平台一致）
-    expect(taiyiPalace(53).palace).toBe(2);
-    expect(taiyiPalace(66).palace).toBe(7);
+    // 阴遁逆行：局 1 起九宫，逆行至一宫
+    expect(taiyiPalace(1, "阴遁").palace).toBe(9);
+    expect(taiyiPalace(4, "阴遁").palace).toBe(8);
+    expect(taiyiPalace(24, "阴遁").palace).toBe(1);
     for (const palace of PALACE_SEQUENCE) expect(palace).not.toBe(5);
+  });
+
+  it("splits the seventy-two ju into 阳遁 1–36 and 阴遁 37–72", () => {
+    expect(dunOf(1)).toBe("阳遁");
+    expect(dunOf(36)).toBe("阳遁");
+    expect(dunOf(37)).toBe("阴遁");
+    expect(dunOf(72)).toBe("阴遁");
   });
 });
 
@@ -51,11 +59,13 @@ describe("tian mu (文昌) — validated against the 太乙全书 example", () =
 });
 
 describe("ji shen and shi ji", () => {
-  it("runs 计神 through the twelve branches, skipping the four corners", () => {
+  it("runs 计神 backwards through the twelve branches (口诀「一寅、二丑、三子」)", () => {
     expect(jiShenPosition(1, "阳遁")).toBe("寅");
-    expect(jiShenPosition(2, "阳遁")).toBe("卯");
+    expect(jiShenPosition(2, "阳遁")).toBe("丑");
+    expect(jiShenPosition(3, "阳遁")).toBe("子");
     expect(jiShenPosition(13, "阳遁")).toBe("寅");
     expect(jiShenPosition(1, "阴遁")).toBe("申");
+    expect(jiShenPosition(2, "阴遁")).toBe("未");
   });
 
   it("derives 始击 by adding 计神 to 和德 and taking the 天目 offset", () => {
@@ -84,11 +94,24 @@ describe("host and guest counts", () => {
     expect(generalPalace(90)).toBe(9);
   });
 
-  it("labels the length of a count", () => {
+  it("derives 参将 with 「三因大将，满十去之」", () => {
+    expect(generalSuPalace(7)).toBe(1); // 主大将 7 → 主参 1
+    expect(generalSuPalace(3)).toBe(9); // 客大将 3 → 客参 9
+    expect(generalSuPalace(6)).toBe(8); // 主大将 6 → 主参 8
+    expect(generalSuPalace(1)).toBe(3); // 客大将 1 → 客参 3
+  });
+
+  it("labels the length of a count (十一以上为长、单九以下为短)", () => {
     expect(lengthLabel(9)).toBe("短数（力不足）");
-    expect(lengthLabel(10)).toBe("长数（谋事长远）");
-    expect(lengthLabel(30)).toBe("长数（谋事长远）");
-    expect(lengthLabel(31)).toBe("过长（拖沓迟缓）");
+    expect(lengthLabel(10)).toBe("中数（十，平）");
+    expect(lengthLabel(11)).toBe("长数（谋事长远）");
+    expect(lengthLabel(31)).toBe("长数（谋事长远）");
+  });
+
+  it("combines host and guest harmony into 上和/次和/下和", () => {
+    expect(harmonyCombined("和", "和")).toBe("上和");
+    expect(harmonyCombined("和", "不和之数（x）")).toBe("次和");
+    expect(harmonyCombined("不和之数（x）", "不和之数（y）")).toBe("下和");
   });
 
   it("flags 不和 when the star's palace parity contradicts the count", () => {
@@ -100,12 +123,32 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
-  it("reproduces 太乙 at 离 2 for 2024 under the 360 cycle", () => {
+  it("reproduces the 太乙秘書 worked examples (入局 1 阳遁, 万历戊子 阴遁)", () => {
+    const yang = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 1 });
+    expect(yang.taiyi.palace).toBe(1); // 太乙乾一宫
+    expect(yang.tianMu.position).toBe("申");
+    expect(yang.counts.host).toBe(7);
+    expect(yang.counts.guest).toBe(13);
+    expect(yang.counts.hostSuPalace).toBe(1); // 主参 1
+    expect(yang.counts.guestSuPalace).toBe(9); // 客参 9
+
+    // 万历戊子（1588）：积年 1938145 → 入局 49 → 阴遁，太乙九宫、主算 16、客算 1
+    const yin = buildTaiyiChart({ year: 1588, cycle: 360, dun: "auto", ruJu: null });
+    expect(yin.accumulation.ruJu).toBe(49);
+    expect(yin.input.dun).toBe("阴遁");
+    expect(yin.taiyi.palace).toBe(9);
+    expect(yin.counts.host).toBe(16);
+    expect(yin.counts.guest).toBe(1);
+    expect(yin.counts.hostSuPalace).toBe(8);
+    expect(yin.counts.guestSuPalace).toBe(3);
+  });
+
+  it("uses the 360 cycle and the classical 遁 rule for 2024 (入局 53 → 阴遁)", () => {
     const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "auto", ruJu: null });
     expect(chart.accumulation).toEqual({ jiyear: 1938581, eraRemainder: 341, ruJu: 53 });
-    expect(chart.taiyi.palace).toBe(2);
-    expect(chart.taiyi.trigram).toBe("离");
-    expect(chart.input.dun).toBe("阴遁"); // 离属阴宫
+    expect(chart.input.dun).toBe("阴遁"); // 局 53 属阴遁三十六局
+    expect(chart.taiyi.palace).toBe(8); // 阴遁逆行：18 段 → 坎八宫
+    expect(chart.taiyi.trigram).toBe("坎");
     expect(chart.input.derived).toBe(true);
     expect(chart.tianMu.position).toBe(tianMuPosition(53, "阴遁"));
     expect(chart.shiJi.position).toBe(shiJiPosition(chart.tianMu.position, chart.jiShen.position));
@@ -115,7 +158,7 @@ describe("taiyi chart", () => {
   it("differs when the era cycle is 365", () => {
     const chart = buildTaiyiChart({ year: 2024, cycle: 365, dun: "auto", ruJu: null });
     expect(chart.accumulation.ruJu).toBe(66);
-    expect(chart.taiyi.palace).toBe(7);
+    expect(chart.taiyi.palace).toBe(3); // 局 66 亦属阴遁，逆行得艮三宫
   });
 
   it("honours an explicit 入局数 and 遁 override", () => {

@@ -81,17 +81,22 @@ export function ZiweiFlyingPanel({
       </div>
       <p className="zf-note">标记说明：<b>is-laiyin</b> 底纹为来因宫（生年天干所在六内宫），<b>is-yearstem</b> 虚线框表示生年天干只落在六外宫（按定义不称来因宫）；<b>is-tianyi</b> 边框为天乙贵人宫；「→宫名（自化）」表示该化星落回本宫，属离心自化；「向心」列为对宫宫干化入本宫的星。</p>
 
-      <div className="divination-section-heading"><span>转忌链</span><small>禄因忌果</small></div>
+      <div className="divination-section-heading"><span>转忌链</span><small>禄因忌果 · 生年与自化并列</small></div>
       <div className="zf-chains">
-        {[...chart.chains.luZhuanJi, ...chart.chains.jiZhuanJi].map((item, index) => (
-          <div className="zf-chain" key={`${item.star}-${index}`}>
-            <b>{index === 0 ? "禄转忌" : "忌转忌"}</b>
+        {[
+          ...chart.chains.luZhuanJi.map((item) => ({ item, label: "禄转忌（生年禄）" })),
+          ...chart.chains.jiZhuanJi.map((item) => ({ item, label: "忌转忌（生年忌）" })),
+          ...chart.chains.selfLuZhuanJi.map((item) => ({ item, label: "自化禄转忌" })),
+          ...chart.chains.selfJiZhuanJi.map((item) => ({ item, label: "自化忌转忌" })),
+        ].map(({ item, label }, index) => (
+          <div className="zf-chain" key={`${label}-${item.star}-${index}`}>
+            <b>{label}</b>
             <span>{item.star}（落 {item.origin}）</span>
             <em>以 {item.via} 宫干飞忌</em>
             <strong>{item.star2} → {item.to}</strong>
           </div>
         ))}
-        {!chart.chains.luZhuanJi.length && !chart.chains.jiZhuanJi.length ? <p className="zf-note">生年四化未落宫，无法起转忌链。</p> : null}
+        {!chart.chains.luZhuanJi.length && !chart.chains.jiZhuanJi.length && !chart.chains.selfLuZhuanJi.length && !chart.chains.selfJiZhuanJi.length ? <p className="zf-note">生年四化与宫干自化均未落宫，无法起转忌链。</p> : null}
       </div>
 
       <div className="zf-two">

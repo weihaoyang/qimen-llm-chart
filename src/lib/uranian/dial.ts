@@ -53,6 +53,9 @@ export type SumStructure = {
   occupied: Occupation[];
 };
 
+/** 差点轴结构（A−B = C）。 */
+export type DifferenceStructure = SumStructure;
+
 export type EquationStructure = {
   axis: number;
   left: [DialBody, DialBody];
@@ -84,6 +87,23 @@ export const findSumStructures = (bodies: DialBody[], settings: DialSettings = D
   for (let i = 0; i < bodies.length; i += 1) {
     for (let j = i + 1; j < bodies.length; j += 1) {
       const axis = sumAxis(bodies[i].longitude, bodies[j].longitude, settings.modulus);
+      const occupied = bodies
+        .filter((_, index) => index !== i && index !== j)
+        .map((body) => ({ body, orb: dialDistance(body.longitude, axis, settings.modulus) }))
+        .filter((entry) => entry.orb <= settings.orb);
+      if (occupied.length) out.push({ a: bodies[i], b: bodies[j], axis, occupied: sortByTightest(occupied) });
+    }
+  }
+  return out.sort((left, right) => left.occupied[0].orb - right.occupied[0].orb);
+};
+
+/** 被占据的差点轴（A−B = C），即「差点」行星图景。 */
+export const findDifferenceStructures = (bodies: DialBody[], settings: DialSettings = DEFAULT_DIAL): DifferenceStructure[] => {
+  const out: DifferenceStructure[] = [];
+  for (let i = 0; i < bodies.length; i += 1) {
+    for (let j = 0; j < bodies.length; j += 1) {
+      if (i === j) continue;
+      const axis = differenceAxis(bodies[i].longitude, bodies[j].longitude, settings.modulus);
       const occupied = bodies
         .filter((_, index) => index !== i && index !== j)
         .map((body) => ({ body, orb: dialDistance(body.longitude, axis, settings.modulus) }))

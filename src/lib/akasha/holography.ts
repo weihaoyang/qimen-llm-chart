@@ -27,8 +27,10 @@ export const entropyBits = (areaM2: number) => areaM2 / (4 * CONSTANTS.lP * CONS
 export const entropyJoulesPerKelvin = (bits: number) => bits * CONSTANTS.kB;
 /** 体积律对照：1 比特 / 普朗克体积。 */
 export const volumeLawBits = (radiusM: number) => ((4 / 3) * Math.PI * radiusM ** 3) / CONSTANTS.lP ** 3;
-/** 贝肯斯坦界（比特）：S ≤ 2π R E /(ħ c)。 */
-export const bekensteinBits = (radiusM: number, energyJ: number) => (2 * Math.PI * radiusM * energyJ) / (CONSTANTS.hbar * CONSTANTS.c);
+/** 贝肯斯坦界：S ≤ 2π k_B R E /(ħ c)。返回 **S/k_B**（无量纲，单位 nat）。 */
+export const bekensteinNats = (radiusM: number, energyJ: number) => (2 * Math.PI * radiusM * energyJ) / (CONSTANTS.hbar * CONSTANTS.c);
+/** 同一条界的**比特数** = (S/k_B)/ln2。 */
+export const bekensteinBits = (radiusM: number, energyJ: number) => bekensteinNats(radiusM, energyJ) / Math.LN2;
 
 export type HolographicReport = {
   massKg: number;

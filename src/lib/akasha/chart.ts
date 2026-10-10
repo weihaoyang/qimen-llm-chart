@@ -23,8 +23,7 @@ export const sourcePositions = (count: number) => {
 export const buildAkashaChart = (settings: AkashaSettings): AkashaChart => {
   const massKg = settings.massKg > 0 && Number.isFinite(settings.massKg) ? settings.massKg : 1;
   const fragment = Math.max(0.05, Math.min(1, settings.fragment));
-  const holographic = holographicReport(massKg, 1);
-  const demo = hologramDemo(sourcePositions(settings.sourceCount), fragment);
+  const holographic = holographicReport(massKg, 1);  const demo = hologramDemo(sourcePositions(settings.sourceCount), fragment);
   return {
     format: "qmdj-akasha-v1",
     input: { massKg, sourceCount: settings.sourceCount, fragment },

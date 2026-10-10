@@ -1,3 +1,13 @@
+/**
+ * 「拆补 / 茅山」局法适配器（实验性对照口径）。
+ *
+ * ⚠️ 已知限制（2026-10 审计，如实声明，勿当准绳）：
+ * - 上游 `taobi`（MPL-2.0）对该模块的三元局法（`#generateElement`）与八神（`#overDivinity`）
+ *   自注 `@check FALSE` 并留有 TODO，即作者本人未确认其正确性。
+ * - 本适配器**跨引擎拼接**：四柱/节气取 `3meta`，局/门/星/神取 `taobi`；两者寄宫口径不同
+ *   （`follow=0` 寄坤二 vs 3meta 寄二八），且本适配器不产出暗干与格局。
+ * 结论：「拆补 / 茅山」盘仅供与默认「转盘（3meta）」对照，默认口径以 3meta 为准。
+ */
 import type { EarthlyBranch, Gate, HeavenlyStem, Palace, Position, Star } from "3meta";
 import taobiModule from "taobi";
 import { toZonedDate } from "@/lib/qimen/timezone";

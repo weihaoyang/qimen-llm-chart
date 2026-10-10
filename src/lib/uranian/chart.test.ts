@@ -6,6 +6,7 @@ import {
   dialDistance,
   dialPosition,
   differenceAxis,
+  findDifferenceStructures,
   findEquationStructures,
   findMidpointStructures,
   findSumStructures,
@@ -86,6 +87,14 @@ describe("uranian dial", () => {
     const equations = findEquationStructures([body("a", 0), body("b", 10), body("c", 20), body("d", 30)], { modulus: 90, orb: 0.001 });
     expect(equations).toHaveLength(1);
     expect(equations[0].axis).toBe(30);
+  });
+
+  it("finds occupied difference axes (A−B = C)", () => {
+    // 50 − 20 = 30（mod 90），令 c 落在 30
+    const differences = findDifferenceStructures([body("a", 50), body("b", 20), body("c", 30)], { modulus: 90, orb: 0.5 });
+    const hit = differences.find((entry) => entry.a.id === "a" && entry.b.id === "b");
+    expect(hit?.axis).toBe(30);
+    expect(hit?.occupied.some((item) => item.body.id === "c")).toBe(true);
   });
 });
 

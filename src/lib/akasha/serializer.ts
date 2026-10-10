@@ -14,7 +14,9 @@ export const serializeAkashaToStructuredText = (chart: AkashaChart) => {
     `史瓦西半径 ${fix(h.schwarzschildRadiusM)} m · 视界面积 ${fix(h.horizonAreaM2)} m²`,
     `面积律信息量 ${h.bits.toExponential(6)} 比特（= 每 4 个普朗克面积 1 比特）· 熵 ${h.entropyJK.toExponential(6)} J/K`,
     `体积律对照（1 比特/普朗克体积）${h.volumeBits.toExponential(6)} 比特 → 面积律比体积律小 ${h.areaVsVolume.toExponential(3)} 倍`,
-    h.bekensteinBits ? `贝肯斯坦界（R=1 m，E=mc²）${h.bekensteinBits.toExponential(6)} 比特` : "",
+    h.bekensteinBits
+      ? `贝肯斯坦界（R=1 m，E=mc²）${h.bekensteinBits.toExponential(6)} 比特 = ${(h.bekensteinBits / Math.LN2).toExponential(6)} nat（S/k_B）`
+      : "",
     "",
     `碎片重建演示：碎片占比 ${d.usableFraction}（分辨率 ≈ ×${d.resolution}）· 与整幅重建的相关系数 ${d.correlation}`,
     `整幅重建峰：${d.peaksFull.map((peak) => `x=${peak.x}(${peak.value})`).join("、")}`,

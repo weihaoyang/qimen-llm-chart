@@ -92,14 +92,23 @@ describe("ziwei flying chart", () => {
   });
 
   it("follows 禄转忌 / 忌转忌 by the landing palace's stem", () => {
-    for (const item of chart.chains.luZhuanJi) {
+    const all = [...chart.chains.luZhuanJi, ...chart.chains.jiZhuanJi, ...chart.chains.selfLuZhuanJi, ...chart.chains.selfJiZhuanJi];
+    expect(all.length).toBeGreaterThan(0);
+    for (const item of all) {
       const viaRow = chart.rows.find((row) => row.palace === item.via);
       expect(viaRow).toBeTruthy();
       expect(item.star2).toBe(STEM_MUTAGENS[viaRow!.stem][3]);
     }
-    for (const item of chart.chains.jiZhuanJi) {
-      const viaRow = chart.rows.find((row) => row.palace === item.via);
-      expect(item.star2).toBe(STEM_MUTAGENS[viaRow!.stem][3]);
+  });
+
+  it("anchors 自化转忌 on palaces whose own stem transforms a star onto itself", () => {
+    for (const item of chart.chains.selfLuZhuanJi) {
+      const row = chart.rows.find((entry) => entry.palace === item.origin);
+      expect(row?.hits.some((hit) => hit.self && hit.mutagen === "禄")).toBe(true);
+    }
+    for (const item of chart.chains.selfJiZhuanJi) {
+      const row = chart.rows.find((entry) => entry.palace === item.origin);
+      expect(row?.hits.some((hit) => hit.self && hit.mutagen === "忌")).toBe(true);
     }
   });
 

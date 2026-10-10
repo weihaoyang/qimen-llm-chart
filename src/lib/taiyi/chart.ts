@@ -29,9 +29,14 @@ export type TaiyiChart = {
     guest: number;
     hostGeneralPalace: number;
     guestGeneralPalace: number;
+    hostSuPalace: number;
+    guestSuPalace: number;
     hostLength: string;
     guestLength: string;
+    hostHarmony: string;
+    guestHarmony: string;
     harmony: string;
+    harmonyCombined: string;
   };
   patterns: string[];
   cycle: TaiyiDeity[];
@@ -44,11 +49,21 @@ export const accumulatedYears = (year: number) => 1937281 + (year - 724);
 /** 入局数：积年累除元六纪周期，再累除七十二。 */
 export const ruJuNumber = (jiyear: number, cycle: number) => mod(jiyear, cycle) % 72;
 
-/** 太乙宫：三年一宫，二十四年一周，不入中宫。 */
-export const taiyiPalace = (ruJu: number) => {
+/**
+ * 太乙宫：三年一宫，二十四年一周，不入中宫。
+ * 阳遁顺行（一乾、二离、三艮、四震、六兑、七坤、八坎、九巽）；
+ * 阴遁逆行（起九宫，逆行至一宫）——见《太乙秘書》「阴遁起九宫逆行」。
+ */
+export const taiyiPalace = (ruJu: number, dun: "阳遁" | "阴遁" = "阳遁") => {
   const block = Math.max(1, Math.ceil(ruJu / 3));
-  return { palace: PALACE_SEQUENCE[(block - 1) % 8], block };
+  const sequence = dun === "阴遁" ? [...PALACE_SEQUENCE].reverse() : PALACE_SEQUENCE;
+  return { palace: sequence[(block - 1) % 8], block };
 };
+
+/** 入局数 → 遁：古以太乙七十二局分「阳遁三十六局（局 1–36）、阴遁三十六局（局 37–72）」。
+ *  《太乙秘書》万历戊子（积年 1938145 → 入局 49）作阴遁九宫，本仓据此口径自动定遁；
+ *  若古籍另有异说，界面可手动覆盖。 */
+export const dunOf = (ruJu: number): "阳遁" | "阴遁" => (ruJu === 0 || ruJu > 36 ? "阴遁" : "阳遁");
 
 /** 天目（文昌）：入局数以十八累除；阳遁自武德起、阴遁自吕申起，顺行十六神，重留乾刊（艮巽）。 */
 export const tianMuPosition = (ruJu: number, dun: "阳遁" | "阴遁") => {
@@ -65,11 +80,12 @@ export const tianMuPosition = (ruJu: number, dun: "阳遁" | "阴遁") => {
   return RING[index];
 };
 
-/** 计神：阳遁起吕申（寅）、阴遁起申，顺行十二地支，跳四维，十二年一周。 */
+/** 计神：阳遁起吕申（寅）、阴遁起申，**逆行十二支**，跳四维，十二年一周。
+ *  口诀「一寅、二丑、三子」（《太乙秘書》）、「寅鼠逆周流」（《淘金歌》）皆主逆行。 */
 export const jiShenPosition = (ruJu: number, dun: "阳遁" | "阴遁") => {
   const twelve = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
   const start = twelve.indexOf(dun === "阳遁" ? "寅" : "申");
-  return twelve[mod(start + (ruJu - 1), 12)];
+  return twelve[mod(start - (ruJu - 1), 12)];
 };
 
 /** 始击（客目）：以计神加于和德（艮）上，顺行十六神，取天目所乘之位。 */
@@ -99,12 +115,31 @@ export const generalPalace = (count: number) => {
   return rest === 0 ? 9 : rest;
 };
 
-export const lengthLabel = (count: number) => (count < 10 ? "短数（力不足）" : count > 30 ? "过长（拖沓迟缓）" : "长数（谋事长远）");
+/** 参将宫：「三因大将，满十去之」＝ 大将宫 × 3 取个位。
+ *  验证：《太乙秘書》入局 1 例（主大将 7 → 主参 1；客大将 3 → 客参 9）、
+ *  万历戊子例（主大将 6 → 主参 8；客大将 1 → 客参 3）均吻合。 */
+export const generalSuPalace = (general: number) => (general * 3) % 10;
+
+export const lengthLabel = (count: number) => {
+  if (count <= 9) return "短数（力不足）";
+  if (count >= 11) return "长数（谋事长远）";
+  return "中数（十，平）";
+};
 
 export const harmonyLabel = (palace: number, count: number) => {
   const yangPalace = YANG_PALACES.includes(palace);
   const odd = count % 2 === 1;
   return yangPalace === odd ? "不和之数（太乙阳宫得奇数 / 阴宫得偶数）" : "和";
+};
+
+/** 主客合参：《太乙金镜式经》列「上和 / 次和 / 下和」之名，本仓取
+ *  两算俱和为上和、一和一不和为次和、俱不和为下和的口径合成。 */
+export const harmonyCombined = (hostHarmony: string, guestHarmony: string) => {
+  const host = hostHarmony === "和";
+  const guest = guestHarmony === "和";
+  if (host && guest) return "上和";
+  if (host || guest) return "次和";
+  return "下和";
 };
 
 const detectPatterns = (taiyiPalaceNumber: number, tianMuPalace: number | null, shiJiPalace: number | null, hostGeneral: number, guestGeneral: number) => {
@@ -125,8 +160,8 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const jiyear = accumulatedYears(year);
   const eraRemainder = mod(jiyear, cycle);
   const ruJu = override ?? ruJuNumber(jiyear, cycle);
-  const { palace, block } = taiyiPalace(ruJu);
-  const dun: "阳遁" | "阴遁" = settings.dun === "auto" ? (YANG_PALACES.includes(palace) ? "阳遁" : "阴遁") : settings.dun;
+  const dun: "阳遁" | "阴遁" = settings.dun === "auto" ? dunOf(ruJu) : settings.dun;
+  const { palace, block } = taiyiPalace(ruJu, dun);
 
   const tianMuPos = tianMuPosition(ruJu, dun);
   const jiShenPos = jiShenPosition(ruJu, dun);
@@ -136,6 +171,10 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const guest = countSum(shiJiPos, taiyiPosition);
   const hostGeneral = generalPalace(host);
   const guestGeneral = generalPalace(guest);
+  const hostSu = generalSuPalace(hostGeneral);
+  const guestSu = generalSuPalace(guestGeneral);
+  const hostHarmony = harmonyLabel(palace, host);
+  const guestHarmony = harmonyLabel(palace, guest);
   const tianMuPalace = isMain(tianMuPos) ? POSITION_TO_PALACE[tianMuPos] : null;
   const shiJiPalace = isMain(shiJiPos) ? POSITION_TO_PALACE[shiJiPos] : null;
   const deityOf = (position: string) => DEITIES.find((deity) => deity.position === position) ?? DEITIES[0];
@@ -153,13 +192,18 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       guest,
       hostGeneralPalace: hostGeneral,
       guestGeneralPalace: guestGeneral,
+      hostSuPalace: hostSu,
+      guestSuPalace: guestSu,
       hostLength: lengthLabel(host),
       guestLength: lengthLabel(guest),
-      harmony: harmonyLabel(palace, host),
+      hostHarmony,
+      guestHarmony,
+      harmony: hostHarmony,
+      harmonyCombined: harmonyCombined(hostHarmony, guestHarmony),
     },
     patterns: detectPatterns(palace, tianMuPalace, shiJiPalace, hostGeneral, guestGeneral),
     cycle: DEITIES,
     disclaimer:
-      "太乙神数研究盘：按公共领域古籍《太乙金镜式经》《太乙全书》一系规则实现（太乙三年一宫、二十四年一周不入中宫；天目以入局数十八累除、阳遁自武德起阴遁自吕申起并重留乾坤/艮巽；计神顺行十二支；始击以计神加和德顺行十六神；主客算自二目顺数正宫至太乙前一宫；格局取杜塞/对/格/掩/囚/关）。未采用开源实现（检索到者实为九星换皮，非太乙神数）。「元六纪周期」古籍作三百六十五，而据金镜式经复现的现代平台与三百六十吻合，故默认 360 并可在界面切换；起元与阳阴遁亦有异说，故入局数与遁皆可覆盖。仅供研究，不构成预测或现实裁决。",
+      "太乙神数研究盘：按公共领域古籍《太乙金镜式经》《太乙秘書》一系规则实现（太乙三年一宫、二十四年一周不入中宫；阳遁顺行、阴遁逆行；七十二局分阳遁三十六局、阴遁三十六局；天目以入局数十八累除、阳遁自武德起阴遁自吕申起并重留乾坤/艮巽；计神逆行十二支；始击以计神加和德顺行十六神；主客算自二目顺数正宫至太乙前一宫；大将取算之个位、参将取『三因大将满十去之』；格局取杜塞/对/格/掩/囚/关）。已古籍例校验：入局 1（阳遁）得太乙乾一宫、天目申、主算 7、客算 13、主参 1、客参 9；万历戊子（阴遁，入局 49）得太乙九宫、主算 16、客算 1、主参 8、客参 3。未采用开源实现（检索到者实为九星换皮，非太乙神数）。元六纪周期古籍作三百六十五，本仓默认 360 并可在界面切换；起元与阳阴遁另有异说，故入局数与遁皆可覆盖。古籍另有「击/迫/提挟/四郭固」等格局，本仓未收（未获可核验的完整定义）；「上和/次和/下和」按两算俱和/一和一不和/俱不和合成。仅供研究，不构成预测或现实裁决。",
   };
 };

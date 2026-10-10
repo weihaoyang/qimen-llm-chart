@@ -104,12 +104,12 @@ export function TaiyiPanel({
       <div className="taiyi-facts">
         <div><span>积年</span><b>{chart.accumulation.jiyear}</b><em>入纪元数 {chart.accumulation.eraRemainder} → 入局数 {chart.accumulation.ruJu}</em></div>
         <div><span>太乙</span><b>{chart.taiyi.palace} 宫</b><em>{chart.taiyi.trigram} · {chart.taiyi.element} · 本周第 {chart.taiyi.block} 个三年</em></div>
-        <div><span>主算 → 主大将</span><b>{chart.counts.host} → {chart.counts.hostGeneralPalace} 宫</b><em>{chart.counts.hostLength}</em></div>
-        <div><span>客算 → 客大将</span><b>{chart.counts.guest} → {chart.counts.guestGeneralPalace} 宫</b><em>{chart.counts.guestLength}</em></div>
+        <div><span>主算 → 主大将</span><b>{chart.counts.host} → 大将 {chart.counts.hostGeneralPalace} 宫 · 参将 {chart.counts.hostSuPalace} 宫</b><em>{chart.counts.hostLength}</em></div>
+        <div><span>客算 → 客大将</span><b>{chart.counts.guest} → 大将 {chart.counts.guestGeneralPalace} 宫 · 参将 {chart.counts.guestSuPalace} 宫</b><em>{chart.counts.guestLength}</em></div>
         <div><span>天目（文昌）</span><b>{chart.tianMu.deity.name}</b><em>{chart.tianMu.position}{chart.tianMu.palace ? ` · 第 ${chart.tianMu.palace} 宫` : " · 间神"}</em></div>
         <div><span>始击（客目）</span><b>{chart.shiJi.deity.name}</b><em>{chart.shiJi.position}{chart.shiJi.palace ? ` · 第 ${chart.shiJi.palace} 宫` : " · 间神"}</em></div>
         <div><span>计神</span><b>{chart.jiShen.deity.name}</b><em>{chart.jiShen.position} · 岁星之使</em></div>
-        <div><span>和否</span><b>{chart.counts.harmony.startsWith("和") ? "和" : "不和"}</b><em>{chart.counts.harmony}</em></div>
+        <div><span>和否</span><b>{chart.counts.harmonyCombined}</b><em>主算{chart.counts.hostHarmony} · 客算{chart.counts.guestHarmony}</em></div>
       </div>
 
       <div className="taiyi-layout">

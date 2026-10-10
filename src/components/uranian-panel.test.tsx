@@ -26,7 +26,7 @@ describe("UranianPanel", () => {
     expect(container.querySelectorAll(".uranian-marker")).toHaveLength(value.bodies.length);
     expect(container.querySelectorAll(".uranian-row")).toHaveLength(8);
     expect(container.querySelectorAll(".uranian-dial__tick")).toHaveLength(18);
-    expect(container.querySelectorAll(".uranian-list__item").length).toBe(value.midpoints.length + value.sums.length + value.equations.length);
+    expect(container.querySelectorAll(".uranian-list__item").length).toBe(value.midpoints.length + value.sums.length + value.differences.length + value.equations.length);
     expect(screen.getByText("八虚星 · TRANSNEPTUNIAN")).toBeInTheDocument();
     expect(screen.getAllByText("丘比特").length).toBeGreaterThan(0);
   });

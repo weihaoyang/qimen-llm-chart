@@ -98,7 +98,7 @@ export function AkashaPanel({
         <div><span>熵</span><b>{sci(h.entropyJK)} J/K</b><em>只由面积决定</em></div>
         <div><span>体积律对照</span><b>{sci(h.volumeBits)} 比特</b><em>1 比特 / 普朗克体积</em></div>
         <div><span>面积律小多少倍</span><b>{sci(h.areaVsVolume)}</b><em>体积律 ÷ 面积律</em></div>
-        <div><span>贝肯斯坦界</span><b>{h.bekensteinBits ? `${sci(h.bekensteinBits)} 比特` : "—"}</b><em>S ≤ 2πk_BRE/(ħc)，R=1 m、E=mc²</em></div>
+        <div><span>贝肯斯坦界</span><b>{h.bekensteinBits ? `${sci(h.bekensteinBits)} 比特` : "—"}</b><em>S ≤ 2πk_BRE/(ħc)，R=1 m、E=mc²（比特 = nats / ln2）</em></div>
         <div><span>普朗克尺度</span><b>ℓ_P = {sci(1.616255e-35)} m</b><em>1 比特 = 4ℓ_P²</em></div>
       </div>
 

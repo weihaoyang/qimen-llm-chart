@@ -77,9 +77,25 @@ export type QizhengChart = {
 
 const wrap = (value: number) => ((value % 360) + 360) % 360;
 
-/** 黄经 → 宫位索引（MIT 脚本口径：寅宫为 0 索引起点）。 */
-export const longitudeToPalace = (longitude: number) => Math.floor(wrap(longitude + 60) / 30) % 12;
-/** 黄经 → 二十八宿（按等分 360/28，MIT 脚本口径）。 */
+/**
+ * 黄经 → 宫位索引（= EARTHLY_BRANCHES 的下标，子=0…亥=11）。
+ *
+ * 依古典「十二次」配十二宫（果老星宗「太阳过宫」表）：
+ * 白羊=戌、金牛=酉、双子=申、巨蟹=未、狮子=午、处女=巳、
+ * 天秤=辰、天蝎=卯、射手=寅、摩羯=丑、水瓶=子、双鱼=亥。
+ *
+ * 历史说明：上游 MIT 脚本用 `floor((lon+60)/30)` 把白羊映射到「寅」，与其自身
+ * （按古典键位编制的）庙旺陷表互相矛盾，属该脚本的已知错误；本仓已改为古典口径。
+ */
+export const longitudeToPalace = (longitude: number) => ((10 - Math.floor(wrap(longitude) / 30)) % 12 + 12) % 12;
+
+/**
+ * 黄经 → 二十八宿。
+ *
+ * ⚠️ 近似：此处与上游脚本一致，采用 **等分 360/28（≈12.857°）** 的粗略口径，并用
+ * 角宿起 0°；古典宿度并不等分（觜约 2°、井约 33°），且二十八宿为恒星锚定、随岁差
+ * 移动。故宿界附近可能有约 ±10° 的偏差，宿名仅供粗定位，不作为判据。
+ */
 export const longitudeToMansion = (longitude: number) => TWENTY_EIGHT_MANSIONS[Math.floor(wrap(longitude) / (360 / 28)) % 28];
 
 const dignityOf = (name: string, branch: string) => {
@@ -91,12 +107,18 @@ const dignityOf = (name: string, branch: string) => {
   return "平";
 };
 
-/** 命宫（MIT 脚本口径：寅起正月顺数至生月，再逆数至生时）。 */
-export const mingPalaceIndex = (month: number, hour: number) => {
-  const base = (2 + month - 1) % 12;
-  const hourIndex = Math.floor(((hour + 1) % 24) / 2);
-  return ((base - hourIndex) % 12 + 12) % 12;
-};
+/**
+ * 命宫（果老式）：「以生时加于太阳所躔之宫，顺数至卯，即命宫也。」
+ * 即将生时置于太阳宫，按地支顺序前推，卯所落之宫为命宫。
+ * 参数均为地支下标（子=0…亥=11）：太阳宫 `sunPalace`、生时 `hourBranch`。
+ *
+ * 历史说明：上游脚本此处误用了紫微斗数的「寅起正月顺数至生月、再逆数至生时」
+ * （且月取公历月），不是七政四余的命宫口径；本仓已改为果老式。
+ */
+export const mingPalaceIndex = (sunPalace: number, hourBranch: number) => ((sunPalace - hourBranch + 3) % 12 + 12) % 12;
+
+/** 生时（小时）→ 地支下标。23:00–00:59 为子时。 */
+export const hourToBranchIndex = (hour: number) => Math.floor(((hour + 1) % 24) / 2);
 
 /** 以出生时刻推算四余黄经：罗计＝黄白平交点（果老旧法 罗睺=降交点），月孛＝平月远地点。 */
 const fourRemainders = (utcMillis: number, moonLongitude: number) => {
@@ -122,7 +144,11 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
 
   const longitudeOf = (planet: string) => astro.points.find((point) => point.name === planet && point.longitude !== null)?.longitude ?? null;
   const stars: QizhengStar[] = [];
-  const mingIndex = mingPalaceIndex(month, hour);
+  // 果老式命宫：由「太阳所躔之宫」起生时顺数至卯。太阳黄经由真星历给出，必存在；
+  // 万一缺失（理论上不会），退回白羊 0°（戌宫）以免整体偏移。
+  const sunLongitude = longitudeOf("太阳");
+  const sunPalace = sunLongitude === null ? 10 : longitudeToPalace(sunLongitude);
+  const mingIndex = mingPalaceIndex(sunPalace, hourToBranchIndex(hour));
   const palaceNameOf = (palace: number) => TWELVE_PALACES[((palace - mingIndex) % 12 + 12) % 12] as string;
 
   for (const { name, planet } of SEVEN_LUMINARIES) {
@@ -175,6 +201,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     palaces,
     stars,
     complete: stars.length > 0,
-    disclaimer: "研究性七政四余：七政黄经用本仓真星历（celestine）；罗睺/计都取黄白平交点（默认为果老旧法，罗睺=降交点），月孛取平月远地点（Meeus 47.7），紫气为脚本约定的虚星（非经典定义）；十二宫与二十八宿按等分口径（移植自 MIT 项目 dglijin-oss/chinese-metaphysics-skills）。不作现实预测或吉凶裁决。",
+    disclaimer:
+      "研究性七政四余：七政黄经用本仓真星历（celestine）。十二宫按古典十二次配宫（白羊=戌、金牛=酉、双子=申…，已修正上游脚本白羊=寅的错位）。命宫用果老式「以生时加太阳所躔之宫，顺数至卯」（非紫微斗数的生月/生时口径）。罗睺/计都取黄白平交点（果老旧法，罗睺=降交点），月孛取平月远地点（Meeus 47.7）。紫气为上游脚本约定的虚星（月黄经−90°），**并非古典长周期虚星**，仅供对照。二十八宿为等分 360/28 近似（古典宿度不等分，宿界附近可有约 ±10° 偏差），宿名不作判据。不作现实预测或吉凶裁决。",
   };
 };

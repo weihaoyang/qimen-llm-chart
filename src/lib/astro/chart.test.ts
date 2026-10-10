@@ -12,7 +12,7 @@ describe("astro chart", () => {
     expect(buildAstroChart(profile)).toEqual(first);
     expect(first.sun.sign).toBeTruthy();
     expect(first.complete).toBe(true);
-    expect(first.points).toHaveLength(10);
+    expect(first.points).toHaveLength(18); // 10 行星 + 5 小行星/凯龙 + 2 交点 + 莉莉丝
     expect(first.angles.midheaven.longitude).not.toBeNull();
     expect(first.houses).toHaveLength(12);
     expect(first.aspects).toEqual(expect.any(Array));
@@ -33,7 +33,7 @@ describe("astro chart", () => {
 
     // Planets and aspects are geocentric, so they still resolve.
     expect(chart.complete).toBe(false);
-    expect(chart.points).toHaveLength(10);
+    expect(chart.points).toHaveLength(18);
     expect(chart.sun.longitude).toBeGreaterThan(279);
     expect(chart.sun.longitude).toBeLessThan(281);
     expect(chart.sun.house).toBeNull();

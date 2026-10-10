@@ -11,7 +11,8 @@ export const serializeAstroToStructuredText = (chart: AstroChart) => [
   formatPoint(chart.moon),
   `${chart.ascendant.name}：${chart.ascendant.sign} ${chart.ascendant.degree ?? "—"}°`,
   ...chart.points.slice(2).map((point) => formatPoint(point)),
-  `相位：${chart.aspects.slice(0, 8).map((aspect) => `${aspect.symbol}${aspect.body1}/${aspect.body2} ${aspect.strength}%`).join("、") || "暂无"}`,
+  `宫制：${chart.houseSystem}`,
+  `相位（共 ${chart.aspects.length} 个）：${chart.aspects.map((aspect) => `${aspect.symbol}${aspect.body1}/${aspect.body2} ${aspect.strength}%`).join("、") || "暂无"}`,
   `模式：${chart.patterns.map((pattern) => pattern.type).join("、") || "暂无"}`,
   `边界：${chart.disclaimer}`,
 ].join("\n");

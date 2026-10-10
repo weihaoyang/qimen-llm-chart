@@ -1,8 +1,15 @@
 /**
- * Short, verbatim excerpts carried over from the original Quantum Bazi
- * corpus. They are intentionally curated instead of bundling the whole book
- * collection into every request. The model receives the source and section so
- * it can distinguish quoted material from its own interpretation.
+ * Short excerpts carried over from the original Quantum Bazi corpus. They are
+ * intentionally curated instead of bundling the whole book collection into
+ * every request.
+ *
+ * Provenance honesty rules:
+ * - `text` is our transcription of the corpus excerpt. It has **not** been
+ *   proof-read character by character against a scholarly edition, so the model
+ *   may only paraphrase it ("据《书名·篇目》大意") and must never present it as a
+ *   verbatim quotation.
+ * - `editorial` is **our own modern wording**. It is never part of the classical
+ *   text and must never be attributed to a book or section.
  */
 export type BaziClassicExcerpt = {
   id: string;
@@ -10,7 +17,10 @@ export type BaziClassicExcerpt = {
   sourceFile: string;
   section: string;
   keywords: readonly string[];
+  /** Corpus excerpt — may only be paraphrased, never quoted verbatim. */
   text: string;
+  /** Our modern editor's note. Must never be cited as classical text. */
+  editorial?: string;
 };
 
 export const BAZI_CLASSIC_EXCERPTS: readonly BaziClassicExcerpt[] = [
@@ -57,7 +67,8 @@ export const BAZI_CLASSIC_EXCERPTS: readonly BaziClassicExcerpt[] = [
     section: "正官论、论七杀",
     keywords: ["官", "官星", "正官", "七杀", "偏官", "事业", "职位", "权力", "制伏"],
     text:
-      "大抵要行官旺乡，月令是也。月令者，提纲也。看命先看提纲，方看其馀。正官乃贵气之物，大忌刑冲破害；又曰喜身旺、印綬。\n七杀者，亦名偏官，喜身旺合杀、喜制伏、喜阳刃；忌身弱、忌见财，生忌无制。七杀不可便言凶，须看身旺身弱、制伏和岁运。",
+      "大抵要行官旺乡，月令是也。月令者，提纲也。看命先看提纲，方看其馀。正官乃贵气之物，大忌刑冲破害；又曰喜身旺、印綬。\n七杀者，亦名偏官，喜身旺合杀、喜制伏、喜阳刃；忌身弱、忌见财，生忌无制。七杀不可便言凶。",
+    editorial: "七杀的吉凶还须看身旺身弱、制伏与岁运的配合。",
   },
   {
     id: "yuanhaiziping-shangguan",
@@ -120,7 +131,8 @@ export const BAZI_CLASSIC_EXCERPTS: readonly BaziClassicExcerpt[] = [
     section: "论太岁",
     keywords: ["流年", "太岁", "岁君", "当年", "今年", "明年", "时间", "触发"],
     text:
-      "其逐年太岁游行十二宫，定一年之祸福，为四时之吉凶。盖太岁如君也，大运如臣也；如君臣和悦，其年则吉，若值刑战，其年则凶。\n若五行有救，四柱有情，仍须结合原局、行运和具体干支关系详审，不可只凭流年一个字作断。",
+      "其逐年太岁游行十二宫，定一年之祸福，为四时之吉凶。盖太岁如君也，大运如臣也；如君臣和悦，其年则吉，若值刑战，其年则凶。",
+    editorial: "若五行有救、四柱有情，仍须结合原局与行运详审，不可只凭流年一字作断。",
   },
 ] as const;
 
@@ -172,11 +184,17 @@ export const selectBaziClassicsContext = ({
 
   const selected = ranked.slice(0, safeLimit);
   return [
-    "以下是原始项目古籍语料中的短篇原文摘录，只作为传统理论的参考证据：",
-    "不要把摘录中的古代断语直接改写成现代确定事件；引用时标明书名和篇目，并说明它如何对应当前盘面。",
-    ...selected.map(
-      ({ excerpt }) =>
-        [`【${excerpt.sourceBook}｜${excerpt.section}｜原始语料：${excerpt.sourceFile}】`, excerpt.text].join("\n"),
+    "以下是原项目八字古籍语料中的**摘录**，只作为传统理论的参考；本仓未逐字校对，引用时只能表述为「据《书名·篇目》大意」。",
+    "禁止把摘录当作逐字原文引用；「编者按」是本仓现代说明，绝不可挂上书名或篇目引用。",
+    "不要把摘录中的古代断语直接改写成现代确定事件；说明它如何对应当前盘面。",
+    ...selected.map(({ excerpt }) =>
+      [
+        `【${excerpt.sourceBook}｜${excerpt.section}｜摘录（未逐字校对）：${excerpt.sourceFile}】`,
+        excerpt.text,
+        excerpt.editorial ? `编者按（本仓现代说明，非原文，禁止作为古籍引用）：${excerpt.editorial}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
     ),
   ].join("\n\n");
 };

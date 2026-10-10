@@ -21,8 +21,8 @@ const pattern = (
 /**
  * Derived facts for AI context. The rules are deliberately conservative:
  * every pattern carries the concrete palace evidence that triggered it.
- * Pattern names and source labels follow the open-source candidate project's
- * patterns.ts, while the product chart remains the single calculation source.
+ * 格局名与判据依传统说法整理，逐条注明所据古籍或口诀（如《紫微斗数全书》
+ * 《紫微斗数骨髓赋》、四化与禄存歌诀）；排盘数据仍以本仓 iztro 盘为唯一来源。
  */
 export const buildZiweiInsights = ({
   palaces,

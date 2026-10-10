@@ -4,12 +4,14 @@ import type { NormalizedProfileInput } from "@/lib/profile";
 import {
   DEFAULT_DIAL,
   dialPosition,
+  findDifferenceStructures,
   findEquationStructures,
   findMidpointStructures,
   findSumStructures,
   formatDial,
   type DialBody,
   type DialSettings,
+  type DifferenceStructure,
   type EquationStructure,
   type MidpointStructure,
   type SumStructure,
@@ -63,6 +65,7 @@ export type UranianChart = {
   tnps: TnpRow[];
   midpoints: MidpointStructure[];
   sums: SumStructure[];
+  differences: DifferenceStructure[];
   equations: EquationStructure[];
   disclaimer: string;
 };
@@ -111,6 +114,7 @@ export const buildUranianChart = (profile: NormalizedProfileInput, astro: AstroC
     tnps,
     midpoints: findMidpointStructures(bodies, settings).slice(0, 60),
     sums: findSumStructures(bodies, settings).slice(0, 60),
+    differences: findDifferenceStructures(bodies, settings).slice(0, 60),
     equations: findEquationStructures(bodies, settings),
     disclaimer: astro.complete
       ? "汉堡学派研究盘：真实行星与四轴由 Celestine 生成；八虚星（Cupido…Poseidon）按 Neely/Matrix 要素与开普勒解算得到地心黄经（移植自 GPL 的 Astrolog）。盘面与中点、行星图景的容许度为研究设定，不构成预测或现实裁决。"

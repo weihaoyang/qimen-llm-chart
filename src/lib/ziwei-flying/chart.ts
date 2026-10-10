@@ -41,6 +41,8 @@ export type ZiweiFlyingChart = {
   chains: {
     luZhuanJi: Array<{ origin: string; star: string; via: string; to: string; star2: string }>;
     jiZhuanJi: Array<{ origin: string; star: string; via: string; to: string; star2: string }>;
+    selfLuZhuanJi: Array<{ origin: string; star: string; via: string; to: string; star2: string }>;
+    selfJiZhuanJi: Array<{ origin: string; star: string; via: string; to: string; star2: string }>;
   };
   disclaimer: string;
 };
@@ -127,6 +129,17 @@ export const buildZiweiFlyingChart = (profile: NormalizedProfileInput): ZiweiFly
   const luAnchor = anchors.find((item) => item.mutagen === "禄");
   const jiAnchor = anchors.find((item) => item.mutagen === "忌");
 
+  type ChainEntry = ZiweiFlyingChart["chains"]["luZhuanJi"][number];
+  const chainOf = (list: Array<{ palace: string; index: number; star: string }>) =>
+    list.map((item) => follow(item.palace, item.index, item.star)).filter(Boolean) as ChainEntry[];
+
+  // 自化锚点：宫干所化之星恰在本宫者（离心自化），分别取自化禄、自化忌起转忌。
+  const selfAnchor = (mutagen: string) =>
+    rows
+      .filter((row) => row.hits.some((hit) => hit.self && hit.mutagen === mutagen))
+      .map((row) => ({ palace: row.palace, index: row.index, star: row.hits.find((hit) => hit.mutagen === mutagen)?.star ?? "" }))
+      .filter((item) => item.star.length > 0);
+
   return {
     format: "qmdj-ziwei-flying-v1",
     input: { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone },
@@ -136,10 +149,12 @@ export const buildZiweiFlyingChart = (profile: NormalizedProfileInput): ZiweiFly
     natives,
     rows,
     chains: {
-      luZhuanJi: luAnchor ? ([follow(luAnchor.palace, luAnchor.index, luAnchor.star)].filter(Boolean) as ZiweiFlyingChart["chains"]["luZhuanJi"]) : [],
-      jiZhuanJi: jiAnchor ? ([follow(jiAnchor.palace, jiAnchor.index, jiAnchor.star)].filter(Boolean) as ZiweiFlyingChart["chains"]["jiZhuanJi"]) : [],
+      luZhuanJi: luAnchor ? chainOf([{ palace: luAnchor.palace, index: luAnchor.index, star: luAnchor.star }]) : [],
+      jiZhuanJi: jiAnchor ? chainOf([{ palace: jiAnchor.palace, index: jiAnchor.index, star: jiAnchor.star }]) : [],
+      selfLuZhuanJi: chainOf(selfAnchor("禄")),
+      selfJiZhuanJi: chainOf(selfAnchor("忌")),
     },
     disclaimer:
-      "紫微斗数「飞星（飞化）· 自化 · 河洛化象」研究盘：十干四化依通行口诀（甲廉破武阳…癸破巨阴贪），宫位与星曜数据来自 iztro（MIT）；飞化、自化、来因宫、禄转忌/忌转忌为北派通行技法；洛书数（一白…九紫）依后天八卦配十二支、河图数（1·6、2·7…）依卦位配生成数，属对照呈现。来因宫依定义为「生年天干所在的六内宫」；若生年天干只落在六外宫，本页改标为「生年干所在宫（六外）」而不称来因宫。注意：「天乙飞星」一名未见统一文献术语，本仓按「年干取天乙贵人宫 + 宫干飞化」组合呈现，并在界面标明；本页不作吉凶断语、不替现实决策。",
+      "紫微斗数「飞星（飞化）· 自化 · 河洛化象」研究盘：十干四化依通行口诀（甲廉破武阳…癸破巨阴贪），宫位与星曜数据来自 iztro（MIT）；飞化、自化、来因宫、禄转忌/忌转忌为北派通行技法（转忌链并列「生年四化」与「宫干自化」两条起法）；洛书数（一白…九紫）依后天八卦配十二支、河图数（1·6、2·7…）依卦位配生成数，属对照呈现。来因宫依定义为「生年天干所在的六内宫」；若生年天干只落在六外宫，本页改标为「生年干所在宫（六外）」而不称来因宫。注意：「天乙飞星」一名未见统一文献术语，本仓按「年干取天乙贵人宫 + 宫干飞化」组合呈现，并在界面标明；本页不作吉凶断语、不替现实决策。",
   };
 };

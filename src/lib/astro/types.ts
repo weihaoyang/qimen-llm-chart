@@ -22,6 +22,8 @@ export type AstroChart = {
   points: AstroPoint[];
   angles: { ascendant: AstroPoint; midheaven: AstroPoint; descendant: AstroPoint; imumCoeli: AstroPoint };
   houses: AstroHouseCusp[];
+  /** 宫制说明（celestine 默认 Placidus；高纬/极区会回退，本仓如实标注）。 */
+  houseSystem: string;
   aspects: AstroAspect[];
   aspectSummary: Record<string, number>;
   patterns: AstroPattern[];

@@ -196,7 +196,7 @@ export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDes
     precision: chart.precision,
     complete: true,
     disclaimer:
-      "研究性人类图：类型、策略、权威、Profile、定义、中心与通道由公开通道映射从 hd-chart-engine 的激活结果推导；行星激活为地心坐标，不依赖出生地；不代表认证排盘、医学或心理诊断。" + warning,
+      "研究性人类图：类型、策略、权威、Profile、定义、中心与通道由公开通道映射从 hd-chart-engine 的激活结果推导；行星激活为地心坐标，不依赖出生地。人生主题（Incarnation Cross）此处只给角度类型与四个门，**不给十字名**；tone/base 为估值（precision 字段已透出）。不代表认证排盘、医学或心理诊断。" + warning,
   };
 };
 

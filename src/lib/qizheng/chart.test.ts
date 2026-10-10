@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
-import { buildQizhengChart, FOUR_REMAINDERS, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
+import { buildQizhengChart, FOUR_REMAINDERS, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
 import { serializeQizhengToStructuredText } from "./serializer";
 
 const profile = () => {
@@ -10,17 +10,36 @@ const profile = () => {
 };
 
 describe("qizheng siyu chart", () => {
-  it("maps longitudes into palaces and mansions (equal-division convention)", () => {
-    expect(longitudeToPalace(0)).toBe(2); // 0° 落寅宫（脚本口径）
-    expect(longitudeToPalace(300)).toBe(0); // 300° 落子宫
+  it("maps longitudes into palaces with the classical 十二次 (Aries = 戌) and uses equal-division mansions", () => {
+    expect(longitudeToPalace(0)).toBe(10); // 0° 白羊 → 戌宫
+    expect(longitudeToPalace(30)).toBe(9); // 30° 金牛 → 酉宫
+    expect(longitudeToPalace(180)).toBe(4); // 180° 天秤 → 辰宫
+    expect(longitudeToPalace(300)).toBe(0); // 300° 水瓶 → 子宫
+    expect(longitudeToPalace(330)).toBe(11); // 330° 双鱼 → 亥宫
     expect(longitudeToMansion(0)).toBe("角");
-    expect(longitudeToMansion(90)).toBe("斗"); // 每宿 360/28 ≈ 12.857°，第 7 宿为斗
+    expect(longitudeToMansion(90)).toBe("斗"); // 等分近似：360/28 ≈ 12.857°，第 7 宿为斗
   });
 
-  it("derives the 命宫 from the birth month and hour", () => {
-    // 五月巳时：寅起正月顺数至五月（临 巳?），再逆数至生时
-    expect(mingPalaceIndex(5, 8)).toBe(2); // 寅
+  it("derives 命宫 with the Guolao rule (sun palace + birth hour, counted to 卯)", () => {
+    expect(hourToBranchIndex(0)).toBe(0); // 子时
+    expect(hourToBranchIndex(8)).toBe(4); // 辰时
+    expect(hourToBranchIndex(22)).toBe(11); // 亥时
+    // 生时即卯 → 命宫 = 太阳宫
+    expect(mingPalaceIndex(10, 3)).toBe(10);
+    // 太阳在戌、午时：午→戌 顺数至卯落未
+    expect(mingPalaceIndex(10, 6)).toBe(7);
+    // 太阳在戌、子时：命宫 = 太阳宫 + 3
+    expect(mingPalaceIndex(10, 0)).toBe(1);
     expect(TWELVE_PALACES[0]).toBe("命宫");
+  });
+
+  it("reaches the classical dignity table now that palaces use the classical mapping", () => {
+    const input: ProfileInput = getDefaultProfileInput(new Date("1990-03-21T12:00:00+08:00"), "Asia/Shanghai");
+    input.location = { city: "上海", timeZone: "Asia/Shanghai", latitude: 31.2304, longitude: 121.4737 };
+    const chart = buildQizhengChart(normalizeProfileInput(input));
+    const sun = chart.stars.find((star) => star.name === "太阳");
+    expect(sun?.branch).toBe("戌"); // 太阳位于白羊
+    expect(sun?.dignity).toBe("庙"); // 太阳庙于戌宫
   });
 
   it("places seven luminaries and four remainders", () => {

@@ -5,7 +5,7 @@ import type { AstroChart, AstroPoint } from "@/lib/astro/types";
 
 const SIGNS = ["白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼"];
 const SYMBOLS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
-const PLANET_SYMBOLS: Record<string, string> = { 太阳: "☉", 月亮: "☽", 水星: "☿", 金星: "♀", 火星: "♂", 木星: "♃", 土星: "♄", 天王: "♅", 海王: "♆", 冥王: "♇" };
+const PLANET_SYMBOLS: Record<string, string> = { 太阳: "☉", 月亮: "☽", 水星: "☿", 金星: "♀", 火星: "♂", 木星: "♃", 土星: "♄", 天王: "♅", 海王: "♆", 冥王: "♇", 凯龙星: "⚷", 谷神星: "⚳", 智神星: "⚴", 婚神星: "⚵", 灶神星: "⚶", 北交点: "☊", 南交点: "☋", 莉莉丝: "⚸" };
 const cx = 310;
 const point = (longitude: number, radius: number) => { const radians = ((longitude - 90) * Math.PI) / 180; return { x: cx + Math.cos(radians) * radius, y: cx + Math.sin(radians) * radius }; };
 const pointFor = (item: AstroPoint, radius: number) => item.longitude === null ? null : point(item.longitude, radius);

@@ -176,6 +176,26 @@ export function UranianPanel({
         <div className="empty-state"><b>无和点命中</b><span>当前容许度 ±{orb}° 内没有天体落在两体和点上。</span></div>
       )}
 
+      <div className="divination-section-heading"><span>行星图景 · 差点 A−B = C</span><small>{chart.differences.length} 条</small></div>
+      {chart.differences.length ? (
+        <div className="uranian-list">
+          {chart.differences.map((entry) => (
+            <div className="uranian-list__item" key={`diff-${entry.a.id}-${entry.b.id}`}>
+              <span className="uranian-list__axis">{formatDial(entry.axis)}</span>
+              <b>{entry.a.name}−{entry.b.name}</b>
+              <span>=</span>
+              <div className="uranian-list__hits">
+                {entry.occupied.map((hit) => (
+                  <em key={hit.body.id}>{hit.body.name}<small>±{hit.orb}°</small></em>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state"><b>无差点命中</b><span>当前容许度 ±{orb}° 内没有天体落在两体差点上。</span></div>
+      )}
+
       <div className="divination-section-heading"><span>行星图景 · 和点等式 A+B = C+D</span><small>{chart.equations.length} 条</small></div>
       {chart.equations.length ? (
         <div className="uranian-list">
