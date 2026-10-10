@@ -244,6 +244,7 @@ export const DEFAULT_AGENT_QUESTIONS: Record<WorkbenchMode, string> = {
   runes: "请基于当前卢恩符文牌阵，逐位说明符文、正逆位与其含义，并给出可验证的现实行动；不要当作确定预测。",
   uranian: "请基于当前汉堡学派 90° 盘，说明八虚星的位置、被占据的中点与行星图景，并区分盘面几何事实与该体系的象征解释。",
   maya: "请基于当前玛雅历换算，说明长纪年、卓尔金、哈布与 13:20 的 Kin，并区分历法换算事实与该体系的象征解释。",
+  vedic: "请基于当前吠陀盘，说明上升、九曜的恒星黄经与宿位，以及所选分盘（D1–D60）中各曜落宫的含义；区分计算事实与经典解释。",
 };
 
 export const AGENT_INTERVIEW_START_QUESTION = "请进入访谈模式。先不要下结论；每次只问我一个最关键的问题，帮助我把当前人生议题说清楚，并按事实、约束、选项、代价、行动逐轮推进。";
@@ -501,6 +502,10 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "历法换算", question: "请复述长纪年、卓尔金（含日名）、哈布、夜之主与历法轮的换算过程，并说明采用的相关系数。", description: "先讲换算，再讲含义。", evidence: ["GMT 相关系数", "长纪年进位", "卓尔金与哈布的组合"] },
     { label: "13:20 与神谕", question: "请说明 Kin、印记、调性、波符与神谕五方的关系，并区分计数事实与 Dreamspell 的象征解释。", description: "计数是事实，含义是解释。", evidence: ["13:20 计数与闰日约定", "印章与调性", "神谕五方的位置"] },
   ],
+  vedic: [
+    { label: "命盘与宿位", question: "请说明上升（Lagna）、九曜的宫位与宿位（含 pada 与宿主），并指出罗睺/计都的平交点约定。", description: "先讲位置，再讲含义。", evidence: ["Lahiri 岁差与恒星黄经", "27 宿与四足", "上升与九曜落宫"] },
+    { label: "分盘判读", question: "请说明所选分盘（如 D9 婚姻、D60 前世业）的划分规则，以及其中各曜落宫与 D1 的异同（含 Vargottama）。", description: "规则是事实，判读是解释。", evidence: ["分盘划分规则", "各曜在分盘中的宫位", "与 D1 的异同"] },
+  ],
 };
 
 /**
@@ -548,6 +553,7 @@ export const AGENT_FOLLOW_UP_QUESTIONS: Record<WorkbenchMode, readonly string[]>
   runes: ["请把每枚符文的建议转成一个本周可验证的小行动。", "这组符文可能被什么现实信息推翻？"],
   uranian: ["请把最紧的三条中点或行星图景翻译成可验证的现实观察。", "换用 45° 或 22.5° 盘时，哪些结构会消失或出现？"],
   maya: ["请逐年核对 13:20 计数，说明哪些年份的 Kin 会因闰日而“不推进”。", "这套系统里哪些是可验证的算术，哪些只是命名与象征？"],
+  vedic: ["请对比 D1 与 D9，指出哪些曜改变了宫位或变成了 Vargottama。", "换用 Raman 或 KP 岁差时，哪些宫的归属会改变？"],
 };
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -572,6 +578,7 @@ const MODE_LABELS: Record<WorkbenchMode, string> = {
   runes: "卢恩符文（Elder Futhark）",
   uranian: "汉堡学派（Uranian / 天王星系统）",
   maya: "玛雅历法与卓尔金（Tzolkin / 13:20）",
+  vedic: "吠陀占星分盘（Shodashavarga）",
 };
 
 const COMMON_ANALYSIS_PROTOCOL = [
@@ -699,6 +706,13 @@ const MODE_SYSTEM_PROMPTS: Record<Exclude<WorkbenchMode, "bazi">, string> = {
     "印章、调性与神谕名称属 Dreamspell 体系的命名与象征解释；不得据历法推算预测事件、健康、婚配或命运。",
     "建议结构：## 历法换算 / ## 卓尔金与 13:20 / ## 象征解释 / ## 边界。",
   ].join("\n"),
+  vedic: [
+    "【吠陀占星边界】本盘采用 Lahiri（Chitrapaksha）岁差：行星为 Celestine 回归黄经减去岁差得到的恒星黄经；罗睺/计都取平交点。岁差体系不同会整体平移宫位，必须说明所用体系。",
+    "只使用载荷中的恒星黄经、宫位、宿与 pada、分盘宫序；不得补造未在载荷中的经典引文（如 BPHS 具体偈颂）或具体事件。",
+    "分盘规则（十六分盘 Shodashavarga）为古典算术；分盘的「主管领域」与该体系的判读属经典解释，必须与算术区分。",
+    "无出生地时未计算上升（Lagna），分盘只列行星、不含命宫；不得据行星落宫推断具体事件、健康、婚姻或命运。",
+    "建议结构：## 上升与九曜 / ## 宿与分盘 / ## 经典解释 / ## 边界。",
+  ].join("\n"),
 };
 
 const KLINE_SYSTEM_PROMPT = [
@@ -742,6 +756,7 @@ const CHOICE_MODE_RULES: Record<WorkbenchMode, string> = {
   runes: "只引用载荷中的符文、正逆位与含义；不得声称预测确定事件，行动建议应低风险且可复盘。",
   uranian: "只引用载荷中的黄经、盘面位置、中点与和点；八虚星不是真实行星，禁止据盘面推断具体事件或命运。",
   maya: "只引用载荷中的历法换算数值；相关系数与闰日约定必须保持口径一致，禁止据历法推断具体事件或命运。",
+  vedic: "只引用载荷中的恒星黄经、宫位、宿与分盘宫序；禁止据分盘推断具体事件、健康、婚姻或命运。",
 };
 
 const buildChoiceSystemPrompt = (mode: WorkbenchMode, outputContract: "choice_json" | "choice_json_forced") => [

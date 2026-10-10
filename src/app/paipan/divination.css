@@ -237,3 +237,43 @@
 .maya-moons__grid i.is-active { background: #1f9d8b; border-color: var(--panel-ink); color: #fff; font-weight: 900; }
 @media (max-width: 850px) { .maya-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .maya-hero { grid-template-columns: 1fr; } .maya-hero__block { min-height: 0; } .maya-kin { grid-template-columns: 1fr; } .maya-kin__number { padding: 8px; } .maya-moons__grid { grid-template-columns: repeat(7, 1fr); } }
+
+/* 吠陀分盘（Vedic / Shodashavarga） */
+.divination-panel--vedic::before { background: #d97706; }
+.vedic-selector { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 16px; }
+.vedic-selector > button { display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 9px; border: 2px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); cursor: pointer; font: 800 11px var(--paipan-font-mono); }
+.vedic-selector > button small { color: var(--panel-muted); font: 700 9px var(--paipan-font); }
+.vedic-selector > button.is-active { background: var(--paipan-accent); }
+.vedic-selector > button.is-active small { color: var(--panel-ink); }
+.vedic-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 1.1fr); gap: 26px; align-items: start; margin-bottom: 22px; }
+.vedic-chart__grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px; aspect-ratio: 1; padding: 2px; background: var(--panel-ink); border: 2px solid var(--panel-ink); }
+.vedic-cell { display: flex; flex-direction: column; gap: 2px; padding: 5px; background: var(--paipan-paper); min-width: 0; }
+.vedic-cell__sign { display: flex; justify-content: space-between; gap: 4px; font: 800 10px var(--paipan-font-mono); }
+.vedic-cell__sign em { color: var(--panel-muted); font: 700 9px var(--paipan-font); font-style: normal; }
+.vedic-cell__house { align-self: flex-start; color: var(--paipan-red); font: 800 9px var(--paipan-font-mono); }
+.vedic-cell__grahas { margin-top: auto; font: 900 12px var(--paipan-font-mono); letter-spacing: .06em; word-break: break-all; }
+.vedic-cell.is-lagna { background: #fde9cf; box-shadow: inset 0 0 0 2px var(--paipan-red); }
+.vedic-center { grid-row: 2 / 4; grid-column: 2 / 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: var(--paipan-ground); }
+.vedic-center b { font: 900 20px var(--paipan-font-mono); }
+.vedic-center span { color: var(--panel-muted); font: 800 10px var(--paipan-font-mono); }
+.vedic-center em { color: var(--panel-muted); font-size: 11px; font-style: normal; }
+.vedic-chart__note { margin: 8px 0 0; color: var(--panel-muted); font-size: 11px; line-height: 1.5; }
+.vedic-table { border-top: 1px solid var(--panel-ink); }
+.vedic-row { display: grid; grid-template-columns: 26px minmax(64px, auto) auto minmax(0, 1fr) 18px; align-items: center; gap: 8px; padding: 7px 4px; border-bottom: 1px solid var(--panel-line); font-size: 12px; }
+.vedic-row > b { font: 800 11px var(--paipan-font-mono); }
+.vedic-row > span { display: flex; flex-direction: column; font-weight: 800; }
+.vedic-row > span small { color: var(--panel-muted); font: 700 9px var(--paipan-font-mono); }
+.vedic-row > strong { font: 800 11px var(--paipan-font-mono); white-space: nowrap; }
+.vedic-row > em { color: var(--panel-muted); font-size: 11px; font-style: normal; }
+.vedic-row__retro { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--paipan-red); color: var(--paipan-red); font: 800 9px var(--paipan-font-mono); font-style: normal; }
+.vedic-matrix { display: grid; gap: 1px; overflow-x: auto; }
+.vedic-matrix__row { display: grid; grid-template-columns: 86px repeat(9, minmax(34px, 1fr)); align-items: center; gap: 1px; padding: 3px 0; border-bottom: 1px solid var(--panel-line); cursor: pointer; }
+.vedic-matrix__row > b { display: flex; align-items: baseline; gap: 5px; font: 800 11px var(--paipan-font-mono); }
+.vedic-matrix__row > b small { color: var(--panel-muted); font: 700 9px var(--paipan-font); }
+.vedic-matrix__row > span { display: grid; place-items: center; padding: 4px 2px; background: var(--paipan-ground); font: 800 11px var(--paipan-font-mono); }
+.vedic-matrix__row--head { border-bottom: 2px solid var(--panel-ink); cursor: default; }
+.vedic-matrix__row--head > b { font: 800 9px var(--paipan-font-mono); letter-spacing: .1em; }
+.vedic-matrix__row--head > b:not(:first-child) { justify-content: center; }
+.vedic-matrix__row.is-active > b { color: var(--paipan-red); }
+.vedic-matrix__row > span.is-vargottama { background: var(--paipan-accent); box-shadow: inset 0 0 0 1.5px var(--panel-ink); }
+@media (max-width: 850px) { .vedic-layout { grid-template-columns: 1fr; } .vedic-matrix__row { grid-template-columns: 62px repeat(9, minmax(28px, 1fr)); } }

@@ -125,6 +125,7 @@ import { SacredGeometryPanel } from "./sacred-geometry-panel";
 import { RunesPanel } from "./runes-panel";
 import { UranianPanel } from "./uranian-panel";
 import { MayaPanel } from "./maya-panel";
+import { VedicPanel } from "./vedic-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -147,6 +148,8 @@ import { buildUranianChart } from "@/lib/uranian/chart";
 import { serializeUranianToCompactJson, serializeUranianToStructuredText } from "@/lib/uranian/serializer";
 import { buildMayaChart } from "@/lib/maya/chart";
 import { serializeMayaToCompactJson, serializeMayaToStructuredText } from "@/lib/maya/serializer";
+import { buildVedicChart } from "@/lib/vedic/chart";
+import { serializeVedicToCompactJson, serializeVedicToStructuredText } from "@/lib/vedic/serializer";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -334,6 +337,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  vedic: {
+    question: DEFAULT_AGENT_QUESTIONS.vedic,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -387,6 +395,7 @@ const MODE_META: Record<
   runes: { label: "卢恩符文", title: "卢恩符文", description: "Elder Futhark / 抽符 / 九界" },
   uranian: { label: "汉堡学派", title: "汉堡学派", description: "天王星系统 / 八虚星 / 90° 盘" },
   maya: { label: "玛雅历法", title: "玛雅历法", description: "长纪年 / 卓尔金 / 13:20" },
+  vedic: { label: "吠陀分盘", title: "吠陀分盘", description: "Lahiri / 九曜 / D1–D60" },
 };
 
 const buildWorkbenchCharts = (
@@ -587,8 +596,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1059,6 +1068,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [mayaDate, setMayaDate] = useState(() => initialState.normalizedProfile.normalized.datetime.slice(0, 10));
   const mayaChart = useMemo(() => buildMayaChart(mayaDate), [mayaDate]);
   const mayaStructuredText = useMemo(() => serializeMayaToStructuredText(mayaChart), [mayaChart]);
+  const [vedicVarga, setVedicVarga] = useState("D9");
+  const vedicChart = useMemo(() => buildVedicChart(normalizedProfile), [normalizedProfile]);
+  const vedicStructuredText = useMemo(() => serializeVedicToStructuredText(vedicChart), [vedicChart]);
   useEffect(() => {
     setMayaDate(normalizedProfile.normalized.datetime.slice(0, 10));
   }, [normalizedProfile]);
@@ -1211,6 +1223,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return uranianStructuredText;
       case "maya":
         return mayaStructuredText;
+      case "vedic":
+        return vedicStructuredText;
     }
   }, [
     mode,
@@ -1233,6 +1247,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     runesStructuredText,
     uranianStructuredText,
     mayaStructuredText,
+    vedicStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1293,8 +1308,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeUranianToCompactJson(uranianChart);
       case "maya":
         return serializeMayaToCompactJson(mayaChart);
+      case "vedic":
+        return serializeVedicToCompactJson(vedicChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1354,6 +1371,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       "sacred-geometry": { ...current["sacred-geometry"], content: "", model: null, error: null, loading: false },
       uranian: { ...current.uranian, content: "", model: null, error: null, loading: false },
       maya: { ...current.maya, content: "", model: null, error: null, loading: false },
+      vedic: { ...current.vedic, content: "", model: null, error: null, loading: false },
       runes: { ...current.runes, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
@@ -2205,6 +2223,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "runes" ? <RunesPanel reading={runeReading} onSpreadChange={(id) => { setRuneSpreadId(id); setCopyState("idle"); }} onRedraw={() => { setRuneSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "uranian" ? <UranianPanel chart={uranianChart} onModulusChange={(modulus) => { setUranianSettings((current) => ({ ...current, modulus })); setCopyState("idle"); }} onOrbChange={(orb) => { setUranianSettings((current) => ({ ...current, orb })); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "maya" ? <MayaPanel chart={mayaChart} dateInput={mayaDate} onDateChange={(value) => { setMayaDate(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel
