@@ -50,7 +50,6 @@ export const buildVerificationData = ({ profile, qimen, bazi, ziwei }: { profile
   }
 
   if (qimen) {
-    const usesAlternateMethod = qimen.input.qimenSettings?.method !== "default";
     rows.push({
       system: "奇门",
       field: "参考引擎",
@@ -61,7 +60,7 @@ export const buildVerificationData = ({ profile, qimen, bazi, ziwei }: { profile
       // branches. The previous ternary returned "unavailable" either way, which
       // read as if the two cases differed.
       status: "unavailable",
-      note: usesAlternateMethod ? "当前盘使用拆补/茅山口径，参考引擎只用于默认转盘；等待单独核验。" : "参考引擎为异步计算，盘面生成后补充局数、遁 type、值符值使比较。",
+      note: "参考引擎为异步计算，盘面生成后补充局数、遁 type、值符值使比较。",
     });
   }
 
@@ -79,7 +78,7 @@ export const buildQimenReferenceVerification = async (profile: NormalizedProfile
   const parts = parseDateTime(profile.normalized.datetime);
   const reference = await calculateQimen({ year: parts.year, month: parts.month, day: parts.day, hour: parts.hour, minute: parts.minute, timezone: profile.normalized.timeZone });
   const rows: VerificationRow[] = [];
-  rows.push(row({ system: "奇门", field: "阴阳遁", primary: qimen.raw.ju.type, reference: reference.dunType === "yang" ? "阳遁" : "阴遁", note: "只比较默认转盘口径；拆补和茅山方法不在此处强行对齐。" }));
+  rows.push(row({ system: "奇门", field: "阴阳遁", primary: qimen.raw.ju.type, reference: reference.dunType === "yang" ? "阳遁" : "阴遁", note: "只比较默认（符头定元）转盘口径。" }));
   rows.push(row({ system: "奇门", field: "局数", primary: String(qimen.raw.ju.number), reference: String(reference.juNumber), note: "局数差异应回到节气、年界和用局法逐项排查。" }));
   rows.push(row({ system: "奇门", field: "值符", primary: `${qimen.raw.zhiFu.star}/${qimen.raw.zhiFu.position}宫`, reference: `${reference.zhiFu.star}/${reference.zhiFu.palace}宫`, note: "值符宫位以各引擎自身九宫编号为准。" }));
   rows.push(row({ system: "奇门", field: "值使", primary: `${qimen.raw.zhiShi.gate}/${qimen.raw.zhiShi.position}宫`, reference: `${reference.zhiShi.gate}/${reference.zhiShi.palace}宫`, note: "值使宫位差异只作为核验提示，不直接生成结论。" }));

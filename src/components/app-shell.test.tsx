@@ -97,7 +97,7 @@ describe("AppShell", () => {
     // population first: the chart modes plus the classic 大六壬 board.
     const tabKeys = [...container.querySelectorAll("[data-tabkey]")]
       .map((node) => node.getAttribute("data-tabkey") ?? "");
-    expect(tabKeys).toHaveLength(22);
+    expect(tabKeys).toHaveLength(23);
     // 每个标签的 itemKey 必须唯一：semi-ui 的 TabBar 内部以 `${key}-bar` 生成 key，
     // 重复 itemKey 会让 React 报 duplicate key（并可能漏渲染标签）。
     expect(new Set(tabKeys).size).toBe(tabKeys.length);
@@ -115,6 +115,26 @@ describe("AppShell", () => {
     for (const retired of ["胜天半子", "以身入局", "重构命运", "人生决策控制室", "关键决策树", "K 线观测"]) {
       expect(text).not.toContain(retired);
     }
+  }, 60000);
+
+  it("exposes the 铁板神数 · 邵子神数 index panel and states that 邵子 stripes are not wired", async () => {
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("tab", { name: "铁板神数 · 邵子神数" }));
+
+    expect(await screen.findByRole("heading", { name: "铁板神数 · 邵子神数" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /复制 JSON/ })).toBeInTheDocument();
+    expect(screen.getByLabelText("求测时间")).toBeInTheDocument();
+    expect(screen.getByText("考刻定分")).toBeInTheDocument();
+    // 未接条文源必须在界面上写清，而不是留白
+    expect(screen.getAllByText(/未接邵子神数条文源/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/条文库 12000 条/)).toBeInTheDocument();
+    expect(screen.getByText(/未实现（不生成条文）/)).toBeInTheDocument();
   }, 60000);
 
   it("renames a saved 生日库 profile", async () => {

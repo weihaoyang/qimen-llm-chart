@@ -2,6 +2,7 @@
 
 import type { FourthWayContent } from "@/lib/fourth-way/content";
 import { EnneagramDiagram } from "./enneagram-diagram";
+import { ProvenanceBlock } from "./provenance-block";
 
 export function FourthWayPanel({ content, onCopyJson, jsonCopied }: { content: FourthWayContent; onCopyJson?: () => void; jsonCopied?: boolean }) {
   return (
@@ -43,6 +44,7 @@ export function FourthWayPanel({ content, onCopyJson, jsonCopied }: { content: F
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{content.disclaimer}</p>
+      <ProvenanceBlock system="fourth-way" />
     </section>
   );
 }

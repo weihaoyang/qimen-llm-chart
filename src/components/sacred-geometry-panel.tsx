@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { PATTERNS, patternById, type SacredShape } from "@/lib/sacred-geometry/patterns";
+import { ProvenanceBlock } from "./provenance-block";
 
 const renderShape = (shape: SacredShape, index: number): ReactElement => {
   const className = shape.guide ? "sacred-shape sacred-shape--guide" : shape.fill ? "sacred-shape sacred-shape--fill" : "sacred-shape";
@@ -64,6 +65,7 @@ export function SacredGeometryPanel({ patternId, steps, onPatternChange, onSteps
       <p className="sacred-blurb">{pattern.blurb}</p>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>图形由圆与直线在单位空间构造（构造圆半径 = 1），图案定义移植自 MIT 项目 evoluteur/sacred-geometry；仅作几何与象征研究，不作现实预测。</p>
+      <ProvenanceBlock system="sacred-geometry" />
     </section>
   );
 }

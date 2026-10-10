@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { evaluateQimenPatterns, type QimenPatternCheck, type QimenPatternGroup, type QimenPatternStrength } from "@/lib/qimen/patterns";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
+import { ProvenanceBlock } from "./provenance-block";
 
 type PatternFilter = "all" | "formed" | "failed";
 
@@ -134,6 +135,8 @@ export function QimenPatternPanel({
           </>
         )}
       </section>
+
+      <ProvenanceBlock system="qimen" />
     </details>
   );
 }

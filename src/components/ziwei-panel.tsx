@@ -6,6 +6,7 @@ import type { ProfileInput } from "@/lib/profile";
 import { DEFAULT_BAZI_SETTINGS } from "@/lib/bazi/settings";
 import { toTimeIndex } from "@/lib/ziwei/time-index";
 import type { NormalizedZiweiChart } from "@/lib/ziwei/types";
+import { ProvenanceBlock } from "./provenance-block";
 
 type ZiweiPanelProps = {
   value: ProfileInput;
@@ -173,6 +174,8 @@ export function ZiweiPanel({ value, chart }: ZiweiPanelProps) {
           <footer>结构识别根据盘面星曜与宫位关系生成，供核对与研究，不构成确定事件判断。</footer>
         </section>
       ) : null}
+
+      <ProvenanceBlock system="ziwei" />
     </div>
   );
 }

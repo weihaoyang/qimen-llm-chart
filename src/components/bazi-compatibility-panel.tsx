@@ -6,6 +6,7 @@ import { getTenGodGroup } from "@/lib/bazi/relations";
 import { BAZI_RELATION_GROUPS, getBaziRelationGroup } from "@/lib/bazi/relations-analysis";
 import type { Gender } from "@/lib/profile";
 import { BaziPanel } from "./bazi-panel";
+import { ProvenanceBlock } from "./provenance-block";
 
 type Props = {
   value: BaziCompatibility | null;
@@ -171,6 +172,8 @@ export function BaziCompatibilityPanel({
           </>
         )}
       </section>
+
+      <ProvenanceBlock system="bazi" />
     </details>
   );
 }

@@ -3,6 +3,7 @@
 import { LETTERS, SEPHIROT, WORLDS } from "@/lib/qabalah/data";
 import type { QabalahReading } from "@/lib/qabalah/chart";
 import { ALPHABET, FINAL_TO_BASE } from "@/lib/qabalah/gematria";
+import { ProvenanceBlock } from "./provenance-block";
 
 const FINALS = Object.keys(FINAL_TO_BASE);
 
@@ -150,6 +151,7 @@ export function QabalahPanel({
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{reading.disclaimer}</p>
+      <ProvenanceBlock system="qabalah" />
     </section>
   );
 }

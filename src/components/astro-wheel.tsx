@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
 import type { AstroChart, AstroPoint } from "@/lib/astro/types";
 
 const SIGNS = ["白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼"];
@@ -17,7 +17,8 @@ export function AstroWheel({ chart }: { chart: AstroChart }) {
   const selectedPoint = selected ? points.get(selected) : undefined;
   const selectedAspects = useMemo(() => chart.aspects.filter((item) => !selected || item.body1 === selected || item.body2 === selected), [chart.aspects, selected]);
   if (!chart.complete) return <div className="astro-wheel-empty">补充出生地经纬度后显示交互式星盘。</div>;
-  return <div className="astro-visual">
+  return <>
+  <div className="astro-visual">
     <div className="astro-wheel-stage">
       <svg className="astro-wheel-svg" viewBox="0 0 620 620" role="img" aria-label="交互式本命星盘">
         <circle cx={cx} cy={cx} r="285" className="astro-wheel-svg__outer" /><circle cx={cx} cy={cx} r="230" className="astro-wheel-svg__zodiac" /><circle cx={cx} cy={cx} r="181" className="astro-wheel-svg__inner" />
@@ -30,5 +31,11 @@ export function AstroWheel({ chart }: { chart: AstroChart }) {
       </svg>
     </div>
     <aside className="astro-visual__inspector"><span className="visual-kicker">SELECTED READOUT</span><h3>{selectedPoint?.name ?? "选择一颗行星"}</h3>{selectedPoint ? <><p className="visual-lead">{selectedPoint.sign} {selectedPoint.degree}° · 第{selectedPoint.house ?? "—"}宫</p><div className="visual-aspects">{chart.aspects.filter((item) => item.body1 === selected || item.body2 === selected).slice(0, 7).map((item) => <div key={`${item.body1}-${item.body2}-${item.type}`}><b>{item.symbol} {item.body1 === selected ? item.body2 : item.body1}</b><span>{item.deviation}° · {item.strength}%</span></div>)}{!chart.aspects.some((item) => item.body1 === selected || item.body2 === selected) ? <small>暂无主要相位</small> : null}</div></> : <p className="visual-copy">点击盘面里的行星，查看落座、落宫和相位。相位线会根据选择自动聚焦。</p>}<div className="visual-legend"><span><i className="legend-line legend-line--soft" />和谐相位</span><span><i className="legend-line legend-line--hard" />张力相位</span><span><i className="legend-dot" />行星落点</span></div></aside>
-  </div>;
+  </div>
+  {chart.lots.length ? <>
+    <div className="divination-section-heading"><span>ARABIC LOTS / 阿拉伯点</span><small>{chart.lots.length} POINTS · {chart.lots[0].sect}盘公式</small></div>
+    <div className="astro-table">{chart.lots.map((lot, index) => <div className="astro-row" key={lot.key} style={{ "--item-index": index } as CSSProperties}><span className="astro-row__marker" /><b>{lot.name}</b><span>{lot.sign}</span><strong>{lot.degree}°</strong><small>{lot.house === null ? "—" : "H" + lot.house}</small></div>)}</div>
+    <p className="divination-panel__note"><span>LOTS</span>{chart.lots.map((lot) => `${lot.name}（${lot.latin}，${lot.alias}）= ${lot.formula}`).join("；")}。阿拉伯点为古典／现代占星通行计算点，公式随昼夜（sect）切换，非天体，不含预测含义。</p>
+  </> : null}
+</>;
 }

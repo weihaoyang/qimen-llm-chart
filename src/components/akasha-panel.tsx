@@ -2,6 +2,7 @@
 
 import type { AkashaChart } from "@/lib/akasha/chart";
 import { AKASHA_CONCEPTS, AKASHA_ETHICS, AKASHA_PROTOCOL, AKASHA_TIMELINE, ANALOGY_NOTES, HOLOGRAM_CONCEPTS, MASS_PRESETS } from "@/lib/akasha/data";
+import { ProvenanceBlock } from "./provenance-block";
 
 const sci = (value: number, digits = 3) => value.toExponential(digits);
 
@@ -191,6 +192,8 @@ export function AkashaPanel({
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}</p>
+
+      <ProvenanceBlock system="akasha" />
     </section>
   );
 }

@@ -45,7 +45,11 @@ export type RawChartData = {
 };
 
 export type NormalizedQimenChart = {
-  engine: "3meta" | "taobi";
+  /**
+   * 出盘引擎。2026-10 起只有 3meta 一条产线路径；
+   * 字段保留是为了让核验层/参考盘提示继续能标注盘面来源。
+   */
+  engine: "3meta";
   input: UserChartInput;
   interpretedDateTime: string;
   raw: RawChartData;

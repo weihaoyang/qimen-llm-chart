@@ -1,6 +1,6 @@
 import { calculateChart } from "celestine";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import type { AstroChart, AstroAspect, AstroPoint, AstroPattern, AstroHouseCusp, ZodiacSign } from "./types";
+import type { AstroChart, AstroAspect, AstroPoint, AstroPattern, AstroHouseCusp, AstroLot, ZodiacSign } from "./types";
 
 const SIGNS: ZodiacSign[] = ["白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼"];
 const EN_SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
@@ -45,6 +45,21 @@ export const offsetMinutes = (datetime: string, timeZone: string) => {
   return Math.round((localAsUtc - utc) / 60000);
 };
 const emptyPoint = (name: string): AstroPoint => ({ name, longitude: null, sign: "未知", degree: null, house: null });
+
+/**
+ * 阿拉伯点中文名。仅映射 celestine 已经算出的 lot，不自行新增定义：
+ * celestine 只给出两个阿拉伯点，公式与昼夜（sect）判定在库内完成
+ * （dist/index.js:8670-8704）——
+ *   福点 Part of Fortune：昼 ASC + Moon − Sun；夜 ASC + Sun − Moon
+ *   精神点 Part of Spirit：取福点的反式
+ * 「sect / 昼夜」由太阳与上升的相对位置判定（dist/index.js:8533-8541），
+ * 与本仓的出生地输入无关地由库给出。
+ * 名称取通行中译：福点（别称财富点／幸运点）、精神点（别称灵点）。
+ */
+const LOT_META: Record<string, { key: string; name: string; latin: string; alias: string }> = {
+  "Part of Fortune": { key: "fortune", name: "福点", latin: "Part of Fortune", alias: "财富点／幸运点" },
+  "Part of Spirit": { key: "spirit", name: "精神点", latin: "Part of Spirit", alias: "灵点／灵魂点" },
+};
 
 export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => {
   const [year, month, day, hour, minute] = parse(profile.normalized.datetime);
@@ -98,6 +113,28 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
   const aspectSummary = hasPlace
     ? chart.aspects.summary
     : aspects.reduce<Record<string, number>>((acc, aspect) => ({ ...acc, [aspect.type]: (acc[aspect.type] ?? 0) + 1 }), {});
+  // 阿拉伯点由上升点参与计算（ASC ± Sun/Moon），未提供出生地时上升点是占位值，
+  // 因而此时不输出 lots（与 angles / houses 同一处理原则）。
+  const lots: AstroLot[] = hasPlace
+    ? chart.lots
+        .filter((lot) => LOT_META[lot.name])
+        .map((lot) => {
+          const meta = LOT_META[lot.name];
+          const signIndex = EN_SIGNS.indexOf(lot.signName);
+          return {
+            key: meta.key,
+            name: meta.name,
+            latin: meta.latin,
+            alias: meta.alias,
+            formula: lot.formula,
+            sect: chart.calculated.isDaytime ? ("昼" as const) : ("夜" as const),
+            longitude: Number(lot.longitude.toFixed(6)),
+            sign: SIGNS[signIndex] ?? "未知",
+            degree: Number((lot.longitude % 30).toFixed(2)),
+            house: lot.house ?? null,
+          };
+        })
+    : [];
 
   return {
     format: "qmdj-astro-chart-v1",
@@ -109,12 +146,13 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
     angles,
     houses,
     houseSystem,
+    lots,
     aspects,
     aspectSummary,
     patterns,
     complete: hasPlace,
     disclaimer: hasPlace
-      ? `研究性星盘：行星、小行星（谷神/智神/婚神/灶神/凯龙）、黄白交点、莉莉丝、宫位、四轴、相位与模式由 Celestine 天文计算引擎生成；宫制：${houseSystem}。不含阿拉伯点（lots）与恒星。结果不替代专业天文历表校核或现实决策。`
-      : "行星、小行星、交点、莉莉丝与相位按地心坐标计算，不依赖出生地；上升、中天与宫位需要出生地经纬度，当前未计算。请补充城市或经纬度后查看四轴与宫位。",
+      ? `研究性星盘：行星、小行星（谷神/智神/婚神/灶神/凯龙）、黄白交点、莉莉丝、宫位、四轴、相位与模式由 Celestine 天文计算引擎生成；宫制：${houseSystem}。阿拉伯点（${lots.map((lot) => lot.name).join("、") || "无"}）为古典／现代占星通行计算点（非天体），按 Celestine 的昼夜（sect）公式取值（福点昼 = ASC + Moon − Sun，夜 = ASC + Sun − Moon；精神点取反），本盘判定为${chart.calculated.isDaytime ? "昼盘" : "夜盘"}。不含恒星。结果不替代专业天文历表校核或现实决策，也不表示任何预测。`
+      : "行星、小行星、交点、莉莉丝与相位按地心坐标计算，不依赖出生地；上升、中天、宫位与阿拉伯点（福点、精神点）需要上升点，当前未计算。请补充城市或经纬度后查看四轴、宫位与阿拉伯点。",
   };
 };

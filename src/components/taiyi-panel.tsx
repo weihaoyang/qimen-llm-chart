@@ -1,8 +1,9 @@
 "use client";
 
 import type { TaiyiChart } from "@/lib/taiyi/chart";
-import { POSITION_TO_PALACE } from "@/lib/taiyi/chart";
+import { HARMONY_SOURCE, POSITION_TO_PALACE } from "@/lib/taiyi/chart";
 import { GENERALS, PALACES, PATTERNS } from "@/lib/taiyi/data";
+import { ProvenanceBlock } from "./provenance-block";
 
 /** 十六神方盘（5×5 外环，顺时针自西北乾起）。 */
 const PLATE: Array<{ position: string; row: number; col: number }> = [
@@ -91,25 +92,28 @@ export function TaiyiPanel({
             ))}
           </div>
         </label>
-        <label>遁
+        <label>遁（须人工选定）
           <div className="rune-selector">
             {(["auto", "阳遁", "阴遁"] as const).map((value) => (
-              <button key={value} type="button" className={value === dun ? "is-active" : undefined} aria-pressed={value === dun} onClick={() => onDunChange?.(value)}>{value === "auto" ? "自动" : value}</button>
+              <button key={value} type="button" className={value === dun ? "is-active" : undefined} aria-pressed={value === dun} onClick={() => onDunChange?.(value)}>{value === "auto" ? "未定（默认阳遁）" : value}</button>
             ))}
           </div>
         </label>
         <label>入局数覆盖<input type="number" min={1} max={72} placeholder="留空为推算" value={ruJuInput} onChange={(event) => onRuJuChange?.(event.target.value)} /></label>
       </div>
+      {dun === "auto" ? (
+        <p className="taiyi-note">遁未选定：古籍《太乙金镜式经》卷三与《太乙秘書》皆阳局七十二局、阴局七十二局并列（秘書阳局第一局太乙一宫、阴局第一局太乙九宫），遁不由局数推出，暂按阳遁排出——请在上方选定遁。</p>
+      ) : null}
 
       <div className="taiyi-facts">
         <div><span>积年</span><b>{chart.accumulation.jiyear}</b><em>入纪元数 {chart.accumulation.eraRemainder} → 入局数 {chart.accumulation.ruJu}</em></div>
         <div><span>太乙</span><b>{chart.taiyi.palace} 宫</b><em>{chart.taiyi.trigram} · {chart.taiyi.element} · 本周第 {chart.taiyi.block} 个三年</em></div>
-        <div><span>主算 → 主大将</span><b>{chart.counts.host} → 大将 {chart.counts.hostGeneralPalace} 宫 · 参将 {chart.counts.hostSuPalace} 宫</b><em>{chart.counts.hostLength}</em></div>
-        <div><span>客算 → 客大将</span><b>{chart.counts.guest} → 大将 {chart.counts.guestGeneralPalace} 宫 · 参将 {chart.counts.guestSuPalace} 宫</b><em>{chart.counts.guestLength}</em></div>
-        <div><span>天目（文昌）</span><b>{chart.tianMu.deity.name}</b><em>{chart.tianMu.position}{chart.tianMu.palace ? ` · 第 ${chart.tianMu.palace} 宫` : " · 间神"}</em></div>
-        <div><span>始击（客目）</span><b>{chart.shiJi.deity.name}</b><em>{chart.shiJi.position}{chart.shiJi.palace ? ` · 第 ${chart.shiJi.palace} 宫` : " · 间神"}</em></div>
+        <div><span>主算 → 主大将</span><b>{chart.counts.host} → 大将 {chart.counts.hostGeneralPalace} 宫 · 参将 {chart.counts.hostSuPalace} 宫</b><em>主算{chart.counts.hostParity} · 主算{chart.counts.hostHarmonyLevel}（卷二）</em></div>
+        <div><span>客算 → 客大将</span><b>{chart.counts.guest} → 大将 {chart.counts.guestGeneralPalace} 宫 · 参将 {chart.counts.guestSuPalace} 宫</b><em>客算{chart.counts.guestParity} · 客算{chart.counts.guestHarmonyLevel}（卷二）</em></div>
+        <div><span>天目（文昌）</span><b>{chart.tianMu.deity.name}</b><em>{chart.tianMu.position} · {chart.tianMu.standing}{chart.tianMu.palace ? `（第 ${chart.tianMu.palace} 宫）` : ""}</em></div>
+        <div><span>始击（客目）</span><b>{chart.shiJi.deity.name}</b><em>{chart.shiJi.position} · {chart.shiJi.standing}{chart.shiJi.palace ? `（第 ${chart.shiJi.palace} 宫）` : ""}</em></div>
         <div><span>计神</span><b>{chart.jiShen.deity.name}</b><em>{chart.jiShen.position} · 岁星之使</em></div>
-        <div><span>和否</span><b>{chart.counts.harmonyCombined}</b><em>主算{chart.counts.hostHarmony} · 客算{chart.counts.guestHarmony}</em></div>
+        <div><span>和数（事实）</span><b>主算 {chart.counts.hostHarmonyLevel} · 客算 {chart.counts.guestHarmonyLevel}</b><em>另一系清单（出处待考）：主算 {chart.counts.hostHarmonyLevelVariant} · 客算 {chart.counts.guestHarmonyLevelVariant}；本仓不下和/不和与长/短判词</em></div>
       </div>
 
       <div className="taiyi-layout">
@@ -137,7 +141,7 @@ export function TaiyiPanel({
         </div>
 
         <div className="taiyi-side">
-          <div className="divination-section-heading"><span>格局 · 六格</span><small>{chart.patterns.length ? `${chart.patterns.length} 条命中` : "未见命中"}</small></div>
+          <div className="divination-section-heading"><span>格局 · {PATTERNS.length} 格</span><small>{chart.patterns.length ? `${chart.patterns.length} 条命中` : "未见命中"}</small></div>
           <div className="taiyi-patterns">
             {PATTERNS.map((pattern) => {
               const hit = chart.patterns.some((entry) => entry.startsWith(pattern.name));
@@ -179,7 +183,11 @@ export function TaiyiPanel({
         ))}
       </div>
 
+      <p className="taiyi-note">{HARMONY_SOURCE}同篇又作「八三四九为阳宫，二七六一为阴宫」。另有一系和数清单作「上和十四、十八；次和二十三、二十九、三十二、三十六；下和十二、十六、二十一、二十七、三十四、三十八」，**本仓未能核到其一手出处**（独立核查在维基文库《太乙秘書》与《金鏡式經》卷二/卷三中均未见），故只作「另一系说法」并列、不归属于任何书名。两书局注亦互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），本仓只列算值与奇偶，不据此下和/不和结论。</p>
+
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}</p>
+
+      <ProvenanceBlock system="taiyi-shenshu" />
     </section>
   );
 }

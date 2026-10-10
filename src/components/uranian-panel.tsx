@@ -2,6 +2,7 @@
 
 import { dialPosition, formatDial } from "@/lib/uranian/dial";
 import type { UranianChart } from "@/lib/uranian/chart";
+import { ProvenanceBlock } from "./provenance-block";
 
 const MODULI = [90, 45, 22.5] as const;
 const SIZE = 380;
@@ -40,7 +41,7 @@ export function UranianPanel({
       <header className="divination-panel__header">
         <div>
           <p className="divination-panel__kicker">URANIAN ASTROLOGY · 天王星系统</p>
-          <h2>汉堡学派 · 90° 盘</h2>
+          <h2>汉堡学派 · {modulus}° 盘</h2>
           <p className="divination-panel__subhead">
             八虚星（Cupido…Poseidon）+ 真实行星，投影到 {modulus}° 盘；中点与行星图景的容许度 ±{orb}°。
             出生地：{chart.input.hasPlace ? "有" : "无（无上升 / 中天）"}
@@ -117,7 +118,7 @@ export function UranianPanel({
               );
             })}
           </svg>
-          <p className="uranian-stage__note">盘面 0° 位于正上方，顺时针递增；同一点即四正相位（0°/90°/180°/270°）重合。</p>
+          <p className="uranian-stage__note">盘面 0° 位于正上方，顺时针递增；同一盘面点代表真实黄经相差 {modulus}° 整数倍的各点在此重合（{modulus}° 盘上 0°/90°/180°/270° 亦落于同处）。结构检索同样按 {modulus}° 重算，容许度 ±{orb}°。</p>
         </div>
 
         <div className="uranian-side">
@@ -128,7 +129,7 @@ export function UranianPanel({
                 <b>{row.code}</b>
                 <span>{row.nameZh}<small>{row.name}</small></span>
                 <strong>{row.zodiac.label}</strong>
-                <em>{formatDial(row.dial90)}</em>
+                <em>{row.dialLabel}</em>
                 <p>{row.principles.join(" · ")}</p>
               </div>
             ))}
@@ -136,7 +137,7 @@ export function UranianPanel({
         </div>
       </div>
 
-      <div className="divination-section-heading"><span>被占据的中点 · MIDPOINTS</span><small>{chart.midpoints.length} 条</small></div>
+      <div className="divination-section-heading"><span>被占据的中点 · MIDPOINTS</span><small>{chart.midpoints.length === chart.totals.midpoints ? `${chart.totals.midpoints} 条` : `列前 ${chart.midpoints.length} / 命中 ${chart.totals.midpoints} 条`}</small></div>
       {chart.midpoints.length ? (
         <div className="uranian-list">
           {chart.midpoints.map((entry) => (
@@ -156,7 +157,7 @@ export function UranianPanel({
         <div className="empty-state"><b>无中点命中</b><span>当前容许度 ±{orb}° 内没有天体落在其它天体的中点上，可放宽容许度。</span></div>
       )}
 
-      <div className="divination-section-heading"><span>行星图景 · 和点 A+B = C</span><small>{chart.sums.length} 条</small></div>
+      <div className="divination-section-heading"><span>行星图景 · 和点 A+B = C</span><small>{chart.sums.length === chart.totals.sums ? `${chart.totals.sums} 条` : `列前 ${chart.sums.length} / 命中 ${chart.totals.sums} 条`}</small></div>
       {chart.sums.length ? (
         <div className="uranian-list">
           {chart.sums.map((entry) => (
@@ -176,7 +177,7 @@ export function UranianPanel({
         <div className="empty-state"><b>无和点命中</b><span>当前容许度 ±{orb}° 内没有天体落在两体和点上。</span></div>
       )}
 
-      <div className="divination-section-heading"><span>行星图景 · 差点 A−B = C</span><small>{chart.differences.length} 条</small></div>
+      <div className="divination-section-heading"><span>行星图景 · 差点 A−B = C</span><small>{chart.differences.length === chart.totals.differences ? `${chart.totals.differences} 条` : `列前 ${chart.differences.length} / 命中 ${chart.totals.differences} 条`}</small></div>
       {chart.differences.length ? (
         <div className="uranian-list">
           {chart.differences.map((entry) => (
@@ -196,7 +197,7 @@ export function UranianPanel({
         <div className="empty-state"><b>无差点命中</b><span>当前容许度 ±{orb}° 内没有天体落在两体差点上。</span></div>
       )}
 
-      <div className="divination-section-heading"><span>行星图景 · 和点等式 A+B = C+D</span><small>{chart.equations.length} 条</small></div>
+      <div className="divination-section-heading"><span>行星图景 · 和点等式 A+B = C+D</span><small>{chart.equations.length === chart.totals.equations ? `${chart.totals.equations} 条` : `列前 ${chart.equations.length} / 命中 ${chart.totals.equations} 条`}</small></div>
       {chart.equations.length ? (
         <div className="uranian-list">
           {chart.equations.map((entry, index) => (
@@ -212,6 +213,7 @@ export function UranianPanel({
       )}
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}八虚星轨道要素与解算移植自 GPL 的 Astrolog（Neely/Matrix 要素）；八虚星并非真实天体，其原则归类属该体系象征解释。</p>
+      <ProvenanceBlock system="uranian" />
     </section>
   );
 }

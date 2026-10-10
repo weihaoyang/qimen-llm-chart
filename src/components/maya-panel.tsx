@@ -2,6 +2,7 @@
 
 import type { MayaChart } from "@/lib/maya/chart";
 import { DAY_SIGN_GLOSS, HAAB_MONTHS, KICHE_DAY_SIGNS, YUCATEC_DAY_SIGNS } from "@/lib/maya/traditional";
+import { ProvenanceBlock } from "./provenance-block";
 
 export function MayaPanel({
   chart,
@@ -139,6 +140,7 @@ export function MayaPanel({
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}</p>
+      <ProvenanceBlock system="maya" />
     </section>
   );
 }

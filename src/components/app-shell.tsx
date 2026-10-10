@@ -130,6 +130,7 @@ import { QabalahPanel } from "./qabalah-panel";
 import { TaiyiPanel } from "./taiyi-panel";
 import { AkashaPanel } from "./akasha-panel";
 import { ZiweiFlyingPanel } from "./ziwei-flying-panel";
+import { TieshenPanel } from "./tieshen-panel";
 import { ChartMaterials } from "./chart-materials";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -162,6 +163,9 @@ import { buildAkashaChart } from "@/lib/akasha/chart";
 import { serializeAkashaToCompactJson, serializeAkashaToStructuredText } from "@/lib/akasha/serializer";
 import { buildZiweiFlyingChart } from "@/lib/ziwei-flying/chart";
 import { serializeZiweiFlyingToCompactJson, serializeZiweiFlyingToStructuredText } from "@/lib/ziwei-flying/serializer";
+import { buildTieshenChart } from "@/lib/tieshen/chart";
+import { serializeTieshenToCompactJson, serializeTieshenToStructuredText } from "@/lib/tieshen/serializer";
+import { KE_NAMES as TIESHEN_KE_NAMES } from "@/lib/tieshen/rules";
 import { buildHumanDesignChart } from "@/lib/human-design/chart";
 import { serializeHumanDesignToCompactJson, serializeHumanDesignToStructuredText } from "@/lib/human-design/serializer";
 import type { HumanDesignChart } from "@/lib/human-design/types";
@@ -374,6 +378,11 @@ const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
     focus: "按问题综合取证",
     content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
   },
+  tieshen: {
+    question: DEFAULT_AGENT_QUESTIONS.tieshen,
+    focus: "按问题综合取证",
+    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
+  },
 });
 
 type GeneratedWorkbenchCharts = {
@@ -432,6 +441,7 @@ const MODE_META: Record<
   "taiyi-shenshu": { label: "太乙神数", title: "太乙神数", description: "十六神 / 八将 / 主客算 / 格局" },
   akasha: { label: "阿卡西 · 全息", title: "阿卡西记录 · 全息宇宙", description: "面积律 / 碎片重建 / 知识条目" },
   "ziwei-flying": { label: "紫微飞星", title: "紫微飞星 · 河洛化象", description: "宫干飞化 / 自化 / 来因宫" },
+  tieshen: { label: "铁板神数 · 邵子神数", title: "铁板神数 · 条文索引盘", description: "先天命数 / 本命数 / 条文库检索" },
 };
 
 const buildWorkbenchCharts = (
@@ -632,8 +642,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
   );
   const [copyState, setCopyState] = useState<"idle" | "text" | "json">("idle");
   const [agentState, setAgentState] = useState(createInitialAgentState);
-  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", qabalah: "free", "taiyi-shenshu": "free", akasha: "free", "ziwei-flying": "free" });
-  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], qabalah: [], "taiyi-shenshu": [], akasha: [], "ziwei-flying": [] });
+  const [conversationModes, setConversationModes] = useState<Record<WorkbenchMode, AgentConversationMode>>({ qimen: "free", bazi: "free", ziwei: "free", combined: "free", research: "free", astro: "free", "human-design": "free", tarot: "free", "fourth-way": "free", harmonic: "free", huangji: "free", qizheng: "free", "sacred-geometry": "free", runes: "free", uranian: "free", maya: "free", vedic: "free", qabalah: "free", "taiyi-shenshu": "free", akasha: "free", "ziwei-flying": "free", tieshen: "free" });
+  const [agentToolEvents, setAgentToolEvents] = useState<Record<WorkbenchMode, AgentToolEvent[]>>({ qimen: [], bazi: [], ziwei: [], combined: [], research: [], astro: [], "human-design": [], tarot: [], "fourth-way": [], harmonic: [], huangji: [], qizheng: [], "sacred-geometry": [], runes: [], uranian: [], maya: [], vedic: [], qabalah: [], "taiyi-shenshu": [], akasha: [], "ziwei-flying": [], tieshen: [] });
   const persistBirthProfiles = (next: BirthProfileEntry[]) => {
     setBirthProfiles(next);
     try { localStorage.setItem("qmdj-birth-library", JSON.stringify(next)); } catch { /* optional */ }
@@ -1130,6 +1140,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const akashaStructuredText = useMemo(() => serializeAkashaToStructuredText(akashaChart), [akashaChart]);
   const ziweiFlyingChart = useMemo(() => buildZiweiFlyingChart(normalizedProfile), [normalizedProfile]);
   const ziweiFlyingStructuredText = useMemo(() => serializeZiweiFlyingToStructuredText(ziweiFlyingChart), [ziweiFlyingChart]);
+  const [tieshenQuery, setTieshenQuery] = useState(() => initialState.normalizedProfile.normalized.datetime);
+  const [tieshenKe, setTieshenKe] = useState<"auto" | (typeof TIESHEN_KE_NAMES)[number]>("auto");
+  const tieshenChart = useMemo(
+    () => buildTieshenChart(normalizedProfile, {
+      queryDatetime: tieshenQuery || undefined,
+      keOverride: tieshenKe === "auto" ? null : tieshenKe,
+    }),
+    [normalizedProfile, tieshenQuery, tieshenKe],
+  );
+  const tieshenStructuredText = useMemo(() => serializeTieshenToStructuredText(tieshenChart), [tieshenChart]);
   useEffect(() => {
     setMayaDate(normalizedProfile.normalized.datetime.slice(0, 10));
   }, [normalizedProfile]);
@@ -1161,7 +1181,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           primary: qimenChart.engine,
           reference: "taibu-core/qimen",
           status: "unavailable",
-          note: qimenChart.input.qimenSettings?.method === "default" ? "参考盘正在计算。" : "拆补与茅山口径暂不强行对齐默认转盘参考引擎。",
+          note: qimenChart.input.qimenSettings?.method === "default" ? "参考盘正在计算。" : "历史口径（拆补/茅山）已撤下：上游实现未自验且跨引擎拼接，本仓只保留默认符头定元口径。",
         });
       }
       return {
@@ -1291,6 +1311,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return akashaStructuredText;
       case "ziwei-flying":
         return ziweiFlyingStructuredText;
+      case "tieshen":
+        return tieshenStructuredText;
     }
   }, [
     mode,
@@ -1318,6 +1340,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     taiyiStructuredText,
     akashaStructuredText,
     ziweiFlyingStructuredText,
+    tieshenStructuredText,
   ]);
 
   const jsonPayload = useMemo(() => {
@@ -1388,8 +1411,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return serializeAkashaToCompactJson(akashaChart);
       case "ziwei-flying":
         return serializeZiweiFlyingToCompactJson(ziweiFlyingChart);
+      case "tieshen":
+        return serializeTieshenToCompactJson(tieshenChart);
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, qabalahReading, taiyiChart, akashaChart, ziweiFlyingChart]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, qabalahReading, taiyiChart, akashaChart, ziweiFlyingChart, tieshenChart]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1454,6 +1479,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       "taiyi-shenshu": { ...current["taiyi-shenshu"], content: "", model: null, error: null, loading: false },
       akasha: { ...current.akasha, content: "", model: null, error: null, loading: false },
       "ziwei-flying": { ...current["ziwei-flying"], content: "", model: null, error: null, loading: false },
+      tieshen: { ...current.tieshen, content: "", model: null, error: null, loading: false },
       runes: { ...current.runes, content: "", model: null, error: null, loading: false },
     }));
     setError(null);
@@ -2310,6 +2336,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "taiyi-shenshu" ? <TaiyiPanel chart={taiyiChart} yearInput={taiyiYear} cycle={taiyiCycle} dun={taiyiDun} ruJuInput={taiyiRuJu} onYearChange={(value) => { setTaiyiYear(value); setCopyState("idle"); }} onCycleChange={(value) => { setTaiyiCycle(value); setCopyState("idle"); }} onDunChange={(value) => { setTaiyiDun(value); setCopyState("idle"); }} onRuJuChange={(value) => { setTaiyiRuJu(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "akasha" ? <AkashaPanel chart={akashaChart} massInput={akashaMass} onMassChange={(value) => { setAkashaMass(value); setCopyState("idle"); }} sourceCount={akashaSources} onSourceCountChange={(value) => { setAkashaSources(value); setCopyState("idle"); }} fragment={akashaFragment} onFragmentChange={(value) => { setAkashaFragment(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "ziwei-flying" ? <ZiweiFlyingPanel chart={ziweiFlyingChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "tieshen" ? <TieshenPanel chart={tieshenChart} queryInput={tieshenQuery} keOverride={tieshenKe} onQueryChange={(value) => { setTieshenQuery(value); setCopyState("idle"); }} onKeChange={(value) => { setTieshenKe(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
 
         {mode === "research" ? (
           <KlinePanel

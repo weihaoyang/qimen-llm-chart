@@ -1,6 +1,7 @@
 "use client";
 
 import { EPOCH_BCE_YEAR, type HuangjiChronology } from "@/lib/huangji/chronology";
+import { ProvenanceBlock } from "./provenance-block";
 
 export function HuangjiPanel({ value, yearInput, yearError, onYearChange, onCopyJson, jsonCopied }: { value: HuangjiChronology; yearInput: string; yearError?: boolean; onYearChange?: (value: string) => void; onCopyJson?: () => void; jsonCopied?: boolean }) {
   const blocks = [
@@ -49,6 +50,7 @@ export function HuangjiPanel({ value, yearInput, yearError, onYearChange, onCopy
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{value.disclaimer}</p>
+      <ProvenanceBlock system="huangji" />
     </section>
   );
 }

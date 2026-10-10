@@ -447,9 +447,7 @@ export function ChartForm({
                     <SelectValue placeholder="选择用局法" />
                   </SelectTrigger>
                   <SelectContent className="control-select-content">
-                    <SelectItem value="default">{SUPPORTED_QIMEN_JU_METHODS[0]}</SelectItem>
-                    <SelectItem value="split">{SUPPORTED_QIMEN_JU_METHODS[1]}</SelectItem>
-                    <SelectItem value="maoshan">{SUPPORTED_QIMEN_JU_METHODS[2]}</SelectItem>
+                    <SelectItem value="default">{SUPPORTED_QIMEN_JU_METHODS[0]}（符头定元）</SelectItem>
                   </SelectContent>
                 </Select>
               </label>

@@ -3,6 +3,7 @@
 import { AETTIR, SPREADS, SPREAD_IDS, type SpreadId } from "@/lib/runes/data";
 import type { RuneReading } from "@/lib/runes/draw";
 import { NINE_WORLDS } from "@/lib/runes/nine-worlds";
+import { ProvenanceBlock } from "./provenance-block";
 
 export function RunesPanel({ reading, onSpreadChange, onRedraw, onCopyJson, jsonCopied }: { reading: RuneReading; onSpreadChange?: (id: SpreadId) => void; onRedraw?: () => void; onCopyJson?: () => void; jsonCopied?: boolean }) {
   return (
@@ -63,6 +64,7 @@ export function RunesPanel({ reading, onSpreadChange, onRedraw, onCopyJson, json
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>符文与九界属神话与象征体系（符文数据移植自 MIT 项目 evoluteur/rune-reading）；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。</p>
+      <ProvenanceBlock system="runes" />
     </section>
   );
 }

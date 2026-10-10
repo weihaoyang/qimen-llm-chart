@@ -15,7 +15,7 @@ import {
   sumAxis,
   type DialBody,
 } from "./dial";
-import { centuriesFromJ1900, EARTH_ELEMENTS, heliocentricEcliptic, TNPS, uranianPositions } from "./elements";
+import { ASTROLOG_ABERRATION_CONSTANT, aberrationDegrees, centuriesFromJ1900, EARTH_ELEMENTS, heliocentricEcliptic, heliocentricState, TNPS, uranianPositions } from "./elements";
 import { serializeUranianToCompactJson, serializeUranianToStructuredText } from "./serializer";
 
 const profile = () => {
@@ -59,6 +59,37 @@ describe("uranian elements", () => {
     }
     expect(new Set(positions.map((position) => position.longitude.toFixed(3))).size).toBe(8);
     expect(toZodiac(positions[0].longitude).label).toMatch(/[白羊金牛双子巨蟹狮子处女天秤天蝎射手摩羯水瓶双鱼]/);
+  });
+
+  it("applies Astrolog's aber term (light-time × geocentric daily motion) to the longitudes", () => {
+    // 常数与公式口径来自 Astrolog matrix.cpp:640
+    //   aber = 0.0057756 * RLength3(XS, YS, ZS) * ret[i];
+    expect(ASTROLOG_ABERRATION_CONSTANT).toBe(0.0057756);
+
+    const withAberration = uranianPositions(2451545.0); // J2000.0
+    const geometric = uranianPositions(2451545.0, { aberration: false });
+    const mod = (value: number) => ((value % 360) + 360) % 360;
+
+    expect(withAberration).toHaveLength(8);
+    for (let index = 0; index < withAberration.length; index += 1) {
+      const row = withAberration[index];
+      const delta = Math.abs(row.longitude - geometric[index].longitude);
+      expect(delta).toBeGreaterThan(1e-4); // 确实施加了更正，不是空操作
+      expect(delta).toBeLessThan(0.02); // 仍是 0.01° 量级：远小于 1.5° 容许度
+      expect(row.longitude).toBeCloseTo(mod(row.geometricLongitude - row.aberration), 6);
+      expect(geometric[index].aberration).toBe(0); // 关闭时置零
+      expect(geometric[index].longitude).toBeCloseTo(geometric[index].geometricLongitude, 9);
+    }
+  });
+
+  it("reproduces the classical aberration constant for the Sun", () => {
+    // 自洽性检验：太阳地心黄经的日变化 ≈ 1°/天、距离 ≈ 1 AU，
+    // 同一式子应给出经典周年光行差常数 ≈ 20.5″。
+    const earth = heliocentricState(EARTH_ELEMENTS, 1);
+    const dailyMotion = ((earth.x * earth.vy - earth.y * earth.vx) / (earth.x * earth.x + earth.y * earth.y)) * (180 / Math.PI);
+    const arcseconds = aberrationDegrees(earth.radius, dailyMotion) * 3600;
+    expect(arcseconds).toBeGreaterThan(15);
+    expect(arcseconds).toBeLessThan(25);
   });
 });
 
@@ -119,10 +150,41 @@ describe("uranian chart", () => {
     const text = serializeUranianToStructuredText(chart);
     expect(text).toContain("汉堡学派");
     expect(text).toContain("Cupido");
+    expect(text).toContain("仅列前 60 条");
     const payload = JSON.parse(serializeUranianToCompactJson(chart)) as { format: string; tnps: unknown[]; bodies: unknown[] };
     expect(payload.format).toBe("qmdj-uranian-v1");
     expect(payload.tnps).toHaveLength(8);
     expect(payload.bodies).toHaveLength(chart.bodies.length);
+  });
+
+  it("recomputes the dial structures for the 22.5° and 45° dials", () => {
+    const input = profile();
+    const astro = buildAstroChart(input);
+    const ninety = buildUranianChart(input, astro, { modulus: 90, orb: 1.5 });
+
+    for (const modulus of [45, 22.5]) {
+      const chart = buildUranianChart(input, astro, { modulus, orb: 1.5 });
+      expect(chart.settings.modulus).toBe(modulus);
+      // 盘面与结构检索都按 modulus 重算，而不是沿用 90°。
+      for (const row of chart.tnps) {
+        expect(row.dial).toBeGreaterThanOrEqual(0);
+        expect(row.dial).toBeLessThan(modulus);
+        expect(row.dialLabel).toBe(formatDial(row.dial));
+      }
+      for (const entry of chart.midpoints) {
+        expect(entry.axis).toBeGreaterThanOrEqual(0);
+        expect(entry.axis).toBeLessThan(modulus);
+      }
+      for (const entry of chart.sums) {
+        expect(entry.axis).toBeGreaterThanOrEqual(0);
+        expect(entry.axis).toBeLessThan(modulus);
+      }
+      expect(chart.totals.midpoints).toBeGreaterThan(ninety.totals.midpoints);
+      expect(chart.midpoints).toHaveLength(Math.min(60, chart.totals.midpoints));
+      expect(chart.limits).toEqual({ structures: 60, equations: 40 });
+      expect(chart.equations.length).toBe(Math.min(40, chart.totals.equations));
+      expect(chart.totals.midpoints).toBeGreaterThanOrEqual(chart.totals.sums);
+    }
   });
 
   it("drops the angles when there is no birth place", () => {

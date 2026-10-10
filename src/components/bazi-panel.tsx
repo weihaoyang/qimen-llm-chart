@@ -24,6 +24,7 @@ import {
   type StrengthFactorState,
 } from "@/lib/bazi/structure-audit";
 import { getLuShenBranch, getTianYiBranches, getWenChangBranch, getYangRenBranch } from "@/lib/bazi/shen-sha";
+import { ProvenanceBlock } from "./provenance-block";
 
 type BaziPanelProps = {
   chart: NormalizedBaziChart | null;
@@ -925,6 +926,8 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
         </div>
       </section>
       </details>
+
+      <ProvenanceBlock system="bazi" />
     </div>
   );
 }

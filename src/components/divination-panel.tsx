@@ -9,6 +9,7 @@ import { buildHumanDesignTransit, type HumanDesignTransit } from "@/lib/human-de
 import type { TarotReading, TarotSpreadId } from "@/lib/tarot/types";
 import { AstroWheel } from "./astro-wheel";
 import { HumanDesignBodygraph } from "./human-design-bodygraph";
+import { ProvenanceBlock } from "./provenance-block";
 
 type Props =
   | { kind: "astro"; value: AstroChart; onCopyJson?: () => void; jsonCopied?: boolean }
@@ -36,6 +37,7 @@ export function DivinationPanel(props: Props) {
       <div className="astro-table">{value.points.map((point, index) => <div className="astro-row" key={point.name} style={{ "--item-index": index } as React.CSSProperties}><span className="astro-row__marker" /><b>{point.name}</b><span>{point.sign}</span><strong>{point.degree === null ? "—" : point.degree + "°"}</strong><small>{point.house === null ? "—" : "H" + point.house}</small></div>)}{!value.points.length ? <div className="empty-state"><b>还差一项输入</b><span>补充城市或经纬度后，才会计算上升点与宫位。</span></div> : null}</div>
       <div className="astro-detail-grid"><div><div className="divination-section-heading"><span>AXES</span><small>ASC / MC / DSC / IC</small></div>{Object.values(value.angles).map((point) => <div className="detail-line" key={point.name}><b>{point.name}</b><span>{displayPoint(point)}</span></div>)}</div><div><div className="divination-section-heading"><span>ASPECTS</span><small>{value.aspects.length} FOUND</small></div>{value.aspects.slice(0, 5).map((aspect) => <div className="detail-line" key={aspect.body1 + aspect.body2 + aspect.type}><b>{aspect.symbol} {aspect.body1} / {aspect.body2}</b><span>{aspect.strength}%</span></div>)}{!value.aspects.length ? <div className="detail-line"><span>缺少输入</span></div> : null}</div></div>
       <p className="divination-panel__note"><span>METHOD NOTE</span>{value.disclaimer}</p>
+      <ProvenanceBlock system={kind} />
     </section>;
   }
   if (kind === "human-design") {
@@ -62,6 +64,7 @@ export function DivinationPanel(props: Props) {
       </div>
       {composite ? <p className="divination-panel__note"><span>合图</span>{composite.type} · {composite.authority} · 定义 {composite.definition} · 通道 {composite.channels.length}（新增 {composite.newChannels.map((channel) => channel.gates.join("-")).join("、") || "无"}） · 新增中心 {composite.newCenters.join("、") || "无"} · 门 {composite.gates.length}</p> : null}
       <p className="divination-panel__note"><span>BOUNDARY</span>{value.disclaimer}</p>
+      <ProvenanceBlock system={kind} />
     </section>;
   }
   return <section className="divination-panel divination-panel--tarot" aria-label="塔罗牌">
@@ -70,5 +73,6 @@ export function DivinationPanel(props: Props) {
     <div className="divination-panel__rule" />
     <div className="tarot-spread">{value.cards.map((card, index) => <article className={"tarot-card " + (card.orientation === "逆位" ? "is-reversed" : "")} key={card.id} style={{ "--item-index": index } as React.CSSProperties}>{card.orientation === "逆位" ? <span className="tarot-card__reversed-badge" aria-hidden="true">倒立</span> : null}<div className="tarot-card__top"><small>0{index + 1} / {value.positions[index]}</small><em>{String(card.number).padStart(2, "0")}</em></div><div className="tarot-card__sigil" aria-hidden="true">{index === 0 ? "✦" : index === 1 ? "◈" : "✳"}</div><strong>{card.name}</strong><span data-orientation={card.orientation}>{card.orientation === "逆位" ? "倒立" : card.orientation} <i /> {card.keyword}</span><p>{card.meaning}</p><div className="tarot-card__footer">{card.arcana === "major" ? "MAJOR ARCANA" : "MINOR ARCANA"}<b>↗</b></div></article>)}</div>
     <p className="divination-panel__note"><span>REFLECTION NOTE</span>{value.disclaimer}</p>
+    <ProvenanceBlock system={kind} />
   </section>;
 }

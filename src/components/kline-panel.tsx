@@ -7,6 +7,7 @@ import { DEFAULT_WINDOW_RADIUS, defaultSelectedIndex, toLifeKlineRows, type Life
 import { KLineChart, KLineLegend } from "./kline-chart";
 import { KLineHud } from "./kline-hud";
 import { KLineTextTable } from "./kline-text-table";
+import { ProvenanceBlock } from "./provenance-block";
 
 type KlinePanelProps = {
   life: KlineSeries;
@@ -159,6 +160,8 @@ export function KlinePanel({ life, relationship, relationshipScales, aiContent, 
           <p className="kline-panel__disclaimer">{series.disclaimer}</p>
         </>
       )}
+
+      <ProvenanceBlock system="research" />
     </section>
   );
 }

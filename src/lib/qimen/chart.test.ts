@@ -79,12 +79,22 @@ describe("buildChart", () => {
     expect(chart.raw.fourPillars.hour).toEqual(direct.fourPillars.hour);
   });
 
-  it("switches to the taobi adapter when using split method", () => {
-    const chart = buildChart({
+  it("degrades retired split/maoshan settings to the default 3meta chart", () => {
+    const input = {
       datetime: "2026-07-06T23:30",
       timeZone: "Asia/Shanghai",
+    } as const;
+    // `copyright.generatedAt` 是出盘时间戳，比较盘面时剔除它。
+    const stableRaw = (chart: ReturnType<typeof buildChart>) => {
+      const { copyright: _copyright, ...raw } = chart.raw as ReturnType<typeof buildChart>["raw"] & {
+        copyright?: unknown;
+      };
+      return { raw, hiddenStemsByPalace: chart.hiddenStemsByPalace };
+    };
+    const defaultChart = buildChart({
+      ...input,
       qimenSettings: {
-        method: "split",
+        method: "default",
         solarTerm: "auto",
         dunType: "auto",
         juNumber: "auto",
@@ -92,12 +102,23 @@ describe("buildChart", () => {
       },
     });
 
-    expect(chart.engine).toBe("taobi");
-    expect(chart.raw.timeInfo.solarTerm).toBe("夏至");
-    expect(chart.raw.ju.type).toBe("阴遁");
-    expect(chart.raw.ju.number).toBe(9);
-    expect(chart.raw.zhiFu.position).toBe(9);
-    expect(chart.raw.zhiShi.gate).toBe("惊门");
-    expect(chart.raw.zhiShi.position).toBe(3);
+    for (const method of ["split", "maoshan"] as const) {
+      const chart = buildChart({
+        ...input,
+        qimenSettings: {
+          method,
+          solarTerm: "auto",
+          dunType: "auto",
+          juNumber: "auto",
+          yearDivide: "exact",
+        },
+      });
+
+      // 产线只有一条引擎路径：历史设置不再触发跨引擎盘，也不再缺暗干/格局。
+      expect(chart.engine).toBe("3meta");
+      expect(stableRaw(chart)).toEqual(stableRaw(defaultChart));
+      // 生效口径回写为 default，避免下游把 3meta 盘当成跨引擎对照盘解释。
+      expect(chart.input.qimenSettings?.method).toBe("default");
+    }
   });
 });

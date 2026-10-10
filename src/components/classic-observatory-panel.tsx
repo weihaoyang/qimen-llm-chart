@@ -1,6 +1,7 @@
 "use client";
 
 import { Compass } from "lucide-react";
+import { ProvenanceBlock } from "./provenance-block";
 
 type ClassicKind = "daliuren";
 type DaliurenJson = {
@@ -44,5 +45,7 @@ export function ClassicObservatoryPanel({ kind, value }: ClassicObservatoryPanel
   return <section className={`classic-observatory classic-observatory--${kind}`} aria-label={title}>
     <header className="classic-observatory__header"><div><span><Compass size={16} aria-hidden="true" /> 三式观测 · 大六壬</span><h2>{title}</h2><p>{description}</p></div><div className="classic-observatory__protocol"><strong>观测协议</strong><span>结构 → 依据 → 现实核验</span></div></header>
     {chart ? <DaliurenBoard chart={chart} /> : <div className="empty-panel">当前时间无法生成此盘，请先检查日期、时间与时区。</div>}
+
+    <ProvenanceBlock system="daliuren" />
   </section>;
 }

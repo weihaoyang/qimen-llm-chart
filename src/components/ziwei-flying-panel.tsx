@@ -2,6 +2,7 @@
 
 import type { ZiweiFlyingChart } from "@/lib/ziwei-flying/chart";
 import { MUTAGEN_NAMES, STEM_MUTAGENS, TECHNIQUES, TIAN_YI } from "@/lib/ziwei-flying/data";
+import { ProvenanceBlock } from "./provenance-block";
 
 export function ZiweiFlyingPanel({
   chart,
@@ -136,6 +137,8 @@ export function ZiweiFlyingPanel({
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}</p>
+
+      <ProvenanceBlock system="ziwei-flying" />
     </section>
   );
 }

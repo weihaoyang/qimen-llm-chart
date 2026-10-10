@@ -2,6 +2,7 @@
 
 import type { VedicChart } from "@/lib/vedic/chart";
 import { GRAHAS, RASHIS, VARGA_DEFINITIONS } from "@/lib/vedic/data";
+import { ProvenanceBlock } from "./provenance-block";
 
 const dms = (degree: number) => {
   const total = Math.round(degree * 60);
@@ -149,6 +150,7 @@ export function VedicPanel({
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}分盘规则出自 Parashara 体系的十六分盘（Shodashavarga），本仓按 MIT 许可的开源实现移植（`vedic-kundali` / `vedic-panchanga`）。</p>
+      <ProvenanceBlock system="vedic" />
     </section>
   );
 }

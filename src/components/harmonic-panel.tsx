@@ -2,6 +2,7 @@
 
 import type { HarmonicChart } from "@/lib/harmonic/chart";
 import { HarmonicWheel } from "./harmonic-wheel";
+import { ProvenanceBlock } from "./provenance-block";
 
 const PRESETS = [1, 4, 5, 7, 9, 16, 24, 36];
 
@@ -56,6 +57,7 @@ export function HarmonicPanel({ value, onHarmonicChange, onCopyJson, jsonCopied 
       </div>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{value.disclaimer}</p>
+      <ProvenanceBlock system="harmonic" />
     </section>
   );
 }

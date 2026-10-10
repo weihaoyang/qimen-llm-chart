@@ -36,6 +36,7 @@ const MODE_OPTIONS: Array<{
   { value: "taiyi-shenshu", label: "太乙神数" },
   { value: "akasha", label: "阿卡西 · 全息" },
   { value: "ziwei-flying", label: "紫微飞星" },
+  { value: "tieshen", label: "铁板神数 · 邵子神数" },
 ];
 
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {
