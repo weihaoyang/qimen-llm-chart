@@ -755,6 +755,14 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const firstRunGuide = useFirstRunGuide();
   const [guideReopened, setGuideReopened] = useState(false);
   const guideVisible = guideReopened || !firstRunGuide.dismissed;
+
+  // 首屏必须能看出「当前盘面是谁、什么时间」：把它直接写在「改时间」按钮上，
+  // 并标出这是不是默认样例（第一次用最容易在这里迷失）。
+  const profileMeta = useMemo(() => {
+    const datetime = normalizedProfile.normalized.datetime.replace("T", " ").slice(0, 16);
+    const city = normalizedProfile.original.location?.city ?? "未设出生地";
+    return { datetime, city, label: `${city} · ${datetime}` };
+  }, [normalizedProfile]);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const isMobile = useIsMobileViewport();
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
@@ -2714,7 +2722,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const mobileActionBar = isMobile ? (
     <nav className="mobile-action-bar" aria-label="排盘操作">
       {mode !== "research" && !classicWorkspace ? (
-        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料"><Clock size={14} strokeWidth={2} />改时间</button>
+        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta">{profileMeta.label}</span></button>
       ) : null}
       {mode !== "research" && !classicWorkspace ? (
         <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
@@ -2811,7 +2819,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
               title="修改出生时间 / 问事时间与排盘资料，改完点「应用并重新排盘」"
             >
               <Clock size={14} strokeWidth={2} />
-              改时间
+              改时间{" "}
+              <span className="hero-action__meta">{profileMeta.label}</span>
             </button>
           ) : null}
           {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
@@ -2830,6 +2839,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       {guideVisible ? (
         <FirstRunGuide
           open
+          profileSummary={profileMeta.label}
           onDismiss={() => {
             firstRunGuide.dismiss();
             setGuideReopened(false);

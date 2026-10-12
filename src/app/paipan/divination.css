@@ -540,3 +540,23 @@
 .first-run-guide__action:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--panel-ink); }
 .first-run-guide :is(.first-run-guide__dismiss, .first-run-guide__action):focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 2px; }
 
+/* 「改时间」按钮上直接显示当前盘面资料（城市 · 时间），首屏就知道自己看的是谁的盘 */
+.hero-action__meta { margin-left: 6px; color: var(--panel-muted); font: 700 10px var(--paipan-font-mono); letter-spacing: .02em; white-space: nowrap; }
+
+/* 手机端：引导改成浮层（底部抽屉式），不挤占盘面；z-index 低于底部操作条（80），留出 76px 空间 */
+@media (max-width: 720px) {
+  .first-run-guide {
+    position: fixed;
+    right: 8px;
+    bottom: 76px;
+    left: 8px;
+    z-index: 70;
+    max-height: 62dvh;
+    overflow: auto;
+    margin: 0;
+    box-shadow: 4px 4px 0 var(--panel-ink);
+  }
+  .first-run-guide__steps { grid-template-columns: 1fr; }
+  .hero-action__meta { display: block; margin-left: 0; }
+}
+

@@ -50,10 +50,13 @@ export const useFirstRunGuide = () => {
  */
 export function FirstRunGuide({
   open,
+  profileSummary,
   onDismiss,
   onOpenTimeSettings,
 }: {
   open: boolean;
+  /** 当前盘面资料（城市 · 时间，必要时带「默认样例」），写进第①步，让人一眼知道自己看的是谁的盘。 */
+  profileSummary?: string;
   onDismiss: () => void;
   onOpenTimeSettings: () => void;
 }) {
@@ -71,7 +74,8 @@ export function FirstRunGuide({
         <li>
           <b>① 先设时间</b>
           <span>
-            点右上「<em>改时间</em>」，填出生时间（或问事时间），再点「应用并重新排盘」。
+            当前盘面：<em>{profileSummary ?? "（未读取）"}</em>。点右上「<em>改时间</em>」改成你的出生时间
+            （或问事时间），再点「应用并重新排盘」。
           </span>
           <button type="button" className="first-run-guide__action" onClick={onOpenTimeSettings}>
             现在就去改时间
@@ -86,7 +90,8 @@ export function FirstRunGuide({
         <li>
           <b>③ 取用结果</b>
           <span>
-            点右上「<em>复制盘面资料</em>」→ 复制或下载「结构化文本 · JSON · 文献」，可直接贴给 AI、存档或换设备继续。
+            点右上「<em>复制盘面资料</em>」→ 复制或下载「结构化文本 · JSON · 文献」，可直接贴给 AI、存档或换设备继续；
+            想在本页直接问就点「<em>AI 盘面分析</em>」。
           </span>
         </li>
         <li>

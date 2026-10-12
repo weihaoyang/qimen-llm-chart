@@ -37,7 +37,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("dialog", { name: "盘面分析台" })).toBeInTheDocument();
     expect(screen.queryByText("开始人生议题访谈")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "改时间" }));
+    fireEvent.click(screen.getByRole("button", { name: /^改时间/ }));
     expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "序列" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "复制盘面资料" })).toBeInTheDocument();
@@ -384,6 +384,11 @@ describe("AppShell", () => {
     const guide = screen.getByRole("complementary", { name: "第一次使用引导" });
     expect(guide).toBeInTheDocument();
     expect(screen.getByText("第一次用？四步上手")).toBeInTheDocument();
+    // 引导里直接写出「当前盘面是哪一份」
+    expect(guide.textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+    // 「改时间」按钮自己就带着当前时间，首屏不用猜
+    const timeButton = screen.getByRole("button", { name: /^改时间/ });
+    expect(timeButton.textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
     // 「现在就去改时间」是真按钮：点它应直接打开排盘资料面板
     fireEvent.click(screen.getByRole("button", { name: "现在就去改时间" }));
     expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();
