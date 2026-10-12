@@ -539,6 +539,29 @@
 .first-run-guide__action { justify-self: start; margin-top: 2px; padding: 6px 10px; border: 2px solid var(--panel-ink); background: var(--paipan-accent); color: var(--panel-ink); font: 800 11px var(--paipan-font); cursor: pointer; box-shadow: 2px 2px 0 var(--panel-ink); }
 .first-run-guide__action:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--panel-ink); }
 .first-run-guide :is(.first-run-guide__dismiss, .first-run-guide__action):focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 2px; }
+.first-run-guide__head-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.first-run-guide__start { padding: 5px 10px; border: 2px solid var(--panel-ink); background: var(--paipan-accent); color: var(--panel-ink); font: 800 10px var(--paipan-font-mono); cursor: pointer; box-shadow: 2px 2px 0 var(--panel-ink); }
+.first-run-guide__start:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--panel-ink); }
+.first-run-guide__start:focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 2px; }
+
+/* 分步高亮指引：本页内逐个指出「在哪点」 */
+.guided-tour { position: fixed; inset: 0; z-index: 200; }
+.guided-tour__dim { position: absolute; inset: 0; background: rgba(18, 18, 20, .45); }
+.guided-tour__spotlight { position: absolute; pointer-events: none; border: 2px solid var(--paipan-accent); background: transparent; box-shadow: 0 0 0 9999px rgba(18, 18, 20, .45), 0 0 0 4px rgba(255, 253, 247, .4); }
+.guided-tour__callout { position: absolute; display: grid; gap: 8px; padding: 14px; border: 2px solid var(--panel-ink); background: #fffdf7; color: var(--panel-ink); box-shadow: 4px 4px 0 var(--panel-ink); }
+.guided-tour__callout.is-centered { top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(340px, calc(100vw - 24px)); }
+.guided-tour__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.guided-tour__head b { font-size: 15px; }
+.guided-tour__head span { color: var(--panel-muted); font: 800 10px var(--paipan-font-mono); }
+.guided-tour__callout p { margin: 0; font-size: 12.5px; line-height: 1.65; }
+.guided-tour__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.guided-tour__actions button { padding: 6px 12px; border: 2px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); font: 800 11px var(--paipan-font-mono); cursor: pointer; }
+.guided-tour__actions button.is-primary { background: var(--paipan-accent); }
+.guided-tour__actions button:disabled { opacity: .4; cursor: not-allowed; }
+.guided-tour__actions button:focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .guided-tour__callout { right: 12px; left: 12px !important; width: auto !important; }
+}
 
 /* 「改时间」按钮上直接显示当前盘面资料（城市 · 时间），首屏就知道自己看的是谁的盘 */
 .hero-action__meta { margin-left: 6px; color: var(--panel-muted); font: 700 10px var(--paipan-font-mono); letter-spacing: .02em; white-space: nowrap; }

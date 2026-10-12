@@ -53,12 +53,15 @@ export function FirstRunGuide({
   profileSummary,
   onDismiss,
   onOpenTimeSettings,
+  onStartTour,
 }: {
   open: boolean;
-  /** 当前盘面资料（城市 · 时间，必要时带「默认样例」），写进第①步，让人一眼知道自己看的是谁的盘。 */
+  /** 当前盘面资料（城市 · 时间），写进第①步，让人一眼知道自己看的是谁的盘。 */
   profileSummary?: string;
   onDismiss: () => void;
   onOpenTimeSettings: () => void;
+  /** 启动分步高亮指引：把「在哪点」逐个指出来。 */
+  onStartTour?: () => void;
 }) {
   if (!open) return null;
 
@@ -66,9 +69,16 @@ export function FirstRunGuide({
     <aside className="first-run-guide" aria-label="第一次使用引导">
       <div className="first-run-guide__head">
         <b>第一次用？四步上手</b>
-        <button type="button" className="first-run-guide__dismiss" onClick={onDismiss}>
-          知道了，不再显示
-        </button>
+        <span className="first-run-guide__head-actions">
+          {onStartTour ? (
+            <button type="button" className="first-run-guide__start" onClick={onStartTour}>
+              带我走一遍（在界面上高亮指出来）
+            </button>
+          ) : null}
+          <button type="button" className="first-run-guide__dismiss" onClick={onDismiss}>
+            知道了，不再显示
+          </button>
+        </span>
       </div>
       <ol className="first-run-guide__steps">
         <li>

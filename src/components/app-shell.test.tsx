@@ -389,6 +389,13 @@ describe("AppShell", () => {
     // 「改时间」按钮自己就带着当前时间，首屏不用猜
     const timeButton = screen.getByRole("button", { name: /^改时间/ });
     expect(timeButton.textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+    // 「带我走一遍」= 分步高亮指引：把「在哪点」逐个指出来
+    fireEvent.click(screen.getByRole("button", { name: /带我走一遍/ }));
+    const tour = screen.getByRole("dialog", { name: "分步指引" });
+    expect(tour).toBeInTheDocument();
+    expect(screen.getByText(`1 / 4`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "跳过" }));
+    expect(screen.queryByRole("dialog", { name: "分步指引" })).not.toBeInTheDocument();
     // 桌面端要点明「右侧就是 AI 对话区」，并给两个容易误解的入口加用途提示
     expect(screen.getByText(/右侧是 AI 对话区/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "出生档案" }).getAttribute("title") ?? "").toContain("导入 / 导出");

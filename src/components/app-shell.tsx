@@ -132,6 +132,7 @@ import { AkashaPanel } from "./akasha-panel";
 import { ZiweiFlyingPanel } from "./ziwei-flying-panel";
 import { ChartMaterials } from "./chart-materials";
 import { FirstRunGuide, useFirstRunGuide } from "./first-run-guide";
+import { GuidedTour, GUIDED_TOUR_STEPS } from "./guided-tour";
 import { ProvenanceLibrary } from "./provenance-library";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -755,6 +756,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const firstRunGuide = useFirstRunGuide();
   const [guideReopened, setGuideReopened] = useState(false);
   const guideVisible = guideReopened || !firstRunGuide.dismissed;
+  // 分步高亮指引（只在用户点「带我走一遍」时挂载，因此内部序号从 0 开始即可）。
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourIndex, setTourIndex] = useState(0);
 
   // 首屏必须能看出「当前盘面是谁、什么时间」：把它直接写在「改时间」按钮上，
   // 并标出这是不是默认样例（第一次用最容易在这里迷失）。
@@ -2591,6 +2595,23 @@ export function AppShell({ platformConfig }: AppShellProps) {
     )
     : null;
 
+  // 分步高亮指引：portal 到 body，避免被工作台的滚动/层叠上下文裁切。
+  const guidedTourOverlay = tourOpen && typeof document !== "undefined"
+    ? createPortal(
+      <GuidedTour
+        steps={GUIDED_TOUR_STEPS}
+        index={tourIndex}
+        onPrev={() => setTourIndex((current) => Math.max(0, current - 1))}
+        onNext={() => setTourIndex((current) => Math.min(GUIDED_TOUR_STEPS.length - 1, current + 1))}
+        onClose={() => {
+          setTourOpen(false);
+          setTourIndex(0);
+        }}
+      />,
+      document.body,
+    )
+    : null;
+
   // Keep a stable DOM anchor for chart integrations and smoke tests even while
   // the analysis drawer is closed. The interactive dialog remains portalized
   // and is mounted only on demand.
@@ -2723,16 +2744,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const mobileActionBar = isMobile ? (
     <nav className="mobile-action-bar" aria-label="排盘操作">
       {mode !== "research" && !classicWorkspace ? (
-        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta">{profileMeta.label}</span></button>
+        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料" data-tour="time"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta">{profileMeta.label}</span></button>
       ) : null}
       {mode !== "research" && !classicWorkspace ? (
         <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>出生档案</button>
       ) : null}
-      <div className="mobile-action mobile-action--materials">
+      <div className="mobile-action mobile-action--materials" data-tour="materials">
         <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
       </div>
       {mode !== "combined" && !classicWorkspace ? (
-        <button type="button" className="mobile-action mobile-action--primary" onClick={() => setChartAnalysisOpen(true)} title="在底部「AI 盘面分析」里提问，或把分析台展开">
+        <button type="button" className="mobile-action mobile-action--primary" data-tour="ai" onClick={() => setChartAnalysisOpen(true)} title="在底部「AI 盘面分析」里提问，或把分析台展开">
           <span>AI</span>盘面分析
         </button>
       ) : null}
@@ -2789,7 +2810,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
           <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
 
-          <div className="observatory-hero__materials">
+          <div className="observatory-hero__materials" data-tour="materials">
             <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
           </div>
 
@@ -2818,6 +2839,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
               aria-haspopup="dialog"
               onClick={openParameters}
               title="修改出生时间 / 问事时间与排盘资料，改完点「应用并重新排盘」"
+              data-tour="time"
             >
               <Clock size={14} strokeWidth={2} />
               改时间{" "}
@@ -2848,6 +2870,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
             setGuideReopened(false);
           }}
           onOpenTimeSettings={openParameters}
+          onStartTour={() => {
+            setTourOpen(true);
+            setTourIndex(0);
+          }}
         />
       ) : null}
 
@@ -2879,13 +2905,14 @@ export function AppShell({ platformConfig }: AppShellProps) {
                 <GripVertical size={17} strokeWidth={1.8} />
               </span>
             </div>
-            <section id="qimen-agent" className="analysis-panel">
+            <section id="qimen-agent" className="analysis-panel" data-tour="ai">
               {workbenchSidebar}
             </section>
           </main>
           {chartAnalysisAnchor}
           {chartAnalysisOverlay}
           {sourceLibraryOverlay}
+          {guidedTourOverlay}
         </>
       )}
 

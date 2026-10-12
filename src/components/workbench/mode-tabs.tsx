@@ -126,7 +126,7 @@ export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect
   };
 
   return (
-    <div className="workbench-tabs workbench-tabs--paged" ref={hostRef} data-pages={pageCount}>
+    <div className="workbench-tabs workbench-tabs--paged" ref={hostRef} data-pages={pageCount} data-tour="tabs">
       {pageCount > 1 ? (
         <button
           type="button"
