@@ -43,6 +43,48 @@ export const GUIDED_TOUR_STEPS: readonly GuidedTourStep[] = [
 
 type Rect = { top: number; left: number; width: number; height: number };
 
+const SEEN_KEY = "qmdj-guided-tour-seen";
+const CHANGE_EVENT = "qmdj-guided-tour-change";
+
+const subscribeSeen = (onChange: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(CHANGE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+};
+
+const readSeen = () => {
+  try {
+    return window.localStorage.getItem(SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const markTourSeen = () => {
+  try {
+    window.localStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    /* 隐私模式忽略 */
+  }
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+};
+
+/**
+ * 「是否已经自动走过一次分步指引」。
+ *
+ * 服务端快照为 `true`（SSR 不自动弹指引），客户端若从未走过则水合后变为 `false`，
+ * 由调用方在首次进入时自动启动一次——不依赖 effect 内同步 setState。
+ */
+export const useGuidedTourSeen = () => {
+  const seen = useSyncExternalStore(subscribeSeen, readSeen, () => true);
+  return { seen, markSeen: markTourSeen };
+};
+
+
 const GAP = 10;
 const CALLOUT_WIDTH = 340;
 

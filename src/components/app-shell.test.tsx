@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PROVENANCE } from "@/lib/provenance/registry";
 import { provenanceSearchText } from "./provenance-block";
 import { AppShell } from "./app-shell";
@@ -20,6 +20,10 @@ if (!globalThis.ResizeObserver) {
 
 describe("AppShell", () => {
   afterEach(() => { cleanup(); localStorage.clear(); });
+
+  // 默认把「已自动走过分步指引」标上，避免自动弹层干扰其余用例；
+  // 专门验证自动引导的用例会自行清掉这个标记。
+  beforeEach(() => { localStorage.setItem("qmdj-guided-tour-seen", "1"); });
 
   it("keeps single-chart and sequence analysis in the chart product", async () => {
     render(<AppShell platformConfig={{
@@ -412,5 +416,24 @@ describe("AppShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "使用说明" }));
     expect(screen.getByRole("complementary", { name: "第一次使用引导" })).toBeInTheDocument();
+  }, 60000);
+
+  it("首次进入自动走一次分步指引，且只自动一次", async () => {
+    localStorage.removeItem("qmdj-guided-tour-seen");
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    // 首次进入会自动弹出（延迟 1.2s 让页面先稳定），并记下"已走过"
+    expect(await screen.findByRole("dialog", { name: "分步指引" }, { timeout: 5000 })).toBeInTheDocument();
+    expect(localStorage.getItem("qmdj-guided-tour-seen")).toBe("1");
+    expect(screen.getByText(`1 / ${4}`)).toBeInTheDocument();
+
+    // 跳过之后不再出现（也不会在本次会话里重弹）
+    fireEvent.click(screen.getByRole("button", { name: "跳过" }));
+    expect(screen.queryByRole("dialog", { name: "分步指引" })).not.toBeInTheDocument();
   }, 60000);
 });

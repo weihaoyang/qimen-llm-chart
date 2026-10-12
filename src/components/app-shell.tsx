@@ -132,7 +132,7 @@ import { AkashaPanel } from "./akasha-panel";
 import { ZiweiFlyingPanel } from "./ziwei-flying-panel";
 import { ChartMaterials } from "./chart-materials";
 import { FirstRunGuide, useFirstRunGuide } from "./first-run-guide";
-import { GuidedTour, GUIDED_TOUR_STEPS } from "./guided-tour";
+import { GuidedTour, GUIDED_TOUR_STEPS, useGuidedTourSeen } from "./guided-tour";
 import { ProvenanceLibrary } from "./provenance-library";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -759,6 +759,21 @@ export function AppShell({ platformConfig }: AppShellProps) {
   // 分步高亮指引（只在用户点「带我走一遍」时挂载，因此内部序号从 0 开始即可）。
   const [tourOpen, setTourOpen] = useState(false);
   const [tourIndex, setTourIndex] = useState(0);
+  // 首次进入自动走一次指引（每个浏览器只自动一次；跳过/Esc 也算走过，之后可在「使用说明」里再打开）。
+  const guidedTourSeen = useGuidedTourSeen();
+  const [tourAutoStarted, setTourAutoStarted] = useState(false);
+  const markTourSeen = guidedTourSeen.markSeen;
+  useEffect(() => {
+    if (guidedTourSeen.seen) return undefined;
+    if (typeof window === "undefined") return undefined;
+    const timer = window.setTimeout(() => {
+      markTourSeen();
+      setTourAutoStarted(true);
+      setTourOpen(true);
+      setTourIndex(0);
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [guidedTourSeen.seen, markTourSeen]);
 
   // 首屏必须能看出「当前盘面是谁、什么时间」：把它直接写在「改时间」按钮上，
   // 并标出这是不是默认样例（第一次用最容易在这里迷失）。
@@ -2595,6 +2610,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
         onClose={() => {
           setTourOpen(false);
           setTourIndex(0);
+          // 自动走过一次后，文本版横幅就没必要再占位置了（用户仍可用「使用说明」叫回来）。
+          if (tourAutoStarted) {
+            firstRunGuide.dismiss();
+            setGuideReopened(false);
+          }
+          setTourAutoStarted(false);
         }}
       />,
       document.body,
