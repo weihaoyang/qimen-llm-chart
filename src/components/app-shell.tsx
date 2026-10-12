@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import type { Position } from "3meta";
-import { GripVertical } from "lucide-react";
+import { Clock, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
@@ -131,6 +131,7 @@ import { TaiyiPanel } from "./taiyi-panel";
 import { AkashaPanel } from "./akasha-panel";
 import { ZiweiFlyingPanel } from "./ziwei-flying-panel";
 import { ChartMaterials } from "./chart-materials";
+import { FirstRunGuide, useFirstRunGuide } from "./first-run-guide";
 import { ProvenanceLibrary } from "./provenance-library";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
@@ -749,6 +750,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [baziPairOpen, setBaziPairOpen] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
   const [sourceLibraryOpen, setSourceLibraryOpen] = useState(false);
+  // 第一次使用引导：默认按「未关闭」渲染（SSR 也有），用户点「知道了」后持久化隐藏；
+  // 「使用说明」按钮可在本次会话内重新打开。
+  const firstRunGuide = useFirstRunGuide();
+  const [guideReopened, setGuideReopened] = useState(false);
+  const guideVisible = guideReopened || !firstRunGuide.dismissed;
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const isMobile = useIsMobileViewport();
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
@@ -2708,7 +2714,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const mobileActionBar = isMobile ? (
     <nav className="mobile-action-bar" aria-label="排盘操作">
       {mode !== "research" && !classicWorkspace ? (
-        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters}>调整盘面</button>
+        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料"><Clock size={14} strokeWidth={2} />改时间</button>
       ) : null}
       {mode !== "research" && !classicWorkspace ? (
         <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
@@ -2785,6 +2791,14 @@ export function AppShell({ platformConfig }: AppShellProps) {
             <button type="button" className="hero-action" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>
               资料库
             </button>
+            <button
+              type="button"
+              className="hero-action"
+              onClick={() => setGuideReopened(true)}
+              title="重新显示「第一次用？四步上手」"
+            >
+              使用说明
+            </button>
           </div>
           {mode !== "research" && !classicWorkspace ? (
             <button
@@ -2794,8 +2808,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
               aria-expanded={parametersOpen}
               aria-haspopup="dialog"
               onClick={openParameters}
+              title="修改出生时间 / 问事时间与排盘资料，改完点「应用并重新排盘」"
             >
-              调整盘面
+              <Clock size={14} strokeWidth={2} />
+              改时间
             </button>
           ) : null}
           {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
@@ -2810,6 +2826,17 @@ export function AppShell({ platformConfig }: AppShellProps) {
           </div>
         </header>
       )}
+
+      {guideVisible ? (
+        <FirstRunGuide
+          open
+          onDismiss={() => {
+            firstRunGuide.dismiss();
+            setGuideReopened(false);
+          }}
+          onOpenTimeSettings={openParameters}
+        />
+      ) : null}
 
       {error ? <p className="error-banner">{error}</p> : null}
 

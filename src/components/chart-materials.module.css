@@ -104,6 +104,16 @@
   font-size: 12px;
 }
 
+.hint {
+  margin: 0;
+  padding: 12px 20px 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #4a463f;
+}
+
+.hint b { color: #191919; }
+
 .drawer pre {
   flex: 1;
   min-height: 0;
