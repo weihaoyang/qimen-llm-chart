@@ -678,7 +678,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `知几生日库-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `知几出生档案-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     setImportStatus(`已导出 ${birthProfiles.length} 条`);
@@ -2531,6 +2531,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       aria-controls="chart-analysis-drawer"
       aria-expanded={chartAnalysisOpen}
       onClick={() => setChartAnalysisOpen(true)}
+      title="在右侧对话区提问；点这里可把分析台展开成抽屉"
     >
       <span>AI</span>
       盘面分析
@@ -2648,15 +2649,15 @@ export function AppShell({ platformConfig }: AppShellProps) {
     : visibleBirthProfiles;
 
   const birthLibraryPanel = (
-    <div className="birth-library-popover" role="dialog" aria-label="姓名与生日库">
-      <strong>姓名与生日库</strong>
+    <div className="birth-library-popover" role="dialog" aria-label="姓名与出生档案">
+      <strong>姓名与出生档案</strong>
       <div className="birth-library-save"><input value={birthName} onChange={(event) => setBirthName(event.target.value)} placeholder="姓名" aria-label="姓名" /><button type="button" onClick={saveBirthProfile}>保存当前</button></div>
       <div className="birth-library-tools">
         <button type="button" onClick={exportBirthProfiles} disabled={!birthProfiles.length}>导出</button>
-        <label className="birth-library-import">导入<input type="file" accept="application/json,.json" aria-label="导入生日库文件" onChange={(event) => { const file = event.target.files?.[0]; if (file) importBirthProfiles(file); event.target.value = ""; }} /></label>
+        <label className="birth-library-import">导入<input type="file" accept="application/json,.json" aria-label="导入出生档案文件" onChange={(event) => { const file = event.target.files?.[0]; if (file) importBirthProfiles(file); event.target.value = ""; }} /></label>
         {importStatus ? <span className="birth-library-status" role="status">{importStatus}</span> : null}
       </div>
-      {birthProfiles.length ? <input className="birth-library-search" value={birthQuery} onChange={(event) => setBirthQuery(event.target.value)} placeholder="搜索姓名或生日" aria-label="搜索生日库" /> : null}
+      {birthProfiles.length ? <input className="birth-library-search" value={birthQuery} onChange={(event) => setBirthQuery(event.target.value)} placeholder="搜索姓名或生日" aria-label="搜索出生档案" /> : null}
       {orderedBirthProfiles.map((item) => renamingBirthId === item.id ? (
         <div className="birth-library-item birth-library-item--renaming" key={item.id}>
           <input
@@ -2725,13 +2726,13 @@ export function AppShell({ platformConfig }: AppShellProps) {
         <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta">{profileMeta.label}</span></button>
       ) : null}
       {mode !== "research" && !classicWorkspace ? (
-        <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
+        <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>出生档案</button>
       ) : null}
       <div className="mobile-action mobile-action--materials">
         <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
       </div>
       {mode !== "combined" && !classicWorkspace ? (
-        <button type="button" className="mobile-action mobile-action--primary" onClick={() => setChartAnalysisOpen(true)}>
+        <button type="button" className="mobile-action mobile-action--primary" onClick={() => setChartAnalysisOpen(true)} title="在底部「AI 盘面分析」里提问，或把分析台展开">
           <span>AI</span>盘面分析
         </button>
       ) : null}
@@ -2751,9 +2752,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
       ) : null}
       {birthLibraryOpen && mode !== "research" && !classicWorkspace ? (
         <div className="mobile-sheet" role="presentation">
-          <button type="button" className="mobile-sheet__backdrop" aria-label="关闭生日库" onClick={() => setBirthLibraryOpen(false)} />
-          <section className="mobile-sheet__panel" role="dialog" aria-modal="true" aria-label="姓名与生日库">
-            <header className="mobile-sheet__head"><strong>生日库</strong><button type="button" aria-label="关闭生日库" onClick={() => setBirthLibraryOpen(false)}>×</button></header>
+          <button type="button" className="mobile-sheet__backdrop" aria-label="关闭出生档案" onClick={() => setBirthLibraryOpen(false)} />
+          <section className="mobile-sheet__panel" role="dialog" aria-modal="true" aria-label="姓名与出生档案">
+            <header className="mobile-sheet__head"><strong>出生档案</strong><button type="button" aria-label="关闭出生档案" onClick={() => setBirthLibraryOpen(false)}>×</button></header>
             <div className="mobile-sheet__body">{birthLibraryPanel}</div>
           </section>
         </div>
@@ -2824,14 +2825,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
             </button>
           ) : null}
           {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
-            <button type="button" className="hero-action" onClick={() => setBirthLibraryOpen((value) => !value)}>生日库</button>
+            <button type="button" className="hero-action" onClick={() => setBirthLibraryOpen((value) => !value)} title="保存常用出生资料：一键切换、导入 / 导出 JSON">出生档案</button>
             {birthLibraryOpen ? birthLibraryPanel : null}
           </div> : null}
 
           <div className="observatory-hero__agent-entry">
             {mode === "combined" || mode === "research" ? (
               <span className="observatory-hero__agent-status">{mode === "combined" ? "三盘数据已注入 Agent" : "研究材料已注入 Agent"}</span>
-            ) : null}
+            ) : (
+              <span className="observatory-hero__agent-status">右侧是 AI 对话区 · 点「盘面分析」可展开分析台</span>
+            )}
           </div>
         </header>
       )}

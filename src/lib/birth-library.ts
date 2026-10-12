@@ -1,5 +1,5 @@
 /**
- * 生日库（姓名与生日库）的导入/导出与合并。
+ * 出生档案（姓名与出生档案）的导入/导出与合并。
  *
  * 档案存在浏览器 localStorage（`qmdj-birth-library`）；这里只放纯逻辑，
  * 方便导出成 JSON 备份、换设备导入，并在导入时做形状校验与去重合并。
@@ -17,7 +17,7 @@ export const MAX_BIRTH_PROFILES = 50;
 
 export const BIRTH_LIBRARY_FORMAT = "qmdj-birth-library-v1";
 
-/** 生日库条目的次要信息：`1990-01-01 12:00 · 男 · 农历 · 真太阳时 · 上海`。 */
+/** 出生档案条目的次要信息：`1990-01-01 12:00 · 男 · 农历 · 真太阳时 · 上海`。 */
 const GENDER_LABEL: Record<string, string> = { male: "男", female: "女" };
 export const formatBirthProfileMeta = (profile: ProfileInput): string => {
   const parts = [profile.datetime.replace("T", " ")];

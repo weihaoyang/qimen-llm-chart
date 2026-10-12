@@ -129,7 +129,7 @@ describe("AppShell", () => {
     }
   }, 60000);
 
-  it("renames a saved 生日库 profile", async () => {
+  it("renames a saved 出生档案 profile", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "seed-1", name: "旧名", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
@@ -140,7 +140,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     fireEvent.click(screen.getByRole("button", { name: "重命名旧名" }));
     fireEvent.change(screen.getByRole("textbox", { name: "重命名旧名" }), { target: { value: "新名" } });
@@ -152,7 +152,7 @@ describe("AppShell", () => {
     expect(stored[0]?.name).toBe("新名");
   }, 60000);
 
-  it("imports a 生日库 JSON export into the library", async () => {
+  it("imports a 出生档案 JSON export into the library", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
       productCode: "shengtian-banzi",
@@ -160,7 +160,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     const payload = JSON.stringify({
       format: "qmdj-birth-library-v1",
@@ -168,7 +168,7 @@ describe("AppShell", () => {
         { id: "imp-1", name: "导入甲", profile: { calendarMode: "solar", datetime: "1985-05-05T08:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
       ],
     });
-    const input = screen.getByLabelText("导入生日库文件");
+    const input = screen.getByLabelText("导入出生档案文件");
     Object.defineProperty(input, "files", {
       value: [new File([payload], "lib.json", { type: "application/json" })],
       configurable: true,
@@ -181,7 +181,7 @@ describe("AppShell", () => {
     expect(stored.map((item) => item.name)).toEqual(["导入甲"]);
   }, 60000);
 
-  it("filters 生日库 by name and birthday and shows an empty state", async () => {
+  it("filters 出生档案 by name and birthday and shows an empty state", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "s-1", name: "小明", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
       { id: "s-2", name: "小红", profile: { calendarMode: "solar", datetime: "2000-12-31T20:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
@@ -193,8 +193,8 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
-    const search = screen.getByLabelText("搜索生日库");
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
+    const search = screen.getByLabelText("搜索出生档案");
 
     fireEvent.change(search, { target: { value: "小红" } });
     expect(screen.getByRole("button", { name: "重命名小红" })).toBeInTheDocument();
@@ -208,7 +208,7 @@ describe("AppShell", () => {
     expect(screen.getByText(/没有匹配/)).toBeInTheDocument();
   }, 60000);
 
-  it("moves the last-used 生日库 profile to the front", async () => {
+  it("moves the last-used 出生档案 profile to the front", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "r-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
       { id: "r-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
@@ -220,14 +220,14 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     fireEvent.click(screen.getByRole("button", { name: /^乙/ }));
     const stored = JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]") as Array<{ name: string }>;
     expect(stored.map((item) => item.name)).toEqual(["乙", "甲"]);
   }, 60000);
 
-  it("overwrites a saved 生日库 profile with the current chart input", async () => {
+  it("overwrites a saved 出生档案 profile with the current chart input", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "o-1", name: "待更新", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
@@ -238,7 +238,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     fireEvent.click(screen.getByRole("button", { name: "更新待更新" }));
     expect(screen.getByText(/用当前盘面资料覆盖/)).toBeInTheDocument();
@@ -251,7 +251,7 @@ describe("AppShell", () => {
     expect(stored[0]?.profile.datetime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
   }, 60000);
 
-  it("asks before deleting a 生日库 profile", async () => {
+  it("asks before deleting a 出生档案 profile", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "d-1", name: "需要确认", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
@@ -262,7 +262,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     fireEvent.click(screen.getByRole("button", { name: "删除需要确认" }));
     expect(screen.getByText(/确认删除/)).toBeInTheDocument();
@@ -276,7 +276,7 @@ describe("AppShell", () => {
     expect(JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]")).toEqual([]);
   }, 60000);
 
-  it("reports when saving reuses an existing 生日库 name", async () => {
+  it("reports when saving reuses an existing 出生档案 name", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "n-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
@@ -287,7 +287,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
     const nameInput = screen.getByLabelText("姓名");
 
     fireEvent.change(nameInput, { target: { value: "乙" } });
@@ -301,7 +301,7 @@ describe("AppShell", () => {
     expect(JSON.parse(localStorage.getItem("qmdj-birth-library") || "[]")).toHaveLength(2);
   }, 60000);
 
-  it("warns when renaming to an existing 生日库 name", async () => {
+  it("warns when renaming to an existing 出生档案 name", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "e-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
       { id: "e-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
@@ -313,7 +313,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     fireEvent.click(screen.getByRole("button", { name: "重命名乙" }));
     fireEvent.change(screen.getByRole("textbox", { name: "重命名乙" }), { target: { value: "甲" } });
@@ -322,7 +322,7 @@ describe("AppShell", () => {
     expect(screen.getByText(/与既有档案同名/)).toBeInTheDocument();
   }, 60000);
 
-  it("pins a 生日库 profile to the front", async () => {
+  it("pins a 出生档案 profile to the front", async () => {
     localStorage.setItem("qmdj-birth-library", JSON.stringify([
       { id: "p-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
       { id: "p-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
@@ -334,7 +334,7 @@ describe("AppShell", () => {
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
-    fireEvent.click(screen.getByRole("button", { name: "生日库" }));
+    fireEvent.click(screen.getByRole("button", { name: "出生档案" }));
 
     fireEvent.click(screen.getByRole("button", { name: "置顶乙" }));
     expect(screen.getByText(/已置顶「乙」/)).toBeInTheDocument();
@@ -389,6 +389,10 @@ describe("AppShell", () => {
     // 「改时间」按钮自己就带着当前时间，首屏不用猜
     const timeButton = screen.getByRole("button", { name: /^改时间/ });
     expect(timeButton.textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+    // 桌面端要点明「右侧就是 AI 对话区」，并给两个容易误解的入口加用途提示
+    expect(screen.getByText(/右侧是 AI 对话区/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "出生档案" }).getAttribute("title") ?? "").toContain("导入 / 导出");
+    expect(screen.getByRole("button", { name: /盘面分析/ }).getAttribute("title") ?? "").toContain("右侧对话区");
     // 「现在就去改时间」是真按钮：点它应直接打开排盘资料面板
     fireEvent.click(screen.getByRole("button", { name: "现在就去改时间" }));
     expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();
