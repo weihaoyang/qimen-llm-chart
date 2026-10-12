@@ -32,9 +32,9 @@ describe("AppShell", () => {
     expect(screen.queryByRole("button", { name: /管理员.*邀请码/ })).not.toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).not.toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-analysis-drawer"]')).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /盘面分析/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /盘面分析/ }));
-    expect(screen.getByRole("dialog", { name: "盘面分析台" })).toBeInTheDocument();
+    // AI 面板已收敛：桌面非三盘模式下 AI 常驻右侧对话区，不再有重复的「盘面分析」抽屉按钮
+    expect(screen.queryByRole("button", { name: /盘面分析/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "发送给 Agent 的问题" })).toBeInTheDocument();
     expect(screen.queryByText("开始人生议题访谈")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^改时间/ }));
@@ -396,10 +396,11 @@ describe("AppShell", () => {
     expect(screen.getByText(`1 / 4`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "跳过" }));
     expect(screen.queryByRole("dialog", { name: "分步指引" })).not.toBeInTheDocument();
-    // 桌面端要点明「右侧就是 AI 对话区」，并给两个容易误解的入口加用途提示
+    // 桌面端要点明「右侧就是 AI 对话区」，并给容易误解的入口加用途提示
     expect(screen.getByText(/右侧是 AI 对话区/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "出生档案" }).getAttribute("title") ?? "").toContain("导入 / 导出");
-    expect(screen.getByRole("button", { name: /盘面分析/ }).getAttribute("title") ?? "").toContain("右侧对话区");
+    // AI 面板已收敛：默认模式下不再有重复的「盘面分析」抽屉按钮
+    expect(screen.queryByRole("button", { name: /盘面分析/ })).not.toBeInTheDocument();
     // 「现在就去改时间」是真按钮：点它应直接打开排盘资料面板
     fireEvent.click(screen.getByRole("button", { name: "现在就去改时间" }));
     expect(screen.getByRole("tab", { name: "单张" })).toBeInTheDocument();

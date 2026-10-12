@@ -2528,20 +2528,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
     </div>
   );
 
-  const chartAnalysisToggle = (
-    <button
-      type="button"
-      className="chart-analysis-toggle"
-      aria-controls="chart-analysis-drawer"
-      aria-expanded={chartAnalysisOpen}
-      onClick={() => setChartAnalysisOpen(true)}
-      title="在右侧对话区提问；点这里可把分析台展开成抽屉"
-    >
-      <span>AI</span>
-      盘面分析
-    </button>
-  );
-
+  // 移动端（无侧栏）与需要临时放大时才用抽屉；桌面非三盘模式的 AI 常驻右侧对话区，
+  // 因此不再提供重复的「盘面分析」按钮。
   const chartAnalysisOverlay = chartAnalysisOpen
     && typeof document !== "undefined"
     ? createPortal(
@@ -2558,9 +2546,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
               <strong>AI 分析</strong>
               <button type="button" onClick={() => setChartAnalysisOpen(false)} aria-label="关闭盘面分析">×</button>
             </header>
-            {/* The compact analysis drawer owns a single inspector instance;
-                rendering the full sidebar here would duplicate its tabs while
-                the main workbench remains mounted underneath the portal. */}
+            {/* 桌面端非三盘模式：AI 就常驻右侧对话区（agentInspector 在 workbenchSidebar 里），
+                所以这里不再提供重复的「盘面分析」抽屉按钮；三盘模式桌面端右侧没有对话区、
+                移动端没有侧栏，仍走这个抽屉。为避免同一时刻存在两个 inspector 实例，
+                workbenchSidebar 里会以 !chartAnalysisOpen 让位。 */}
             {agentInspector}
           </section>
         </div>
@@ -2855,7 +2844,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             {mode === "combined" || mode === "research" ? (
               <span className="observatory-hero__agent-status">{mode === "combined" ? "三盘数据已注入 Agent" : "研究材料已注入 Agent"}</span>
             ) : (
-              <span className="observatory-hero__agent-status">右侧是 AI 对话区 · 点「盘面分析」可展开分析台</span>
+              <span className="observatory-hero__agent-status">右侧是 AI 对话区 · 直接在下方输入问题</span>
             )}
           </div>
         </header>
@@ -2898,7 +2887,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
           >
             <section id="qimen-chart" className="analysis-panel">
               {workbenchCanvas}
-              {isMobile ? null : chartAnalysisToggle}
             </section>
             <div id="qimen-workbench-separator" className="analysis-panel-divider" aria-hidden="true">
               <span className="analysis-panel-divider__grip" aria-hidden="true">

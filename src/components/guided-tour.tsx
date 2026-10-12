@@ -37,7 +37,7 @@ export const GUIDED_TOUR_STEPS: readonly GuidedTourStep[] = [
     id: "ai",
     selector: '[data-tour="ai"]',
     title: "④ 问 AI",
-    body: "桌面右侧就是 AI 对话区（点「盘面分析」可展开成抽屉查看）；手机点底部「AI 盘面分析」。",
+    body: "桌面右侧就是 AI 对话区：直接在下方输入框提问（可拖拽调宽）；手机点底部「AI 盘面分析」。",
   },
 ];
 
