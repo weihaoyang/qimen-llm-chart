@@ -131,6 +131,7 @@ import { TaiyiPanel } from "./taiyi-panel";
 import { AkashaPanel } from "./akasha-panel";
 import { ZiweiFlyingPanel } from "./ziwei-flying-panel";
 import { ChartMaterials } from "./chart-materials";
+import { ProvenanceLibrary } from "./provenance-library";
 import parameterStyles from "./parameters-drawer.module.css";
 import { buildAstroChart } from "@/lib/astro/chart";
 import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "@/lib/astro/serializer";
@@ -747,6 +748,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
   const [baziPairOpen, setBaziPairOpen] = useState(false);
   const [chartAnalysisOpen, setChartAnalysisOpen] = useState(false);
+  const [sourceLibraryOpen, setSourceLibraryOpen] = useState(false);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const isMobile = useIsMobileViewport();
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
@@ -2548,6 +2550,32 @@ export function AppShell({ platformConfig }: AppShellProps) {
     )
     : null;
 
+  // 出处与原文资料库：与各体系面板底部的「出处与原文」读同一份登记册，
+  // 但集中在一处并支持全文检索 / 按体系与状态筛选。
+  const sourceLibraryOverlay = sourceLibraryOpen
+    && typeof document !== "undefined"
+    ? createPortal(
+      <div className="product-chart chart-analysis-portal">
+        <div className="chart-analysis-drawer is-open" aria-hidden={false}>
+          <button
+            type="button"
+            className="chart-analysis-drawer__backdrop"
+            aria-label="关闭资料库遮罩"
+            onClick={() => setSourceLibraryOpen(false)}
+          />
+          <section className="chart-analysis-drawer__panel" id="source-library-drawer" role="dialog" aria-label="出处与原文资料库" aria-modal="true">
+            <header className="chart-analysis-drawer__header">
+              <strong>出处与原文 · 资料库</strong>
+              <button type="button" onClick={() => setSourceLibraryOpen(false)} aria-label="关闭资料库">×</button>
+            </header>
+            <ProvenanceLibrary />
+          </section>
+        </div>
+      </div>,
+      document.body,
+    )
+    : null;
+
   // Keep a stable DOM anchor for chart integrations and smoke tests even while
   // the analysis drawer is closed. The interactive dialog remains portalized
   // and is mounted only on demand.
@@ -2731,6 +2759,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
               <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "游客模式"}</span>
               <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "账户与权益"}</small>
             </button>
+            <button type="button" className="mobile-account-trigger" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>
+              <span>资料库</span>
+              <small>出处与原文</small>
+            </button>
           </div>
           <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
         </header>
@@ -2748,6 +2780,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
           {platformAccount}
 
+          {/* 资料库与当前盘面无关，任何模式都可查阅。 */}
+          <div className="birth-library-control">
+            <button type="button" className="hero-action" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>
+              资料库
+            </button>
+          </div>
           {mode !== "research" && !classicWorkspace ? (
             <button
               className="hero-action"
@@ -2807,6 +2845,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           </main>
           {chartAnalysisAnchor}
           {chartAnalysisOverlay}
+          {sourceLibraryOverlay}
         </>
       )}
 

@@ -512,3 +512,16 @@
 .provenance__document-note { margin: 8px 0; padding: 6px 8px; border-left: 3px solid var(--panel-line); color: var(--panel-muted); font-size: 11px; line-height: 1.6; }
 @media (max-width: 620px) { .provenance__list { padding-left: 12px; } }
 
+/* 资料库（全局可搜索）· 与面板内的「出处与原文」共用条目样式 */
+.provenance-library { display: grid; gap: 12px; }
+.provenance-library__search { display: flex; align-items: center; gap: 8px; font: 800 11px var(--paipan-font-mono); letter-spacing: .08em; }
+.provenance-library__search input { flex: 1 1 auto; min-width: 0; padding: 9px 10px; border: 2px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); font: 700 13px var(--paipan-font); }
+.provenance-library__search input:focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 1px; }
+.provenance-library__filters { display: grid; gap: 8px; }
+.provenance-library__chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.provenance-library__chips button { padding: 4px 9px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); font: 800 10px var(--paipan-font-mono); cursor: pointer; }
+.provenance-library__chips button:hover { background: var(--paipan-ground); }
+.provenance-library__chips button.is-active { background: var(--paipan-accent); font-weight: 950; }
+.provenance-library__count { margin: 0; color: var(--panel-muted); font: 700 11px var(--paipan-font-mono); }
+.provenance__system { padding: 1px 6px; border: 1px solid var(--panel-line); background: var(--paipan-ground); color: var(--panel-muted); font: 800 9px var(--paipan-font-mono); letter-spacing: .06em; }
+

@@ -3,6 +3,8 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { PROVENANCE } from "@/lib/provenance/registry";
+import { provenanceSearchText } from "./provenance-block";
 import { AppShell } from "./app-shell";
 
 // Keep the workbench wiring test focused on mode switching and data injection;
@@ -341,5 +343,30 @@ describe("AppShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "取消置顶乙" }));
     expect(localStorage.getItem("qmdj-birth-library-pin")).toBeNull();
+  }, 60000);
+
+  it("opens the 资料库 drawer with full-text search over the provenance registry", async () => {
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+
+    // 资料库与当前盘面无关：任何模式下都应有入口
+    fireEvent.click(screen.getByRole("button", { name: "资料库" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "出处与原文资料库" });
+    expect(dialog).toBeInTheDocument();
+
+    // 只出现在某条目"资料本体"里的片段也能搜到（太乙卷三·推迫法）
+    fireEvent.change(screen.getByLabelText("检索出处与原文"), { target: { value: "前為外迫" } });
+    const expected = PROVENANCE.filter((entry) => provenanceSearchText(entry).includes("前為外迫")).length;
+    expect(expected).toBeGreaterThan(0);
+    expect(screen.getByText(`命中 ${expected} / ${PROVENANCE.length} 条`)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "关闭资料库" }));
+    expect(screen.queryByRole("dialog", { name: "出处与原文资料库" })).not.toBeInTheDocument();
   }, 60000);
 });
