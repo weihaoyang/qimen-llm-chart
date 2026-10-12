@@ -2262,6 +2262,13 @@ export function AppShell({ platformConfig }: AppShellProps) {
     return () => { document.body.style.overflow = previous; };
   }, [parametersOpen]);
 
+  // 排在画布之前定义：画布里的盘面（星盘 / 吠陀）要在「缺出生地」提示条上直接调它。
+  const openParameters = () => {
+    parameterSnapshot.current = { profile: formState, settings: qimenSettings, sequence: sequenceFormState, quick: quickChartMode };
+    setError(null);
+    setParametersOpen(true);
+  };
+
   const workbenchCanvas = (
     <section className="canvas-panel" data-mode={mode}>
       {mode === "qimen" ? (
@@ -2329,7 +2336,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
         {mode === "ziwei" ? <ZiweiPanel value={formState} chart={ziweiChart} /> : null}
 
-        {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "astro" ? <DivinationPanel kind="astro" value={astroChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} onRequestLocation={openParameters} /> : null}
         {mode === "human-design" ? <DivinationPanel kind="human-design" value={humanDesignChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "tarot" ? <DivinationPanel kind="tarot" value={tarotReading} onSpreadChange={(next) => { setTarotSpreadId(next); setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onRedraw={() => { setTarotSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "fourth-way" ? <FourthWayPanel content={FOURTH_WAY_CONTENT} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
@@ -2340,7 +2347,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "runes" ? <RunesPanel reading={runeReading} onSpreadChange={(id) => { setRuneSpreadId(id); setCopyState("idle"); }} onRedraw={() => { setRuneSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "uranian" ? <UranianPanel chart={uranianChart} onModulusChange={(modulus) => { setUranianSettings((current) => ({ ...current, modulus })); setCopyState("idle"); }} onOrbChange={(orb) => { setUranianSettings((current) => ({ ...current, orb })); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "maya" ? <MayaPanel chart={mayaChart} dateInput={mayaDate} onDateChange={(value) => { setMayaDate(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
-        {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} onRequestLocation={openParameters} /> : null}
         {mode === "qabalah" ? <QabalahPanel reading={qabalahReading} input={qabalahInput} onInputChange={(value) => { setQabalahInput(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "taiyi-shenshu" ? <TaiyiPanel chart={taiyiChart} yearInput={taiyiYear} cycle={taiyiCycle} dun={taiyiDun} ruJuInput={taiyiRuJu} onYearChange={(value) => { setTaiyiYear(value); setCopyState("idle"); }} onCycleChange={(value) => { setTaiyiCycle(value); setCopyState("idle"); }} onDunChange={(value) => { setTaiyiDun(value); setCopyState("idle"); }} onRuJuChange={(value) => { setTaiyiRuJu(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "akasha" ? <AkashaPanel chart={akashaChart} massInput={akashaMass} onMassChange={(value) => { setAkashaMass(value); setCopyState("idle"); }} sourceCount={akashaSources} onSourceCountChange={(value) => { setAkashaSources(value); setCopyState("idle"); }} fragment={akashaFragment} onFragmentChange={(value) => { setAkashaFragment(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
@@ -2628,12 +2635,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const chartAnalysisAnchor = !chartAnalysisOpen
     ? <div data-layout="chart-analysis-drawer" aria-hidden="true" hidden />
     : null;
-
-  const openParameters = () => {
-    parameterSnapshot.current = { profile: formState, settings: qimenSettings, sequence: sequenceFormState, quick: quickChartMode };
-    setError(null);
-    setParametersOpen(true);
-  };
 
   const platformAccount = (
     <div className="platform-account" aria-label="平台账户与 AI 权益">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { VedicChart } from "@/lib/vedic/chart";
 import type { NodeMode } from "@/lib/vedic/ayanamsa";
 import { GRAHAS, RASHIS, VARGA_DEFINITIONS } from "@/lib/vedic/data";
+import { InputNotice } from "./input-notice";
 import { ProvenanceBlock } from "./provenance-block";
 
 const dms = (degree: number) => {
@@ -34,12 +35,15 @@ export function VedicPanel({
   onVargaChange,
   onCopyJson,
   jsonCopied,
+  onRequestLocation,
 }: {
   chart: VedicChart;
   vargaCode: string;
   onVargaChange?: (code: string) => void;
   onCopyJson?: () => void;
   jsonCopied?: boolean;
+  /** 「去补出生地」：由工作台打开排盘资料面板。 */
+  onRequestLocation?: () => void;
 }) {
   const definition = VARGA_DEFINITIONS.find((item) => item.code === vargaCode) ?? VARGA_DEFINITIONS[0];
   const varga = chart.vargas.find((item) => item.code === definition.code) ?? chart.vargas[0];
@@ -87,6 +91,14 @@ export function VedicPanel({
         </div>
       </header>
       <div className="divination-panel__rule" />
+
+      {!chart.lagna ? (
+        <InputNotice
+          title="还差出生地：上升（Lagna）与分盘命宫未计算。"
+          detail="行星的恒星黄经、宫位与各分盘不受出生地影响；补上城市或经纬度后，上升与以命宫起的落宫会立即出现。"
+          onAction={onRequestLocation}
+        />
+      ) : null}
 
       <div className="vedic-selector" role="group" aria-label="选择分盘">
         {VARGA_DEFINITIONS.map((item) => (

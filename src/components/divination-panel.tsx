@@ -9,10 +9,11 @@ import { buildHumanDesignTransit, type HumanDesignTransit } from "@/lib/human-de
 import type { TarotReading, TarotSpreadId } from "@/lib/tarot/types";
 import { AstroWheel } from "./astro-wheel";
 import { HumanDesignBodygraph } from "./human-design-bodygraph";
+import { InputNotice } from "./input-notice";
 import { ProvenanceBlock } from "./provenance-block";
 
 type Props =
-  | { kind: "astro"; value: AstroChart; onCopyJson?: () => void; jsonCopied?: boolean }
+  | { kind: "astro"; value: AstroChart; onCopyJson?: () => void; jsonCopied?: boolean; onRequestLocation?: () => void }
   | { kind: "human-design"; value: HumanDesignChart; onCopyJson?: () => void; jsonCopied?: boolean }
   | { kind: "tarot"; value: TarotReading; onRedraw?: () => void; onCopyJson?: () => void; jsonCopied?: boolean; onSpreadChange?: (spreadId: TarotSpreadId) => void };
 
@@ -31,6 +32,13 @@ export function DivinationPanel(props: Props) {
       <div className="divination-panel__topline"><span>OBSERVATORY / 01</span><span className={value.complete ? "status status--live" : "status"}>{value.complete ? "CALCULATED" : "INPUT REQUIRED"}</span></div>
       <header className="divination-panel__header"><div><p className="divination-panel__kicker">ASTRO / NATAL CHART</p><h2>星盘</h2><p className="divination-panel__subhead">把出生时刻转换成可检视的天文坐标。</p></div><div className="divination-panel__header-actions">{props.onCopyJson ? <button type="button" className="divination-panel__export" onClick={props.onCopyJson}>复制 JSON <span>{props.jsonCopied ? "✓" : "⧉"}</span></button> : null}<div className="astro-orbit" aria-hidden="true"><i /><i /><i /><b /></div></div></header>
       <div className="divination-panel__rule" />
+      {!value.complete ? (
+        <InputNotice
+          title="还差出生地：上升 / 中天 / 十二宫位与阿拉伯点都算不出来。"
+          detail="行星、小行星、交点、莉莉丝与相位按地心坐标计算，不受出生地影响；补上城市或经纬度后，四轴、宫位与福点 / 精神点会立即出现。"
+          onAction={props.onRequestLocation}
+        />
+      ) : null}
       <AstroWheel chart={value} />
       <div className="divination-panel__stat-grid">{astroStats.map(([label, key], index) => { const point = value[key]; return <div className="divination-stat" key={key} style={{ "--item-index": index } as React.CSSProperties}><span className="divination-stat__index">0{index + 1}</span><small>{label}</small><strong>{displayPoint(point)}</strong><em>{point.house === null ? "未计算宫位" : "第" + point.house + "宫"}</em></div>; })}</div>
       <div className="divination-section-heading"><span>PLANETARY POSITIONS</span><small>{value.points.length || 0} POINTS / TROPICAL</small></div>

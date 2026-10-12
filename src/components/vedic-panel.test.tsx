@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { buildVedicChart } from "@/lib/vedic/chart";
 import { VedicPanel } from "./vedic-panel";
@@ -42,5 +42,16 @@ describe("VedicPanel", () => {
     fireEvent.click(trueButton);
     expect(trueButton).toHaveAttribute("aria-pressed", "true");
     expect(container.querySelector(".vedic-table + .vedic-chart__note")).toHaveTextContent("罗睺 / 计都取真交点（True Node）");
+  });
+
+  it("缺出生地时给出提示条与一键补录动作", () => {
+    const input: ProfileInput = getDefaultProfileInput(new Date("1990-05-20T08:30:00+08:00"), "Asia/Shanghai");
+    delete input.location;
+    const onRequestLocation = vi.fn();
+    render(<VedicPanel chart={buildVedicChart(normalizeProfileInput(input))} vargaCode="D1" onRequestLocation={onRequestLocation} />);
+
+    expect(screen.getByText(/还差出生地/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "去补出生地" }));
+    expect(onRequestLocation).toHaveBeenCalledTimes(1);
   });
 });
