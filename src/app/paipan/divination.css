@@ -568,6 +568,15 @@
 .input-notice__action { flex: 0 0 auto; padding: 7px 12px; border: 2px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); font: 800 11px var(--paipan-font); cursor: pointer; box-shadow: 2px 2px 0 var(--panel-ink); }
 .input-notice__action:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--panel-ink); }
 .input-notice__action:focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 2px; }
+
+/* 排盘时间步进器：所有体系通用（原本只在奇门模式渲染，样式也只写在 [data-mode="qimen"] 下） */
+.chart-time-stepper { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; padding: 7px 10px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); }
+.chart-time-stepper > span { color: var(--panel-muted); font: 800 10px var(--paipan-font-mono); letter-spacing: .08em; }
+.chart-time-stepper > strong { font: 800 12px var(--paipan-font-mono); }
+.chart-time-stepper .datetime-stepper { display: flex; gap: 4px; }
+.chart-time-stepper .datetime-stepper button { min-height: 26px; padding: 3px 8px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); color: var(--panel-ink); font: 800 11px var(--paipan-font-mono); cursor: pointer; }
+.chart-time-stepper .datetime-stepper button:hover { background: var(--paipan-accent); }
+.chart-time-stepper .datetime-stepper button:focus-visible { outline: 3px solid var(--paipan-red); outline-offset: 2px; }
 @media (max-width: 720px) {
   .guided-tour__callout { right: 12px; left: 12px !important; width: auto !important; }
 }

@@ -2271,7 +2271,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const workbenchCanvas = (
     <section className="canvas-panel" data-mode={mode}>
-      {mode === "qimen" ? (
+      {/* 排盘时间前后推移：任何体系都用得到（研究页是 K 线，不需要）。 */}
+      {mode !== "research" ? (
         <div className="chart-time-stepper" aria-label="盘面时间快速调整">
           <span>排盘时间</span>
           <strong>{formState.datetime.replace("T", " ")}</strong>

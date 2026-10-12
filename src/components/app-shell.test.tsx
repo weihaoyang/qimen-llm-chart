@@ -418,6 +418,25 @@ describe("AppShell", () => {
     expect(screen.getByRole("complementary", { name: "第一次使用引导" })).toBeInTheDocument();
   }, 60000);
 
+  it("在非奇门体系里也能直接前后推移排盘时间", async () => {
+    render(<AppShell platformConfig={{
+      baseUrl: "https://api.singseq.com",
+      productCode: "shengtian-banzi",
+      accessScope: "shengtian-banzi-core",
+    }} />);
+
+    await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
+    fireEvent.click(screen.getByRole("tab", { name: "八字" }));
+
+    const stepper = await screen.findByRole("group", { name: "快速调整排盘时间" });
+    expect(stepper).toBeInTheDocument();
+    // 排盘时间就显示在步进器旁，四个推移按钮（−/+ 时辰、−/+ 1 天）都可用
+    expect(screen.getByLabelText("盘面时间快速调整").textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+    for (const label of ["− 时辰", "+ 时辰", "− 1天", "+ 1天"]) {
+      expect(screen.getByRole("button", { name: label })).toBeEnabled();
+    }
+  }, 60000);
+
   it("首次进入自动走一次分步指引，且只自动一次", async () => {
     localStorage.removeItem("qmdj-guided-tour-seen");
     render(<AppShell platformConfig={{
