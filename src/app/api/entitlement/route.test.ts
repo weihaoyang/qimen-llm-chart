@@ -19,11 +19,11 @@ describe("GET /api/entitlement", () => {
 
   it("returns only platform-owned usage balance", async () => {
     requireSubject.mockResolvedValue({ subjectType: "user", subjectId: "u-1" });
-    fetchUsage.mockResolvedValue({ product_code: "shengtian-banzi", available: 20, reserved: 3, consumed: 7 });
+    fetchUsage.mockResolvedValue({ product_code: "qimen", available: 20, reserved: 3, consumed: 7 });
     const { GET } = await import("./route");
     const response = await GET(new Request("http://local/api/entitlement", { headers: { authorization: "Bearer token" } }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ usage: { product_code: "shengtian-banzi", available: 20, reserved: 3, consumed: 7 } });
+    expect(await response.json()).toEqual({ usage: { product_code: "qimen", available: 20, reserved: 3, consumed: 7 } });
     expect(fetchUsage).toHaveBeenCalledWith("token", { planCode: "agent" });
   });
 

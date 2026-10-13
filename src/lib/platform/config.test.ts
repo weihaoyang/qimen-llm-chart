@@ -12,8 +12,8 @@ describe("platform config", () => {
   it("uses the checked-in product contract when public build env is absent", () => {
     expect(resolvePlatformClientConfig({})).toEqual({
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
       loginUrl: undefined,
     });
   });
@@ -84,28 +84,28 @@ describe("platform config", () => {
       buildPlatformUnifiedLoginUrl({
         baseUrl: "https://platform.example.com",
         loginUrl: "https://account.example.com/login",
-        productCode: "shengtian-banzi",
-        accessScope: "shengtian-banzi-core",
+        productCode: "qimen",
+        accessScope: "qimen-core",
         returnUrl: "https://qmdj.example.com/#/auth/callback",
       }),
     ).toBe(
-      "https://account.example.com/login?product_code=shengtian-banzi&access_scope=shengtian-banzi-core",
+      "https://account.example.com/login?product_code=qimen&access_scope=qimen-core",
     );
   });
 
   it("defaults OAuth login to the deployed canonical authorize endpoint", () => {
     const url = buildPlatformOAuthLoginUrl({
       baseUrl: "https://api.singseq.com",
-      clientId: "shengtian-banzi",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      clientId: "qimen",
+      productCode: "qimen",
+      accessScope: "qimen-core",
       redirectUri: "https://qmdj.singseq.com/#/auth/callback",
       codeChallenge: "challenge",
       state: "state",
     });
 
     expect(url).toBe(
-      "https://singseq.com/oauth/authorize?product_code=shengtian-banzi&access_scope=shengtian-banzi-core&client_id=shengtian-banzi&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2F%23%2Fauth%2Fcallback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
+      "https://singseq.com/oauth/authorize?product_code=qimen&access_scope=qimen-core&client_id=qimen&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2F%23%2Fauth%2Fcallback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
     );
     expect(url).not.toContain("app.singseq.com");
   });

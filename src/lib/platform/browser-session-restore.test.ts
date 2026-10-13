@@ -86,8 +86,8 @@ const bridgeRefreshCalls = () => fetchMock.mock.calls.filter(([input]) => String
 describe("restorePlatformAccessState", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
-    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     window.localStorage.clear();
   });
 
@@ -166,8 +166,8 @@ describe("restorePlatformAccessState", () => {
 describe("bridge session recovery", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
-    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     window.localStorage.clear();
     document.cookie = "qmdj_platform_csrf=; Max-Age=0; path=/";
   });
@@ -209,8 +209,8 @@ describe("bridge session recovery", () => {
 describe("cross-tab refresh lock", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
-    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     window.localStorage.clear();
   });
 

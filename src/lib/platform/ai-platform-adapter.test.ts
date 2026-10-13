@@ -10,7 +10,7 @@ describe("reportPlatformTokenUsage", () => {
         usage: { inputTokens: 4, outputTokens: 2 },
         idempotencyKey: "qmdj-test-1",
       },
-      { env: { PLATFORM_BASE_URL: "https://platform.example.com", PLATFORM_PRODUCT_CODE: "shengtian-banzi", PLATFORM_ACCESS_SCOPE: "shengtian-banzi-core" } },
+      { env: { PLATFORM_BASE_URL: "https://platform.example.com", PLATFORM_PRODUCT_CODE: "qimen", PLATFORM_ACCESS_SCOPE: "qimen-core" } },
     );
     expect(result).toEqual({ reported: false, reasonCode: "platform_product_service_secret_missing" });
   });
@@ -27,8 +27,8 @@ describe("reportPlatformTokenUsage", () => {
       {
         env: {
           PLATFORM_BASE_URL: "https://platform.example.com",
-          PLATFORM_PRODUCT_CODE: "shengtian-banzi",
-          PLATFORM_ACCESS_SCOPE: "shengtian-banzi-core",
+          PLATFORM_PRODUCT_CODE: "qimen",
+          PLATFORM_ACCESS_SCOPE: "qimen-core",
           PLATFORM_PRODUCT_SERVICE_SECRET: "server-only-secret",
         },
         fetchImpl,
@@ -37,7 +37,7 @@ describe("reportPlatformTokenUsage", () => {
     expect(result.reported).toBe(true);
     expect(fetchImpl).toHaveBeenCalledOnce();
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://platform.example.com/api/v1/entitlement/products/shengtian-banzi/token-usage");
+    expect(url).toBe("https://platform.example.com/api/v1/entitlement/products/qimen/token-usage");
     expect(new Headers(init.headers).get("X-Product-Service-Secret")).toBe("server-only-secret");
     expect(JSON.parse(String(init.body))).toEqual({
       provider_code: "openai-compatible",

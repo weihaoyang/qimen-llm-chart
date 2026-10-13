@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/platform/config", () => ({
   requirePlatformServerConfig: () => ({
     baseUrl: "https://platform.example.com",
-    productCode: "shengtian-banzi",
+    productCode: "qimen",
   }),
 }));
 

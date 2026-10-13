@@ -14,8 +14,8 @@ describe("AI product manifest", () => {
     };
     expect(manifest.platform_api_origin).toBe("https://api.singseq.com");
     expect(manifest.oauth_authorize_url).toBe("https://singseq.com/oauth/authorize");
-    expect(manifest.product_code).toBe("shengtian-banzi");
-    expect(manifest.access_scope).toBe("shengtian-banzi-core");
+    expect(manifest.product_code).toBe("qimen");
+    expect(manifest.access_scope).toBe("qimen-core");
     expect(manifest.capabilities.agent.plan_code).toBe(AGENT_PLAN_CODE);
     expect(manifest.capabilities.kline.plan_code).toBe(KLINE_PLAN_CODE);
     expect(manifest.capabilities.agent.usage_unit).toBe("analysis_turn");

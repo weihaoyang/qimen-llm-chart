@@ -9,14 +9,14 @@ describe("platform browser helpers", () => {
   it("prepares a PKCE login redirect for the production product callback", async () => {
     const login = await preparePlatformOAuthLogin({
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }, "https://qmdj.singseq.com/");
     const url = new URL(login.url);
 
     expect(url.origin + url.pathname).toBe("https://singseq.com/oauth/authorize");
-    expect(url.searchParams.get("client_id")).toBe("shengtian-banzi");
-    expect(url.searchParams.get("access_scope")).toBe("shengtian-banzi-core");
+    expect(url.searchParams.get("client_id")).toBe("qimen");
+    expect(url.searchParams.get("access_scope")).toBe("qimen-core");
     expect(url.searchParams.get("redirect_uri")).toBe("https://qmdj.singseq.com/#/auth/callback");
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("code_challenge")).toBe(login.request.challenge);
@@ -89,8 +89,8 @@ describe("platform browser helpers", () => {
       scope: process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE,
     };
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = "https://platform.example.com";
-    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     const requests: Array<{ url: string; body: string }> = [];
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       requests.push({ url: input.toString(), body: String(init?.body ?? "") });
@@ -103,8 +103,8 @@ describe("platform browser helpers", () => {
       return new Response(JSON.stringify({ checkout_token: "guest-token", order: { order_id: "guest-order" } }), { status: 200 });
     }));
 
-    await createAccountCheckout("account-token", "shengtian-banzi-analysis-10", "alipay", "https://qmdj.example.com/billing/result", undefined, "wap");
-    const guest = await createGuestCheckout("shengtian-banzi-analysis-10", "alipay");
+    await createAccountCheckout("account-token", "qimen-analysis-10", "alipay", "https://qmdj.example.com/billing/result", undefined, "wap");
+    const guest = await createGuestCheckout("qimen-analysis-10", "alipay");
     await createGuestPaymentAttempt(guest, "alipay", "https://qmdj.example.com/billing/result", "wap");
 
     const accountBody = JSON.parse(requests[0]?.body ?? "{}");
@@ -126,8 +126,8 @@ describe("platform browser helpers", () => {
       scope: process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE,
     };
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = "https://platform.example.com";
-    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
 
     let request: { url: string; method: string; authorization: string | null; body: string } | null = null;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -139,8 +139,8 @@ describe("platform browser helpers", () => {
       };
       return new Response(JSON.stringify({
         return_code: 0,
-        product_code: "shengtian-banzi",
-        plan_code: "shengtian-banzi-analysis-10",
+        product_code: "qimen",
+        plan_code: "qimen-analysis-10",
         plan_title: "邀请码分析次数",
         credits_granted: 10,
         available: 10,
@@ -171,23 +171,23 @@ describe("platform browser helpers", () => {
       scope: process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE,
     };
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = "https://platform.example.com";
-    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "shengtian-banzi";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "shengtian-banzi-core";
+    process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
+    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
 
     let requestUrl = "";
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       requestUrl = input.toString();
       return new Response(JSON.stringify({
         return_code: 0,
-        product_code: "shengtian-banzi",
-        plan_code: "shengtian-banzi-analysis-10",
+        product_code: "qimen",
+        plan_code: "qimen-analysis-10",
         available: 9,
         reserved: 0,
         consumed: 1,
         usage_unit: "analysis_turn",
         usage_label: "研究对话轮次",
         by_plan: [
-          { plan_code: "shengtian-banzi-analysis-10", available: 9, reserved: 0, consumed: 1, usage_unit: "analysis_turn", usage_label: "研究对话轮次" },
+          { plan_code: "qimen-analysis-10", available: 9, reserved: 0, consumed: 1, usage_unit: "analysis_turn", usage_label: "研究对话轮次" },
         ],
       }), { status: 200 });
     }));
@@ -195,9 +195,9 @@ describe("platform browser helpers", () => {
     try {
       // Two per-use units exist for this product; an unscoped read would return a
       // "mixed" sum. The read must carry plan_code so the balance stays per-unit.
-      const usage = await fetchPlatformUsage("access-token", "csrf-token", "shengtian-banzi-analysis-10");
-      expect(requestUrl).toContain("/api/v1/entitlement/products/shengtian-banzi/usage");
-      expect(requestUrl).toContain("plan_code=shengtian-banzi-analysis-10");
+      const usage = await fetchPlatformUsage("access-token", "csrf-token", "qimen-analysis-10");
+      expect(requestUrl).toContain("/api/v1/entitlement/products/qimen/usage");
+      expect(requestUrl).toContain("plan_code=qimen-analysis-10");
       expect(usage.usage_unit).toBe("analysis_turn");
       expect(usage.usage_label).toBe("研究对话轮次");
       expect(usage.by_plan).toHaveLength(1);

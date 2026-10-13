@@ -8,7 +8,7 @@ import {
 
 const base = {
   orderId: "order-1",
-  productCode: "shengtian-banzi",
+  productCode: "qimen",
   checkoutMode: "account" as const,
   checkoutToken: "",
   planCode: "plan-1",

@@ -69,7 +69,7 @@ const SCHEMA_GATE_KEY = "qmdj-real-test-schema";
  * Named once and used twice: the pool sets it, and the leftover sweep matches it
  * exactly. An exact match rather than a `LIKE 'qmdj-%'` because the sweep
  * terminates backends — a prefix would start killing application connections the
- * day someone renames the app's pool to `qmdj-app`. (It is `shengtian-banzi`
+ * day someone renames the app's pool to `qmdj-app`. (It is `qimen`
  * today, so a prefix would happen to be safe; "happens to be safe" is what stops
  * being true without anyone noticing.)
  */

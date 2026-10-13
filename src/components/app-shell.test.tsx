@@ -28,8 +28,8 @@ describe("AppShell", () => {
   it("keeps single-chart and sequence analysis in the chart product", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     expect(await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 })).toBeInTheDocument();
@@ -51,8 +51,8 @@ describe("AppShell", () => {
   it("wires the normalized Ziwei chart into the visible workbench panel", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -65,8 +65,8 @@ describe("AppShell", () => {
   it("exposes the 从八字逆推生日 entry point in the BaZi workspace", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -93,8 +93,8 @@ describe("AppShell", () => {
   it("renders only the chart surface, with none of the retired 胜天半子 copy or panes", async () => {
     const { container } = render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -139,8 +139,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -159,8 +159,8 @@ describe("AppShell", () => {
   it("imports a 出生档案 JSON export into the library", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -192,8 +192,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -219,8 +219,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -237,8 +237,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -261,8 +261,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -286,8 +286,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -312,8 +312,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -333,8 +333,8 @@ describe("AppShell", () => {
     ]));
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -352,8 +352,8 @@ describe("AppShell", () => {
   it("opens the 资料库 drawer with full-text search over the provenance registry", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -378,8 +378,8 @@ describe("AppShell", () => {
     localStorage.removeItem("qmdj-first-run-guide-dismissed");
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -421,8 +421,8 @@ describe("AppShell", () => {
   it("在非奇门体系里也能直接前后推移排盘时间", async () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -441,8 +441,8 @@ describe("AppShell", () => {
     localStorage.removeItem("qmdj-guided-tour-seen");
     render(<AppShell platformConfig={{
       baseUrl: "https://api.singseq.com",
-      productCode: "shengtian-banzi",
-      accessScope: "shengtian-banzi-core",
+      productCode: "qimen",
+      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });

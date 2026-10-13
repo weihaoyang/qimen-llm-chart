@@ -19,14 +19,14 @@ const server = http.createServer((request, response) => {
   if (url.pathname.endsWith("/gate")) {
     json(response, subjectId ? 200 : 401, {
       allowed: Boolean(subjectId), mode: subjectId ? "account" : "blocked",
-      product_code: "shengtian-banzi", access_scope: "shengtian-banzi-core",
+      product_code: "qimen", access_scope: "qimen-core",
       subject_type: subjectId ? "user" : "", subject_id: subjectId,
       entitlement_source: "test-mock", reason_code: subjectId ? "" : "unauthorized", message: "",
     });
     return;
   }
   if (url.pathname.includes("/usage/")) {
-    json(response, 200, { product_code: "shengtian-banzi", available: 99, reserved: 0, consumed: 0, reservation_id: "test-reservation" });
+    json(response, 200, { product_code: "qimen", available: 99, reserved: 0, consumed: 0, reservation_id: "test-reservation" });
     return;
   }
   json(response, 404, { message: "not found" });

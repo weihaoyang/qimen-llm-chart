@@ -4,11 +4,11 @@
   "oauth_authorize_url": "https://singseq.com/oauth/authorize",
   "product_origin_url": "https://qmdj.singseq.com",
   "oauth_callback_path": "/#/auth/callback",
-  "product_code": "shengtian-banzi",
-  "access_scope": "shengtian-banzi-core",
+  "product_code": "qimen",
+  "access_scope": "qimen-core",
   "capabilities": {
     "agent": {
-      "plan_code": "shengtian-banzi-analysis-10",
+      "plan_code": "qimen-analysis-10",
       "usage_unit": "analysis_turn",
       "usage_label": "研究对话轮次",
       "provider_route": "/api/agent",
@@ -16,7 +16,7 @@
       "token_metering": "platform_token_usage"
     },
     "kline": {
-      "plan_code": "shengtian-banzi-kline-precise-1",
+      "plan_code": "qimen-kline-precise-1",
       "usage_unit": "kline_report",
       "usage_label": "K 线 AI 分析报告",
       "provider_route": "/api/agent",

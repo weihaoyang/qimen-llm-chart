@@ -28,8 +28,8 @@ const {
   requestAgentAnalysisMock: vi.fn(),
   streamAgentAnalysisMock: vi.fn(),
   createAgentEventStreamResponseMock: vi.fn(() => new Response("stream-events", { headers: { "Content-Type": "application/x-ndjson" } })),
-  agentPlanCode: "shengtian-banzi-analysis-10",
-  klinePlanCode: "shengtian-banzi-kline-precise-1",
+  agentPlanCode: "qimen-analysis-10",
+  klinePlanCode: "qimen-kline-precise-1",
 }));
 
 // `PlatformServerRequestError` is passed through from the real module rather than
@@ -126,7 +126,7 @@ describe("POST /api/agent", () => {
     reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "分析完成", model: "mock-model" });
     commitGuestUsageMock.mockResolvedValue({
-      product_code: "shengtian-banzi",
+      product_code: "qimen",
       available: 0,
       reserved: 0,
       consumed: 1,
@@ -139,7 +139,7 @@ describe("POST /api/agent", () => {
       content: "分析完成",
       model: "mock-model",
       usage: {
-        product_code: "shengtian-banzi",
+        product_code: "qimen",
         available: 0,
         reserved: 0,
         consumed: 1,
@@ -184,7 +184,7 @@ describe("POST /api/agent", () => {
     fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "ok" });
     reservePlatformUsageMock.mockResolvedValue({ reservation_id: "account-reservation" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "账户分析完成", model: "mock-model" });
-    commitPlatformUsageMock.mockResolvedValue({ product_code: "shengtian-banzi", available: 9, reserved: 0, consumed: 1 });
+    commitPlatformUsageMock.mockResolvedValue({ product_code: "qimen", available: 9, reserved: 0, consumed: 1 });
 
     const response = await POST(validAccountRequest());
 
@@ -200,7 +200,7 @@ describe("POST /api/agent", () => {
     fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "ok" });
     reservePlatformUsageMock.mockResolvedValue({ reservation_id: "follow-up-reservation" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "基于上一轮继续分析", model: "mock-model" });
-    commitPlatformUsageMock.mockResolvedValue({ product_code: "shengtian-banzi", available: 8, reserved: 0, consumed: 2 });
+    commitPlatformUsageMock.mockResolvedValue({ product_code: "qimen", available: 8, reserved: 0, consumed: 2 });
     const history = [
       { role: "user", content: "第一轮问题" },
       { role: "assistant", content: "第一轮结果" },
@@ -277,7 +277,7 @@ describe("POST /api/agent", () => {
     readGuestCheckoutTokenMock.mockReturnValue("token-1");
     reserveGuestUsageMock.mockResolvedValue({ reservation_id: "kline-reservation" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "人生 K 线深度报告", model: "mock-model" });
-    commitGuestUsageMock.mockResolvedValue({ product_code: "shengtian-banzi", available: 0, reserved: 0, consumed: 1 });
+    commitGuestUsageMock.mockResolvedValue({ product_code: "qimen", available: 0, reserved: 0, consumed: 1 });
 
     const response = await POST(new Request("http://localhost/api/agent", {
       method: "POST",
@@ -397,7 +397,7 @@ describe("POST /api/agent (streaming settle)", () => {
     await callbacks.onFinish();
 
     expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
-    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: "shengtian-banzi-analysis-10" });
+    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: "qimen-analysis-10" });
     expect(releaseGuestUsageMock).not.toHaveBeenCalled();
   });
 

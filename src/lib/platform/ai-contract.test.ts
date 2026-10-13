@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readProviderUsage, runBilledAi, type AiAuditEvent } from "./ai-contract";
 
-const input = { productCode: "shengtian-banzi", accessScope: "shengtian-banzi-core", capability: "agent", planCode: "shengtian-banzi-analysis-10" };
+const input = { productCode: "qimen", accessScope: "qimen-core", capability: "agent", planCode: "qimen-analysis-10" };
 
 describe("runBilledAi", () => {
   it("reserves, invokes, commits once, and records token usage", async () => {

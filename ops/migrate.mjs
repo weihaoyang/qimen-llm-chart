@@ -114,7 +114,7 @@ const splitStatements = (sql) => {
  */
 const migrationChecksum = (sql) => createHash("sha256").update(sql.replace(/\r\n/g, "\n")).digest("hex");
 
-const pool = new Pool({ connectionString, ssl: process.env.DATABASE_SSL === "require" ? { rejectUnauthorized: true } : undefined, application_name: "shengtian-banzi-migrator", max: 1 });
+const pool = new Pool({ connectionString, ssl: process.env.DATABASE_SSL === "require" ? { rejectUnauthorized: true } : undefined, application_name: "qimen-migrator", max: 1 });
 try {
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (version varchar(128) PRIMARY KEY, checksum varchar(64) NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`);
   const applied = new Map((await pool.query("SELECT version,checksum FROM schema_migrations ORDER BY version")).rows.map((row) => [row.version, row.checksum]));
