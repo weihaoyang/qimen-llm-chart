@@ -184,8 +184,10 @@ html body .page-shell.product-chart .mobile-hero .workbench-tabs__list {
 body .product-chart .observatory-hero .workbench-tabs__tab,
 html body .page-shell.product-chart .mobile-hero .workbench-tabs__tab {
   display: inline-flex !important;
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
+  /* 标签按自己名字的宽度占位（分页算法会按名字宽度切页），因此不再等宽拉伸； */
+  /* min-width 是触摸目标下限，不是排版依据。 */
+  flex: 0 0 auto !important;
+  min-width: 52px !important;
   min-height: 30px !important;
   align-items: center !important;
   justify-content: center !important;

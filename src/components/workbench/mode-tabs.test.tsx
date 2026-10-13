@@ -3,7 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MODE_OPTIONS, ModeTabs } from "./mode-tabs";
+import { FALLBACK_PAGE_SIZE, MODE_OPTIONS, ModeTabs, PAGER_WIDTH, tabBoxWidth } from "./mode-tabs";
 
 type ObserverRecord = { callback: ResizeObserverCallback; targets: Element[]; trigger: () => void };
 
@@ -73,17 +73,65 @@ describe("ModeTabs 翻页按钮", () => {
     expect(screen.getByText("3/3")).toBeInTheDocument();
   });
 
-  it("容器越窄每页越少：480px 时每页 4 个、共 6 页", () => {
+  it("按名字宽度分页：整页宽度不超预算，容器越窄每页越少", () => {
     const { container } = renderTabs();
     setHostWidth(container, 480);
     act(() => {
       observers[0].trigger();
     });
 
-    expect(visibleKeys(container)).toHaveLength(4);
-    expect(screen.getByText("1/6")).toBeInTheDocument();
-    // 收窄后不会横向滚动（一页恰好铺满）
-    expect(container.querySelectorAll(".workbench-tabs__tab").length).toBe(4);
+    // 名字宽窄不同 → 标签盒宽也不同（长名字不会再被省略号裁掉）
+    expect(tabBoxWidth("赫尔墨斯卡巴拉")).toBeGreaterThan(tabBoxWidth("奇门"));
+
+    const labelsAt = (width: number) => {
+      setHostWidth(container, width);
+      act(() => {
+        observers[0].trigger();
+      });
+      return visibleKeys(container).map((key) => MODE_OPTIONS.find((item) => item.value === key)?.label ?? "");
+    };
+
+    const narrow = labelsAt(480);
+    // 整页（含标签间距）不超过可用宽度，因此不会有标签被裁
+    const used = narrow.reduce((sum, label) => sum + tabBoxWidth(label), 0) + Math.max(0, narrow.length - 1) * 6;
+    expect(used).toBeLessThanOrEqual(480 - PAGER_WIDTH);
+    expect(narrow.length).toBeLessThan(FALLBACK_PAGE_SIZE);
+    expect(labelsAt(900).length).toBeGreaterThan(narrow.length);
+
+    // 翻到底仍能看到全部体系，页数与页码指示一致
+    const pageCount = Number(container.querySelector(".workbench-tabs")?.getAttribute("data-pages"));
+    expect(pageCount).toBeGreaterThan(1);
+    const seen = new Set<string>();
+    for (;;) {
+      visibleKeys(container).forEach((key) => seen.add(key));
+      if (nextPage().disabled) break;
+      fireEvent.click(nextPage());
+    }
+    expect(seen.size).toBe(MODE_OPTIONS.length);
+    expect(screen.getByText(`${pageCount}/${pageCount}`)).toBeInTheDocument();
+  });
+
+  it("布局在测量后变窄时，按列表真实宽度收紧，不让标签溢出裁掉体系", () => {
+    const { container } = renderTabs();
+    setHostWidth(container, 1200);
+    act(() => {
+      observers[0].trigger();
+    });
+    const wideCount = visibleKeys(container).length;
+    expect(wideCount).toBeGreaterThan(5);
+
+    // 模拟"测量之后布局又变窄"（例如账户状态文案变长把标签条挤窄）：RS 没来得及回调，
+    // 此时渲染出来的标签已经比列表宽，兜底校正必须用列表真实宽度重算。
+    const list = container.querySelector<HTMLElement>(".workbench-tabs__list");
+    Object.defineProperty(list, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(list, "scrollWidth", { configurable: true, value: 900 });
+    fireEvent.click(nextPage());
+
+    const after = visibleKeys(container);
+    const used = after.reduce((sum, key) => sum + tabBoxWidth(MODE_OPTIONS.find((item) => item.value === key)?.label ?? ""), 0) + Math.max(0, after.length - 1) * 6;
+    expect(used).toBeLessThanOrEqual(300);
+    expect(after.length).toBeLessThan(wideCount);
+    expect(container.querySelectorAll(".workbench-tabs__tab").length).toBe(after.length);
   });
 
   it("程序性切换体系时自动翻到它所在的那一页；点击标签回调正确", () => {

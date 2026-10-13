@@ -40,22 +40,82 @@ export const MODE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "daliuren", label: "大六壬" },
 ];
 
-/** 单个标签的最小可读宽度（px）：据此决定一页放几个。 */
-const MIN_TAB_WIDTH = 86;
-/** 手机上的最小标签宽度（px）：手机屏一次只放 3 个体系太浪费，收窄到 4 个一页。 */
-const MIN_TAB_WIDTH_NARROW = 66;
-/** 判定"手机宽度"的查询：与 shell 的移动端断点一致。 */
-const NARROW_VIEWPORT_QUERY = "(max-width: 720px)";
+/**
+ * 体系标签条：**按名字宽度分页**的翻页按钮（‹ ›），不是横向滚动。
+ *
+ * 早期版本给每个标签等宽（`flex: 1 1 0`），因此"一页能放几个"只能按最小宽度除，长名字
+ * （「赫尔墨斯卡巴拉」「阿卡西 · 全息」）永远被省略号收尾。现在每个标签按自己名字的排版宽度
+ * 占位、逐页装满可用宽度，于是任何视口下都不会有标签被裁掉，短名字也不再浪费空间。
+ */
+
+/** 单个标签的最小盒宽（px）：太窄不好点，也保证短名字的方块不塌陷。 */
+export const MIN_TAB_BOX = 52;
+/** 标签盒宽估算使用的字号（px）：与 workbench-responsive.css 里 .workbench-tabs__tab 的实际字号对应。 */
+const TAB_FONT_PX = 12;
+/** 标签盒宽估算里除文字以外的开销：padding 2×8 + border 2×2 + 安全余量 6。 */
+const TAB_CHROME_X = 26;
+/** 标签之间的间距（px）：与 CSS 中 .workbench-tabs__list 的 gap 一致。 */
+const TAB_GAP = 6;
 /** 翻页按钮与页码占用的宽度（px）。 */
-const PAGER_WIDTH = 104;
+export const PAGER_WIDTH = 104;
 /** 量不到容器宽度时（jsdom / 嵌入 webview）的每页个数。 */
-const FALLBACK_PAGE_SIZE = 8;
+export const FALLBACK_PAGE_SIZE = 8;
 const CLASSIC_KEY = "daliuren";
 
+const FULL_WIDTH_CHAR = /[\u2e80-\u9fff\u3000-\u303f\uff00-\uffef]/;
+
+/** 估一个名字的排版宽度（px）：汉字按 1em、西文按 0.58em、空格按 0.34em。 */
+const estimateLabelWidth = (label: string, fontPx = TAB_FONT_PX) => {
+  let width = 0;
+  for (const char of label) {
+    if (char === " ") width += fontPx * 0.34;
+    else if (FULL_WIDTH_CHAR.test(char)) width += fontPx;
+    else width += fontPx * 0.58;
+  }
+  return width;
+};
+
+/** 一个标签实际占用的盒宽（px）：名字宽度加排版开销，且不小于最小盒宽。 */
+export const tabBoxWidth = (label: string) => Math.max(MIN_TAB_BOX, Math.ceil(estimateLabelWidth(label)) + TAB_CHROME_X);
+
 /**
- * 体系标签条：**翻页按钮**（‹ ›）而非横向滚动。
+ * 把体系名字按可用宽度切成若干页。
  *
- * - 每页标签个数由容器宽度决定（`ResizeObserver`），因此任何宽度下都不会出现横向滚动或标签重叠；
+ * 每页至少 2 个（否则翻页比点标签还累）；单个名字超出整行时它单独占一页，由 CSS 兜底。
+ * `available <= 0` 表示量不到宽度（jsdom / 首帧），退回固定每页 `FALLBACK_PAGE_SIZE` 个。
+ */
+export const paginateTabs = (labels: string[], available: number) => {
+  if (!(available > 0)) {
+    const size = Math.max(1, FALLBACK_PAGE_SIZE);
+    const pages: string[][] = [];
+    for (let index = 0; index < labels.length; index += size) pages.push(labels.slice(index, index + size));
+    return pages.length ? pages : [[]];
+  }
+
+  const pages: string[][] = [];
+  let current: string[] = [];
+  let used = 0;
+  for (const label of labels) {
+    const width = tabBoxWidth(label);
+    const extra = current.length ? TAB_GAP : 0;
+    if (current.length >= 2 && used + extra + width > available) {
+      pages.push(current);
+      current = [label];
+      used = width;
+      continue;
+    }
+    current.push(label);
+    used += extra + width;
+  }
+  if (current.length) pages.push(current);
+  return pages.length ? pages : [labels];
+};
+
+/**
+ * 体系标签条：**按名字宽度分页**的翻页按钮（‹ ›）而非横向滚动。
+ *
+ * - 每个标签按自己名字的排版宽度占位，`ResizeObserver` 量到可用宽度后逐页装满，因此任何宽度
+ *   下都不会出现横向滚动、标签重叠或被省略号裁掉；
  * - 当前体系被程序性切换（深链 / 恢复 / 重置 / 选经典盘）时自动翻到它所在的一页，手动翻页浏览时不打扰；
  * - 左右方向键在当前页内移动，越界则翻页；
  * - 每个标签渲染 `data-tabkey`（唯一），供回归测试与外部工具定位。
@@ -63,31 +123,32 @@ const CLASSIC_KEY = "daliuren";
 export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect }: ModeTabsProps) {
   const activeKey = classicActive ?? mode;
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [pageSize, setPageSize] = useState(FALLBACK_PAGE_SIZE);
+  // 量到的"标签可用宽度"（px）；0 表示还没量到（首帧 / jsdom），此时退回固定每页个数。
+  const [budget, setBudget] = useState(0);
   // 手动翻页记录：记下「为哪个体系翻到了第几页」。体系一旦变化（点击标签 / 深链 / 恢复 /
   // 重置），这条记录就失效，页码自动回到该体系所在页——因此不需要在 effect 里 setState。
   const [paging, setPaging] = useState<{ key: string; page: number }>({ key: activeKey, page: 0 });
 
-  const pageCount = Math.max(1, Math.ceil(MODE_OPTIONS.length / pageSize));
+  const pages = useMemo(() => paginateTabs(MODE_OPTIONS.map((item) => item.label), budget), [budget]);
+  const pageCount = pages.length;
   const activeIndex = Math.max(0, MODE_OPTIONS.findIndex((item) => item.value === activeKey));
-  const followPage = Math.floor(activeIndex / pageSize);
-  const page = Math.min(paging.key === activeKey ? paging.page : followPage, pageCount - 1);
+  const activeLabel = MODE_OPTIONS[activeIndex]?.label ?? "";
+  const followPage = Math.max(0, pages.findIndex((labels) => labels.includes(activeLabel)));
+  const page = Math.min(Math.max(paging.key === activeKey ? paging.page : followPage, 0), pageCount - 1);
 
   const goToPage = (next: number) => {
     setPaging({ key: activeKey, page: Math.min(Math.max(0, next), pageCount - 1) });
   };
 
-  // 每页个数随容器宽度自适应；这样「一页」总是恰好铺满，不需要横向滚动。
+  // 标签条一页放几个由可用宽度决定：每个标签按自己名字的宽度占位，逐页装满即可，
+  // 不需要横向滚动，也不会有标签被省略号裁掉。
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
     const measure = () => {
       const width = host.clientWidth;
       if (!width) return;
-      const narrow = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(NARROW_VIEWPORT_QUERY).matches;
-      const minTabWidth = narrow ? MIN_TAB_WIDTH_NARROW : MIN_TAB_WIDTH;
-      const fit = Math.floor((width - PAGER_WIDTH) / minTabWidth);
-      setPageSize(Math.min(MODE_OPTIONS.length, Math.max(2, fit)));
+      setBudget(width - PAGER_WIDTH);
     };
     measure();
     if (typeof ResizeObserver === "undefined") {
@@ -107,8 +168,20 @@ export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect
     host.querySelector<HTMLElement>(`[data-tabkey="${activeKey}"]`)?.focus();
   }, [activeKey, page]);
 
-  const start = page * pageSize;
-  const visible = useMemo(() => MODE_OPTIONS.slice(start, start + pageSize), [start, pageSize]);
+  const visibleLabels = useMemo(() => pages[page] ?? pages[0] ?? [], [pages, page]);
+  const visible = useMemo(
+    () => MODE_OPTIONS.filter((item) => visibleLabels.includes(item.label)),
+    [visibleLabels],
+  );
+
+  // 兜底校正：分页依赖"量到的可用宽度"，若布局在测量之后又变窄（例如账户状态从"读取账户…"
+  // 变成更长的文案），ResizeObserver 未必来得及回调，整页标签就会溢出、末位体系被裁掉。
+  // 渲染后若发现标签确实溢出了列表，就用列表的真实宽度重算一次——只收紧，不会来回震荡。
+  useEffect(() => {
+    const list = hostRef.current?.querySelector<HTMLElement>(".workbench-tabs__list");
+    if (!list || budget <= 0) return;
+    if (list.scrollWidth > list.clientWidth + 1) setBudget(list.clientWidth);
+  }, [budget, page, visibleLabels]);
 
   const select = useCallback(
     (value: string) => {

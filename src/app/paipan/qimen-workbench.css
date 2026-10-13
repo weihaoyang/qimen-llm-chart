@@ -486,6 +486,58 @@
   html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 12px !important; }
 }
 
+/* 卡片按"自身尺寸"分档定字号：窗口矮或盘面被挤时卡片会被压小（实测 1366×768 下卡片只有
+   212×86），桌面那套 clamp(17px…) 会把「辰/巳」「休 / 死」「天芮天禽」这类长值挤成省略号。
+   以卡片自身为容器，窄卡片自动换小档，而不是把内容裁掉。 */
+@media (min-width: 721px) {
+  html body .product-chart[data-mode="qimen"] .palace-card {
+    container-type: size !important;
+  }
+}
+
+@container (max-width: 360px) {
+  /* 主要值（星/门/神）允许最长四字（中宫「天芮天禽」）：格子宽 ≈ (卡片 − 10)/3，
+     所以字号取 (卡片 − 10)/12.6，四字正好放得下；宽卡片由 24px 封顶。
+     卡片极窄时（<约 190px）四字无解，用 14px 下限保住可读性，不再压到个位数。 */
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong {
+    font-size: clamp(14px, calc((100cqw - 10px) / 12.6), 24px) !important;
+  }
+  /* 事实值同理按卡片宽度算：三列时格子宽 ≈ (卡片 − 10)/3，扣掉标签与间距后要能容下最长的
+     「休 / 死」（约 3.9em）。这样 193px 卡片也不会只差 2px 就被省略号切掉。 */
+  html body .product-chart[data-mode="qimen"] .palace-card__fact dd {
+    font-size: clamp(12px, calc(((100cqw - 10px) / 3 - 20px) / 3.9), 15px) !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 10px !important; }
+}
+
+/* 卡片窄到三列放不下最长的「势 废 / 相」时（约 ≤215px，例如 721–900px 视口下画布被智能体
+   面板挤到 ~380px，卡片只剩 ~122px）：事实栏改两列，并让「势」独占整行——与手机端同一套处理。 */
+@container (max-width: 215px) {
+  html body .product-chart[data-mode="qimen"] .palace-card__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1px 5px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact { min-height: 0 !important; padding: 0 !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact--status { grid-column: 1 / -1 !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__fact dd { font-size: 12px !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 9px !important; }
+}
+
+/* 画布被智能体面板挤窄的视口区间：排盘时间与四个按钮不再挤在一行（否则时间被省略号截断），
+   改成与手机端一致的「标签 + 时间」一行、按钮整行铺开。 */
+@media (min-width: 721px) and (max-width: 960px) {
+  html body .product-chart[data-mode="qimen"] .chart-time-stepper {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    gap: 4px 8px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+  }
+}
+
 /* Keep sequence labels in their own row.  Older sidebar rules used a compact
    single-flow layout, which lets the next label sit on the previous input. */
 html body .product-chart[data-mode="qimen"] .sidebar-quick-controls {
