@@ -42,6 +42,10 @@ export const MODE_OPTIONS: Array<{ value: string; label: string }> = [
 
 /** 单个标签的最小可读宽度（px）：据此决定一页放几个。 */
 const MIN_TAB_WIDTH = 86;
+/** 手机上的最小标签宽度（px）：手机屏一次只放 3 个体系太浪费，收窄到 4 个一页。 */
+const MIN_TAB_WIDTH_NARROW = 66;
+/** 判定"手机宽度"的查询：与 shell 的移动端断点一致。 */
+const NARROW_VIEWPORT_QUERY = "(max-width: 720px)";
 /** 翻页按钮与页码占用的宽度（px）。 */
 const PAGER_WIDTH = 104;
 /** 量不到容器宽度时（jsdom / 嵌入 webview）的每页个数。 */
@@ -80,7 +84,9 @@ export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect
     const measure = () => {
       const width = host.clientWidth;
       if (!width) return;
-      const fit = Math.floor((width - PAGER_WIDTH) / MIN_TAB_WIDTH);
+      const narrow = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(NARROW_VIEWPORT_QUERY).matches;
+      const minTabWidth = narrow ? MIN_TAB_WIDTH_NARROW : MIN_TAB_WIDTH;
+      const fit = Math.floor((width - PAGER_WIDTH) / minTabWidth);
       setPageSize(Math.min(MODE_OPTIONS.length, Math.max(2, fit)));
     };
     measure();

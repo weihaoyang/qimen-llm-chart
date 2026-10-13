@@ -2805,14 +2805,17 @@ export function AppShell({ platformConfig }: AppShellProps) {
             <div className="mobile-hero__brand">
               <h1>知几</h1>
             </div>
-            <button type="button" className="mobile-account-trigger" onClick={() => setMobileAccountOpen(true)} aria-haspopup="dialog" aria-expanded={mobileAccountOpen}>
-              <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "游客模式"}</span>
-              <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "账户与权益"}</small>
-            </button>
-            <button type="button" className="mobile-account-trigger" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>
-              <span>资料库</span>
-              <small>出处与原文</small>
-            </button>
+            {/* 两个入口成组靠右：早先它们各自作为 space-between 的一项，中间被撑出近百像素空档。 */}
+            <div className="mobile-hero__actions">
+              <button type="button" className="mobile-account-trigger" onClick={() => setMobileAccountOpen(true)} aria-haspopup="dialog" aria-expanded={mobileAccountOpen}>
+                <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "游客模式"}</span>
+                <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "账户与权益"}</small>
+              </button>
+              <button type="button" className="mobile-account-trigger" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>
+                <span>资料库</span>
+                <small>出处与原文</small>
+              </button>
+            </div>
           </div>
           <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
         </header>

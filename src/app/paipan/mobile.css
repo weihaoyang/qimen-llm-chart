@@ -72,6 +72,14 @@
     gap: 10px;
   }
 
+  /* 两个入口成组靠右，彼此只留 6px；否则 space-between 会把它们撑开到屏幕两侧。 */
+  html body .page-shell.product-chart .mobile-hero__actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+  }
+
   html body .page-shell.product-chart .mobile-hero__brand {
     display: flex;
     min-width: 0;
@@ -537,23 +545,43 @@
     padding: 4px !important;
   }
 
+  /* 手机宫格只有 ~122px 一格，字号必须按"格宽"定：19px 的「天柱」需要 38px，而格子里只有
+     35px，于是满盘省略号。这里把值收到能容下两个字的 14px，长的星名（中宫「天芮天禽」）
+     改为折行而不是截断；事实栏改两列、收掉内边距，让「支 辰/巳」有整格宽度，最长的
+     「势 废 / 相」独占整行。 */
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__header h3 {
-    font-size: 16px !important;
+    font-size: 14px !important;
   }
 
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__primary-item strong {
-    font-size: 19px !important;
+    font-size: 14px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
   }
 
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__fact dd {
-    font-size: 15px !important;
+    font-size: 12px !important;
   }
 
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__index,
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__identity > span,
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__primary-item span,
   html body .page-shell.product-chart[data-mode="qimen"] .palace-card__facts dt {
-    font-size: 11px !important;
+    font-size: 9px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="qimen"] .palace-card__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1px 5px !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="qimen"] .palace-card__fact {
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body .page-shell.product-chart[data-mode="qimen"] .palace-card__fact--status {
+    grid-column: 1 / -1 !important;
   }
 
   html body .page-shell.product-chart[data-mode="qimen"] .summary-strip {
