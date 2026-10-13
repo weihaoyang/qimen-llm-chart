@@ -134,6 +134,33 @@ describe("ModeTabs 翻页按钮", () => {
     expect(container.querySelectorAll(".workbench-tabs__tab").length).toBe(after.length);
   });
 
+  it("挂载后布局再变窄（异步账户状态）时，落定核对会把分页收紧", () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = renderTabs();
+      setHostWidth(container, 1200);
+      act(() => {
+        observers[0].trigger();
+      });
+      const wideCount = visibleKeys(container).length;
+      expect(wideCount).toBeGreaterThan(5);
+
+      const list = container.querySelector<HTMLElement>(".workbench-tabs__list");
+      Object.defineProperty(list, "clientWidth", { configurable: true, value: 320 });
+      Object.defineProperty(list, "scrollWidth", { configurable: true, value: 800 });
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      const after = visibleKeys(container);
+      const used = after.reduce((sum, key) => sum + tabBoxWidth(MODE_OPTIONS.find((item) => item.value === key)?.label ?? ""), 0) + Math.max(0, after.length - 1) * 6;
+      expect(used).toBeLessThanOrEqual(320);
+      expect(after.length).toBeLessThan(wideCount);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("程序性切换体系时自动翻到它所在的那一页；点击标签回调正确", () => {
     const onChange = vi.fn();
     const { container, rerender } = renderTabs({ mode: "qimen", onChange });

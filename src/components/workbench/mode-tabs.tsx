@@ -183,6 +183,19 @@ export function ModeTabs({ mode, onChange, classicActive = null, onClassicSelect
     if (list.scrollWidth > list.clientWidth + 1) setBudget(list.clientWidth);
   }, [budget, page, visibleLabels]);
 
+  // 再补几次"落定后核对"：账户/权益状态与平台套餐都是异步到达的，会在首帧之后改变标签条宽度。
+  // 这几次核对与 ResizeObserver 互补（离屏窗口 / webview 里 RO 回调可能被推迟）。
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const check = () => {
+      const list = hostRef.current?.querySelector<HTMLElement>(".workbench-tabs__list");
+      if (!list || !list.clientWidth) return;
+      if (list.scrollWidth > list.clientWidth + 1) setBudget(list.clientWidth);
+    };
+    const timers = [400, 1200, 2600].map((ms) => window.setTimeout(check, ms));
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, []);
+
   const select = useCallback(
     (value: string) => {
       if (value === CLASSIC_KEY) {

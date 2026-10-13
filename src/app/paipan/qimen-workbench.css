@@ -421,6 +421,15 @@
   .product-chart[data-mode="qimen"] .paipan-workspace .palace-grid { width: min(100%, 70vh); height: auto; max-width: 100%; max-height: 100%; justify-self: center; align-self: center; }
 }
 
+/* 721–1280px：桌面工作区按 2fr/1fr 分栏且智能体栏固定 320px，会把画布挤到 ~380px，
+   宫格卡片随之缩到 ~122px（中宫四字星名放不下）。这个区间改成"画布优先"：智能体栏取
+   clamp(280px, 30vw, 390px)（下限 280 仍够用，上限与宽的 2fr/1fr 分栏平滑衔接）。 */
+@media (min-width: 721px) and (max-width: 1280px) {
+  html body .product-chart[data-mode="qimen"] > .paipan-workspace {
+    grid-template-columns: minmax(0, 1fr) 6px clamp(280px, 30vw, 390px) !important;
+  }
+}
+
 @media (max-width: 720px) {
   html body .page-shell.product-chart[data-mode="qimen"] { display: grid !important; grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) !important; width: 100vw !important; max-width: 100vw !important; height: 100dvh !important; min-width: 0 !important; min-height: 0 !important; padding: 6px !important; overflow: hidden !important; }
   html body .page-shell.product-chart[data-mode="qimen"] > .observatory-hero { display: grid !important; grid-template: 32px 36px 32px / minmax(0, 1fr) auto !important; width: 100% !important; min-width: 0 !important; gap: 6px !important; padding: 8px !important; }
@@ -498,9 +507,9 @@
 @container (max-width: 360px) {
   /* 主要值（星/门/神）允许最长四字（中宫「天芮天禽」）：格子宽 ≈ (卡片 − 10)/3，
      所以字号取 (卡片 − 10)/12.6，四字正好放得下；宽卡片由 24px 封顶。
-     卡片极窄时（<约 190px）四字无解，用 14px 下限保住可读性，不再压到个位数。 */
+     卡片极窄时（<约 150px）四字本来无解，宁可把下限降到 11px 也不让星名被省略号截断。 */
   html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong {
-    font-size: clamp(14px, calc((100cqw - 10px) / 12.6), 24px) !important;
+    font-size: clamp(11px, calc((100cqw - 10px) / 12.6), 24px) !important;
   }
   /* 事实值同理按卡片宽度算：三列时格子宽 ≈ (卡片 − 10)/3，扣掉标签与间距后要能容下最长的
      「休 / 死」（约 3.9em）。这样 193px 卡片也不会只差 2px 就被省略号切掉。 */
@@ -523,18 +532,17 @@
   html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 9px !important; }
 }
 
-/* 画布被智能体面板挤窄的视口区间：排盘时间与四个按钮不再挤在一行（否则时间被省略号截断），
-   改成与手机端一致的「标签 + 时间」一行、按钮整行铺开。 */
+/* 画布被智能体面板挤窄的视口区间：不加行（那会吃掉 ~35px 盘面高度，反而把宫格压更小），
+   改为隐藏「排盘时间」标签并收窄四个按钮，让时间文本在同一行内完整显示。 */
 @media (min-width: 721px) and (max-width: 960px) {
   html body .product-chart[data-mode="qimen"] .chart-time-stepper {
-    grid-template-columns: auto minmax(0, 1fr) !important;
-    gap: 4px 8px !important;
+    gap: 6px !important;
   }
-  html body .product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper {
-    grid-column: 1 / -1 !important;
-    display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 4px !important;
+  html body .product-chart[data-mode="qimen"] .chart-time-stepper > span {
+    display: none !important;
+  }
+  html body .product-chart[data-mode="qimen"] .chart-time-stepper .datetime-stepper button {
+    padding: 3px 5px !important;
   }
 }
 
