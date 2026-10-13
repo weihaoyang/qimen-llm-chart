@@ -31,7 +31,7 @@
 
 /* Wide masthead. */
 
-@media (min-width: 1141px) {
+@media (min-width: 1560px) {
   html body .page-shell.product-chart .observatory-hero {
     display: flex !important;
     align-items: center !important;
@@ -73,27 +73,47 @@
     align-items: center !important;
     margin: 0 !important;
   }
+  /* 这些容器在窄一点的大屏上会被压扁，内部按钮随之换行堆叠（标签条也被挤到只剩两百来像素）。
+     宽 masthead 里只允许体系标签条伸缩，其余一律按内容宽度排布。 */
+  html body .page-shell.product-chart .observatory-hero__materials,
+  html body .page-shell.product-chart .observatory-hero .birth-library-control {
+    flex: 0 0 auto !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .birth-library-control {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
 }
 
-/* Medium masthead. */
+/* Narrow-to-medium masthead: three fixed rows.
 
-@media (max-width: 1140px) and (min-width: 721px) {
+   The desktop masthead cannot hold identity + account + the ten-tab rail + the
+   chart controls on one line below ~1560px. Relying on flex-wrap alone made the
+   grouping drift with the viewport (at 1100px `出生档案` was orphaned on its own
+   row while `改时间` shared the identity row; containers also shrank until their
+   buttons stacked). Pin the composition instead: row 1 identity + materials +
+   account, row 2 the tab rail across the full width, row 3 the chart controls. */
+
+@media (min-width: 721px) and (max-width: 1559.98px) {
   html body .page-shell.product-chart .observatory-hero {
     display: flex !important;
     flex-wrap: wrap !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    gap: 6px 10px !important;
+    gap: 8px 10px !important;
     min-height: 0 !important;
-    padding: 8px 12px !important;
+    padding: 9px 14px !important;
     background: var(--paipan-paper) !important;
     border: 2px solid var(--paipan-ink) !important;
     border-radius: 4px !important;
     box-shadow: var(--paipan-shadow-lg) !important;
   }
+  /* Row 1: identity, then materials + account pulled to the right. */
   html body .page-shell.product-chart .observatory-hero__copy {
     order: 1 !important;
     flex: 0 0 auto !important;
+    padding-right: 0 !important;
   }
   html body .page-shell.product-chart .observatory-hero .observatory-hero__materials {
     order: 2 !important;
@@ -102,36 +122,56 @@
   }
   html body .page-shell.product-chart .observatory-hero .platform-account {
     order: 3 !important;
-    flex: 0 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex: 0 0 auto !important;
     min-width: 0 !important;
     margin-left: 0 !important;
     position: static !important;
+    top: auto !important;
+    right: auto !important;
     transform: none !important;
   }
-  /* Keep the status from crowding the action row out on short screens. */
+  /* Keep the status text from crowding the rest of the row out. */
   html body .page-shell.product-chart .observatory-hero .platform-account__status {
     max-width: 96px !important;
     overflow: hidden !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
   }
-  html body .page-shell.product-chart .observatory-hero .hero-action {
-    order: 4 !important;
-    flex: 0 0 auto !important;
-    display: inline-flex !important;
-    align-items: center !important;
+  html body .page-shell.product-chart .observatory-hero .platform-account__redeem-wrap {
+    position: relative !important;
   }
-  html body .page-shell.product-chart .observatory-hero .birth-library-control {
-    order: 5 !important;
-    flex: 0 0 auto !important;
+  html body .page-shell.product-chart .observatory-hero .platform-account__redeem-popover {
+    right: 0 !important;
+    left: auto !important;
+    z-index: 110 !important;
   }
+  /* Row 2: the tab rail owns the full width — it is the primary navigation. */
   html body .page-shell.product-chart .observatory-hero .workbench-tabs {
-    order: 6 !important;
+    order: 4 !important;
     flex: 1 1 100% !important;
     width: 100% !important;
     min-width: 0 !important;
     display: flex !important;
     align-items: center !important;
+  }
+  /* Row 3: chart controls, in one predictable group. */
+  html body .page-shell.product-chart .observatory-hero .hero-action {
+    order: 5 !important;
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+  }
+  html body .page-shell.product-chart .observatory-hero .birth-library-control {
+    order: 6 !important;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
   }
   html body .page-shell.product-chart .observatory-hero__agent-entry {
     display: none !important;
