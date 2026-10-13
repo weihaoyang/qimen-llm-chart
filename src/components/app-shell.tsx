@@ -2275,7 +2275,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
       {mode !== "research" ? (
         <div className="chart-time-stepper" aria-label="盘面时间快速调整">
           <span>排盘时间</span>
-          <strong>{formState.datetime.replace("T", " ")}</strong>
+          {/* 时钟文本：SSR 用 hydration-safe 常量、客户端挂载后换成真实时钟，
+              两者必然不同，故按 React 对时间戳的约定抑制这一层的水合比对。 */}
+          <strong suppressHydrationWarning>{formState.datetime.replace("T", " ")}</strong>
           <DateTimeStepper onShift={shiftChartDateTime} />
         </div>
       ) : null}
@@ -2756,7 +2758,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const mobileActionBar = isMobile ? (
     <nav className="mobile-action-bar" aria-label="排盘操作">
       {mode !== "research" && !classicWorkspace ? (
-        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料" data-tour="time"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta">{profileMeta.label}</span></button>
+        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料" data-tour="time"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta" suppressHydrationWarning>{profileMeta.label}</span></button>
       ) : null}
       {mode !== "research" && !classicWorkspace ? (
         <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>出生档案</button>
@@ -2855,7 +2857,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             >
               <Clock size={14} strokeWidth={2} />
               改时间{" "}
-              <span className="hero-action__meta">{profileMeta.label}</span>
+              <span className="hero-action__meta" suppressHydrationWarning>{profileMeta.label}</span>
             </button>
           ) : null}
           {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">

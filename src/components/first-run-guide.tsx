@@ -84,7 +84,7 @@ export function FirstRunGuide({
         <li>
           <b>① 先设时间</b>
           <span>
-            当前盘面：<em>{profileSummary ?? "（未读取）"}</em>。点右上「<em>改时间</em>」改成你的出生时间
+            当前盘面：<em suppressHydrationWarning>{profileSummary ?? "（未读取）"}</em>。点右上「<em>改时间</em>」改成你的出生时间
             （或问事时间），再点「应用并重新排盘」。
           </span>
           <button type="button" className="first-run-guide__action" onClick={onOpenTimeSettings}>

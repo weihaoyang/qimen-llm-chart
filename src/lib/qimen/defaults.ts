@@ -1,5 +1,6 @@
 import type { ChartSequenceInput, SequenceStep } from "./sequence";
 import type { UserChartInput } from "./types";
+import { formatDateTimeInputInZone } from "./timezone";
 
 const FALLBACK_TIME_ZONE = "Asia/Shanghai";
 const DEFAULT_SEQUENCE_STEP: SequenceStep = "double-hour";
@@ -42,27 +43,6 @@ const normalizeTimeZone = (timeZone?: string) => {
   }
 
   return FALLBACK_TIME_ZONE;
-};
-
-const formatDateTimeInputInZone = (date: Date, timeZone: string) => {
-  const parts = getFormatter(timeZone).formatToParts(date);
-  const valueByType = Object.fromEntries(
-    parts
-      .filter((part) => part.type !== "literal")
-      .map((part) => [part.type, part.value]),
-  ) as Record<string, string>;
-
-  return [
-    valueByType.year,
-    "-",
-    valueByType.month,
-    "-",
-    valueByType.day,
-    "T",
-    valueByType.hour,
-    ":",
-    valueByType.minute,
-  ].join("");
 };
 
 const shiftLocalDateTimeByDays = (datetime: string, days: number) => {

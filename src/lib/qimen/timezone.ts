@@ -21,7 +21,7 @@ const getFormatter = (timeZone: string) => {
   return formatter;
 };
 
-const getTimeZoneParts = (date: Date, timeZone: string) => {
+export const getTimeZoneParts = (date: Date, timeZone: string) => {
   const parts = getFormatter(timeZone).formatToParts(date);
   const valueByType = Object.fromEntries(
     parts
@@ -69,6 +69,20 @@ export const formatLocalDateTime = (datetime: string) => {
 export const formatDateTimeInZone = (date: Date, timeZone: string) => {
   const parts = getTimeZoneParts(date, timeZone);
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
+};
+
+/**
+ * The wall-clock reading of `date` inside `timeZone`, as `YYYY-MM-DDTHH:mm`.
+ *
+ * This shape is what `<input type="datetime-local">` and `ProfileInput.datetime`
+ * use. It must go through `timeZone` rather than `Date#getHours()`: the process
+ * time zone of a server (production runs UTC) is not the visitor's, so a
+ * process-local read makes the server render different text than the browser and
+ * React reports a hydration mismatch.
+ */
+export const formatDateTimeInputInZone = (date: Date, timeZone: string) => {
+  const parts = getTimeZoneParts(date, timeZone);
+  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`;
 };
 
 export const toZonedDate = (datetime: string, timeZone: string) => {
