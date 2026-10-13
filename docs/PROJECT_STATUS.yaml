@@ -1,14 +1,16 @@
 project: 'qmdj'
 profile: 'high-risk'
-updated: '2026-10-12'
+updated: '2026-10-13'
 objective: '完成知几排盘工作台的领域能力、平台接入与本地可验证闭环'
 success_condition: '用户可在 /paipan 使用奇门、八字、紫微、三盘联合、七政四余、太乙神数、紫微飞星、玛雅、吠陀、卡巴拉、卢恩、神圣几何、塔罗、第四道、汉堡学派、皇极经世、大六壬、阿卡西、人类图、泛音等体系排盘与相关分析；每个体系在前端可直接查阅其逐字出处与异说/未核项；首次使用有引导（首屏显示当前盘面、分步高亮、入口名实相符）；平台登录、套餐、支付恢复和受限 AI 均遵守统一平台 gate；产品业务数据留在本仓库边界且本地验证可复现'
 phase: 'deployed'
-status: 'divination_history_audited_provenance_library_and_first_run_onboarding_shipped_production_released_20261012'
-current_blocker: '生产已发布 20261012-2daddf4（容器 qmdj healthy，/paipan 200，公网 https://qmdj.singseq.com 回显 releaseId 20261012-2daddf4）。剩余阻塞：①已登录态 gate / AI 页面点击与邀请码列表 / 创建权限的验收未执行（需可审计的管理员会话）；②RFC 阶段 3/4 计算迁出与平台生产部署阶段 3/4 需平台 owner 会签/真实拓扑。'
+status: 'divination_history_audited_provenance_library_and_first_run_onboarding_shipped_production_released_20261013'
+current_blocker: '生产已发布 20261013-f3d7f86（容器 qmdj healthy，/paipan 200，公网 https://qmdj.singseq.com 回显 releaseId 20261013-f3d7f86；上一版 20261012-2daddf4 保留为回滚目标）。剩余阻塞：①已登录态 gate / AI 页面点击与邀请码列表 / 创建权限的验收未执行（需可审计的管理员会话）；②RFC 阶段 3/4 计算迁出与平台生产部署阶段 3/4 需平台 owner 会签/真实拓扑。'
 next_action: '用可审计的已登录管理员会话完成 gate / AI 页面点击与邀请码列表 / 创建权限验收（不执行真实扣款）。质量门为本地 `npm run ci`（本仓不使用云端 CI）。'
 active_workers: []
 recent_evidence:
+  - '2026-10-13: **修复生产 React #418（水合文本不一致）并发布 20261013-f3d7f86**（用户指示「上线」）。发现方式：把线上 /paipan 摆进浏览器逐步驱动演示，第 5 步读控制台发现 1 条 `React #418`。根因：`getDefaultProfileInput` 用 `Date#getHours()` 等**进程本地时区**读法拼默认时间，生产容器进程时区为 UTC、访客浏览器为 +08，故 SSR 渲染 `2000-01-01 12:00`、首个客户端渲染 `2000-01-01 20:00`，文本必然不一致（本地开发机同区，从不复现）。修法：①默认时间与 `solar` 字段一律**按传入时区**落值（`qimen/timezone.ts` 导出唯一实现 `formatDateTimeInputInZone`/`getTimeZoneParts`，`qimen/defaults.ts` 删重复实现）；②「改时间」meta、排盘时间、引导摘要三处时钟文本按 React 对时间戳的约定加 `suppressHydrationWarning`（其余部分仍严格水合校验）；③新增 `profile/defaults.test.ts` 用与时区无关的断言钉住该性质。验证：`npm run ci` 122 文件 / 695 通过 / 2 skipped、eslint 0 error、next build 通过；本地以 `TZ=UTC` 起生产构建复刻生产进程时区，SSR 稳定输出 `2000-01-01 20:00`、0 条控制台消息。发布后线上复验：/api/version 回显 20261013-f3d7f86、/paipan 200、SSR 占位符为 `2000-01-01 20:00`（修复前是 12:00）、该页控制台 **0 条消息（#418 归零）**、挂载后替换为访客真实时间。'
+  - '2026-10-13: 用浏览器工具在**线上**逐步驱动走通首次使用演示并留证据：①首次打开自动弹分步指引第①步（高亮「改时间」，按钮带 `上海 · 2026-10-13 15:34`）；②第②步高亮翻页标签条（‹ › + `1 / 4`）；③「复制盘面资料」抽屉含用途说明与「复制到剪贴板 / 下载为文件」；④「资料库」搜只存在于条目**资料本体**里的原文片段「前為外迫」→ 命中 1 / 39 条（太乙卷三《推迫法》），证明检索确到原文层；⑤「改时间」面板含 `−/+ 时辰`、`−/+ 1天`。演示前重置首次体验：清 `qmdj-guided-tour-seen` 与 `qmdj-first-run-guide-dismissed` 后 reload。'
   - '2026-10-13: 移除 GitHub Actions 工作流（`.github/workflows/ci.yml`，同时清空 `.github/`）。理由：本仓无需云端 CI——它与本地 `npm run ci` 是同一条命令，且因 `@singularity-sequence/web-sdk` 是 `file:` 指向私有平台仓，云端要真跑必须配 `PLATFORM_REPO_TOKEN`；该密钥未配时工作流 6/7 步被 `if` 跳过，等于绿灯空转、不提供任何校验（反易误以为有云端兜底）。改为只保留本地质量门：改完跑 `npm run ci`，绿了才提交/推送；发布自带构建＋健康门＋自动回滚，不依赖云端。`docs/CI.md` 已改写为"本地一条命令 + 为什么没有云端 CI + 将来如需重建的做法"。'
   - '2026-10-12: **生产发布 20261012-2daddf4**（用户指示「上线」）。流程：push main（b1f3fb0..2daddf4，9 个提交）→ git archive 出 tar → scp 至主机 → 解到 /srv/qmdj-releases/20261012-2daddf4 → doctor 全绿（磁盘 9.0G）→ 后台 deploy。结果 RELEASE_OK=20261012-2daddf4，容器 qmdj healthy，回滚目标 qmdj:20261011-2e5b28a；主机 /paipan 200，公网 https://qmdj.singseq.com/paipan 200 且含「带我走一遍」「出生档案」「当前盘面：」「使用说明」「复制盘面资料」「资料库」与翻页标签条；README 时代遗留文案「调整盘面」已归零。本次无数据库迁移。'
   - '2026-10-12: 首次使用体验整批落地（9 个提交）：①「出处与原文」升级为可全文检索的**资料库**（抽屉 + 体系/状态筛选，材料本体可搜）；②首次进入**自动走一次分步高亮指引**（只在浏览器首次，跳过/Esc 也算走过），文本版四步引导可随时用「使用说明」叫回；③「调整盘面」→「改时间」并**在按钮上直接显示当前盘面（城市 · 时间）**；「盘面资料」→「复制盘面资料」（抽屉内写明用途，动作改「复制到剪贴板 / 下载为文件」）；「生日库」→「出生档案」（内部存储键不变）；④桌面端点明「右侧是 AI 对话区」并**收敛重复的「盘面分析」抽屉按钮**（净删代码）；⑤手机端引导改浮层；⑥时间前后推移（−/+ 时辰、−/+ 1 天）从"仅奇门"放开到所有体系（补通用样式）；⑦星盘/吠陀补**缺出生地空态引导**与一键「去补出生地」；⑧三盘联合页补用法与边界说明并修掉 3 处指向旧按钮名的过期文案。'
@@ -53,8 +55,8 @@ recent_evidence:
   - '2026-09-16: 统一登录边界完成生产修复：platform 667f2aa 使用 form-urlencoded siteverify，website release 20260916-214725-16c0b67 使用 canonical Cap endpoint；/login、/paipan、identity captcha、Cap challenge 均 200，真实移动端用户确认原 CAPTCHA 验证失败消失。'
   - '2026-09-25: qmdj 平台接入收口：普通代码统一 ProductPlatformClient，管理员邀请码隔离 admin client，服务端 gate/usage/guest usage 改走平台 SDK；AI 非流式与流式成功结算后通过 ProductServiceClient 上报 provider/model/token usage；新增 PLATFORM_INTEGRATION.md 与服务密钥边界文档。qmdj 全量 578 passed/13 skipped、TypeScript、lint、Next build 通过；qmdj commit d25f87a 已推送 main。'
   - '2026-09-25: 平台 web SDK 增加服务端显式 Cookie、可注入 fetch 与关闭自动 refresh 选项；SDK 28/28 测试通过，commit ba59c84 已推送 main。'
-last_commit: '2daddf4'
-remote_state: 'qmdj main 已推送 2daddf4；生产已发布 20261012-2daddf4（容器 qmdj healthy，/paipan 200，公网 qmdj.singseq.com 回显该 releaseId），上一版 20261011-2e5b28a 保留为回滚目标。平台 main 已推送 5edbb66（生产平台运行 20261009-5f21213）。'
+last_commit: 'f3d7f86'
+remote_state: 'qmdj main 已推送 f3d7f86；生产已发布 20261013-f3d7f86（容器 qmdj healthy，/paipan 200，公网 qmdj.singseq.com 回显该 releaseId，该页控制台 0 条消息、React #418 已归零），上一版 20261012-2daddf4 保留为回滚目标。平台 main 已推送 5edbb66（生产平台运行 20261009-5f21213）。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'
@@ -79,6 +81,8 @@ known_limits:
     - '阿卡西记录：非可计算体系，只列知识条目与伦理边界，不提供任何「读取」。'
     - '铁板神数 / 邵子神数：已整体移除（条文文本可分发性未决——仓库 LICENSE 为 Apache-2.0 但同仓 README 称「仅供学习交流使用」；邵子的条文与编号规则则未获许可允许且可核验的来源）。'
     - '三盘联合：只做聚合与对照，不产出任何自动吉凶断语。'
+  frontend:
+    - '首屏时间占位：服务端不可能知道访客时钟，默认盘面时间先用「水合安全常量」（`HYDRATION_SAFE_DATE` + `HYDRATION_SAFE_TIME_ZONE`，即 2000-01-01 20:00）渲染，挂载后替换为访客真实时间——首帧会有一次时间替换，这是为水合一致性刻意付出的代价。时钟文本（改时间 meta、排盘时间、引导摘要）按 React 对时间戳的约定带 `suppressHydrationWarning`；其余区域仍是严格水合校验，禁止给非时钟内容加该属性。默认盘面时间必须按传入时区落值（`formatDateTimeInputInZone`），不得用 `Date#getHours()` 这类进程本地读法，否则生产（进程时区 UTC）会与访客（+08）渲染出不同文本。'
   platform_not_in_this_repo:
     - '已登录态 gate / AI 页面点击与邀请码列表 / 创建权限的验收未执行（需可审计的管理员会话；不执行真实扣款）。'
     - 'RFC 阶段 3/4 计算迁出、平台生产部署阶段 3/4 需平台 owner 会签与真实拓扑。'
