@@ -36,6 +36,19 @@ describe("HumanDesignBodygraph", () => {
     expect(screen.getByText(/激活门/)).toHaveTextContent(String(definedCenter?.gates[0]));
   });
 
+  it("keeps center shapes free of transform attributes (hover scaling replaces them)", () => {
+    const { container } = render(<HumanDesignBodygraph chart={chart()} />);
+    const shapes = [...container.querySelectorAll(".bodygraph-svg__center rect, .bodygraph-svg__center path")];
+
+    expect(shapes).toHaveLength(9);
+    // 形状一律不带 transform 属性：样式里的 `transform-box: fill-box` 会改变属性 transform 的
+    // 参考坐标系，而 hover 的 `transform: scale(1.08)` 会整条替换它——两者叠加会让菱形跳出盘面并在
+    // 悬停时疯狂抖动。菱形因此改为用 path 直接画四个顶点。
+    expect(shapes.filter((shape) => shape.hasAttribute("transform"))).toHaveLength(0);
+    expect(container.querySelectorAll(".bodygraph-svg__center path")).toHaveLength(6);
+    expect(container.querySelectorAll(".bodygraph-svg__center rect")).toHaveLength(3);
+  });
+
   it("marks the channels and centers only the partner brings", () => {
     const value = chart();
     const partner = chartFor("1992-02-02T09:00:00+08:00");

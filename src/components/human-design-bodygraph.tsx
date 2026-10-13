@@ -5,6 +5,26 @@ import { HD_CHANNELS } from "@/lib/human-design/chart";
 import type { HumanDesignChart } from "@/lib/human-design/types";
 
 const CENTERS: Record<string, { x: number; y: number; kind: "diamond" | "square" | "triangle" }> = { 头: { x: 180, y: 40, kind: "triangle" }, 阿基那: { x: 180, y: 125, kind: "diamond" }, 喉咙: { x: 180, y: 215, kind: "square" }, "G中心": { x: 180, y: 315, kind: "diamond" }, 意志力: { x: 73, y: 292, kind: "triangle" }, 脾: { x: 73, y: 410, kind: "triangle" }, 情绪: { x: 287, y: 292, kind: "triangle" }, 骶骨: { x: 180, y: 435, kind: "square" }, 根部: { x: 180, y: 540, kind: "square" } };
+/**
+ * 菱形中心的半对角线：50×50 的方框绕中心转 45° 后，四个顶点在中心外 25√2 处。
+ *
+ * 菱形必须**用 path 直接画出四个顶点**，不能用带 `transform="rotate(45 …)"` 的 rect：
+ * 样式里为了让 hover 缩放绕形状自身中心，设了 `transform-box: fill-box`，它同样作用于
+ * SVG 的 transform 属性，会把"绕用户坐标点旋转"当成 fill-box 局部坐标解读，把菱形推到
+ * 盘面外；更糟的是 hover 的 `transform: scale(1.08)` 会整条替换属性 transform，指针一
+ * 移上去形状就跳走、hover 立刻失效再触发 —— 表现为疯狂抖动。
+ */
+const DIAMOND_HALF_DIAGONAL = 25 * Math.SQRT2;
+const centerShape = (center: { x: number; y: number; kind: "diamond" | "square" | "triangle" }) => {
+  if (center.kind === "diamond") {
+    const { x, y } = center;
+    return <path d={`M${x} ${y - DIAMOND_HALF_DIAGONAL} L${x + DIAMOND_HALF_DIAGONAL} ${y} L${x} ${y + DIAMOND_HALF_DIAGONAL} L${x - DIAMOND_HALF_DIAGONAL} ${y} Z`} />;
+  }
+  if (center.kind === "triangle") {
+    return <path d={`M${center.x} ${center.y - 29} L${center.x + 29} ${center.y + 23} L${center.x - 29} ${center.y + 23} Z`} />;
+  }
+  return <rect x={center.x - 28} y={center.y - 28} width="56" height="56" />;
+};
 const keyHandler = (event: KeyboardEvent<SVGGElement>, callback: () => void) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); callback(); } };
 const channelKey = (gates: [number, number]) => `${gates[0]}-${gates[1]}`;
 
@@ -40,7 +60,7 @@ export function HumanDesignBodygraph({ chart, partner }: { chart: HumanDesignCha
             const active = selected === name;
             return (
               <g key={name} className={`bodygraph-svg__center ${isDefined ? "is-defined" : "is-open"} ${partnerOnly ? "is-partner" : ""} ${active ? "is-selected" : ""}`} tabIndex={0} role="button" aria-label={`查看${name}中心`} onClick={() => setSelected(active ? null : name)} onKeyDown={(event) => keyHandler(event, () => setSelected(active ? null : name))}>
-                {center.kind === "diamond" ? <rect x={center.x - 25} y={center.y - 25} width="50" height="50" transform={`rotate(45 ${center.x} ${center.y})`} /> : center.kind === "triangle" ? <path d={`M${center.x} ${center.y - 29} L${center.x + 29} ${center.y + 23} L${center.x - 29} ${center.y + 23} Z`} /> : <rect x={center.x - 28} y={center.y - 28} width="56" height="56" />}
+                {centerShape(center)}
                 {name === "G中心" ? <text x={center.x} y={center.y + 4} textAnchor="middle">G</text> : <text x={center.x} y={center.y + 4} textAnchor="middle">{name}</text>}
               </g>
             );
