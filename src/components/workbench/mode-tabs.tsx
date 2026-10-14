@@ -37,6 +37,7 @@ export const MODE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "taiyi-shenshu", label: "太乙神数" },
   { value: "akasha", label: "阿卡西 · 全息" },
   { value: "ziwei-flying", label: "紫微飞星" },
+  { value: "bazi-tcm", label: "中医运气" },
   { value: "daliuren", label: "大六壬" },
 ];
 

@@ -52,7 +52,7 @@ describe("ModeTabs 翻页按钮", () => {
   it("第一页只渲染一页标签，并在翻页后暴露全部唯一 key", () => {
     const { container } = renderTabs();
 
-    // 默认（量不到宽度时）每页 8 个；22 个体系共 3 页。
+    // 默认（量不到宽度时）每页 8 个；23 个体系共 3 页。
     expect(visibleKeys(container)).toHaveLength(8);
     expect(screen.getByText("1/3")).toBeInTheDocument();
     expect(prevPage().disabled).toBe(true);
@@ -67,7 +67,7 @@ describe("ModeTabs 翻页按钮", () => {
       fireEvent.click(nextPage());
     }
     expect(seen.size).toBe(MODE_OPTIONS.length);
-    expect(seen.size).toBe(22);
+    expect(seen.size).toBe(23);
     expect(seen.has("daliuren")).toBe(true);
     expect(nextPage().disabled).toBe(true);
     expect(screen.getByText("3/3")).toBeInTheDocument();

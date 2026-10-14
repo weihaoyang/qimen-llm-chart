@@ -114,7 +114,7 @@ describe("AppShell", () => {
       fireEvent.click(nextPage);
     }
     const tabKeys = [...tabKeySet];
-    expect(tabKeys).toHaveLength(22);
+    expect(tabKeys).toHaveLength(23);
     // 每个标签的 key 必须唯一：重复会让 React 报 duplicate key（并可能漏渲染标签）。
     expect(new Set(tabKeys).size).toBe(tabKeys.length);
     expect(tabKeys.filter((key) => /kline|decision|agent/i.test(key))).toEqual([]);
