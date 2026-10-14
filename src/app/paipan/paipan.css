@@ -18,11 +18,29 @@ html:has(.product-chart), body:has(.product-chart), .product-chart {
   --paipan-yellow: #ffbe1a;
   --paipan-red: #e63946;
   --paipan-violet: #475569;
-  --paipan-slate: #71717a;
+  /* 次要文字色：#71717a 在浅底（#f4f1ea）上对比度 4.17:1，达不到 AA 的 4.5:1（Lighthouse
+     color-contrast 实测命中排盘时间标签、格局提示、页脚备案链接）。#5c5c66 在浅底 5.9:1、
+     白底 6.6:1，仍属"次要灰"但读得清。 */
+  --paipan-slate: #5c5c66;
   --paipan-slate-light: #e4e4e7;
   --paipan-shadow: 3px 3px 0 var(--paipan-ink);
   --paipan-shadow-sm: 2px 2px 0 var(--paipan-ink);
   --paipan-shadow-lg: 4px 4px 0 var(--paipan-ink);
   --paipan-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --paipan-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* 视觉隐藏、保留给屏幕阅读器。用绝对定位（不是 display:none），因此不占网格行 —— 用来给
+   宫格补一个 h2 分区标题，修掉"宫名 h3 之前没有 h2"的标题层级跳级（Lighthouse heading-order）。 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

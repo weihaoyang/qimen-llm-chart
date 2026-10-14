@@ -28,7 +28,7 @@ export const KLINE_PALETTE = {
   /** `--paipan-violet` — secondary labels. */
   violet: "#475569",
   /** `--paipan-slate` — tertiary text. */
-  slate: "#71717a",
+  slate: "#5c5c66",
   /** `--paipan-slate-light` — brush track, grid. */
   slateLight: "#e4e4e7",
   /** `.kline-panel__grid` stroke — dashed grid lines. */

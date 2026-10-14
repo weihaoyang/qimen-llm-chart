@@ -156,7 +156,9 @@ body .product-chart .qmdj-footer__compact {
 }
 
 body .product-chart .qmdj-footer__compact a {
-  color: var(--paipan-red) !important;
+  /* 品牌红 #e63946 在白底只有 4.16:1，达不到 AA 对小号粗体的 4.5:1（Lighthouse color-contrast
+     实测命中页脚备案链接）。用同色系深一档的 #cf2f3c（≈5.1:1），仍是品牌红。 */
+  color: #cf2f3c !important;
 }
 
 /* ---- 体系标签条：翻页按钮（‹ ›）而非横向滚动 ---------------------------- */

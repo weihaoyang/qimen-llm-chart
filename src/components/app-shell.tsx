@@ -2271,6 +2271,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const workbenchCanvas = (
     <section className="canvas-panel" data-mode={mode}>
+      {/* 屏幕阅读器用的分区标题：宫格里的宫名是 h3，缺一个 h2 会让标题层级跳级（Lighthouse
+          heading-order 实测命中）。sr-only 是绝对定位，不占网格行、不影响盘面布局。 */}
+      <h2 className="sr-only">{MODE_META[mode].title}</h2>
       {/* 排盘时间前后推移：任何体系都用得到（研究页是 K 线，不需要）。 */}
       {mode !== "research" ? (
         <div className="chart-time-stepper" aria-label="盘面时间快速调整">
