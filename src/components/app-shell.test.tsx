@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PROVENANCE } from "@/lib/provenance/registry";
+import { loadAllMaterials, mergeMaterials } from "@/lib/provenance/materials/manifest";
+import type { ProvenanceMaterialSet } from "@/lib/provenance/types";
 import { provenanceSearchText } from "./provenance-block";
 import { AppShell } from "./app-shell";
 
@@ -17,6 +19,12 @@ vi.mock("@/vendor/react-iztro", () => ({
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 }
+
+// 材料本体（整段原文）已拆到按需模块，资料库打开后才异步取回；测试里先 await 一份完整语料。
+let PROVENANCE_MATERIALS: ProvenanceMaterialSet = {};
+beforeAll(async () => {
+  PROVENANCE_MATERIALS = await loadAllMaterials();
+});
 
 describe("AppShell", () => {
   afterEach(() => { cleanup(); localStorage.clear(); });
@@ -364,9 +372,13 @@ describe("AppShell", () => {
     const dialog = await screen.findByRole("dialog", { name: "出处与原文资料库" });
     expect(dialog).toBeInTheDocument();
 
+    // 材料本体按需载入完成后（加载中先显示「正在载入原文…」），
     // 只出现在某条目"资料本体"里的片段也能搜到（太乙卷三·推迫法）
+    await waitFor(() => expect(screen.queryByText("正在载入原文…")).not.toBeInTheDocument(), { timeout: 30000 });
     fireEvent.change(screen.getByLabelText("检索出处与原文"), { target: { value: "前為外迫" } });
-    const expected = PROVENANCE.filter((entry) => provenanceSearchText(entry).includes("前為外迫")).length;
+    const expected = PROVENANCE
+      .map((entry) => mergeMaterials(entry, PROVENANCE_MATERIALS))
+      .filter((entry) => provenanceSearchText(entry).includes("前為外迫")).length;
     expect(expected).toBeGreaterThan(0);
     expect(screen.getByText(`命中 ${expected} / ${PROVENANCE.length} 条`)).toBeInTheDocument();
 

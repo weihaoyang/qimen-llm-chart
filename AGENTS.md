@@ -36,13 +36,14 @@ retired and must not be recreated or referenced by new work.
 
 ## 当前产品平台参数
 
-知几已经独立于胜天半子代码边界，但生产平台合同仍沿用历史兼容配置，直到平台登记知几专用产品。
+知几已经独立于胜天半子代码边界；平台已登记知几专用产品（product_code `qimen` / access_scope `qimen-core`），仓库默认配置已随之切换，历史兼容值仅作记录。
 
 - 产品名: `知几`
-- 当前生产 `product_code`: `shengtian-banzi`（历史兼容合同）
-- 当前生产 `access_scope`: `shengtian-banzi-core`（历史兼容合同）
+- 当前生产 `product_code`: `qimen`（平台已登记知几专用产品；证据：`GET https://api.singseq.com/api/v1/commerce/products/qimen/plans` 返回 200 且 `product_code` 为 `qimen`，三档 per_use 套餐齐备；仓库默认值见 `singseq.product.json` 与 `config/ai-product-manifest.json`）
+- 当前生产 `access_scope`: `qimen-core`（同上，随 `qimen` 一并登记）
+- 历史兼容值 `shengtian-banzi` / `shengtian-banzi-core`：**仅作历史记录**，不得回退使用（此前知几与胜天半子共用产品码，订单/额度/报表混在一起；平台已为知几登记独立产品，未用的胜天额度已继承）
 - 产品主域名: `https://qmdj.singseq.com`
-- 知几专用 product code/access scope 尚未取得平台登记证据，禁止自行猜测或切换。
+- 部署环境一致性：**实际生效的产品码取决于部署环境变量**（如 `.env.local` 中的产品码键）。若环境变量仍留历史值，运行时会退回旧产品码——发布或切换前必须核对部署环境与本节一致，并同步平台侧的 OAuth client、gate `access_scope` 与额度归属。
 - 预发域名: `由当前部署环境决定，接入前必须同步到平台 return_url 白名单`
 - 产品主入口路由: `/paipan`
 - 受限能力入口路由: `/paipan`

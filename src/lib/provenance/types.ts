@@ -21,6 +21,10 @@ export type ProvenanceKind = "古籍原文" | "开源实现" | "计算口径" | 
  *
  * 纪律：`lines` 中的每一行都要**照来源原样**抄录（繁简、异体字、标点体例、代码一律不改），
  * 无法逐字确认的内容不得放入。体例、版本或转写差异写在 `note`。
+ *
+ * 载入方式：材料本体体积很大（整段原文/整表数值），**不再随首屏打包**，只放在
+ * `src/lib/provenance/materials/*` 里，由 `materials/manifest.ts` 的 `import()` 按需载入
+ * （读者展开「出处与原文」或打开「资料库」时触发）。
  */
 export type ProvenanceDocument = {
   /** 资料标题，例如「推撃法」「置閏法」「matrix.cpp:640」 */
@@ -31,6 +35,12 @@ export type ProvenanceDocument = {
   note?: string;
 };
 
+/**
+ * 条目元数据与短引文——**随首屏打包的那部分**。
+ * 这里没有 `documents`：材料本体属于按需载入的 `materials/*`，取回后用
+ * `ProvenanceEntryWithMaterials` 渲染与检索（见 `materials/manifest.ts` 的 `mergeMaterials`）。
+ * 这条边界由类型守住——往 registry 里塞 `documents` 会直接编译不过。
+ */
 export type ProvenanceEntry = {
   id: string;
   system: ProvenanceSystem;
@@ -44,12 +54,22 @@ export type ProvenanceEntry = {
   url?: string;
   /** 逐字引文（尽量原文，不做现代化改写）。 */
   quote?: string;
-  /** 逐字资料本体（整段原文 / 整张数值表 / 源码行）；与 `quote` 的短引句区分，供前端折叠查阅。 */
-  documents?: readonly ProvenanceDocument[];
   /** 需要展开的结构化资料（表、清单、代码摘句）。 */
   details?: readonly string[];
   /** 本仓如何处理、以及读者需要注意什么。 */
   note?: string;
 };
+
+/** 条目元数据 + 已按需取回的材料本体（列表渲染与全文检索都用这个形状）。 */
+export type ProvenanceEntryWithMaterials = ProvenanceEntry & {
+  /** 逐字资料本体（整段原文 / 整张数值表 / 源码行）；与 `quote` 的短引句区分，供前端折叠查阅。 */
+  documents?: readonly ProvenanceDocument[];
+};
+
+/**
+ * 一个体系的材料本体：条目 id → `documents`。
+ * 没有长材料的条目不出现（`mergeMaterials` 会原样返回条目）。
+ */
+export type ProvenanceMaterialSet = Readonly<Record<string, readonly ProvenanceDocument[]>>;
 
 export const PROVENANCE_STATUS_ORDER: readonly ProvenanceStatus[] = ["已核", "异说", "未核", "本仓自撰"];
