@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import type { Position } from "3meta";
@@ -110,7 +111,13 @@ import { InspectorPanel } from "./inspector-panel";
 import { PalaceGrid } from "./palace-grid";
 import { QimenPatternPanel } from "./qimen-pattern-panel";
 import { SummaryStrip } from "./summary-strip";
-import { KlinePanel } from "./kline-panel";
+// 术数研究 · 人生 K 线面板只在「研究」体系下渲染，且它带来的 `recharts`（含其 d3 依赖）
+// 是首屏最大的一块非首屏资源，因此改成**客户端按需加载**：默认（奇门）首屏不再打包 recharts，
+// 只有真的切到研究体系时才去取这一块。挂载前的占位只在这一条体系里出现一瞬。
+const KlinePanel = dynamic(() => import("./kline-panel").then((module) => module.KlinePanel), {
+  ssr: false,
+  loading: () => <div className="kline-panel__empty">正在载入 K 线面板…</div>,
+});
 import { ClassicObservatoryPanel } from "./classic-observatory-panel";
 import { BaziCompatibilityPanel } from "./bazi-compatibility-panel";
 import { ModeTabs } from "./workbench/mode-tabs";
