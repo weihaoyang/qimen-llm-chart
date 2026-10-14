@@ -61,8 +61,8 @@ recent_evidence:
   - '2026-09-16: 统一登录边界完成生产修复：platform 667f2aa 使用 form-urlencoded siteverify，website release 20260916-214725-16c0b67 使用 canonical Cap endpoint；/login、/paipan、identity captcha、Cap challenge 均 200，真实移动端用户确认原 CAPTCHA 验证失败消失。'
   - '2026-09-25: qmdj 平台接入收口：普通代码统一 ProductPlatformClient，管理员邀请码隔离 admin client，服务端 gate/usage/guest usage 改走平台 SDK；AI 非流式与流式成功结算后通过 ProductServiceClient 上报 provider/model/token usage；新增 PLATFORM_INTEGRATION.md 与服务密钥边界文档。qmdj 全量 578 passed/13 skipped、TypeScript、lint、Next build 通过；qmdj commit d25f87a 已推送 main。'
   - '2026-09-25: 平台 web SDK 增加服务端显式 Cookie、可注入 fetch 与关闭自动 refresh 选项；SDK 28/28 测试通过，commit ba59c84 已推送 main。'
-last_commit: 'd9243a2'
-remote_state: 'qmdj main 已推送 88b0bca；生产已发布 20261014-88b0bca（容器 qmdj healthy，/paipan 200，/api/version 回显该 releaseId），上一版 20261014-be9b7c1 保留为回滚目标。本轮内容：无障碍 1.00（次要文字对比度 + 宫格标题层级）与「八字 + 中医运气」域层（五运六气内核 + 脏腑经络对应 + 对照视图，13 条回归）。另记录：早前发布 20261014-be9b7c1（容器 qmdj healthy，/paipan 200，公网 qmdj.singseq.com 回显该 releaseId，控制台 0 条消息）。注意两次同 commit 发布：另一会话先以 20261014-1058-be9b7c1 发布过同一 commit（be9b7c1，含产品身份切换与 CSP 清理），本次为其后的同源发布；当前 manifest 的 previous_image 即该同源镜像，上一个**内容不同**的版本是 20261014-5a7b9f4。本轮同时携带另一会话的产品身份切换：已复验平台 GET /api/v1/commerce/products/qimen/plans 返回 200 且 product_code=qimen、healthz 200。平台 main 已推送 5edbb66（生产平台运行 20261009-5f21213）。'
+last_commit: 'b78fd38'
+remote_state: 'qmdj main 已推送 b78fd38；生产已发布 20261015-b78fd38（容器 qmdj healthy，/api/version 回显该 releaseId，/paipan 200 且首屏 HTML 56 KB，控制台 0 条消息），回滚目标 20261015-073a6bd。本轮内容：把「出处与原文」的材料本体改为按需加载（每体系一个独立 chunk），首屏 JS 1598→1572 KB gzip、页面 chunk 714→649 KB；线上实测首屏 18 个 script、材料 0 字节，展开区块时才取回（18→19），资料库全文检索仍能命中原文本体（前為外迫）。平台 main 已推送 5edbb66。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'
