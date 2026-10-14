@@ -30,7 +30,7 @@ describe("content security policy", () => {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://api.singseq.com https://consumer-api.singularitysequence.com https:",
+      "connect-src 'self' https://api.singseq.com https:",
       "frame-src 'self'",
     ]) {
       expect(policy).toContain(directive);
