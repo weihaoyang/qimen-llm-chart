@@ -60,7 +60,7 @@ recent_evidence:
   - '2026-09-25: qmdj 平台接入收口：普通代码统一 ProductPlatformClient，管理员邀请码隔离 admin client，服务端 gate/usage/guest usage 改走平台 SDK；AI 非流式与流式成功结算后通过 ProductServiceClient 上报 provider/model/token usage；新增 PLATFORM_INTEGRATION.md 与服务密钥边界文档。qmdj 全量 578 passed/13 skipped、TypeScript、lint、Next build 通过；qmdj commit d25f87a 已推送 main。'
   - '2026-09-25: 平台 web SDK 增加服务端显式 Cookie、可注入 fetch 与关闭自动 refresh 选项；SDK 28/28 测试通过，commit ba59c84 已推送 main。'
 last_commit: 'be9b7c1'
-remote_state: 'qmdj main 已推送 be9b7c1；生产已发布 20261014-be9b7c1（容器 qmdj healthy，/paipan 200，公网 qmdj.singseq.com 回显该 releaseId，控制台 0 条消息），上一版 20261014-5a7b9f4 保留为回滚目标。本轮同时带上另一会话的两个提交：产品身份从 shengtian-banzi 切到平台新登记的 qimen（已复验平台 GET /api/v1/commerce/products/qimen/plans 返回 200 且 product_code=qimen、healthz 200）、以及 CSP connect-src 清理。平台 main 已推送 5edbb66（生产平台运行 20261009-5f21213）。'
+remote_state: 'qmdj main 已推送 fb54a9f（文档）；生产已发布 20261014-be9b7c1（容器 qmdj healthy，/paipan 200，公网 qmdj.singseq.com 回显该 releaseId，控制台 0 条消息）。注意两次同 commit 发布：另一会话先以 20261014-1058-be9b7c1 发布过同一 commit（be9b7c1，含产品身份切换与 CSP 清理），本次为其后的同源发布；当前 manifest 的 previous_image 即该同源镜像，上一个**内容不同**的版本是 20261014-5a7b9f4。本轮同时携带另一会话的产品身份切换：已复验平台 GET /api/v1/commerce/products/qimen/plans 返回 200 且 product_code=qimen、healthz 200。平台 main 已推送 5edbb66（生产平台运行 20261009-5f21213）。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'
