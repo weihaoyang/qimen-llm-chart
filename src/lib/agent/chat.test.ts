@@ -16,6 +16,13 @@ import {
   createAgentEventStreamResponse,
 } from "./chat";
 
+/**
+ * 初始提示词层的统一判据：无论是输入框预填的初始提问，还是未登录就能点到的第一个
+ * 分析角度，都必须自带一句纪律（区分/边界/口径）或禁止性要求（不做/不给/不要/不能）。
+ * 定义在这里而不是各自内联，避免两处判据以后漂移、让其中一面悄悄退化。
+ */
+const PROMPT_DISCIPLINE = /区分|边界|口径|不做|不给|不要|不能|而非|不是|只按/;
+
 describe("agent chat helpers", () => {
   it("keeps tool payloads out of tool_result while exposing chart updates", async () => {
     async function* parts() {
@@ -64,7 +71,7 @@ describe("agent chat helpers", () => {
       expect(question.length).toBeLessThanOrEqual(150);
       expect(seen.has(question)).toBe(false);
       seen.add(question);
-      expect(question).toMatch(/区分|边界|口径|不做|不给|不要|而非/);
+      expect(question).toMatch(PROMPT_DISCIPLINE);
       // 已被撤下或未实现的能力不得出现在初始提问里（否则等于把它们当成可用选项）。
       expect(question).not.toMatch(/拆补|茅山|执提|自挟|铁板|邵子/);
     }
@@ -100,6 +107,12 @@ describe("agent chat helpers", () => {
     // 未登录/未开通时，AI 面板展示的是每个体系的前 4 个分析角度按钮（欢迎态），
     // 用户最常点的第一条因此也必须自带该体系的口径要求——否则「初始提示」在
     // 用户实际能点的那一面上仍然缺口径，只剩输入框预填有。
+    // 统一标准：未登录就能点到的那第一条角度，必须自带一句纪律（区分/边界/口径/不做/不要/而非），
+    // 不区分体系——否则「初始提示」的完备性就随体系而变。
+    for (const [mode, angles] of Object.entries(AGENT_ANALYSIS_ANGLES)) {
+      expect(angles[0]?.question, `${mode} 的第一个分析角度应自带纪律句`).toMatch(PROMPT_DISCIPLINE);
+    }
+
     const expected: Record<string, string> = {
       qimen: "符头定元",
       ziwei: "运限",
