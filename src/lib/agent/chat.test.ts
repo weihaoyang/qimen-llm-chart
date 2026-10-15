@@ -96,6 +96,31 @@ describe("agent chat helpers", () => {
     expect(buildAgentSystemPrompt("combined")).toContain("相似字词不等于共振");
   });
 
+  it("puts the same口径 requirement on each mode's first analysis angle", () => {
+    // 未登录/未开通时，AI 面板展示的是每个体系的前 4 个分析角度按钮（欢迎态），
+    // 用户最常点的第一条因此也必须自带该体系的口径要求——否则「初始提示」在
+    // 用户实际能点的那一面上仍然缺口径，只剩输入框预填有。
+    const expected: Record<string, string> = {
+      qimen: "符头定元",
+      ziwei: "运限",
+      combined: "同一时间层级",
+      research: "时间尺度",
+      "human-design": "估值",
+      huangji: "反推",
+      qizheng: "交点约定",
+      uranian: "光行差",
+      vedic: "岁差",
+      qabalah: "katan-mispari",
+      "taiyi-shenshu": "360",
+      "ziwei-flying": "天乙飞星",
+      "bazi-tcm": "不做诊断",
+    };
+    for (const [mode, token] of Object.entries(expected)) {
+      const angles = AGENT_ANALYSIS_ANGLES[mode as keyof typeof AGENT_ANALYSIS_ANGLES];
+      expect(angles?.[0]?.question, `${mode} 的第一个分析角度应说明口径`).toContain(token);
+    }
+  });
+
   it("falls back to standard OpenAI-compatible env vars", () => {
     expect(
       getAgentConfig({

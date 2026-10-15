@@ -275,7 +275,7 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
   qimen: [
     {
       label: "盘面总览",
-      question: "请先概括当前奇门盘的盘面事实，再指出最重要的门、星、神、宫位组合和待复核点。",
+      question: "请先概括当前奇门盘的盘面事实，再指出最重要的门、星、神、宫位组合和待复核点，并说明所用用局口径（本仓默认符头定元）。",
       description: "先把盘面事实压缩成一张证据地图，再指出最值得继续核验的组合。",
       evidence: ["时令、遁局与局数", "值符、值使与驿马", "关键宫位的门星神干"],
     },
@@ -369,7 +369,7 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
   ziwei: [
     {
       label: "命宫与身宫",
-      question: "请重点分析命宫、身宫及其主星组合，区分本命结构、推断与需要继续核验的部分。",
+      question: "请重点分析命宫、身宫及其主星组合，区分本命结构、推断与需要继续核验的部分，并区分载荷中实际给出的运限字段。",
       description: "先读命宫、身宫和主星组合，再区分本命结构与需要核验的推断。",
       evidence: ["命宫与身宫", "主星及辅星组合", "事实、推断与待核验项"],
     },
@@ -407,7 +407,7 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
   combined: [
     {
       label: "三盘总览",
-      question: "请先分别列出奇门、八字、紫微的盘面事实，再给出三盘联合的共同信号、差异和待复核点。",
+      question: "请先分别列出奇门、八字、紫微的盘面事实，再给出三盘联合的共同信号、差异和待复核点。只在同一议题、同一时间层级下比较三盘。",
       description: "先做三盘分栏事实清单，再只比较同一议题和同一时间层级的信号。",
       evidence: ["三盘各自的核心锚点", "同一议题的可比字段", "共同信号与待复核点"],
     },
@@ -445,7 +445,7 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
   research: [
     {
       label: "人生趋势",
-      question: "请解释当前人生趋势 K 线的主要结构波动，逐条对应大运、流年与证据信号，并明确它不是事件预测。",
+      question: "请解释当前人生趋势 K 线的主要结构波动，逐条对应大运、流年与证据信号，并明确它不是事件预测。先说明当前用的是哪个研究工具与时间尺度。",
       description: "把趋势图还原成大运、流年和关系证据，不把指数包装成命运涨跌。",
       evidence: ["大运与流年干支", "十二长生与关系", "支持信号和待复核信号"],
     },
@@ -479,7 +479,7 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "行星落点", question: "请整理已计算行星落点的主题，并标明天文引擎和精度边界。", description: "按结构化落点整理主题与误差边界。", evidence: ["行星星座", "行星宫位", "计算口径"] },
   ],
   "human-design": [
-    { label: "类型与策略", question: "请说明当前人类图的类型、策略、权威、Profile 与定义，并区分推导字段与象征解释。", description: "只解释载荷字段，不进行心理或医学诊断。", evidence: ["类型", "策略与权威", "Profile 与定义"] },
+    { label: "类型与策略", question: "请说明当前人类图的类型、策略、权威、Profile 与定义，并区分推导字段与象征解释。并说明 tone/base 为估值。", description: "只解释载荷字段，不进行心理或医学诊断。", evidence: ["类型", "策略与权威", "Profile 与定义"] },
     { label: "中心结构", question: "请逐项解释已定义中心与开放中心，区分数据与解释。", description: "围绕中心结构提供反思角度。", evidence: ["中心定义状态", "中心激活门", "通道"] },
   ],
   tarot: [
@@ -495,11 +495,11 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "优先叠合", question: "请列出当前容许度内最紧的几组合相，并指出它们对应的母盘次要相位。", description: "按紧密度排序读叠合。", evidence: ["最紧合相", "对应母盘相位", "母盘容许度"] },
   ],
   huangji: [
-    { label: "纪年坐标", question: "请说明当前年份的元、会、运、世、世内年与年干支，并给出距纪元的年数序号。", description: "只做层级坐标换算。", evidence: ["元/会/运/世层级", "世内年", "年干支与距纪元序号"] },
+    { label: "纪年坐标", question: "请说明当前年份的元、会、运、世、世内年与年干支，并给出距纪元的年数序号。并说明该锚点是上游反推的派生值。", description: "只做层级坐标换算。", evidence: ["元/会/运/世层级", "世内年", "年干支与距纪元序号"] },
     { label: "尺度对照", question: "请说明一元 129600 年、一会 10800 年、一运 360 年、一世 30 年的换算，以及当前坐标对应的历史尺度。", description: "把大数与现实年代尺度对齐。", evidence: ["层级年数", "当前元内进度", "边界与不可推演的部分"] },
   ],
   qizheng: [
-    { label: "星曜落宫", question: "请列出七政与四余各自的黄经、宫位、宿度与庙旺，并说明取用口径。", description: "按星曜逐条落到宫与宿。", evidence: ["七政落宫", "四余落宫", "庙旺与宿度"] },
+    { label: "星曜落宫", question: "请列出七政与四余各自的黄经、宫位、宿度与庙旺，并说明取用口径（罗睺/计都的交点约定与二十八宿口径）。", description: "按星曜逐条落到宫与宿。", evidence: ["七政落宫", "四余落宫", "庙旺与宿度"] },
     { label: "命宫与十二宫", question: "请说明命宫如何定出，以及十二宫与星曜的对应关系。", description: "先定命宫，再看星曜分布。", evidence: ["命宫地支", "十二宫顺序", "星曜与命宫的关系"] },
   ],
   "sacred-geometry": [
@@ -511,7 +511,7 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "九界参照", question: "请结合北欧九界的层次说明这组符文可能对应的处境，并区分神话象征与现实推断。", description: "九界只作象征参照。", evidence: ["九界三层", "符文与九界的关联", "现实可验证的部分"] },
   ],
   uranian: [
-    { label: "八虚星位置", question: "请逐颗说明八虚星（Cupido…Poseidon）落在哪个星座度数、盘面位置，以及它在汉堡体系中的原则。", description: "先讲位置，再讲原则。", evidence: ["地心黄经与盘面位置", "八虚星原则", "与真实行星的相对关系"] },
+    { label: "八虚星位置", question: "请逐颗说明八虚星（Cupido…Poseidon）落在哪个星座度数、盘面位置，以及它在汉堡体系中的原则。并说明这里施加的是光行差口径。", description: "先讲位置，再讲原则。", evidence: ["地心黄经与盘面位置", "八虚星原则", "与真实行星的相对关系"] },
     { label: "中点与图景", question: "请说明当前被占据的中点与行星图景（A/B=C、A+B=C、A+B=C+D），并区分盘面几何与被解释出来的意义。", description: "几何是事实，意义是解释。", evidence: ["中点轴与容许度", "和点与等式", "哪些是象征解释"] },
   ],
   maya: [
@@ -519,15 +519,15 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "13:20 与神谕", question: "请说明 Kin、印记、调性、波符与神谕五方的关系，并区分计数事实与 Dreamspell 的象征解释。", description: "计数是事实，含义是解释。", evidence: ["13:20 计数与闰日约定", "印章与调性", "神谕五方的位置"] },
   ],
   vedic: [
-    { label: "命盘与宿位", question: "请说明上升（Lagna）、九曜的宫位与宿位（含 pada 与宿主），并指出罗睺/计都的平交点约定。", description: "先讲位置，再讲含义。", evidence: ["Lahiri 岁差与恒星黄经", "27 宿与四足", "上升与九曜落宫"] },
+    { label: "命盘与宿位", question: "请说明上升（Lagna）、九曜的宫位与宿位（含 pada 与宿主），并指出罗睺/计都的平交点约定与所用岁差体系。", description: "先讲位置，再讲含义。", evidence: ["Lahiri 岁差与恒星黄经", "27 宿与四足", "上升与九曜落宫"] },
     { label: "分盘判读", question: "请说明所选分盘（如 D9 婚姻、D60 前世业）的划分规则，以及其中各曜落宫与 D1 的异同（含 Vargottama）。", description: "规则是事实，判读是解释。", evidence: ["分盘划分规则", "各曜在分盘中的宫位", "与 D1 的异同"] },
   ],
   qabalah: [
-    { label: "四界与十辉", question: "请说明四界各自的神名、天使、天使序与对应辉位，并对照十辉的天使体系。", description: "对照是事实，含义是解释。", evidence: ["四界要素", "十辉神名与天使", "字母 ↔ 塔罗/元素/行星"] },
+    { label: "四界与十辉", question: "请说明四界各自的神名、天使、天使序与对应辉位，并对照十辉的天使体系。并说明 katan-mispari 不逐字拆分。", description: "对照是事实，含义是解释。", evidence: ["四界要素", "十辉神名与天使", "字母 ↔ 塔罗/元素/行星"] },
     { label: "字母数术", question: "请逐字说明输入词的字母与数值，列出十三法结果，并说明数根与同值字母。", description: "先算术，再谈象征。", evidence: ["逐字数值", "十三法结果", "数根与同值字母"] },
   ],
   "taiyi-shenshu": [
-    { label: "起局推演", question: "请复述积年 → 入纪元数 → 入局数 → 太乙宫的推导，并说明天目（文昌）、计神、始击各自如何求出。", description: "先讲推导链，再看盘。", evidence: ["积年与入局数", "太乙三年一宫不入中宫", "天目/计神/始击求法"] },
+    { label: "起局推演", question: "请复述积年 → 入纪元数 → 入局数 → 太乙宫的推导，并说明天目（文昌）、计神、始击各自如何求出，以及所用元六纪周期（360/365）与遁的口径。", description: "先讲推导链，再看盘。", evidence: ["积年与入局数", "太乙三年一宫不入中宫", "天目/计神/始击求法"] },
     { label: "主客算与格局", question: "请说明主算与客算如何自二目顺数正宫至太乙前一宫，大将宫如何取，并指出命中的格局与长短数、和否。", description: "规则是事实，断语是解释。", evidence: ["主客算算法", "大将宫取个位/除九", "格局六格与长短数"] },
   ],
   akasha: [
@@ -535,11 +535,11 @@ export const AGENT_ANALYSIS_ANGLES: Record<WorkbenchMode, readonly AgentAnalysis
     { label: "碎片重建与概念边界", question: "请解释碎片重建为何仍得到全部点源、分辨率如何随碎片下降，并指出哪些说法只是流行类比。", description: "物理与类比必须分开。", evidence: ["干涉与傅里叶", "碎片比例与分辨率", "阿卡西与全息的类比边界"] },
   ],
   "ziwei-flying": [
-    { label: "飞化与自化", question: "请逐宫说明该宫宫干所化禄权科忌飞入何宫，并指出哪些是自化（离心）、哪些有对宫向心化入。", description: "先飞化，再自化。", evidence: ["十干四化表", "飞入宫", "自化与向心"] },
+    { label: "飞化与自化", question: "请逐宫说明该宫宫干所化禄权科忌飞入何宫，并指出哪些是自化（离心）、哪些有对宫向心化入。并注明「天乙飞星」为本仓组合命名。", description: "先飞化，再自化。", evidence: ["十干四化表", "飞入宫", "自化与向心"] },
     { label: "来因宫与转忌链", question: "请说明来因宫如何取定、天乙贵人宫如何取，并逐步复述禄转忌与忌转忌的链条。", description: "规则是事实，断语是解释。", evidence: ["来因宫取法", "天乙贵人口诀", "禄转忌/忌转忌链"] },
   ],
   "bazi-tcm": [
-    { label: "运气推演", question: "请复述所选流年的中运（太过/不及与纪名）、司天、在泉与六步客主加临，并指出哪些是《素问》明文、哪些出自后世运气专书。", description: "先讲可核验的条款，再谈对照。", evidence: ["十干化运与十二支化六气", "司天在泉与客主加临", "岁会/天符/太一天符原文"] },
+    { label: "运气推演", question: "请复述所选流年的中运（太过/不及与纪名）、司天、在泉与六步客主加临，并指出哪些是《素问》明文、哪些出自后世运气专书，注明交年三派等异说，并说明本页不做诊断、不给方药。", description: "先讲可核验的条款，再谈对照。", evidence: ["十干化运与十二支化六气", "司天在泉与客主加临", "岁会/天符/太一天符原文"] },
     { label: "干支对照脏腑经络", question: "请按《针灸聚英》十干配脏腑与《针灸大全》十二时辰配十二经，逐柱列出本命四柱的脏腑与经络对应。", description: "只做文献对应，不做体质或诊断。", evidence: ["十干配脏腑歌", "十二经纳地支歌", "《素问·藏气法时论》五脏主时"] },
   ],
 };
