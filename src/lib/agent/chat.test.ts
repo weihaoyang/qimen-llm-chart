@@ -51,6 +51,51 @@ describe("agent chat helpers", () => {
     expect(AGENT_ANALYSIS_ANGLES.combined.some((angle) => angle.label === "情感婚恋")).toBe(true);
   });
 
+  it("keeps every initial question anchored, bounded and explicit about its own口径", () => {
+    // 初始提问是用户直接发送的那条指令，它自己必须带住体系边界：
+    // 服务端规则里写明的纪律（区分事实/推断/假设、说明口径、不得当作预测）
+    // 一旦在预填问题里丢失，用户点「发送」就会绕过那层约束。
+    const entries = Object.entries(DEFAULT_AGENT_QUESTIONS);
+    expect(entries).toHaveLength(22);
+
+    const seen = new Set<string>();
+    for (const [, question] of entries) {
+      expect(question.trim().length).toBeGreaterThan(20);
+      expect(question.length).toBeLessThanOrEqual(150);
+      expect(seen.has(question)).toBe(false);
+      seen.add(question);
+      expect(question).toMatch(/区分|边界|口径|不做|不给|不要|而非/);
+      // 已被撤下或未实现的能力不得出现在初始提问里（否则等于把它们当成可用选项）。
+      expect(question).not.toMatch(/拆补|茅山|执提|自挟|铁板|邵子/);
+    }
+
+    // 登记过异说或可切换口径的体系，必须要求说明「所用口径」。
+    expect(DEFAULT_AGENT_QUESTIONS.qimen).toContain("符头定元");
+    expect(DEFAULT_AGENT_QUESTIONS.ziwei).toContain("运限");
+    expect(DEFAULT_AGENT_QUESTIONS.research).toContain("时间尺度");
+    expect(DEFAULT_AGENT_QUESTIONS.harmonic).toContain("合相");
+    expect(DEFAULT_AGENT_QUESTIONS.huangji).toContain("反推");
+    expect(DEFAULT_AGENT_QUESTIONS.qizheng).toContain("交点约定");
+    expect(DEFAULT_AGENT_QUESTIONS.uranian).toContain("光行差");
+    expect(DEFAULT_AGENT_QUESTIONS.maya).toContain("相关系数");
+    expect(DEFAULT_AGENT_QUESTIONS.vedic).toContain("岁差");
+    expect(DEFAULT_AGENT_QUESTIONS.qabalah).toContain("katan-mispari");
+    expect(DEFAULT_AGENT_QUESTIONS["taiyi-shenshu"]).toContain("360");
+    expect(DEFAULT_AGENT_QUESTIONS["ziwei-flying"]).toContain("天乙飞星");
+    expect(DEFAULT_AGENT_QUESTIONS["bazi-tcm"]).toContain("不做诊断");
+  });
+
+  it("requires the model to restate the口径 it used and keeps the per-system boundaries in the system prompt", () => {
+    // 初始提问要求使用者说明口径，这里保证服务端也要求模型**复述**该口径，
+    // 否则异说体系仍可能被当成唯一真值输出。
+    expect(buildAgentSystemPrompt("qizheng")).toContain("复述本次采用的");
+    expect(buildAgentSystemPrompt("bazi-tcm")).toContain("不预测疾病");
+    expect(buildAgentSystemPrompt("bazi-tcm")).toContain("咨询执业医师");
+    expect(buildAgentSystemPrompt("qimen")).toContain("拆补 / 茅山");
+    expect(buildAgentSystemPrompt("akasha")).toContain("不得扮演「读取阿卡西记录」的角色");
+    expect(buildAgentSystemPrompt("combined")).toContain("相似字词不等于共振");
+  });
+
   it("falls back to standard OpenAI-compatible env vars", () => {
     expect(
       getAgentConfig({
