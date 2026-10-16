@@ -62,7 +62,7 @@ recent_evidence:
   - '2026-09-25: qmdj 平台接入收口：普通代码统一 ProductPlatformClient，管理员邀请码隔离 admin client，服务端 gate/usage/guest usage 改走平台 SDK；AI 非流式与流式成功结算后通过 ProductServiceClient 上报 provider/model/token usage；新增 PLATFORM_INTEGRATION.md 与服务密钥边界文档。qmdj 全量 578 passed/13 skipped、TypeScript、lint、Next build 通过；qmdj commit d25f87a 已推送 main。'
   - '2026-09-25: 平台 web SDK 增加服务端显式 Cookie、可注入 fetch 与关闭自动 refresh 选项；SDK 28/28 测试通过，commit ba59c84 已推送 main。'
 last_commit: '73b9282'
-remote_state: 'qmdj main 已推送 73b9282；生产已发布 20261015-a031550（容器 qmdj healthy，/api/version 回显该 releaseId，/paipan 200 且首屏 HTML 56 KB、控制台 0 条消息），回滚目标 20261015-b78fd38。**73b9282 尚未发布**：它是审查修正（12 个体系首屏角度的纪律句、判据统一、包体数字更新），行为影响仅限初始提示词文本。本轮内容：① 人生 K 线面板改为客户端按需加载，recharts（411 KB）移出首屏——首屏 JS 1572→1432 KB gzip、最大 chunk 1714→1306 KB，线上首屏 17 个脚本中 0 个含 recharts；② 初始提示词按体系口径对齐：22 条初始提问 + 13 个体系的首个分析角度补上登记口径，服务端新增强制「先复述所用口径及其异说」。另记本地磁盘事故：F: 盘满导致 next build 报 ENOSPC（非代码问题），已清 926 MB webpack 缓存与两个临时检出，F: 仅余约 400 MB。平台 main 已推送 5edbb66。'
+remote_state: 'qmdj main 已推送 723df30（另有未合并分支 identity-casdoor-cutover=08373dd，Casdoor 标准登录重写，待阶段 D 并入 main）。**支付宝事故已完整闭环**：三处根因全部修复——① SS_ALIPAY_SELLER_ID 少一位（→ 16 位 2088680608589035）；② 验签公钥误用「应用公钥」而非「支付宝公钥」（2026-10-16 定位，容器强制重建）；③ 本仓服务端产品码旧值（→ qimen，发布 20261015-a031550）。受影响订单 b8134a5e… 已确权为 active（经 commerce.payment_query_recorded 主动查询兜底结算，发放 10 次额度），修复后无新回调被拒。平台侧新增两道防线（支付宝公钥指纹自检+漂移告警、拒收回调报文留档与离线验签）。平台集成分支 integration/platform-next @ 559fda4：808 passed / 1 skipped（~58s，16 worker）+ 支付 e2e 10 passed/1 skipped；P1（脚手架+SDK）进行中，P2（收银台即服务+产品凭据）排队。待外部输入：法务/税务劳务报酬口径（阶段 C）、生产窗口（阶段 D: G3→G4→G5）。'
 handoff: 'docs/HANDOFF_AGENT_CHAT.md'
 adoption:
   mode: 'adopt'
