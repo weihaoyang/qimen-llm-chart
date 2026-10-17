@@ -58,7 +58,8 @@ QMDJ 不实现公司级 OTP、用户库、订单、支付结果、订阅或 enti
 
 仍未收口：
 
-1. **加密异步通知未实测**：接口内容加密的"请求加密 + 响应先验签再解密"已在真实网关验证可用（加密与证书模式可叠加），但控制台侧的加密通知形态未跑过；且服务器那把 AES 密钥曾被误打印，**建议先在控制台轮换再用**（当前生产保持加密关闭，功能上无缺口）。
+1. ~~加密异步通知未实测~~ **已实测通过（2026-10-17）**：生产已开启 `SS_ALIPAY_ENCRYPT_TYPE=AES`（密钥与服务器 `/srv/alipay/20261017/aes_key.txt` 同一把），就绪 `encryption_enabled=true / encryption_ready=true`；真实链路验证——加密下单（`biz_content` 密文）→ **密文异步通知先验签再解密** → `signature_valid=true`、`settlement_source=callback` → 权益发放 → **加密退款** `completed` → 权益 `cancelled`。服务端代码侧 `normalize_certificate_mode_response` 已覆盖"证书模式 + 内容加密"叠加形态。
+   ⚠️ 仍建议轮换该 AES 密钥（曾被误打印）：控制台重设后把新 `AES.txt` 放 `/srv/alipay/20261017/`，并用一次性容器验证"同一把"再切换；另注意 **密钥文件属主必须是 uid 1000(app)**，且**每个新 release 的 `infra/secrets` 都要带上它**（`deploy-shadow-release.sh` 只校验私钥/公钥，不自动搬 secrets）。
 2. **劳务出款护栏**：额度预检 `alipay.fund.quota.query` 返回 `INVALID_PARAMETER`（`product_code` 取值不被接受）、余额预检/官方回单/消息回调三项未开；且需控制台「商家转账—接入检测」重新通过（当初唯一未通过项就是应用未配置公钥证书，现已完成证书模式）。
 3. **身份切换前置**：`SS_CASDOOR_*` 未配（P1）、契约需收紧到路径式回调（P3）、生产 SMS+微信登录人工证据（P4）、逐产品签核人（P8）；`SS_CASDOOR_LOGIN_CLIENTS` 逐产品开关已实现（默认空=fail-closed）。
 4. **秒级接入的 5 个人工步骤**：产品目录/定价（无 API）、`integrations.py`+配置生成+nginx、Casdoor application、审核钩子 URL、回跳白名单；自动化部分（登记→审批→托管→凭据→下单→支付尝试→下架）实测**1.0–1.3 秒**跑完。
