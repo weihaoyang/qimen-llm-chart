@@ -59,7 +59,14 @@ QMDJ 不实现公司级 OTP、用户库、订单、支付结果、订阅或 enti
 仍未收口：
 
 1. ~~加密异步通知未实测~~ **已实测通过（2026-10-17）**：生产已开启 `SS_ALIPAY_ENCRYPT_TYPE=AES`（密钥与服务器 `/srv/alipay/20261017/aes_key.txt` 同一把），就绪 `encryption_enabled=true / encryption_ready=true`；真实链路验证——加密下单（`biz_content` 密文）→ **密文异步通知先验签再解密** → `signature_valid=true`、`settlement_source=callback` → 权益发放 → **加密退款** `completed` → 权益 `cancelled`。服务端代码侧 `normalize_certificate_mode_response` 已覆盖"证书模式 + 内容加密"叠加形态。
-   ⚠️ 仍建议轮换该 AES 密钥（曾被误打印）：控制台重设后把新 `AES.txt` 放 `/srv/alipay/20261017/`，并用一次性容器验证"同一把"再切换；另注意 **密钥文件属主必须是 uid 1000(app)**，且**每个新 release 的 `infra/secrets` 都要带上它**（`deploy-shadow-release.sh` 只校验私钥/公钥，不自动搬 secrets）。
+   ⚠️ **密钥轮换已决定放弃（2026-10-18，操作人决定）**：继续使用当前 AES 密钥，接受"曾被误打印"的风险；生产持续开启内容加密。若要恢复轮换：控制台重设后把新 `AES.txt` 放 `/srv/alipay/20261017/`，并用一次性容器验证"同一把"再切换；注意 **密钥文件属主必须是 uid 1000(app)**，且**每个新 release 的 `infra/secrets` 都要带上它**（`deploy-shadow-release.sh` 只校验私钥/公钥，不自动搬 secrets）。
+
+对账与账户能力（2026-10-18 真实接口实测）：
+
+- **日对账**：`2026-10-16` → `status=ok`（账单 1 笔 / 平台 1 笔已结算 / `orders_matched_from_bill=1` / 全部差异计数 0）；`2026-10-17` → `status=alert`，原因是账单含 3 笔退款（3 次 ¥0.01 测试退款，`-0.01`）与 1 笔**非平台单号**（绕过平台的 `SSTEST…`）—— 告警行为正确（账单有平台不认识的收入必须人工核）。
+- **余额** `alipay.fund.account.query` → `10000 Success`；**转账额度** `alipay.fund.quota.query` → `10000 Success`（`restricted=true`，额度受限）。额度查询必须用 `product_code=TRANS_ACCOUNT_NO_PWD` + `biz_scene=DIRECT_TRANSFER`（与转账的 `BATCH_API_NO_PWD/MULTI_STEP_TRANSFER` 解耦）。
+- 账单下载走 `http://dwbillcenter.alipay.com`，平台如实标注 `commerce_daily_bill_insecure_transport`（已知、非隐瞒）。
+- **劳务真实转账仍缺一步**：商家侧「资金管理 → 转账场景 → 申明『佣金报酬』」未完成，`multistep.transfer` 返回 `TRANSFER_SCENE_NAME_ILLEGAL`；开好后可重跑同一批次（幂等，不会重复出款）。
 2. **劳务出款护栏**：额度预检 `alipay.fund.quota.query` 返回 `INVALID_PARAMETER`（`product_code` 取值不被接受）、余额预检/官方回单/消息回调三项未开；且需控制台「商家转账—接入检测」重新通过（当初唯一未通过项就是应用未配置公钥证书，现已完成证书模式）。
 3. **身份切换前置**：`SS_CASDOOR_*` 未配（P1）、契约需收紧到路径式回调（P3）、生产 SMS+微信登录人工证据（P4）、逐产品签核人（P8）；`SS_CASDOOR_LOGIN_CLIENTS` 逐产品开关已实现（默认空=fail-closed）。
 4. **秒级接入的 5 个人工步骤**：产品目录/定价（无 API）、`integrations.py`+配置生成+nginx、Casdoor application、审核钩子 URL、回跳白名单；自动化部分（登记→审批→托管→凭据→下单→支付尝试→下架）实测**1.0–1.3 秒**跑完。
