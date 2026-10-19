@@ -58,7 +58,21 @@ QMDJ 不实现公司级 OTP、用户库、订单、支付结果、订阅或 enti
 
 仍未收口：
 
-1. ~~加密异步通知未实测~~ **已实测通过（2026-10-17）**：生产已开启 `SS_ALIPAY_ENCRYPT_TYPE=AES`（密钥与服务器 `/srv/alipay/20261017/aes_key.txt` 同一把），就绪 `encryption_enabled=true / encryption_ready=true`；真实链路验证——加密下单（`biz_content` 密文）→ **密文异步通知先验签再解密** → `signature_valid=true`、`settlement_source=callback` → 权益发放 → **加密退款** `completed` → 权益 `cancelled`。服务端代码侧 `normalize_certificate_mode_response` 已覆盖"证书模式 + 内容加密"叠加形态。
+1. **微信登录 / 微信支付**：开放平台/商户号侧尚未拿到 AppID 与商户 API 证书（小程序/开放平台注册需主体认证 + 对公打款验证），代码侧微信网关目前仅实现 H5。
+2. **劳务出款**：¥0.10 真实转账已成功（见下），但「佣金报酬」场景为 1–3 个工作日审核后生效；官方回单与消息回调仍关闭。
+3. **身份切换前置**：`SS_CASDOOR_*` 已配（P1 就绪、`providers.casdoor_identity.ready=true`），但 `SS_CASDOOR_LOGIN_CLIENTS` 为空（fail-closed，登录仍走旧手机号/OTP 路径）；仍需 P3 契约收紧、P4 真实短信+微信登录人工证据、P8 逐产品签核人，才能开 G3/G4。
+4. **秒级接入的收尾**：Host/CORS/OAuth 白名单均已数据驱动热生效；剩「产品目录/定价」可经 provision API 完成，但 **DNS 记录**与**证书签发**仍依赖外部（`*.singseq.com` 已通配，新增子域无需手工加 DNS）。
+
+### 2026-10-20 收口记录（生产）
+
+- 平台线上版本切换为 **`20261020-qimen-8853ad5`**（我方集成分支 + 额度护栏修正 + 迁移 `20261021_0004` 对齐）：`qimen` 注册恢复 → **qmdj 登录不再报 `identity_oauth_context_invalid`**（操作人实测登录成功）；证书模式、内容加密、Casdoor P1 均保持。
+- **¥0.10 真实劳务转账成功**：批次 `LBVERIFY20261017A` → `settled`，`provider_status=success`、支付宝订单号 `20261020020070111500030004866728`、税额 0（≤¥800）、`paid=10 / difference=0` 对平；成功后重试被 `batch settled` 拒绝（无第二笔）。
+- 额度护栏修正：支付宝 `restricted=true` 仅表示"账户有额度上限"，改为按"**剩余额度 ≥ 本笔金额**"放行（当次 `daily_remain=¥20,000`、`monthly_remain=¥100,000`）。
+- ⚠️ 已知遗留：此前一版 `20261021-quant-payment-contract-0004` 的来源分支已丢失（未 push、不在本机/远端），其**平台侧新增接口**目前不在线上；quant 产品站点本身正常（200），待找回分支后 merge 回来。
+
+### 内容加密实测（2026-10-17）
+
+- 生产已开启 `SS_ALIPAY_ENCRYPT_TYPE=AES`（密钥与服务器 `/srv/alipay/20261017/aes_key.txt` 同一把），就绪 `encryption_enabled=true / encryption_ready=true`；真实链路验证——加密下单（`biz_content` 密文）→ **密文异步通知先验签再解密** → `signature_valid=true`、`settlement_source=callback` → 权益发放 → **加密退款** `completed` → 权益 `cancelled`。服务端代码侧 `normalize_certificate_mode_response` 已覆盖"证书模式 + 内容加密"叠加形态。
    ⚠️ **密钥轮换已决定放弃（2026-10-18，操作人决定）**：继续使用当前 AES 密钥，接受"曾被误打印"的风险；生产持续开启内容加密。若要恢复轮换：控制台重设后把新 `AES.txt` 放 `/srv/alipay/20261017/`，并用一次性容器验证"同一把"再切换；注意 **密钥文件属主必须是 uid 1000(app)**，且**每个新 release 的 `infra/secrets` 都要带上它**（`deploy-shadow-release.sh` 只校验私钥/公钥，不自动搬 secrets）。
 
 对账与账户能力（2026-10-18 真实接口实测）：
@@ -66,10 +80,7 @@ QMDJ 不实现公司级 OTP、用户库、订单、支付结果、订阅或 enti
 - **日对账**：`2026-10-16` → `status=ok`（账单 1 笔 / 平台 1 笔已结算 / `orders_matched_from_bill=1` / 全部差异计数 0）；`2026-10-17` → `status=alert`，原因是账单含 3 笔退款（3 次 ¥0.01 测试退款，`-0.01`）与 1 笔**非平台单号**（绕过平台的 `SSTEST…`）—— 告警行为正确（账单有平台不认识的收入必须人工核）。
 - **余额** `alipay.fund.account.query` → `10000 Success`；**转账额度** `alipay.fund.quota.query` → `10000 Success`（`restricted=true`，额度受限）。额度查询必须用 `product_code=TRANS_ACCOUNT_NO_PWD` + `biz_scene=DIRECT_TRANSFER`（与转账的 `BATCH_API_NO_PWD/MULTI_STEP_TRANSFER` 解耦）。
 - 账单下载走 `http://dwbillcenter.alipay.com`，平台如实标注 `commerce_daily_bill_insecure_transport`（已知、非隐瞒）。
-- **劳务真实转账仍缺一步**：商家侧「资金管理 → 转账场景 → 申明『佣金报酬』」未完成，`multistep.transfer` 返回 `TRANSFER_SCENE_NAME_ILLEGAL`；开好后可重跑同一批次（幂等，不会重复出款）。
-2. **劳务出款护栏**：额度预检 `alipay.fund.quota.query` 返回 `INVALID_PARAMETER`（`product_code` 取值不被接受）、余额预检/官方回单/消息回调三项未开；且需控制台「商家转账—接入检测」重新通过（当初唯一未通过项就是应用未配置公钥证书，现已完成证书模式）。
-3. **身份切换前置**：`SS_CASDOOR_*` 未配（P1）、契约需收紧到路径式回调（P3）、生产 SMS+微信登录人工证据（P4）、逐产品签核人（P8）；`SS_CASDOOR_LOGIN_CLIENTS` 逐产品开关已实现（默认空=fail-closed）。
-4. **秒级接入的 5 个人工步骤**：产品目录/定价（无 API）、`integrations.py`+配置生成+nginx、Casdoor application、审核钩子 URL、回跳白名单；自动化部分（登记→审批→托管→凭据→下单→支付尝试→下架）实测**1.0–1.3 秒**跑完。
+- **劳务真实转账已打通（2026-10-20）**：`佣金报酬` 场景审核通过后，¥0.10 真实转账 `provider_status=success`（见上方「2026-10-20 收口记录」）。
 
 运维纪律（本次排障踩过的坑，发布/切换前必须遵守）：
 
