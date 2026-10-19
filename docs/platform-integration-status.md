@@ -106,3 +106,11 @@ PLATFORM_ACCESS_SCOPE=qimen-core
 3. AI 请求必须携带平台 access token，并由平台 gate/usage 决定是否允许；本地显示余额不能单独授权。
 4. 发布前必须执行平台健康检查、产品构建、OAuth callback、匿名拒绝边界和已登录 gate/usage 验证。
 5. 支付验证只生成不扣款的支付链接；真实扣款必须另行授权。
+
+### 2026-10-20 统一记录（main = integration = 线上）
+
+- 平台仓把 `origin/main`（quant arena checkout/OAuth + 迁移 `20261021_0004`）与 `integration/platform-next` **合并统一**：merge `94756e0`，发布源码 `d655bec`，远端 `main` 与 `integration/platform-next` 均为 `7839e3e`（已 push，**可追溯**）。
+- 线上 release **`20261020-unified-d655bec`**；迁移单头 `20261021_0004`；全套 **1102 passed / 1 skipped / 0 failed**；证书模式 + 内容加密 + Casdoor P1 全在；`qimen` / `quant-arena` 的 plans/contract 均 200，quant 平台路由非 404。
+- 幂等复核：`LBVERIFY20261017A` 仍 settled（gross/net/paid 10/10/10，diff 0，1 item，无第二笔）。
+- ⚠️ 跨仓契约变更：`payment-attempts` 的 `return_url` 变为**必填**（来自 main 线）。qmdj 已传；`assessment-center` / `guanxiang` 两仓尚未逐一审计，需跟进。
+- ⚠️ 回滚线：`:20261020-qimen-8853ad5`（以及 `:20261021-quant-payment-contract-0004`）。
