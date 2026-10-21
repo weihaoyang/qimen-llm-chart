@@ -24,8 +24,12 @@ describe("platform browser helpers", () => {
     expect(login.request.verifier.length).toBeGreaterThan(40);
   });
 
-  it("parses only the canonical hash callback route", () => {
+  it("parses the canonical hash and path callback routes", () => {
     expect(parsePlatformOAuthCallback("#/auth/callback?code=ssp_oauth_1&state=state-1")).toEqual({
+      code: "ssp_oauth_1",
+      state: "state-1",
+    });
+    expect(parsePlatformOAuthCallback("/auth/callback?code=ssp_oauth_1&state=state-1")).toEqual({
       code: "ssp_oauth_1",
       state: "state-1",
     });
@@ -103,12 +107,16 @@ describe("platform browser helpers", () => {
       return new Response(JSON.stringify({ checkout_token: "guest-token", order: { order_id: "guest-order" } }), { status: 200 });
     }));
 
-    await createAccountCheckout("account-token", "qimen-analysis-10", "alipay", "https://qmdj.example.com/billing/result", undefined, "wap");
-    const guest = await createGuestCheckout("qimen-analysis-10", "alipay");
+    const accountKey = "qmdj-qimen-analysis-10-account-retry-key-0001";
+    const guestKey = "qmdj-qimen-analysis-10-guest-retry-key-0001";
+    await createAccountCheckout("account-token", "qimen-analysis-10", "alipay", "https://qmdj.example.com/billing/result", { idempotencyKey: accountKey }, "wap");
+    const guest = await createGuestCheckout("qimen-analysis-10", "alipay", guestKey);
     await createGuestPaymentAttempt(guest, "alipay", "https://qmdj.example.com/billing/result", "wap");
 
     const accountBody = JSON.parse(requests[0]?.body ?? "{}");
     const guestBody = JSON.parse(requests[2]?.body ?? "{}");
+    expect(accountBody.idempotency_key).toBe(accountKey);
+    expect(guestBody.idempotency_key).toBe(guestKey);
     expect(accountBody.idempotency_key.length).toBeGreaterThanOrEqual(32);
     expect(guestBody.idempotency_key.length).toBeGreaterThanOrEqual(32);
     expect(JSON.parse(requests[0]?.body ?? "{}").payment_scene).toBeUndefined();

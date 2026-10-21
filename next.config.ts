@@ -14,16 +14,32 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: buildContentSecurityPolicy(process.env.NODE_ENV !== "production") },
 ];
 
+const linkedSdkBuildPackage = process.env.QIMEN_WEB_SDK_BUILD_PACKAGE;
+const linkedSdkBuildTsconfig = process.env.QIMEN_WEB_SDK_TSCONFIG_PATH;
+
 const nextConfig: NextConfig = {
   agentRules: false,
   output: "standalone",
   // Lets a local verification build run beside an active preview server
   // without touching or deleting that server's .next artifacts.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
-  // The account SDK is linked from the adjacent platform repository. Tell
-  // Turbopack that it is first-party source instead of treating the junction
-  // as an unresolved external package during production builds.
+  // The account SDK is linked from the adjacent platform repository. During
+  // production builds the helper aliases it to a Qimen-owned temporary copy.
   transpilePackages: ["@singularity-sequence/web-sdk"],
+  ...(linkedSdkBuildTsconfig ? { typescript: { tsconfigPath: linkedSdkBuildTsconfig } } : {}),
+  ...(linkedSdkBuildPackage
+    ? {
+        webpack(config) {
+          const aliases = config.resolve.alias;
+          config.resolve.alias = {
+            ...(aliases && typeof aliases === "object" && !Array.isArray(aliases) ? aliases : {}),
+            "@": path.join(__dirname, "src"),
+            "@singularity-sequence/web-sdk$": linkedSdkBuildPackage,
+          };
+          return config;
+        },
+      }
+    : {}),
   allowedDevOrigins: ["127.0.0.1"],
   turbopack: {
     // `__dirname` is the application root. Pointing Turbopack at its parent

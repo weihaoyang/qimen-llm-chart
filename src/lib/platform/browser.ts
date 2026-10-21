@@ -126,7 +126,7 @@ export const createAccountCheckout = async (
   planCode: string,
   paymentChannel: string,
   returnUrl: string | ((orderId: string) => string),
-  options?: { csrfToken?: string },
+  options?: { csrfToken?: string; idempotencyKey?: string },
   paymentScene: "web" | "wap" = "web",
 ): Promise<PlatformCheckout> => {
   const config = requirePlatformClientConfig();
@@ -135,7 +135,7 @@ export const createAccountCheckout = async (
     product_code: config.productCode,
     plan_code: planCode,
     payment_channel: paymentChannel,
-    idempotency_key: createIdempotencyKey(planCode),
+    idempotency_key: options?.idempotencyKey ?? createIdempotencyKey(planCode),
   } as { product_code: string; plan_code: string; payment_channel: string; idempotency_key: string }) as { order?: unknown; order_id?: unknown };
   const orderId = asOrderId(orderResponse.order ?? orderResponse.order_id);
   if (!orderId) throw new Error("平台没有返回订单号，未继续发起支付。");
@@ -241,8 +241,7 @@ export const consumePlatformOAuthRequest = (state: string) => {
 };
 
 export const parsePlatformOAuthCallback = (value: string): PlatformOAuthCallback | null => {
-  if (!value.startsWith("#")) return null;
-  const normalized = value.slice(1);
+  const normalized = value.startsWith("#") ? value.slice(1) : value;
   if (!normalized.startsWith("/auth/callback")) return null;
   const query = normalized.slice("/auth/callback".length);
   if (query && !query.startsWith("?")) return null;

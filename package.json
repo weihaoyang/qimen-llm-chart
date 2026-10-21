@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build": "node ops/build-linked-web-sdk.mjs",
     "db:migrate": "node ops/migrate.mjs apply",
     "db:status": "node ops/migrate.mjs status",
     "css:audit": "node ops/prune-css.mjs src/app/globals.css src/app/platform-views.css src/app/paipan/paipan.css src/app/paipan/bazi.css src/app/paipan/research.css src/app/paipan/classic.css src/app/paipan/ziwei.css src/app/paipan/workbench-responsive.css src/app/paipan/analysis-panels.css src/app/paipan/workbench-shell.css src/app/paipan/qimen-workbench.css && node ops/dedupe-css.mjs src/app/globals.css src/app/platform-views.css src/app/paipan/paipan.css src/app/paipan/bazi.css src/app/paipan/research.css src/app/paipan/classic.css src/app/paipan/ziwei.css src/app/paipan/workbench-responsive.css src/app/paipan/analysis-panels.css src/app/paipan/workbench-shell.css src/app/paipan/qimen-workbench.css",

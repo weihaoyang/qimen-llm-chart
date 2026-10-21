@@ -1,9 +1,11 @@
 /** @vitest-environment jsdom */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearActiveAgentSession,
+  clearCheckoutIdempotencyKey,
   clearPendingPaidAnalysis,
+  getCheckoutIdempotencyKey,
   loadActiveAgentSession,
   loadPendingPaidAnalysis,
   popCompletedPaidAnalysis,
@@ -40,11 +42,36 @@ describe("paid analysis recovery storage", () => {
     window.localStorage.clear();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("keeps guest checkout tokens session-only", () => {
-    savePendingPaidAnalysis(pending("guest"));
+    expect(savePendingPaidAnalysis(pending("guest"))).toBe(true);
     expect(window.sessionStorage.length).toBe(1);
     expect(window.localStorage.length).toBe(0);
     expect(loadPendingPaidAnalysis()?.checkoutToken).toBe("guest-secret");
+  });
+
+  it("reuses a checkout idempotency key across retries and separates account from guest", () => {
+    const accountKey = getCheckoutIdempotencyKey("qimen-analysis-10", "account");
+    expect(getCheckoutIdempotencyKey("qimen-analysis-10", "account")).toBe(accountKey);
+    const guestKey = getCheckoutIdempotencyKey("qimen-analysis-10", "guest");
+    expect(guestKey).not.toBe(accountKey);
+    expect(window.localStorage.getItem("qmdj.checkout-idempotency.v1:account:qimen-analysis-10")).toBe(accountKey);
+    expect(window.sessionStorage.getItem("qmdj.checkout-idempotency.v1:guest:qimen-analysis-10")).toBe(guestKey);
+
+    clearCheckoutIdempotencyKey("qimen-analysis-10", "account", accountKey);
+    expect(getCheckoutIdempotencyKey("qimen-analysis-10", "account")).not.toBe(accountKey);
+  });
+
+  it("does not claim recovery data was saved when browser storage rejects writes", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("storage disabled", "QuotaExceededError");
+    });
+
+    expect(savePendingPaidAnalysis(pending("guest"))).toBe(false);
+    expect(() => getCheckoutIdempotencyKey("qimen-analysis-10", "guest")).toThrow("未创建支付订单");
   });
 
   it("keeps account paid recovery after a tab/provider round trip", () => {

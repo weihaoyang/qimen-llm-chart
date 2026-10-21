@@ -93,6 +93,8 @@ import { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 import type { PlanCatalogItem, PlatformProfile, PlatformSession } from "@singularity-sequence/web-sdk";
 import {
   AGENT_SESSION_TURNS,
+  clearCheckoutIdempotencyKey,
+  getCheckoutIdempotencyKey,
   loadActiveAgentSession,
   loadKlineAiResult,
   popCompletedPaidAnalysis,
@@ -832,7 +834,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
     let active = true;
     const restoreOAuthCallback = async () => {
       if (typeof window === "undefined") return;
-      const callback = parsePlatformOAuthCallback(window.location.hash);
+      const callback = parsePlatformOAuthCallback(
+        window.location.pathname === "/auth/callback"
+          ? `${window.location.pathname}${window.location.search}`
+          : window.location.hash,
+      );
       if (!callback) return;
       const clearCallback = () => {
         window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
@@ -955,7 +961,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
   useEffect(() => {
     let cancelled = false;
     const loadPlatformWorkspace = async () => {
-      if (typeof window !== "undefined" && parsePlatformOAuthCallback(window.location.hash)) {
+      if (typeof window !== "undefined" && parsePlatformOAuthCallback(
+        window.location.pathname === "/auth/callback"
+          ? `${window.location.pathname}${window.location.search}`
+          : window.location.hash,
+      )) {
         // The callback effect owns this mount while the authorization code is exchanged.
         return;
       }
@@ -1851,15 +1861,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
         // creating the order so a valid logged-in user never falls through to
         // guest checkout or loses the pending analysis.
         const access = await refreshPlatformAccount();
+        const idempotencyKey = getCheckoutIdempotencyKey(planCode, "account");
         const checkout = await createAccountCheckout(
           access.session.access_token,
           planCode,
           paymentChannel,
           returnUrl,
-          { csrfToken: access.session.csrf_token },
+          { csrfToken: access.session.csrf_token, idempotencyKey },
           paymentScene,
         );
-        savePendingPaidAnalysis({
+        const recoverySaved = savePendingPaidAnalysis({
           ...pending,
           orderId: checkout.orderId,
           productCode: platformConfig.productCode,
@@ -1867,18 +1878,22 @@ export function AppShell({ platformConfig }: AppShellProps) {
           checkoutMode: "account",
           returnPath: "/paipan",
         });
+        if (!recoverySaved) throw new Error("浏览器无法保存订单恢复信息，未跳转到支付页面。");
+        clearCheckoutIdempotencyKey(planCode, "account", idempotencyKey);
         window.location.assign(checkout.providerCheckoutUrl);
         return;
       }
 
-      const checkout = await createGuestCheckout(planCode, paymentChannel);
+      const idempotencyKey = getCheckoutIdempotencyKey(planCode, "guest");
+      const checkout = await createGuestCheckout(planCode, paymentChannel, idempotencyKey);
       const payment = await createGuestPaymentAttempt(
         checkout,
         paymentChannel,
         returnUrl(checkout.order.order_id),
         paymentScene,
       );
-      savePendingPaidAnalysis({
+      if (!payment.provider_checkout_url) throw new Error("平台没有返回收银台地址，未继续发起支付。");
+      const recoverySaved = savePendingPaidAnalysis({
         ...pending,
         orderId: checkout.order.order_id,
         productCode: platformConfig.productCode,
@@ -1886,7 +1901,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         checkoutMode: "guest",
         returnPath: "/paipan",
       });
-      if (!payment.provider_checkout_url) throw new Error("平台没有返回收银台地址，未继续发起支付。");
+      if (!recoverySaved) throw new Error("浏览器无法保存订单恢复信息，未跳转到支付页面。");
+      clearCheckoutIdempotencyKey(planCode, "guest", idempotencyKey);
       window.location.href = payment.provider_checkout_url;
     } finally {
       checkoutInFlightRef.current = false;

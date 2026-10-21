@@ -6,6 +6,7 @@ const PENDING_KEY = "qmdj.pending-paid-analysis.v1";
 const COMPLETED_KEY = "qmdj.completed-paid-analysis.v1";
 const ACTIVE_KEY = "qmdj.active-agent-session.v1";
 const KLINE_RESULT_KEY = "qmdj.kline-ai-result.v1";
+const CHECKOUT_IDEMPOTENCY_PREFIX = "qmdj.checkout-idempotency.v1";
 export const AGENT_SESSION_TURNS = 10;
 
 export type PendingPaidAnalysis = {
@@ -94,6 +95,7 @@ const writeTo = (key: string, value: unknown, mode: CheckoutMode) => {
   const credential = carriesCredential(value);
   try {
     (credential ? sessionStorageFor() : storageFor(mode))?.setItem(key, JSON.stringify(value));
+    return Boolean(readFrom(key, credential ? "guest" : mode));
   } catch {
     // An account recovery contains no guest credential, so a same-tab session
     // fallback is safe when localStorage is unavailable (private mode/quota).
@@ -101,10 +103,12 @@ const writeTo = (key: string, value: unknown, mode: CheckoutMode) => {
     if (mode === "account" && !credential) {
       try {
         sessionStorageFor()?.setItem(key, JSON.stringify(value));
+        return Boolean(readFrom(key, "guest"));
       } catch {
         // There is no safe durable fallback for browser storage being disabled.
       }
     }
+    return false;
   }
 };
 
@@ -118,6 +122,64 @@ const removeFrom = (key: string, mode: CheckoutMode) => {
 
 export const savePendingPaidAnalysis = (value: PendingPaidAnalysis) =>
   writeTo(PENDING_KEY, value, value.checkoutMode === "account" ? "account" : "guest");
+
+const checkoutIdempotencyStorageKey = (mode: CheckoutMode, planCode: string) =>
+  `${CHECKOUT_IDEMPOTENCY_PREFIX}:${mode}:${encodeURIComponent(planCode)}`;
+
+const checkoutIntentStores = (mode: CheckoutMode): Storage[] => {
+  if (typeof window === "undefined") return [];
+  const stores: Storage[] = [];
+  if (mode === "account") {
+    try { stores.push(window.localStorage); } catch { /* use the same-tab fallback */ }
+  }
+  try { stores.push(window.sessionStorage); } catch { /* no browser storage is available */ }
+  return stores;
+};
+
+const randomIdempotencyKey = (planCode: string) => {
+  const random = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `qmdj-${planCode}-${random}`.slice(0, 128);
+};
+
+export const getCheckoutIdempotencyKey = (planCode: string, mode: CheckoutMode) => {
+  if (typeof window === "undefined") throw new Error("无法安全保存订单恢复信息。");
+  const key = checkoutIdempotencyStorageKey(mode, planCode);
+  const stores = checkoutIntentStores(mode);
+  for (const store of stores) {
+    try {
+      const existing = store.getItem(key);
+      if (existing && existing.length >= 32) return existing;
+    } catch {
+      // Try the account session fallback below.
+    }
+  }
+
+  const idempotencyKey = randomIdempotencyKey(planCode);
+  for (const store of stores) {
+    try {
+      store.setItem(key, idempotencyKey);
+      if (store.getItem(key) === idempotencyKey) return idempotencyKey;
+    } catch {
+      // Continue only to the credential-free account fallback.
+    }
+  }
+  throw new Error("浏览器无法保存订单恢复信息，未创建支付订单。");
+};
+
+export const clearCheckoutIdempotencyKey = (planCode: string, mode: CheckoutMode, expectedKey: string) => {
+  if (typeof window === "undefined") return;
+  const key = checkoutIdempotencyStorageKey(mode, planCode);
+  const stores = checkoutIntentStores(mode);
+  for (const store of stores) {
+    try {
+      if (store.getItem(key) === expectedKey) store.removeItem(key);
+    } catch {
+      // Best effort cleanup; retaining the key keeps ambiguous retries idempotent.
+    }
+  }
+};
 
 export const loadPendingPaidAnalysis = (): PendingPaidAnalysis | null => {
   return readFrom<PendingPaidAnalysis>(PENDING_KEY, "guest") ?? readFrom<PendingPaidAnalysis>(PENDING_KEY, "account");
