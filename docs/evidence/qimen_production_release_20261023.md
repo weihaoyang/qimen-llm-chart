@@ -37,6 +37,9 @@ Consumer Platform source and data were not changed.
   HTTP 200, no `授权参数不完整`, login continuation rendered
 - Runtime container environment reports `PLATFORM_PRODUCT_CODE=qimen` and
   `PLATFORM_ACCESS_SCOPE=qimen-core`.
+- Unauthenticated `GET /api/entitlement`: HTTP 401.
+- Unauthenticated `POST /api/agent`: HTTP 401.
+- Empty `POST /api/platform/session` bridge request: HTTP 400.
 
 ## Boundary
 
