@@ -63,11 +63,11 @@ GEMINI_MODEL=gemini-2.5-flash
 
 ```text
 NEXT_PUBLIC_PLATFORM_BASE_URL=https://api.singseq.com
-NEXT_PUBLIC_PLATFORM_PRODUCT_CODE=shengtian-banzi
-NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE=shengtian-banzi-core
+NEXT_PUBLIC_PLATFORM_PRODUCT_CODE=qimen
+NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE=qimen-core
 PLATFORM_BASE_URL=https://api.singseq.com
-PLATFORM_PRODUCT_CODE=shengtian-banzi
-PLATFORM_ACCESS_SCOPE=shengtian-banzi-core
+PLATFORM_PRODUCT_CODE=qimen
+PLATFORM_ACCESS_SCOPE=qimen-core
 ```
 
 本产品已经在平台正式注册，线上平台地址为 `https://api.singseq.com`。

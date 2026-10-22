@@ -67,6 +67,13 @@ const capture = (cmd, args) => {
   return result.status === 0 ? (result.stdout ?? "").trim() : "";
 };
 
+const envFileValue = (name) => {
+  if (!existsSync(config.envFile)) return "";
+  const source = readFileSync(config.envFile, "utf8");
+  const line = source.split(/\r?\n/).find((entry) => entry.trim().startsWith(`${name}=`));
+  return line ? line.slice(line.indexOf("=") + 1).trim().replace(/^['\"]|['\"]$/g, "") : "";
+};
+
 /** Docker, with sudo when the caller cannot reach the socket. */
 const docker = (args) => run(SUDO[0] ?? "docker", SUDO.length ? ["docker", ...args] : args);
 const dockerCapture = (args) => capture(SUDO[0] ?? "docker", SUDO.length ? ["docker", ...args] : args);
@@ -148,6 +155,13 @@ Config (env overridable):
     ok("compose file", existsSync(config.composeFile), config.composeFile);
     ok("release script", existsSync(config.releaseScript), config.releaseScript);
     ok("env file", existsSync(config.envFile), config.envFile);
+    const platformProduct = envFileValue("PLATFORM_PRODUCT_CODE") || envFileValue("NEXT_PUBLIC_PLATFORM_PRODUCT_CODE");
+    const platformScope = envFileValue("PLATFORM_ACCESS_SCOPE") || envFileValue("NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE");
+    ok(
+      "platform product contract",
+      platformProduct === "qimen" && platformScope === "qimen-core",
+      `product=${platformProduct || "(missing)"} scope=${platformScope || "(missing)"}`,
+    );
     ok("web-sdk package", existsSync(config.sdkSrc), config.sdkSrc);
 
     const dfLine = capture("df", ["-Pk", ROOT]).split("\n")[1] ?? "";
