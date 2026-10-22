@@ -17,7 +17,8 @@
     "ci": "npm run typecheck && eslint src && npm test && npm run build",
     "test": "vitest run",
     "test:concurrency": "vitest run src/lib/db/concurrency.test.ts",
-    "deploy": "node ops/deploy/cli.mjs"
+    "deploy": "node ops/deploy/cli.mjs",
+    "platform:cli": "node ops/platform-cli.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.47",
