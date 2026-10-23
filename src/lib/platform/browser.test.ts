@@ -17,7 +17,7 @@ describe("platform browser helpers", () => {
     expect(url.origin + url.pathname).toBe("https://singseq.com/oauth/authorize");
     expect(url.searchParams.get("client_id")).toBe("qimen");
     expect(url.searchParams.get("access_scope")).toBe("qimen-core");
-    expect(url.searchParams.get("redirect_uri")).toBe("https://qmdj.singseq.com/#/auth/callback");
+    expect(url.searchParams.get("redirect_uri")).toBe("https://qmdj.singseq.com/auth/callback");
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("code_challenge")).toBe(login.request.challenge);
     expect(url.searchParams.get("state")).toBe(login.request.state);
