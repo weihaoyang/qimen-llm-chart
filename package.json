@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "ci": "npm run typecheck && eslint src && npm test && npm run build",
     "test": "vitest run",
+    "test:platform-cli": "node --test ops/platform-cli.test.mjs",
     "test:concurrency": "vitest run src/lib/db/concurrency.test.ts",
     "deploy": "node ops/deploy/cli.mjs",
     "platform:cli": "node ops/platform-cli.mjs"
