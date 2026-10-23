@@ -34,11 +34,13 @@ const authHeaders = (options = {}, env = process.env) => {
   const token = options.token || env.PLATFORM_ACCESS_TOKEN || env.SS_ACCESS_TOKEN || "";
   const cookie = options.cookie || env.PLATFORM_COOKIE || env.QIMEN_PLATFORM_COOKIE || "";
   const csrf = options.csrf_token || env.PLATFORM_CSRF_TOKEN || "";
+  const guestToken = options.guest_checkout_token || env.PLATFORM_GUEST_CHECKOUT_TOKEN || "";
   return {
     Accept: "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(cookie ? { Cookie: cookie } : {}),
     ...(csrf ? { "x-csrf-token": csrf } : {}),
+    ...(guestToken ? { "x-guest-checkout-token": guestToken } : {}),
   };
 };
 
@@ -99,6 +101,27 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     const app = await health();
     const route = await requestJson(endpoint(config.appUrl, "/api/agent"), options, fetchImpl);
     return { ok: app.app.health.ok && app.app.version.ok && (route.ok || boundaryOk(route.status)), command, data: { ...app, ai_route: { status: route.status, reachable: route.ok || boundaryOk(route.status), expected_method: "POST", response: route.body } } };
+  }
+  if (command === "ai-run" || command === "ai-analysis") {
+    const mode = String(options.mode || "").trim();
+    const structuredText = String(options.structured_text || "").trim();
+    const jsonPayload = String(options.json_payload || "").trim();
+    if (!mode) throw new Error(`${command} requires --mode <workbench-mode>`);
+    if (!structuredText) throw new Error(`${command} requires --structured-text <text>`);
+    if (!jsonPayload) throw new Error(`${command} requires --json-payload <valid-json>`);
+    try { JSON.parse(jsonPayload); } catch { throw new Error("ai-run requires --json-payload to be valid JSON"); }
+    const body = {
+      mode,
+      structuredText,
+      jsonPayload,
+      ...(options.question ? { question: String(options.question) } : {}),
+      ...(options.focus ? { focus: String(options.focus) } : {}),
+      ...(options.research_tool ? { researchTool: String(options.research_tool) } : {}),
+      ...(options.analysis_product ? { analysisProduct: String(options.analysis_product) } : {}),
+      ...(options.conversation_mode ? { conversationMode: String(options.conversation_mode) } : {}),
+    };
+    const result = await requestJson(endpoint(config.appUrl, "/api/agent"), { ...options, method: "POST", body, headers: { "content-type": "application/json" } }, fetchImpl);
+    return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
   }
   if (command === "status") {
     const [healthData, plans, session, gate] = await Promise.all([

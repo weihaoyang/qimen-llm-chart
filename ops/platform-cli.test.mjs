@@ -39,3 +39,27 @@ test("ai-health probes route reachability without posting an inference", async (
   assert.equal(result.ok, true);
   assert.equal(result.data.ai_route.expected_method, "POST");
 });
+
+test("ai-run posts the real agent contract and forwards auth", async () => {
+  const result = await runCommand("ai-run", {
+    mode: "qimen",
+    structured_text: "盘面摘要",
+    json_payload: JSON.stringify({ chart: "qimen" }),
+    question: "请分析",
+    token: "token-1",
+  }, env, mockFetch([{ match: "/api/agent", body: { answer: "ok" }, assert: (init) => {
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers.Authorization, "Bearer token-1");
+    assert.equal(init.headers["content-type"], "application/json");
+    assert.deepEqual(JSON.parse(init.body), { mode: "qimen", structuredText: "盘面摘要", jsonPayload: '{"chart":"qimen"}', question: "请分析" });
+  } }]));
+  assert.equal(result.ok, true);
+  assert.equal(result.data.answer, "ok");
+});
+
+test("ai-run preserves provider and entitlement failures", async () => {
+  const result = await runCommand("ai-run", { mode: "qimen", structured_text: "盘面", json_payload: "{}" }, env, mockFetch([{ match: "/api/agent", status: 402, body: { reasonCode: "usage_credit_required" } }]));
+  assert.equal(result.ok, false);
+  assert.equal(result.status, 402);
+  assert.equal(result.data.reasonCode, "usage_credit_required");
+});
