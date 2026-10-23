@@ -8,7 +8,7 @@
   "access_scope": "qimen-core",
   "oauth": {
     "client_id": "qimen",
-    "redirect_uri": "https://qmdj.singseq.com/#/auth/callback",
+    "redirect_uri": "https://qmdj.singseq.com/auth/callback",
     "access_scope": "qimen-core",
     "response_type": "code",
     "code_challenge_method": "S256",
