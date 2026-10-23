@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 const manifest = {
@@ -8,6 +8,8 @@ const manifest = {
   productCode: "qimen",
   accessScope: "qimen-core",
 };
+const CLI_OAUTH_CLIENT = "qimen-cli";
+const CLI_OAUTH_REDIRECT_URI = "http://127.0.0.1:47832/oauth/callback";
 
 const trimBase = (value) => String(value || "").replace(/\/+$/, "");
 
@@ -63,13 +65,35 @@ export const requestJson = async (url, options = {}, fetchImpl = fetch) => {
 
 const boundaryOk = (status) => status === 401 || status === 403 || status === 405;
 const endpoint = (base, path) => `${trimBase(base)}${path.startsWith("/") ? path : `/${path}`}`;
-const base64Url = (value) => Buffer.from(value).toString("base64url");
-const createOAuthRequest = () => {
-  const verifier = base64Url(randomBytes(48));
-  const challenge = createHash("sha256").update(verifier).digest("base64url");
-  const state = base64Url(randomBytes(32));
-  return { verifier, challenge, state };
-};
+const cliOAuthBlock = (command, config) => ({
+  ok: false,
+  command,
+  status: 501,
+  reason_code: "oauth_cli_client_not_registered",
+  product_code: config.productCode,
+  access_scope: config.accessScope,
+  data: {
+    message: "Qimen has only a browser OAuth client. The platform has not registered a product OAuth-only client, so CLI login cannot receive desktop_session.",
+    required_platform_registration: {
+      client_code: CLI_OAUTH_CLIENT,
+      product_code: config.productCode,
+      oauth_only: true,
+      platform_identity: false,
+      oauth_redirect_uris: [CLI_OAUTH_REDIRECT_URI],
+    },
+    required_website_registration: {
+      client_id: CLI_OAUTH_CLIENT,
+      oauth_redirect_uris: [CLI_OAUTH_REDIRECT_URI],
+      access_scope: config.accessScope,
+    },
+    required_client_config: {
+      client_id: CLI_OAUTH_CLIENT,
+      product_code: config.productCode,
+      access_scope: config.accessScope,
+      redirect_uri: CLI_OAUTH_REDIRECT_URI,
+    },
+  },
+});
 const createIdempotencyKey = (productCode, options = {}) => String(options.idempotency_key || options.idempotencyKey || `cli-${productCode}-${randomUUID()}`).slice(0, 128);
 const extractOrderId = (body) => {
   if (typeof body?.order_id === "string" && body.order_id.trim()) return body.order_id.trim();
@@ -90,27 +114,10 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
   };
   if (command === "health") return { ok: true, command, data: await health() };
   if (command === "auth-url" || command === "oauth-url" || command === "login-url") {
-    const request = createOAuthRequest();
-    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/#/auth/callback`).trim();
-    const loginUrl = String(options.login_url || "https://singseq.com/oauth/authorize");
-    const url = new URL(loginUrl, /^https?:\/\//i.test(loginUrl) ? undefined : config.platformUrl);
-    url.searchParams.set("client_id", config.productCode);
-    url.searchParams.set("product_code", config.productCode);
-    url.searchParams.set("access_scope", config.accessScope);
-    url.searchParams.set("redirect_uri", redirectUri);
-    url.searchParams.set("response_type", "code");
-    url.searchParams.set("code_challenge", request.challenge);
-    url.searchParams.set("code_challenge_method", "S256");
-    url.searchParams.set("state", request.state);
-    return { ok: true, command, data: { url: url.toString(), redirect_uri: redirectUri, code_verifier: request.verifier, code_challenge: request.challenge, state: request.state, product_code: config.productCode, access_scope: config.accessScope } };
+    return cliOAuthBlock(command, config);
   }
   if (command === "oauth-exchange") {
-    const code = String(options.code || "").trim();
-    const verifier = String(options.code_verifier || options.verifier || "").trim();
-    if (!code || !verifier) throw new Error("oauth-exchange requires --code <code> and --code-verifier <verifier>");
-    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/#/auth/callback`).trim();
-    const result = await requestJson(endpoint(config.platformUrl, "/api/v1/oauth/token"), { ...options, method: "POST", body: { grant_type: "authorization_code", code, client_id: config.productCode, redirect_uri: redirectUri, code_verifier: verifier }, headers: { "content-type": "application/json" } }, fetchImpl);
-    return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
+    return cliOAuthBlock(command, config);
   }
   if (command === "plans") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl);

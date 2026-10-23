@@ -35,17 +35,32 @@ test("orders and usage lifecycle stay product-scoped", async () => {
   assert.deepEqual(calls.map(([method]) => method), ["GET", "GET", "POST", "POST", "POST"]);
 });
 
-test("auth-url emits the complete PKCE contract", async () => {
+test("CLI auth-url reports the exact missing OAuth-only registration instead of a browser login URL", async () => {
   const result = await runCommand("auth-url", {}, env);
-  const url = new URL(result.data.url);
-  assert.equal(url.searchParams.get("client_id"), "qimen");
-  assert.equal(url.searchParams.get("product_code"), "qimen");
-  assert.equal(url.searchParams.get("access_scope"), "qimen-core");
-  assert.equal(url.searchParams.get("redirect_uri"), "https://qimen.example.test/#/auth/callback");
-  assert.equal(url.searchParams.get("code_challenge_method"), "S256");
-  assert.equal(url.searchParams.get("code_challenge").length, 43);
-  assert.equal(url.searchParams.get("state").length, 43);
-  assert.equal(result.data.code_verifier.length >= 43, true);
+  assert.equal(result.ok, false);
+  assert.equal(result.status, 501);
+  assert.equal(result.reason_code, "oauth_cli_client_not_registered");
+  assert.deepEqual(result.data.required_platform_registration, {
+    client_code: "qimen-cli",
+    product_code: "qimen",
+    oauth_only: true,
+    platform_identity: false,
+    oauth_redirect_uris: ["http://127.0.0.1:47832/oauth/callback"],
+  });
+  assert.deepEqual(result.data.required_website_registration, {
+    client_id: "qimen-cli",
+    oauth_redirect_uris: ["http://127.0.0.1:47832/oauth/callback"],
+    access_scope: "qimen-core",
+  });
+  assert.equal("url" in result.data, false);
+});
+
+test("oauth exchange reports the registration block without contacting token endpoint", async () => {
+  const result = await runCommand("oauth-exchange", { code: "browser-code", code_verifier: "verifier" }, env, async () => {
+    throw new Error("token endpoint must not be called before the CLI client is registered");
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason_code, "oauth_cli_client_not_registered");
 });
 
 test("checkout validates plans, forwards one idempotency key, then creates payment", async () => {
