@@ -23,9 +23,8 @@ export type PlatformOAuthCallback = {
 };
 
 const PLATFORM_OAUTH_STORAGE_KEY = "qmdj.platform.oauth.v1";
-// The platform contract now registers the path callback. Keep hash parsing
-// below for in-flight legacy sessions while all new requests use the path.
-export const PLATFORM_OAUTH_CALLBACK_PATH = "/auth/callback";
+// The registered production callback is a hash route handled by the workbench.
+export const PLATFORM_OAUTH_CALLBACK_PATH = "/#/auth/callback";
 
 export type PlatformAccessState = {
   session: PlatformSession;

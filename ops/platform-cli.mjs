@@ -91,7 +91,7 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
   if (command === "health") return { ok: true, command, data: await health() };
   if (command === "auth-url" || command === "oauth-url" || command === "login-url") {
     const request = createOAuthRequest();
-    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/auth/callback`).trim();
+    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/#/auth/callback`).trim();
     const loginUrl = String(options.login_url || "https://singseq.com/oauth/authorize");
     const url = new URL(loginUrl, /^https?:\/\//i.test(loginUrl) ? undefined : config.platformUrl);
     url.searchParams.set("client_id", config.productCode);
@@ -108,7 +108,7 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     const code = String(options.code || "").trim();
     const verifier = String(options.code_verifier || options.verifier || "").trim();
     if (!code || !verifier) throw new Error("oauth-exchange requires --code <code> and --code-verifier <verifier>");
-    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/auth/callback`).trim();
+    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/#/auth/callback`).trim();
     const result = await requestJson(endpoint(config.platformUrl, "/api/v1/oauth/token"), { ...options, method: "POST", body: { grant_type: "authorization_code", code, client_id: config.productCode, redirect_uri: redirectUri, code_verifier: verifier }, headers: { "content-type": "application/json" } }, fetchImpl);
     return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
   }

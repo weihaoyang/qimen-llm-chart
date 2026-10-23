@@ -41,7 +41,7 @@ test("auth-url emits the complete PKCE contract", async () => {
   assert.equal(url.searchParams.get("client_id"), "qimen");
   assert.equal(url.searchParams.get("product_code"), "qimen");
   assert.equal(url.searchParams.get("access_scope"), "qimen-core");
-  assert.equal(url.searchParams.get("redirect_uri"), "https://qimen.example.test/auth/callback");
+  assert.equal(url.searchParams.get("redirect_uri"), "https://qimen.example.test/#/auth/callback");
   assert.equal(url.searchParams.get("code_challenge_method"), "S256");
   assert.equal(url.searchParams.get("code_challenge").length, 43);
   assert.equal(url.searchParams.get("state").length, 43);
