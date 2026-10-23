@@ -18,6 +18,23 @@ test("plans uses the registered qimen product and never writes", async () => {
   assert.equal(result.status, 200);
 });
 
+test("orders and usage lifecycle stay product-scoped", async () => {
+  const calls = [];
+  const fetcher = mockFetch([
+    { match: "/commerce/orders?product_code=qimen", body: { items: [] }, assert: (init, url) => { calls.push([init.method, url]); } },
+    { match: "/usage?plan_code=qimen-analysis-10", body: { product_code: "qimen", plan_code: "qimen-analysis-10" }, assert: (init, url) => { calls.push([init.method, url]); } },
+    { match: "/usage/reserve?plan_code=qimen-analysis-10", body: { product_code: "qimen", reservation_id: "reservation-1" }, assert: (init, url) => { calls.push([init.method, url]); assert.equal(init.method, "POST"); } },
+    { match: "/usage/reservation-1/commit?plan_code=qimen-analysis-10", body: { product_code: "qimen", reservation_id: "reservation-1" }, assert: (init, url) => { calls.push([init.method, url]); assert.equal(init.method, "POST"); } },
+    { match: "/usage/reservation-1/release", body: { product_code: "qimen", reservation_id: "reservation-1" }, assert: (init, url) => { calls.push([init.method, url]); assert.equal(init.method, "POST"); } },
+  ]);
+  await runCommand("orders", {}, env, fetcher);
+  await runCommand("usage", { plan_code: "qimen-analysis-10" }, env, fetcher);
+  await runCommand("usage-reserve", { plan_code: "qimen-analysis-10" }, env, fetcher);
+  await runCommand("usage-commit", { reservation_id: "reservation-1", plan_code: "qimen-analysis-10" }, env, fetcher);
+  await runCommand("usage-release", { reservation_id: "reservation-1" }, env, fetcher);
+  assert.deepEqual(calls.map(([method]) => method), ["GET", "GET", "POST", "POST", "POST"]);
+});
+
 test("auth-url emits the complete PKCE contract", async () => {
   const result = await runCommand("auth-url", {}, env);
   const url = new URL(result.data.url);

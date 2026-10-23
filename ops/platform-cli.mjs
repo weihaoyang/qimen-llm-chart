@@ -116,6 +116,10 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl);
     return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
   }
+  if (command === "orders") {
+    const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/orders?product_code=${encodeURIComponent(config.productCode)}`), options, fetchImpl);
+    return { ok: result.ok || boundaryOk(result.status), command, status: result.status, data: result.body, request: result.url };
+  }
   if (command === "session" || command === "auth-status") {
     const hasToken = Boolean(options.token || env.PLATFORM_ACCESS_TOKEN || env.SS_ACCESS_TOKEN);
     const result = await requestJson(
@@ -128,6 +132,20 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
   if (command === "gate") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/gate?access_scope=${encodeURIComponent(config.accessScope)}`), options, fetchImpl);
     return { ok: result.ok || boundaryOk(result.status), command, status: result.status, allowed: result.ok && result.body?.allowed === true, data: result.body, request: result.url };
+  }
+  if (command === "entitlement") return runCommand("gate", rawOptions, env, fetchImpl);
+  if (["usage", "usage-reserve", "usage-commit", "usage-release"].includes(command)) {
+    const planCode = String(options.plan_code || options.plan || "").trim();
+    const reservationId = String(options.reservation_id || options.reservation || "").trim();
+    if (command === "usage-reserve" && !planCode) throw new Error("usage-reserve requires --plan-code <plan>");
+    if ((command === "usage-commit" || command === "usage-release") && !reservationId) throw new Error(`${command} requires --reservation-id <id>`);
+    const suffix = command === "usage"
+      ? `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage${planCode ? `?plan_code=${encodeURIComponent(planCode)}` : ""}`
+      : command === "usage-reserve"
+        ? `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/reserve?plan_code=${encodeURIComponent(planCode)}`
+        : `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/usage/${encodeURIComponent(reservationId)}/${command.slice("usage-".length)}${planCode ? `?plan_code=${encodeURIComponent(planCode)}` : ""}`;
+    const result = await requestJson(endpoint(config.platformUrl, suffix), { ...options, method: command === "usage" ? "GET" : "POST", body: command === "usage" ? undefined : {}, headers: command === "usage" ? undefined : { "content-type": "application/json" } }, fetchImpl);
+    return { ok: result.ok || boundaryOk(result.status), command, status: result.status, data: result.body, request: result.url };
   }
   if (command === "payment-result") {
     const orderId = String(options.order_id || options.orderId || "").trim();
