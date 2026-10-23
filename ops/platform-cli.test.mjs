@@ -18,6 +18,38 @@ test("plans uses the registered qimen product and never writes", async () => {
   assert.equal(result.status, 200);
 });
 
+test("auth-url emits the complete PKCE contract", async () => {
+  const result = await runCommand("auth-url", {}, env);
+  const url = new URL(result.data.url);
+  assert.equal(url.searchParams.get("client_id"), "qimen");
+  assert.equal(url.searchParams.get("product_code"), "qimen");
+  assert.equal(url.searchParams.get("access_scope"), "qimen-core");
+  assert.equal(url.searchParams.get("redirect_uri"), "https://qimen.example.test/auth/callback");
+  assert.equal(url.searchParams.get("code_challenge_method"), "S256");
+  assert.equal(url.searchParams.get("code_challenge").length, 43);
+  assert.equal(url.searchParams.get("state").length, 43);
+  assert.equal(result.data.code_verifier.length >= 43, true);
+});
+
+test("checkout validates plans, forwards one idempotency key, then creates payment", async () => {
+  const calls = [];
+  const result = await runCommand("checkout", { plan_code: "qimen-analysis-10", payment_channel: "alipay", idempotency_key: "stable-key", return_url: "https://qimen.example.test/billing/result?order_id={order_id}" }, env, mockFetch([
+    { match: "/commerce/products/qimen/plans", body: { items: [{ plan_code: "qimen-analysis-10" }] }, assert: (init) => calls.push([init.method, "plans"]) },
+    { match: "/commerce/orders", body: { order: { order_id: "order-1" } }, assert: (init) => { calls.push([init.method, "order"]); assert.deepEqual(JSON.parse(init.body), { product_code: "qimen", plan_code: "qimen-analysis-10", payment_channel: "alipay", idempotency_key: "stable-key" }); } },
+    { match: "/commerce/payment-attempts", body: { payment_attempt_id: "attempt-1", provider_checkout_url: "https://pay.test/1" }, assert: (init) => { calls.push([init.method, "payment"]); assert.deepEqual(JSON.parse(init.body), { order_id: "order-1", product_code: "qimen", payment_channel: "alipay", payment_scene: "web", return_url: "https://qimen.example.test/billing/result?order_id=order-1" }); } },
+  ]));
+  assert.equal(result.ok, true);
+  assert.deepEqual(calls, [["GET", "plans"], ["POST", "order"], ["POST", "payment"]]);
+  assert.equal(result.provider_checkout_url, "https://pay.test/1");
+});
+
+test("ai-contract exposes the server lifecycle and required inputs", async () => {
+  const result = await runCommand("ai-contract", {}, env);
+  assert.equal(result.data.route, "/api/agent");
+  assert.deepEqual(result.data.plans, ["qimen-analysis-10", "qimen-kline-precise-1"]);
+  assert.equal(result.data.gate_required, true);
+});
+
 test("anonymous gate is a successful boundary result and stays denied", async () => {
   const result = await runCommand("gate", {}, env, mockFetch([{ match: "/gate?access_scope=qimen-core", status: 401, body: { reason_code: "identity_session_invalid" } }]));
   assert.equal(result.ok, true);

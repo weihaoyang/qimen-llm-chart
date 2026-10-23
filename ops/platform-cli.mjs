@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 const manifest = {
@@ -62,6 +63,20 @@ export const requestJson = async (url, options = {}, fetchImpl = fetch) => {
 
 const boundaryOk = (status) => status === 401 || status === 403 || status === 405;
 const endpoint = (base, path) => `${trimBase(base)}${path.startsWith("/") ? path : `/${path}`}`;
+const base64Url = (value) => Buffer.from(value).toString("base64url");
+const createOAuthRequest = () => {
+  const verifier = base64Url(randomBytes(48));
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
+  const state = base64Url(randomBytes(32));
+  return { verifier, challenge, state };
+};
+const createIdempotencyKey = (productCode, options = {}) => String(options.idempotency_key || options.idempotencyKey || `cli-${productCode}-${randomUUID()}`).slice(0, 128);
+const extractOrderId = (body) => {
+  if (typeof body?.order_id === "string" && body.order_id.trim()) return body.order_id.trim();
+  if (typeof body?.order?.order_id === "string" && body.order.order_id.trim()) return body.order.order_id.trim();
+  return "";
+};
+const extractProviderUrl = (body) => [body?.provider_checkout_url, body?.checkout_url, body?.url].find((value) => typeof value === "string" && value.trim())?.trim() || "";
 
 export const runCommand = async (command, rawOptions = {}, env = process.env, fetchImpl = fetch) => {
   const config = resolveConfig(env, rawOptions);
@@ -74,6 +89,29 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     return { app: { health: healthResult, version: versionResult }, product_code: config.productCode };
   };
   if (command === "health") return { ok: true, command, data: await health() };
+  if (command === "auth-url" || command === "oauth-url" || command === "login-url") {
+    const request = createOAuthRequest();
+    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/auth/callback`).trim();
+    const loginUrl = String(options.login_url || "https://singseq.com/oauth/authorize");
+    const url = new URL(loginUrl, /^https?:\/\//i.test(loginUrl) ? undefined : config.platformUrl);
+    url.searchParams.set("client_id", config.productCode);
+    url.searchParams.set("product_code", config.productCode);
+    url.searchParams.set("access_scope", config.accessScope);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("code_challenge", request.challenge);
+    url.searchParams.set("code_challenge_method", "S256");
+    url.searchParams.set("state", request.state);
+    return { ok: true, command, data: { url: url.toString(), redirect_uri: redirectUri, code_verifier: request.verifier, code_challenge: request.challenge, state: request.state, product_code: config.productCode, access_scope: config.accessScope } };
+  }
+  if (command === "oauth-exchange") {
+    const code = String(options.code || "").trim();
+    const verifier = String(options.code_verifier || options.verifier || "").trim();
+    if (!code || !verifier) throw new Error("oauth-exchange requires --code <code> and --code-verifier <verifier>");
+    const redirectUri = String(options.redirect_uri || options.redirect_url || `${config.appUrl}/auth/callback`).trim();
+    const result = await requestJson(endpoint(config.platformUrl, "/api/v1/oauth/token"), { ...options, method: "POST", body: { grant_type: "authorization_code", code, client_id: config.productCode, redirect_uri: redirectUri, code_verifier: verifier }, headers: { "content-type": "application/json" } }, fetchImpl);
+    return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
+  }
   if (command === "plans") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl);
     return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
@@ -96,6 +134,28 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     if (!orderId) throw new Error("payment-result requires --order-id <id>");
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/payment-result/${encodeURIComponent(orderId)}?product_code=${encodeURIComponent(config.productCode)}`), options, fetchImpl);
     return { ok: result.ok || boundaryOk(result.status), command, status: result.status, data: result.body, request: result.url };
+  }
+  if (command === "checkout") {
+    const planCode = String(options.plan_code || options.plan || "").trim();
+    if (!planCode) throw new Error("checkout requires --plan-code <plan>");
+    const paymentChannel = String(options.payment_channel || options.channel || "alipay").trim();
+    const paymentScene = String(options.payment_scene || options.scene || "web").trim();
+    if (!["web", "wap"].includes(paymentScene)) throw new Error("checkout --payment-scene must be web or wap");
+    const idempotencyKey = createIdempotencyKey(config.productCode, options);
+    const planResult = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl);
+    if (!planResult.ok) return { ok: false, command, status: planResult.status, data: planResult.body, request: planResult.url };
+    const items = Array.isArray(planResult.body?.items) ? planResult.body.items : [];
+    if (items.length && !items.some((item) => item?.plan_code === planCode)) return { ok: false, command, status: 422, data: { reason_code: "plan_not_found", plan_code: planCode, product_code: config.productCode } };
+    const orderResult = await requestJson(endpoint(config.platformUrl, "/api/v1/commerce/orders"), { ...options, method: "POST", body: { product_code: config.productCode, plan_code: planCode, payment_channel: paymentChannel, idempotency_key: idempotencyKey }, headers: { "content-type": "application/json" } }, fetchImpl);
+    if (!orderResult.ok) return { ok: false, command, status: orderResult.status, data: orderResult.body, idempotency_key: idempotencyKey, request: orderResult.url };
+    const orderId = extractOrderId(orderResult.body);
+    if (!orderId) return { ok: false, command, status: 502, data: { reason_code: "order_id_missing", order: orderResult.body }, idempotency_key: idempotencyKey };
+    const returnUrl = String(options.return_url || options.return_url_template || `${config.appUrl}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(config.productCode)}`).replace("{order_id}", encodeURIComponent(orderId));
+    const paymentResult = await requestJson(endpoint(config.platformUrl, "/api/v1/commerce/payment-attempts"), { ...options, method: "POST", body: { order_id: orderId, product_code: config.productCode, payment_channel: paymentChannel, payment_scene: paymentScene, return_url: returnUrl }, headers: { "content-type": "application/json" } }, fetchImpl);
+    return { ok: paymentResult.ok, command, status: paymentResult.status, idempotency_key: idempotencyKey, order_id: orderId, payment_attempt_id: paymentResult.body?.payment_attempt_id || "", provider_checkout_url: extractProviderUrl(paymentResult.body), return_url: returnUrl, data: { plans: planResult.body, order: orderResult.body, payment_attempt: paymentResult.body }, request: paymentResult.url };
+  }
+  if (command === "ai-contract") {
+    return { ok: true, command, data: { product_code: config.productCode, access_scope: config.accessScope, route: "/api/agent", gate_required: true, plans: ["qimen-analysis-10", "qimen-kline-precise-1"], lifecycle: ["gate", "reserve", "provider", "commit_or_release", "report_token_usage", "audit"], required_args: ["--mode", "--structured-text", "--json-payload"] } };
   }
   if (command === "ai-health") {
     const app = await health();
