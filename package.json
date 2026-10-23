@@ -14,7 +14,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run typecheck && eslint src && npm test && npm run build",
+    "ci": "npm run typecheck && eslint src && npm test && npm run test:platform-cli && npm run build",
     "test": "vitest run",
     "test:platform-cli": "node --test ops/platform-cli.test.mjs",
     "test:concurrency": "vitest run src/lib/db/concurrency.test.ts",
