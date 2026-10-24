@@ -29,8 +29,6 @@ export const resolveConfig = (env = process.env, overrides = {}) => ({
   oauthRedirectUri: overrides.redirect_uri || env.QIMEN_CLI_OAUTH_REDIRECT_URI || CLI_OAUTH_REDIRECT_URI,
   sessionFile: overrides.session_file || env.QIMEN_CLI_SESSION_FILE || DEFAULT_SESSION_FILE,
   oauthStateFile: overrides.oauth_state_file || env.QIMEN_CLI_OAUTH_STATE_FILE || DEFAULT_OAUTH_STATE_FILE,
-  oauthRegistrationConfirmed: overrides.registration_confirmed === true
-    || String(overrides.registration_confirmed || env.QIMEN_CLI_OAUTH_REGISTERED || "").toLowerCase() === "true",
 });
 
 const parseArgs = (argv) => {
@@ -196,37 +194,6 @@ const waitForOAuthCallback = (config, request, fetchImpl, env) => new Promise((r
     }
   });
 });
-const cliOAuthBlock = (command, config, request, message = "Qimen CLI OAuth client is not registered on the Consumer Platform.") => ({
-  ok: false,
-  command,
-  status: 501,
-  reason_code: "oauth_cli_client_not_registered",
-  product_code: config.productCode,
-  access_scope: config.accessScope,
-  data: {
-    message,
-    registration_confirmed: config.oauthRegistrationConfirmed,
-    ...(request ? { authorize_url: oauthUrl(config, request), state: request.state } : {}),
-    required_platform_registration: {
-      client_code: config.oauthClientId,
-      product_code: config.productCode,
-      oauth_only: true,
-      platform_identity: false,
-      oauth_redirect_uris: [config.oauthRedirectUri],
-    },
-    required_website_registration: {
-      client_id: config.oauthClientId,
-      oauth_redirect_uris: [config.oauthRedirectUri],
-      access_scope: config.accessScope,
-    },
-    required_client_config: {
-      client_id: config.oauthClientId,
-      product_code: config.productCode,
-      access_scope: config.accessScope,
-      redirect_uri: config.oauthRedirectUri,
-    },
-  },
-});
 const helpResult = () => ({ ok: true, command: "help", data: {
   description: "Qimen platform contract CLI. OAuth never copies browser cookies.",
   commands: ["login", "auth-url", "oauth-exchange", "session", "session-refresh", "session-clear", "health", "plans", "orders", "gate", "usage", "usage-reserve", "usage-commit", "usage-release", "payment-result", "checkout", "ai-contract", "ai-health", "ai-run", "status"],
@@ -255,22 +222,17 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
   if (command === "auth-url" || command === "oauth-url" || command === "login-url") {
     const request = createOAuthRequest();
     saveOAuthState(config, request);
-    if (config.oauthRegistrationConfirmed) {
-      return { ok: true, command, status: 200, data: { authorize_url: oauthUrl(config, request), state: request.state, redirect_uri: config.oauthRedirectUri, product_code: config.productCode, access_scope: config.accessScope, session_file: config.sessionFile, oauth_state_file: config.oauthStateFile } };
-    }
-    return cliOAuthBlock(command, config, request);
+    return { ok: true, command, status: 200, data: { authorize_url: oauthUrl(config, request), state: request.state, redirect_uri: config.oauthRedirectUri, product_code: config.productCode, access_scope: config.accessScope, session_file: config.sessionFile, oauth_state_file: config.oauthStateFile } };
   }
   if (command === "login") {
     const request = createOAuthRequest();
     saveOAuthState(config, request);
-    if (!config.oauthRegistrationConfirmed) return cliOAuthBlock(command, config, request);
     return waitForOAuthCallback(config, request, fetchImpl, env);
   }
   if (command === "oauth-exchange") {
     const code = String(options.code || "").trim();
     const returnedState = String(options.state || "").trim();
     if (!code || !returnedState) throw new Error("oauth-exchange requires --code <code> and --state <state>");
-    if (!config.oauthRegistrationConfirmed) return cliOAuthBlock(command, config, null);
     const pending = loadOAuthState(config);
     if (!pending || pending.state !== returnedState) {
       return { ok: false, command, status: 400, reason_code: "oauth_state_invalid", message: "OAuth state does not match the pending Qimen CLI login." };

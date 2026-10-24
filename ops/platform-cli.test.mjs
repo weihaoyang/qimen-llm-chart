@@ -38,12 +38,11 @@ test("orders and usage lifecycle stay product-scoped", async () => {
   assert.deepEqual(calls.map(([method]) => method), ["GET", "GET", "POST", "POST", "POST"]);
 });
 
-test("CLI auth-url reports the exact missing OAuth-only registration with a contract-complete preview URL", async () => {
+test("CLI auth-url creates a contract-complete PKCE request without a local registration flag", async () => {
   const dir = mkdtempSync(join(tmpdir(), "qimen-cli-auth-"));
   const result = await runCommand("auth-url", { session_file: join(dir, "session.json"), oauth_state_file: join(dir, "oauth.json") }, env);
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 501);
-  assert.equal(result.reason_code, "oauth_cli_client_not_registered");
+  assert.equal(result.ok, true);
+  assert.equal(result.status, 200);
   const url = new URL(result.data.authorize_url);
   assert.equal(url.origin + url.pathname, "https://singseq.com/oauth/authorize");
   assert.equal(url.searchParams.get("client_id"), "qimen-cli");
@@ -54,38 +53,19 @@ test("CLI auth-url reports the exact missing OAuth-only registration with a cont
   assert.equal(url.searchParams.get("code_challenge_method"), "S256");
   assert.match(url.searchParams.get("code_challenge"), /^[A-Za-z0-9_-]{43}$/);
   assert.match(url.searchParams.get("state"), /^[A-Za-z0-9_-]{43}$/);
-  assert.deepEqual(result.data.required_platform_registration, {
-    client_code: "qimen-cli",
-    product_code: "qimen",
-    oauth_only: true,
-    platform_identity: false,
-    oauth_redirect_uris: ["http://127.0.0.1:47832/oauth/callback"],
-  });
-  assert.deepEqual(result.data.required_website_registration, {
-    client_id: "qimen-cli",
-    oauth_redirect_uris: ["http://127.0.0.1:47832/oauth/callback"],
-    access_scope: "qimen-core",
-  });
   assert.equal(JSON.parse(readFileSync(join(dir, "oauth.json"), "utf8")).state, url.searchParams.get("state"));
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("login reports missing registration without starting a callback listener", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-login-"));
-  const result = await runCommand("login", { session_file: join(dir, "session.json"), oauth_state_file: join(dir, "oauth.json") }, env);
-  assert.equal(result.ok, false);
-  assert.equal(result.reason_code, "oauth_cli_client_not_registered");
-  assert.equal(result.data.required_client_config.redirect_uri, "http://127.0.0.1:47832/oauth/callback");
-  rmSync(dir, { recursive: true, force: true });
-});
-
-test("oauth exchange refuses to contact token endpoint until registration is confirmed", async () => {
+test("OAuth exchange sends the pending request to the platform and surfaces its real registration error", async () => {
   const dir = mkdtempSync(join(tmpdir(), "qimen-cli-exchange-"));
-  const result = await runCommand("oauth-exchange", { code: "browser-code", state: "state", session_file: join(dir, "session.json"), oauth_state_file: join(dir, "oauth.json") }, env, async () => {
-    throw new Error("token endpoint must not be called before the CLI client is registered");
-  });
+  const oauthStateFile = join(dir, "oauth.json");
+  const auth = await runCommand("auth-url", { session_file: join(dir, "session.json"), oauth_state_file: oauthStateFile }, env);
+  const state = new URL(auth.data.authorize_url).searchParams.get("state");
+  const result = await runCommand("oauth-exchange", { code: "browser-code", state, session_file: join(dir, "session.json"), oauth_state_file: oauthStateFile }, env, mockFetch([{ match: "/api/v1/oauth/token", status: 400, body: { detail: { reason_code: "identity_oauth_client_mismatch" } }, assert: (init) => assert.equal(init.method, "POST") }]));
   assert.equal(result.ok, false);
-  assert.equal(result.reason_code, "oauth_cli_client_not_registered");
+  assert.equal(result.status, 400);
+  assert.equal(result.data.detail.reason_code, "identity_oauth_client_mismatch");
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -96,13 +76,13 @@ test("registered OAuth exchange validates state and persists returned platform s
   const auth = await runCommand("auth-url", { session_file: sessionFile, oauth_state_file: oauthStateFile }, env);
   const state = new URL(auth.data.authorize_url).searchParams.get("state");
   const wrongState = await runCommand("oauth-exchange", {
-    code: "oauth-code", state: "wrong-state", registration_confirmed: true,
+    code: "oauth-code", state: "wrong-state",
     session_file: sessionFile, oauth_state_file: oauthStateFile,
   }, env, async () => { throw new Error("wrong OAuth state must not contact token endpoint"); });
   assert.equal(wrongState.reason_code, "oauth_state_invalid");
 
   const exchange = await runCommand("oauth-exchange", {
-    code: "oauth-code", state, registration_confirmed: true,
+    code: "oauth-code", state,
     session_file: sessionFile, oauth_state_file: oauthStateFile,
   }, env, mockFetch([{
     match: "/api/v1/oauth/token",

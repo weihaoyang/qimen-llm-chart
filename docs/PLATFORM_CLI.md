@@ -24,14 +24,13 @@ state are stored under `%USERPROFILE%\.qimen\platform-oauth-state.json` (or
 `QIMEN_CLI_OAUTH_STATE_FILE`) with owner-only file permissions where supported.
 
 The platform and website must both register this exact client/product/scope/
-callback before OAuth can complete. Until then, `auth-url` returns HTTP-like
-status 501 with `oauth_cli_client_not_registered`, the generated URL for
-inspection, and the exact registration payload. This preview is not a login
-success. Do not substitute the browser client `qimen` or the platform-only
+callback before OAuth can complete. `auth-url` always emits the contract
+request; the platform authorize and token endpoints are the registration
+boundary and return their real structured error if the tuple is not accepted.
+Do not substitute the browser client `qimen` or the platform-only
 `singseq-cli` client.
 
-After the platform and website registrations are completed, set
-`QIMEN_CLI_OAUTH_REGISTERED=true` and run `login`. It binds only to
+Run `login` once the platform registration is present. It binds only to
 `127.0.0.1:47832`, opens the platform authorization page in the default
 browser, validates the returned state, exchanges the code, and saves the
 session. CAPTCHA and OTP remain completed by the account holder in the browser.
