@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { runCommand } from "./platform-cli.mjs";
 
 const mockFetch = (routes) => async (input, init = {}) => {
@@ -35,11 +38,22 @@ test("orders and usage lifecycle stay product-scoped", async () => {
   assert.deepEqual(calls.map(([method]) => method), ["GET", "GET", "POST", "POST", "POST"]);
 });
 
-test("CLI auth-url reports the exact missing OAuth-only registration instead of a browser login URL", async () => {
-  const result = await runCommand("auth-url", {}, env);
+test("CLI auth-url reports the exact missing OAuth-only registration with a contract-complete preview URL", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-auth-"));
+  const result = await runCommand("auth-url", { session_file: join(dir, "session.json"), oauth_state_file: join(dir, "oauth.json") }, env);
   assert.equal(result.ok, false);
   assert.equal(result.status, 501);
   assert.equal(result.reason_code, "oauth_cli_client_not_registered");
+  const url = new URL(result.data.authorize_url);
+  assert.equal(url.origin + url.pathname, "https://singseq.com/oauth/authorize");
+  assert.equal(url.searchParams.get("client_id"), "qimen-cli");
+  assert.equal(url.searchParams.get("product_code"), "qimen");
+  assert.equal(url.searchParams.get("access_scope"), "qimen-core");
+  assert.equal(url.searchParams.get("redirect_uri"), "http://127.0.0.1:47832/oauth/callback");
+  assert.equal(url.searchParams.get("response_type"), "code");
+  assert.equal(url.searchParams.get("code_challenge_method"), "S256");
+  assert.match(url.searchParams.get("code_challenge"), /^[A-Za-z0-9_-]{43}$/);
+  assert.match(url.searchParams.get("state"), /^[A-Za-z0-9_-]{43}$/);
   assert.deepEqual(result.data.required_platform_registration, {
     client_code: "qimen-cli",
     product_code: "qimen",
@@ -52,15 +66,85 @@ test("CLI auth-url reports the exact missing OAuth-only registration instead of 
     oauth_redirect_uris: ["http://127.0.0.1:47832/oauth/callback"],
     access_scope: "qimen-core",
   });
-  assert.equal("url" in result.data, false);
+  assert.equal(JSON.parse(readFileSync(join(dir, "oauth.json"), "utf8")).state, url.searchParams.get("state"));
+  rmSync(dir, { recursive: true, force: true });
 });
 
-test("oauth exchange reports the registration block without contacting token endpoint", async () => {
-  const result = await runCommand("oauth-exchange", { code: "browser-code", code_verifier: "verifier" }, env, async () => {
+test("login reports missing registration without starting a callback listener", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-login-"));
+  const result = await runCommand("login", { session_file: join(dir, "session.json"), oauth_state_file: join(dir, "oauth.json") }, env);
+  assert.equal(result.ok, false);
+  assert.equal(result.reason_code, "oauth_cli_client_not_registered");
+  assert.equal(result.data.required_client_config.redirect_uri, "http://127.0.0.1:47832/oauth/callback");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("oauth exchange refuses to contact token endpoint until registration is confirmed", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-exchange-"));
+  const result = await runCommand("oauth-exchange", { code: "browser-code", state: "state", session_file: join(dir, "session.json"), oauth_state_file: join(dir, "oauth.json") }, env, async () => {
     throw new Error("token endpoint must not be called before the CLI client is registered");
   });
   assert.equal(result.ok, false);
   assert.equal(result.reason_code, "oauth_cli_client_not_registered");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("registered OAuth exchange validates state and persists returned platform session for later CLI reads", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-session-"));
+  const sessionFile = join(dir, "session.json");
+  const oauthStateFile = join(dir, "oauth.json");
+  const auth = await runCommand("auth-url", { session_file: sessionFile, oauth_state_file: oauthStateFile }, env);
+  const state = new URL(auth.data.authorize_url).searchParams.get("state");
+  const wrongState = await runCommand("oauth-exchange", {
+    code: "oauth-code", state: "wrong-state", registration_confirmed: true,
+    session_file: sessionFile, oauth_state_file: oauthStateFile,
+  }, env, async () => { throw new Error("wrong OAuth state must not contact token endpoint"); });
+  assert.equal(wrongState.reason_code, "oauth_state_invalid");
+
+  const exchange = await runCommand("oauth-exchange", {
+    code: "oauth-code", state, registration_confirmed: true,
+    session_file: sessionFile, oauth_state_file: oauthStateFile,
+  }, env, mockFetch([{
+    match: "/api/v1/oauth/token",
+    body: { session: { access_token: "ssp_at_cli", refresh_token: "ssp_rt_cli", user_id: "user-1", expires_at_iso: "2030-01-01T00:00:00Z" } },
+    assert: (init) => {
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), {
+        grant_type: "authorization_code", code: "oauth-code", client_id: "qimen-cli",
+        redirect_uri: "http://127.0.0.1:47832/oauth/callback",
+        code_verifier: JSON.parse(readFileSync(oauthStateFile, "utf8")).verifier,
+      });
+    },
+  }]));
+  assert.equal(exchange.ok, true);
+  assert.equal(JSON.parse(readFileSync(sessionFile, "utf8")).refresh_token, "ssp_rt_cli");
+  const session = await runCommand("session", { session_file: sessionFile }, env, mockFetch([{
+    match: "/api/v1/identity/me",
+    body: { session: { access_token: "ssp_at_cli", refresh_token: "ssp_rt_cli" }, profile: { user_id: "user-1" } },
+    assert: (init) => assert.equal(init.headers.Authorization, "Bearer ssp_at_cli"),
+  }]));
+  assert.equal(session.authenticated, true);
+  assert.deepEqual(session.data.session, { access_token: "[redacted]", refresh_token: "[redacted]" });
+  const refreshed = await runCommand("session-refresh", { session_file: sessionFile }, env, mockFetch([{
+    match: "/api/v1/identity/refresh",
+    body: { session: { access_token: "ssp_at_next", refresh_token: "ssp_rt_next", user_id: "user-1" } },
+    assert: (init) => {
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), { refresh_token: "ssp_rt_cli" });
+    },
+  }]));
+  assert.equal(refreshed.ok, true);
+  assert.equal(JSON.parse(readFileSync(sessionFile, "utf8")).access_token, "ssp_at_next");
+  const cleared = await runCommand("session-clear", { session_file: sessionFile, oauth_state_file: oauthStateFile }, env);
+  assert.equal(cleared.ok, true);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("help lists the supported commands", async () => {
+  const result = await runCommand("help", {}, env);
+  assert.equal(result.ok, true);
+  assert.ok(result.data.commands.includes("auth-url"));
+  assert.ok(result.data.commands.includes("session-clear"));
 });
 
 test("checkout validates plans, forwards one idempotency key, then creates payment", async () => {

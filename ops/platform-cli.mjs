@@ -1,5 +1,10 @@
 #!/usr/bin/env node
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { createServer } from "node:http";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const manifest = {
@@ -10,6 +15,8 @@ const manifest = {
 };
 const CLI_OAUTH_CLIENT = "qimen-cli";
 const CLI_OAUTH_REDIRECT_URI = "http://127.0.0.1:47832/oauth/callback";
+const DEFAULT_SESSION_FILE = join(homedir(), ".qimen", "platform-session.json");
+const DEFAULT_OAUTH_STATE_FILE = join(homedir(), ".qimen", "platform-oauth-state.json");
 
 const trimBase = (value) => String(value || "").replace(/\/+$/, "");
 
@@ -18,6 +25,12 @@ export const resolveConfig = (env = process.env, overrides = {}) => ({
   platformUrl: trimBase(overrides.platformUrl || env.PLATFORM_BASE_URL || env.NEXT_PUBLIC_PLATFORM_BASE_URL || manifest.platformUrl),
   productCode: overrides.productCode || env.PLATFORM_PRODUCT_CODE || env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE || manifest.productCode,
   accessScope: overrides.accessScope || env.PLATFORM_ACCESS_SCOPE || env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE || manifest.accessScope,
+  oauthClientId: overrides.oauth_client_id || env.QIMEN_CLI_OAUTH_CLIENT_ID || CLI_OAUTH_CLIENT,
+  oauthRedirectUri: overrides.redirect_uri || env.QIMEN_CLI_OAUTH_REDIRECT_URI || CLI_OAUTH_REDIRECT_URI,
+  sessionFile: overrides.session_file || env.QIMEN_CLI_SESSION_FILE || DEFAULT_SESSION_FILE,
+  oauthStateFile: overrides.oauth_state_file || env.QIMEN_CLI_OAUTH_STATE_FILE || DEFAULT_OAUTH_STATE_FILE,
+  oauthRegistrationConfirmed: overrides.registration_confirmed === true
+    || String(overrides.registration_confirmed || env.QIMEN_CLI_OAUTH_REGISTERED || "").toLowerCase() === "true",
 });
 
 const parseArgs = (argv) => {
@@ -34,7 +47,7 @@ const parseArgs = (argv) => {
 };
 
 const authHeaders = (options = {}, env = process.env) => {
-  const token = options.token || env.PLATFORM_ACCESS_TOKEN || env.SS_ACCESS_TOKEN || "";
+  const token = options.token || options.session?.access_token || env.PLATFORM_ACCESS_TOKEN || env.SS_ACCESS_TOKEN || "";
   const cookie = options.cookie || env.PLATFORM_COOKIE || env.QIMEN_PLATFORM_COOKIE || "";
   const csrf = options.csrf_token || env.PLATFORM_CSRF_TOKEN || "";
   const guestToken = options.guest_checkout_token || env.PLATFORM_GUEST_CHECKOUT_TOKEN || "";
@@ -65,7 +78,125 @@ export const requestJson = async (url, options = {}, fetchImpl = fetch) => {
 
 const boundaryOk = (status) => status === 401 || status === 403 || status === 405;
 const endpoint = (base, path) => `${trimBase(base)}${path.startsWith("/") ? path : `/${path}`}`;
-const cliOAuthBlock = (command, config) => ({
+const base64Url = (value) => Buffer.from(value).toString("base64url");
+const createOAuthRequest = () => {
+  const verifier = base64Url(randomBytes(48));
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
+  const state = base64Url(randomBytes(32));
+  return { verifier, challenge, state };
+};
+const oauthUrl = (config, request) => {
+  const url = new URL("https://singseq.com/oauth/authorize");
+  url.searchParams.set("client_id", config.oauthClientId);
+  url.searchParams.set("product_code", config.productCode);
+  url.searchParams.set("access_scope", config.accessScope);
+  url.searchParams.set("redirect_uri", config.oauthRedirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("code_challenge", request.challenge);
+  url.searchParams.set("code_challenge_method", "S256");
+  url.searchParams.set("state", request.state);
+  return url.toString();
+};
+const safeWriteJson = (file, value) => {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  try { chmodSync(file, 0o600); } catch { /* Windows ACLs are managed by the user profile. */ }
+};
+const readJson = (file) => {
+  try { return JSON.parse(readFileSync(file, "utf8")); } catch { return null; }
+};
+const saveOAuthState = (config, request) => safeWriteJson(config.oauthStateFile, {
+  client_id: config.oauthClientId,
+  product_code: config.productCode,
+  access_scope: config.accessScope,
+  redirect_uri: config.oauthRedirectUri,
+  verifier: request.verifier,
+  challenge: request.challenge,
+  state: request.state,
+  created_at: new Date().toISOString(),
+});
+const loadOAuthState = (config) => {
+  const value = readJson(config.oauthStateFile);
+  if (!value || value.client_id !== config.oauthClientId || value.product_code !== config.productCode
+    || value.redirect_uri !== config.oauthRedirectUri || typeof value.verifier !== "string"
+    || typeof value.state !== "string") return null;
+  return value;
+};
+const removeOAuthState = (config) => { try { rmSync(config.oauthStateFile, { force: true }); } catch { /* best effort */ } };
+const readStoredSession = (config) => {
+  const value = readJson(config.sessionFile);
+  if (!value || typeof value.access_token !== "string" || !value.access_token) return null;
+  return value;
+};
+const redactSessionTokens = (value) => {
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(redactSessionTokens);
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => {
+    if (["access_token", "refresh_token"].includes(key)) return [key, entry ? "[redacted]" : entry];
+    return [key, redactSessionTokens(entry)];
+  }));
+};
+const saveStoredSession = (config, body) => {
+  const session = body?.session && typeof body.session === "object" ? body.session : body;
+  if (typeof session?.access_token !== "string" || !session.access_token) return false;
+  safeWriteJson(config.sessionFile, {
+    access_token: session.access_token,
+    refresh_token: typeof session.refresh_token === "string" ? session.refresh_token : "",
+    expires_at_iso: typeof session.expires_at_iso === "string" ? session.expires_at_iso : "",
+    refresh_expires_at_iso: typeof session.refresh_expires_at_iso === "string" ? session.refresh_expires_at_iso : "",
+    user_id: typeof session.user_id === "string" ? session.user_id : "",
+    phone_number: typeof session.phone_number === "string" ? session.phone_number : "",
+    saved_at: new Date().toISOString(),
+  });
+  return true;
+};
+const clearStoredSession = (config) => { try { rmSync(config.sessionFile, { force: true }); } catch { /* best effort */ } };
+const openExternalUrl = (url) => new Promise((resolve, reject) => {
+  const [command, args] = process.platform === "win32"
+    ? ["rundll32", ["url.dll,FileProtocolHandler", url]]
+    : process.platform === "darwin" ? ["open", [url]] : ["xdg-open", [url]];
+  const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
+  child.once("error", reject);
+  child.once("spawn", () => { child.unref(); resolve(); });
+});
+const waitForOAuthCallback = (config, request, fetchImpl, env) => new Promise((resolve) => {
+  const server = createServer(async (incoming, outgoing) => {
+    const callback = new URL(incoming.url || "/", `http://${incoming.headers.host || "127.0.0.1"}`);
+    if (callback.pathname !== new URL(config.oauthRedirectUri).pathname) {
+      outgoing.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      outgoing.end("Qimen OAuth callback not found.");
+      return;
+    }
+    const state = callback.searchParams.get("state") || "";
+    const code = callback.searchParams.get("code") || "";
+    if (!code || state !== request.state) {
+      outgoing.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
+      outgoing.end("OAuth state validation failed. Return to the Qimen CLI.");
+      return;
+    }
+    outgoing.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+    outgoing.end("Qimen sign-in received. You can close this tab and return to the CLI.");
+    server.close();
+    resolve(runCommand("oauth-exchange", {
+      code,
+      state,
+      registration_confirmed: true,
+      session_file: config.sessionFile,
+      oauth_state_file: config.oauthStateFile,
+    }, env, fetchImpl));
+  });
+  server.on("error", (error) => resolve({ ok: false, command: "login", status: 500, error: error.message }));
+  const redirect = new URL(config.oauthRedirectUri);
+  server.listen(Number(redirect.port), "127.0.0.1", async () => {
+    try {
+      await openExternalUrl(oauthUrl(config, request));
+    } catch (error) {
+      server.close();
+      resolve({ ok: false, command: "login", status: 500, reason_code: "browser_launch_failed", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+});
+const cliOAuthBlock = (command, config, request, message = "Qimen CLI OAuth client is not registered on the Consumer Platform.") => ({
   ok: false,
   command,
   status: 501,
@@ -73,27 +204,34 @@ const cliOAuthBlock = (command, config) => ({
   product_code: config.productCode,
   access_scope: config.accessScope,
   data: {
-    message: "Qimen has only a browser OAuth client. The platform has not registered a product OAuth-only client, so CLI login cannot receive desktop_session.",
+    message,
+    registration_confirmed: config.oauthRegistrationConfirmed,
+    ...(request ? { authorize_url: oauthUrl(config, request), state: request.state } : {}),
     required_platform_registration: {
-      client_code: CLI_OAUTH_CLIENT,
+      client_code: config.oauthClientId,
       product_code: config.productCode,
       oauth_only: true,
       platform_identity: false,
-      oauth_redirect_uris: [CLI_OAUTH_REDIRECT_URI],
+      oauth_redirect_uris: [config.oauthRedirectUri],
     },
     required_website_registration: {
-      client_id: CLI_OAUTH_CLIENT,
-      oauth_redirect_uris: [CLI_OAUTH_REDIRECT_URI],
+      client_id: config.oauthClientId,
+      oauth_redirect_uris: [config.oauthRedirectUri],
       access_scope: config.accessScope,
     },
     required_client_config: {
-      client_id: CLI_OAUTH_CLIENT,
+      client_id: config.oauthClientId,
       product_code: config.productCode,
       access_scope: config.accessScope,
-      redirect_uri: CLI_OAUTH_REDIRECT_URI,
+      redirect_uri: config.oauthRedirectUri,
     },
   },
 });
+const helpResult = () => ({ ok: true, command: "help", data: {
+  description: "Qimen platform contract CLI. OAuth never copies browser cookies.",
+  commands: ["login", "auth-url", "oauth-exchange", "session", "session-refresh", "session-clear", "health", "plans", "orders", "gate", "usage", "usage-reserve", "usage-commit", "usage-release", "payment-result", "checkout", "ai-contract", "ai-health", "ai-run", "status"],
+  oauth: { client_id: CLI_OAUTH_CLIENT, redirect_uri: CLI_OAUTH_REDIRECT_URI, state_file: "QIMEN_CLI_OAUTH_STATE_FILE", session_file: "QIMEN_CLI_SESSION_FILE" },
+} });
 const createIdempotencyKey = (productCode, options = {}) => String(options.idempotency_key || options.idempotencyKey || `cli-${productCode}-${randomUUID()}`).slice(0, 128);
 const extractOrderId = (body) => {
   if (typeof body?.order_id === "string" && body.order_id.trim()) return body.order_id.trim();
@@ -104,7 +242,7 @@ const extractProviderUrl = (body) => [body?.provider_checkout_url, body?.checkou
 
 export const runCommand = async (command, rawOptions = {}, env = process.env, fetchImpl = fetch) => {
   const config = resolveConfig(env, rawOptions);
-  const options = { ...rawOptions, env };
+  const options = { ...rawOptions, session: readStoredSession(config), env };
   const health = async () => {
     const [healthResult, versionResult] = await Promise.all([
       requestJson(endpoint(config.appUrl, "/api/health"), options, fetchImpl),
@@ -112,12 +250,43 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     ]);
     return { app: { health: healthResult, version: versionResult }, product_code: config.productCode };
   };
+  if (command === "help" || command === "--help" || command === "-h") return helpResult();
   if (command === "health") return { ok: true, command, data: await health() };
   if (command === "auth-url" || command === "oauth-url" || command === "login-url") {
-    return cliOAuthBlock(command, config);
+    const request = createOAuthRequest();
+    saveOAuthState(config, request);
+    if (config.oauthRegistrationConfirmed) {
+      return { ok: true, command, status: 200, data: { authorize_url: oauthUrl(config, request), state: request.state, redirect_uri: config.oauthRedirectUri, product_code: config.productCode, access_scope: config.accessScope, session_file: config.sessionFile, oauth_state_file: config.oauthStateFile } };
+    }
+    return cliOAuthBlock(command, config, request);
+  }
+  if (command === "login") {
+    const request = createOAuthRequest();
+    saveOAuthState(config, request);
+    if (!config.oauthRegistrationConfirmed) return cliOAuthBlock(command, config, request);
+    return waitForOAuthCallback(config, request, fetchImpl, env);
   }
   if (command === "oauth-exchange") {
-    return cliOAuthBlock(command, config);
+    const code = String(options.code || "").trim();
+    const returnedState = String(options.state || "").trim();
+    if (!code || !returnedState) throw new Error("oauth-exchange requires --code <code> and --state <state>");
+    if (!config.oauthRegistrationConfirmed) return cliOAuthBlock(command, config, null);
+    const pending = loadOAuthState(config);
+    if (!pending || pending.state !== returnedState) {
+      return { ok: false, command, status: 400, reason_code: "oauth_state_invalid", message: "OAuth state does not match the pending Qimen CLI login." };
+    }
+    const result = await requestJson(endpoint(config.platformUrl, "/api/v1/oauth/token"), {
+      ...options,
+      method: "POST",
+      body: { grant_type: "authorization_code", code, client_id: config.oauthClientId, redirect_uri: config.oauthRedirectUri, code_verifier: pending.verifier },
+      headers: { "content-type": "application/json" },
+    }, fetchImpl);
+    if (result.ok) {
+      const saved = saveStoredSession(config, result.body);
+      removeOAuthState(config);
+      return { ok: saved, command, status: result.status, authenticated: saved, session_file: config.sessionFile, data: saved ? { user_id: readStoredSession(config)?.user_id || "", expires_at_iso: readStoredSession(config)?.expires_at_iso || "" } : { reason_code: "oauth_session_missing", message: "Token exchange succeeded but the platform response did not include an access token." }, request: result.url };
+    }
+    return { ok: false, command, status: result.status, data: result.body, request: result.url };
   }
   if (command === "plans") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl);
@@ -128,13 +297,31 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
     return { ok: result.ok || boundaryOk(result.status), command, status: result.status, data: result.body, request: result.url };
   }
   if (command === "session" || command === "auth-status") {
-    const hasToken = Boolean(options.token || env.PLATFORM_ACCESS_TOKEN || env.SS_ACCESS_TOKEN);
+    const hasToken = Boolean(options.token || options.session?.access_token || env.PLATFORM_ACCESS_TOKEN || env.SS_ACCESS_TOKEN);
     const result = await requestJson(
       hasToken ? endpoint(config.platformUrl, "/api/v1/identity/me") : endpoint(config.appUrl, "/api/platform/session"),
       options,
       fetchImpl,
     );
-    return { ok: result.ok || boundaryOk(result.status), command, status: result.status, authenticated: result.ok, data: result.body, request: result.url };
+    return { ok: result.ok || boundaryOk(result.status), command, status: result.status, authenticated: result.ok, session_source: hasToken ? "qimen_cli_session_file_or_token" : options.cookie || env.PLATFORM_COOKIE || env.QIMEN_PLATFORM_COOKIE ? "browser_cookie" : "none", data: redactSessionTokens(result.body), request: result.url };
+  }
+  if (command === "session-clear" || command === "logout") {
+    clearStoredSession(config);
+    removeOAuthState(config);
+    return { ok: true, command, authenticated: false, session_file_removed: config.sessionFile };
+  }
+  if (command === "session-refresh" || command === "refresh") {
+    const stored = readStoredSession(config);
+    if (!stored?.refresh_token) return { ok: false, command, status: 401, reason_code: "cli_session_refresh_missing", message: "No saved Qimen CLI refresh token is available." };
+    const result = await requestJson(endpoint(config.platformUrl, "/api/v1/identity/refresh"), {
+      ...options,
+      method: "POST",
+      body: { refresh_token: stored.refresh_token },
+      headers: { "content-type": "application/json" },
+    }, fetchImpl);
+    if (!result.ok) return { ok: false, command, status: result.status, data: redactSessionTokens(result.body), request: result.url };
+    const saved = saveStoredSession(config, result.body);
+    return { ok: saved, command, status: result.status, authenticated: saved, session_file: config.sessionFile, data: saved ? { user_id: readStoredSession(config)?.user_id || "", expires_at_iso: readStoredSession(config)?.expires_at_iso || "" } : { reason_code: "oauth_session_missing", message: "Platform refresh succeeded but did not return an access token." }, request: result.url };
   }
   if (command === "gate") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/entitlement/products/${encodeURIComponent(config.productCode)}/gate?access_scope=${encodeURIComponent(config.accessScope)}`), options, fetchImpl);

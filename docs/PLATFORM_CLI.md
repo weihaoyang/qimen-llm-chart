@@ -1,8 +1,7 @@
 # Platform CLI
 
-The product exposes a read-only platform smoke CLI. It uses the same registered
-`qimen` / `qimen-core` coordinates as the web adapter and never creates an order,
-payment attempt, reservation, or AI inference.
+The Qimen CLI uses `qimen` / `qimen-core`. `node ops/platform-cli.mjs --help`
+lists the commands. Read-only checks include:
 
 ```powershell
 npm run platform:cli -- status --json
@@ -10,43 +9,60 @@ npm run platform:cli -- health --json
 npm run platform:cli -- plans --json
 npm run platform:cli -- session --json
 npm run platform:cli -- gate --json
+npm run platform:cli -- usage --json
 npm run platform:cli -- payment-result --order-id <platform-order-id> --json
 npm run platform:cli -- ai-health --json
+npm run platform:cli -- ai-contract --json
 ```
 
-For an authenticated read, set `PLATFORM_ACCESS_TOKEN` (or pass `--token`). For
-browser bridge checks, pass `--cookie` and optionally `PLATFORM_CSRF_TOKEN`.
-HTTP 401/403/405 responses are returned as structured boundary results so an
-anonymous smoke does not look like a transport failure.
+## CLI OAuth
 
-`auth-url` and `oauth-exchange` currently return
-`oauth_cli_client_not_registered`; the CLI does not emit a browser-only login
-URL or call the token endpoint with the browser client's identity. The platform
-registry currently has no Qimen OAuth-only client. To enable product-scoped CLI
-login, register the same fixed callback in both the platform and website:
+The CLI uses a distinct OAuth-only client, `qimen-cli`, and the fixed callback
+`http://127.0.0.1:47832/oauth/callback`. Its authorization URL includes the
+full platform contract, S256 PKCE and a 43-character state. The verifier and
+state are stored under `%USERPROFILE%\.qimen\platform-oauth-state.json` (or
+`QIMEN_CLI_OAUTH_STATE_FILE`) with owner-only file permissions where supported.
 
-```json
-{
-  "platform": {
-    "client_code": "qimen-cli",
-    "product_code": "qimen",
-    "oauth_only": true,
-    "platform_identity": false,
-    "oauth_redirect_uris": ["http://127.0.0.1:47832/oauth/callback"]
-  },
-  "website": {
-    "client_id": "qimen-cli",
-    "oauth_redirect_uris": ["http://127.0.0.1:47832/oauth/callback"],
-    "access_scope": "qimen-core"
-  },
-  "client": {
-    "client_id": "qimen-cli",
-    "product_code": "qimen",
-    "access_scope": "qimen-core",
-    "redirect_uri": "http://127.0.0.1:47832/oauth/callback"
-  }
-}
+The platform and website must both register this exact client/product/scope/
+callback before OAuth can complete. Until then, `auth-url` returns HTTP-like
+status 501 with `oauth_cli_client_not_registered`, the generated URL for
+inspection, and the exact registration payload. This preview is not a login
+success. Do not substitute the browser client `qimen` or the platform-only
+`singseq-cli` client.
+
+After the platform and website registrations are completed, set
+`QIMEN_CLI_OAUTH_REGISTERED=true` and run `login`. It binds only to
+`127.0.0.1:47832`, opens the platform authorization page in the default
+browser, validates the returned state, exchanges the code, and saves the
+session. CAPTCHA and OTP remain completed by the account holder in the browser.
+For a manual flow, run `auth-url`, complete login in a browser, then pass the
+callback's `code` and `state` to:
+
+```powershell
+npm run platform:cli -- oauth-exchange --code <code> --state <state> --json
+npm run platform:cli -- session --json
+npm run platform:cli -- session-refresh --json
+npm run platform:cli -- gate --json
 ```
 
-The CLI must not treat `singseq-cli` (platform identity only) as Qimen gate
-authentication. No browser cookie or token is copied or persisted by this CLI.
+The CLI verifies the returned state before exchanging the code. A successful
+exchange stores platform-issued access and refresh tokens in
+`%USERPROFILE%\.qimen\platform-session.json` (or `QIMEN_CLI_SESSION_FILE`);
+the file is created with owner-only permissions where supported. All commands
+use that access token unless `--token` or `PLATFORM_ACCESS_TOKEN` overrides it.
+Run `session-clear` to delete saved session and pending OAuth state. Tokens are
+never printed by the CLI. Browser cookies are not copied into the CLI.
+
+## Side Effects
+
+`checkout` creates a platform order and payment attempt. `usage-reserve`,
+`usage-commit`, and `usage-release` change platform usage state. `ai-run` calls
+the real Qimen AI endpoint and can consume an entitlement. These commands must
+only be run when the operator intends their real platform effects. Prices,
+payment state, entitlement, and usage remain owned by Consumer Platform.
+
+Authenticated reads use the CLI session file, `--token`, or
+`PLATFORM_ACCESS_TOKEN`. Browser bridge checks may use `--cookie` and
+`PLATFORM_CSRF_TOKEN`; the CLI does not persist browser cookies. Anonymous
+401/403/405 responses are returned as structured boundary results and never
+count as authenticated or gate-allowed.
