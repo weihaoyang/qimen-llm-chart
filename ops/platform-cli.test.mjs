@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer } from "node:http";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runCommand } from "./platform-cli.mjs";
+import { parseOAuthCallbackParams, resolveConfig, runCommand, waitForOAuthCallback } from "./platform-cli.mjs";
 
 const mockFetch = (routes) => async (input, init = {}) => {
   const url = String(input);
@@ -14,6 +15,14 @@ const mockFetch = (routes) => async (input, init = {}) => {
 };
 
 const env = { PLATFORM_BASE_URL: "https://api.example.test", PLATFORM_PRODUCT_CODE: "qimen", PLATFORM_ACCESS_SCOPE: "qimen-core", QIMEN_APP_URL: "https://qimen.example.test" };
+const findFreePort = () => new Promise((resolve, reject) => {
+  const server = createServer();
+  server.once("error", reject);
+  server.listen(0, "127.0.0.1", () => {
+    const { port } = server.address();
+    server.close((error) => error ? reject(error) : resolve(port));
+  });
+});
 
 test("plans uses the registered qimen product and never writes", async () => {
   const result = await runCommand("plans", {}, env, mockFetch([{ match: "/commerce/products/qimen/plans", body: { items: [], channels: [] }, assert: (init) => assert.equal(init.method, "GET") }]));
@@ -78,6 +87,104 @@ test("CLI auth-url creates a contract-complete PKCE request without a local regi
   assert.match(url.searchParams.get("state"), /^[A-Za-z0-9_-]{43}$/);
   assert.equal(JSON.parse(readFileSync(join(dir, "oauth.json"), "utf8")).state, url.searchParams.get("state"));
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("OAuth callback accepts the platform fragment form used by the browser", () => {
+  assert.deepEqual(parseOAuthCallbackParams("http://127.0.0.1:47832/oauth/callback#?code=browser-code&state=browser-state"), {
+    code: "browser-code",
+    state: "browser-state",
+  });
+  assert.deepEqual(parseOAuthCallbackParams("http://127.0.0.1:47832/oauth/callback?code=query-code&state=query-state"), {
+    code: "query-code",
+    state: "query-state",
+  });
+});
+
+test("login bridges the browser fragment, rejects a mismatched state, and saves the platform session", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-login-"));
+  const port = await findFreePort();
+  const loginEnv = {
+    ...env,
+    QIMEN_CLI_OAUTH_REDIRECT_URI: `http://127.0.0.1:${port}/oauth/callback`,
+    QIMEN_CLI_SESSION_FILE: join(dir, "session.json"),
+    QIMEN_CLI_OAUTH_STATE_FILE: join(dir, "oauth.json"),
+  };
+  try {
+    const auth = await runCommand("auth-url", {}, loginEnv);
+    const state = auth.data.state;
+    const config = resolveConfig(loginEnv);
+    let tokenCalls = 0;
+    const login = waitForOAuthCallback(config, { state }, mockFetch([{
+      match: "/api/v1/oauth/token",
+      body: { desktop_session: { access_token: "access-test", refresh_token: "refresh-test", user_id: "user-test" } },
+      assert: (init) => {
+        tokenCalls += 1;
+        assert.equal(init.method, "POST");
+        assert.deepEqual(JSON.parse(init.body), {
+          grant_type: "authorization_code",
+          code: "fragment-code",
+          client_id: "qimen-cli",
+          redirect_uri: config.oauthRedirectUri,
+          code_verifier: JSON.parse(readFileSync(config.oauthStateFile, "utf8")).verifier,
+        });
+      },
+    }]), loginEnv, {
+      openBrowser: async (authorizeUrl) => {
+        const authorize = new URL(authorizeUrl);
+        const callbackUrl = authorize.searchParams.get("redirect_uri");
+        const page = await fetch(callbackUrl);
+        assert.equal(page.status, 200);
+        const html = await page.text();
+        assert.match(html, /location\.hash/);
+        const postCallback = (callbackState) => fetch(`${callbackUrl.replace(/\/oauth\/callback$/, "")}/oauth/callback/complete`, {
+          method: "POST",
+          headers: { origin: new URL(callbackUrl).origin, "content-type": "application/json" },
+          body: JSON.stringify({ code: "fragment-code", state: callbackState }),
+        });
+        const rejected = await postCallback("wrong-state");
+        assert.equal(rejected.status, 400);
+        assert.equal(tokenCalls, 0);
+        const accepted = await postCallback(state);
+        assert.equal(accepted.status, 200);
+        assert.match((await accepted.json()).message, /sign-in complete/);
+      },
+      timeoutMs: 2_000,
+    });
+    const result = await login;
+    assert.equal(result.ok, true);
+    assert.equal(tokenCalls, 1);
+    assert.equal(JSON.parse(readFileSync(config.sessionFile, "utf8")).refresh_token, "refresh-test");
+    assert.equal(existsSync(config.oauthStateFile), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("login timeout removes pending PKCE state and releases the loopback port", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-timeout-"));
+  const port = await findFreePort();
+  const timeoutEnv = {
+    ...env,
+    QIMEN_CLI_OAUTH_REDIRECT_URI: `http://127.0.0.1:${port}/oauth/callback`,
+    QIMEN_CLI_SESSION_FILE: join(dir, "session.json"),
+    QIMEN_CLI_OAUTH_STATE_FILE: join(dir, "oauth.json"),
+  };
+  try {
+    const auth = await runCommand("auth-url", {}, timeoutEnv);
+    const config = resolveConfig(timeoutEnv);
+    const result = await waitForOAuthCallback(config, { state: auth.data.state }, async () => {
+      throw new Error("timeout must not exchange a token");
+    }, timeoutEnv, { openBrowser: async () => {}, timeoutMs: 20 });
+    assert.equal(result.reason_code, "oauth_callback_timeout");
+    assert.equal(existsSync(config.oauthStateFile), false);
+    await new Promise((resolve, reject) => {
+      const server = createServer();
+      server.once("error", reject);
+      server.listen(port, "127.0.0.1", () => server.close((error) => error ? reject(error) : resolve()));
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("OAuth exchange sends the pending request to the platform and surfaces its real registration error", async () => {

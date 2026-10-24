@@ -161,40 +161,126 @@ const openExternalUrl = (url) => new Promise((resolve, reject) => {
   child.once("error", reject);
   child.once("spawn", () => { child.unref(); resolve(); });
 });
-const waitForOAuthCallback = (config, request, fetchImpl, env) => new Promise((resolve) => {
+export const parseOAuthCallbackParams = (value) => {
+  const url = new URL(value, "http://127.0.0.1/");
+  const params = new URLSearchParams(url.search || (url.hash ? url.hash.replace(/^#\??/, "") : ""));
+  return { code: params.get("code") || "", state: params.get("state") || "" };
+};
+const oauthCallbackHtml = () => `<!doctype html><meta charset="utf-8"><title>Qimen sign-in</title><p id="status">Returning to the Qimen CLI...</p><script>
+const params = new URLSearchParams(location.hash.replace(/^#\\??/, '') || location.search.replace(/^\\?/, ''));
+fetch('/oauth/callback/complete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: params.get('code') || '', state: params.get('state') || '' }) })
+  .then(async response => { const body = await response.json().catch(() => ({})); document.getElementById('status').textContent = response.ok ? 'Qimen sign-in complete. You can close this tab.' : (body.message || body.reason_code || 'Qimen sign-in failed. Return to the CLI.'); })
+  .catch(() => { document.getElementById('status').textContent = 'Unable to reach the Qimen CLI. Return to the CLI and retry.'; });
+</script>`;
+export const waitForOAuthCallback = (config, request, fetchImpl, env, {
+  openBrowser = openExternalUrl,
+  timeoutMs = 120_000,
+} = {}) => new Promise((resolve) => {
+  let completed = false;
+  let settled = false;
+  let timer;
+  let serverClosed = false;
+  const controller = new AbortController();
+  const closeServer = () => {
+    if (serverClosed) return;
+    serverClosed = true;
+    if (server.listening) server.close();
+  };
+  const settle = (result) => {
+    if (settled) return;
+    settled = true;
+    if (timer) clearTimeout(timer);
+    if (!result.ok) controller.abort();
+    removeOAuthState(config);
+    closeServer();
+    resolve(result);
+  };
+  const finish = async (code, state, outgoing) => {
+    if (completed) {
+      outgoing.writeHead(409, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      outgoing.end(JSON.stringify({ reason_code: "oauth_callback_already_consumed", message: "This sign-in callback has already been used." }));
+      return;
+    }
+    if (!code || state !== request.state) {
+      outgoing.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      outgoing.end(JSON.stringify({ reason_code: "oauth_state_invalid", message: "OAuth state validation failed. Return to the Qimen CLI." }));
+      return;
+    }
+    completed = true;
+    closeServer();
+    try {
+      const result = await runCommand("oauth-exchange", {
+        code,
+        state,
+        registration_confirmed: true,
+        session_file: config.sessionFile,
+        oauth_state_file: config.oauthStateFile,
+      }, env, (input, init) => fetchImpl(input, { ...init, signal: controller.signal }));
+      outgoing.writeHead(result.ok ? 200 : 502, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      outgoing.end(JSON.stringify({
+        ...(result.ok
+          ? { message: "Qimen sign-in complete. You can close this tab and return to the CLI." }
+          : { reason_code: result.data?.detail?.reason_code || result.reason_code || "oauth_exchange_failed", message: "Qimen sign-in could not be completed. Return to the CLI and retry." }),
+      }));
+      settle(result);
+    } catch (error) {
+      outgoing.writeHead(502, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      outgoing.end(JSON.stringify({ reason_code: "oauth_exchange_failed", message: "Qimen sign-in could not be completed. Return to the CLI and retry." }));
+      settle({ ok: false, command: "login", status: 502, reason_code: "oauth_exchange_failed", error: error instanceof Error ? error.message : String(error) });
+    }
+  };
   const server = createServer(async (incoming, outgoing) => {
     const callback = new URL(incoming.url || "/", `http://${incoming.headers.host || "127.0.0.1"}`);
-    if (callback.pathname !== new URL(config.oauthRedirectUri).pathname) {
+    const callbackPath = new URL(config.oauthRedirectUri).pathname;
+    if (callback.pathname !== callbackPath && callback.pathname !== "/oauth/callback/complete") {
       outgoing.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
       outgoing.end("Qimen OAuth callback not found.");
       return;
     }
-    const state = callback.searchParams.get("state") || "";
-    const code = callback.searchParams.get("code") || "";
-    if (!code || state !== request.state) {
-      outgoing.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
-      outgoing.end("OAuth state validation failed. Return to the Qimen CLI.");
+    if (incoming.method === "GET" && callback.pathname === callbackPath) {
+      const { code, state } = parseOAuthCallbackParams(incoming.url || "/");
+      if (code || state) {
+      void finish(code, state, outgoing);
+        return;
+      }
+      outgoing.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" });
+      outgoing.end(oauthCallbackHtml());
       return;
     }
-    outgoing.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
-    outgoing.end("Qimen sign-in received. You can close this tab and return to the CLI.");
-    server.close();
-    resolve(runCommand("oauth-exchange", {
-      code,
-      state,
-      registration_confirmed: true,
-      session_file: config.sessionFile,
-      oauth_state_file: config.oauthStateFile,
-    }, env, fetchImpl));
+    if (incoming.method !== "POST" || callback.pathname !== "/oauth/callback/complete"
+      || incoming.headers.origin !== `http://127.0.0.1:${new URL(config.oauthRedirectUri).port}`
+      || incoming.headers["content-type"]?.split(";")[0] !== "application/json") {
+      outgoing.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      outgoing.end("Qimen OAuth callback not found.");
+      return;
+    }
+    let raw = "";
+    incoming.setEncoding("utf8");
+    incoming.on("data", (chunk) => { raw += chunk; if (raw.length > 8192) incoming.destroy(); });
+    incoming.on("end", () => {
+      let payload;
+      try { payload = JSON.parse(raw); } catch { payload = null; }
+      void finish(typeof payload?.code === "string" ? payload.code : "", typeof payload?.state === "string" ? payload.state : "", outgoing);
+    });
   });
-  server.on("error", (error) => resolve({ ok: false, command: "login", status: 500, error: error.message }));
+  server.on("error", (error) => settle({ ok: false, command: "login", status: 500, error: error.message }));
   const redirect = new URL(config.oauthRedirectUri);
   server.listen(Number(redirect.port), "127.0.0.1", async () => {
+    timer = setTimeout(() => {
+      controller.abort();
+      settle({
+        ok: false,
+        command: "login",
+        status: 408,
+        reason_code: "oauth_callback_timeout",
+        message: "Timed out waiting for the Qimen sign-in callback. Start login again.",
+      });
+    }, timeoutMs);
+    timer.unref?.();
     try {
-      await openExternalUrl(oauthUrl(config, request));
+      await openBrowser(oauthUrl(config, request));
     } catch (error) {
-      server.close();
-      resolve({ ok: false, command: "login", status: 500, reason_code: "browser_launch_failed", error: error instanceof Error ? error.message : String(error) });
+      settle({ ok: false, command: "login", status: 500, reason_code: "browser_launch_failed", error: error instanceof Error ? error.message : String(error) });
     }
   });
 });
