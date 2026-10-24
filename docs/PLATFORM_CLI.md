@@ -45,7 +45,9 @@ npm run platform:cli -- gate --json
 ```
 
 The CLI verifies the returned state before exchanging the code. A successful
-exchange stores platform-issued access and refresh tokens in
+exchange stores platform-issued access and refresh tokens from the OAuth-only
+`desktop_session` response field (and accepts the `session` shape used by
+refresh) in
 `%USERPROFILE%\.qimen\platform-session.json` (or `QIMEN_CLI_SESSION_FILE`);
 the file is created with owner-only permissions where supported. All commands
 use that access token unless `--token` or `PLATFORM_ACCESS_TOKEN` overrides it.

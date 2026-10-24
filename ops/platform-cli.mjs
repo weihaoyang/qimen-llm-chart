@@ -135,7 +135,11 @@ const redactSessionTokens = (value) => {
   }));
 };
 const saveStoredSession = (config, body) => {
-  const session = body?.session && typeof body.session === "object" ? body.session : body;
+  // OAuth-only clients receive bearer credentials in desktop_session. Refresh
+  // responses use session, so accept both without persisting profile data.
+  const session = body?.desktop_session && typeof body.desktop_session === "object"
+    ? body.desktop_session
+    : body?.session && typeof body.session === "object" ? body.session : body;
   if (typeof session?.access_token !== "string" || !session.access_token) return false;
   safeWriteJson(config.sessionFile, {
     access_token: session.access_token,

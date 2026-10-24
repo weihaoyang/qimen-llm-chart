@@ -120,6 +120,26 @@ test("registered OAuth exchange validates state and persists returned platform s
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("OAuth-only token responses persist desktop_session credentials", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-desktop-session-"));
+  const sessionFile = join(dir, "session.json");
+  const oauthStateFile = join(dir, "oauth.json");
+  const auth = await runCommand("auth-url", { session_file: sessionFile, oauth_state_file: oauthStateFile }, env);
+  const state = new URL(auth.data.authorize_url).searchParams.get("state");
+  const exchange = await runCommand("oauth-exchange", {
+    code: "oauth-code", state, session_file: sessionFile, oauth_state_file: oauthStateFile,
+  }, env, mockFetch([{ match: "/api/v1/oauth/token", body: {
+    session: { user_id: "user-1" },
+    desktop_session: { access_token: "desktop-at", refresh_token: "desktop-rt", user_id: "user-1" },
+  } }]));
+  assert.equal(exchange.ok, true);
+  assert.deepEqual(JSON.parse(readFileSync(sessionFile, "utf8")), {
+    access_token: "desktop-at", refresh_token: "desktop-rt", expires_at_iso: "", refresh_expires_at_iso: "",
+    user_id: "user-1", phone_number: "", saved_at: JSON.parse(readFileSync(sessionFile, "utf8")).saved_at,
+  });
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("help lists the supported commands", async () => {
   const result = await runCommand("help", {}, env);
   assert.equal(result.ok, true);
