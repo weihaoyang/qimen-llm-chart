@@ -200,9 +200,11 @@ const waitForOAuthCallback = (config, request, fetchImpl, env) => new Promise((r
 });
 const helpResult = () => ({ ok: true, command: "help", data: {
   description: "Qimen platform contract CLI. OAuth never copies browser cookies.",
-  commands: ["login", "auth-url", "oauth-exchange", "session", "session-refresh", "session-clear", "health", "plans", "orders", "gate", "usage", "usage-reserve", "usage-commit", "usage-release", "payment-result", "checkout", "ai-contract", "ai-health", "ai-run", "status"],
+  commands: ["login", "auth-url", "oauth-exchange", "session", "session-refresh", "session-clear", "health", "contract", "plans", "orders", "gate", "usage", "usage-reserve", "usage-commit", "usage-release", "payment-result", "checkout", "ai-contract", "ai-health", "ai-run", "status"],
   oauth: { client_id: CLI_OAUTH_CLIENT, redirect_uri: CLI_OAUTH_REDIRECT_URI, state_file: "QIMEN_CLI_OAUTH_STATE_FILE", session_file: "QIMEN_CLI_SESSION_FILE" },
 } });
+const readLocalProductContract = () => JSON.parse(readFileSync(new URL("../singseq.product.json", import.meta.url), "utf8"));
+const sortedStrings = (values) => [...new Set((Array.isArray(values) ? values : []).filter((value) => typeof value === "string"))].sort();
 const createIdempotencyKey = (productCode, options = {}) => String(options.idempotency_key || options.idempotencyKey || `cli-${productCode}-${randomUUID()}`).slice(0, 128);
 const extractOrderId = (body) => {
   if (typeof body?.order_id === "string" && body.order_id.trim()) return body.order_id.trim();
@@ -257,6 +259,47 @@ export const runCommand = async (command, rawOptions = {}, env = process.env, fe
   if (command === "plans") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl);
     return { ok: result.ok, command, status: result.status, data: result.body, request: result.url };
+  }
+  if (command === "contract") {
+    const [products, plans] = await Promise.all([
+      requestJson(endpoint(config.platformUrl, "/api/v1/commerce/products"), options, fetchImpl),
+      requestJson(endpoint(config.platformUrl, `/api/v1/commerce/products/${encodeURIComponent(config.productCode)}/plans`), options, fetchImpl),
+    ]);
+    const local = readLocalProductContract();
+    if (!products.ok || !plans.ok) {
+      return {
+        ok: false,
+        command,
+        status: !products.ok ? products.status : plans.status,
+        data: { product_code: config.productCode, access_scope: config.accessScope, local, platform: { products: products.body, plans: plans.body } },
+        requests: [products.url, plans.url],
+      };
+    }
+    const registered = (Array.isArray(products.body?.items) ? products.body.items : []).find((item) => item?.product_code === config.productCode) || null;
+    const livePlans = Array.isArray(plans.body?.items) ? plans.body.items : [];
+    const mismatches = [];
+    if (local.product_code !== config.productCode || local.access_scope !== config.accessScope) mismatches.push("local_product_coordinates_mismatch");
+    if (!registered) mismatches.push("platform_product_missing");
+    if (registered && registered.status !== "active") mismatches.push("platform_product_inactive");
+    if (registered?.access_scope !== config.accessScope) mismatches.push("platform_access_scope_mismatch");
+    if (registered && JSON.stringify(sortedStrings(registered.capabilities)) !== JSON.stringify(sortedStrings(local.capabilities))) mismatches.push("platform_capabilities_mismatch");
+    if (livePlans.some((plan) => plan.product_code !== config.productCode || plan.access_scope !== config.accessScope)) mismatches.push("platform_plan_coordinates_mismatch");
+    const livePlanCodes = sortedStrings(livePlans.map((plan) => plan.plan_code));
+    const localPlanCodes = sortedStrings((Array.isArray(local.plans) ? local.plans : []).map((plan) => plan?.plan_code));
+    if (JSON.stringify(livePlanCodes) !== JSON.stringify(localPlanCodes)) mismatches.push("platform_plan_set_mismatch");
+    return {
+      ok: mismatches.length === 0,
+      command,
+      status: 200,
+      data: {
+        product_code: config.productCode,
+        configured_access_scope: config.accessScope,
+        platform: { product: registered, plans: livePlans, channels: Array.isArray(plans.body?.channels) ? plans.body.channels : [] },
+        local: { access_scope: local.access_scope, capabilities: local.capabilities, plans: local.plans },
+        mismatches,
+      },
+      requests: [products.url, plans.url],
+    };
   }
   if (command === "orders") {
     const result = await requestJson(endpoint(config.platformUrl, `/api/v1/commerce/orders?product_code=${encodeURIComponent(config.productCode)}`), options, fetchImpl);
