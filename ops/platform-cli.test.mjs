@@ -21,6 +21,29 @@ test("plans uses the registered qimen product and never writes", async () => {
   assert.equal(result.status, 200);
 });
 
+test("contract reads platform product and plans facts without writing", async () => {
+  const calls = [];
+  const result = await runCommand("contract", {}, env, mockFetch([
+    { match: "/commerce/products/qimen/plans", body: { items: [{ plan_code: "qimen-analysis-10", product_code: "qimen", access_scope: "qimen-core" }, { plan_code: "qimen-kline-precise-1", product_code: "qimen", access_scope: "qimen-core" }], channels: [{ channel: "alipay", ready: true }] }, assert: (init, url) => { calls.push([init.method, url]); assert.equal(init.method, "GET"); } },
+    { match: "/commerce/products", body: { items: [{ product_code: "qimen", name: "知几", status: "active", region_scope: "cn-mainland", access_scope: "qimen-core", capabilities: ["identity", "catalog", "checkout", "payment_result", "entitlement_gate", "usage_reserve", "invitation_redeem", "token_usage", "ai_analysis"] }] }, assert: (init, url) => { calls.push([init.method, url]); assert.equal(init.method, "GET"); } },
+  ]));
+  assert.equal(result.ok, true);
+  assert.equal(result.status, 200);
+  assert.deepEqual(calls.map(([method]) => method), ["GET", "GET"]);
+  assert.equal(result.data.platform.product.product_code, "qimen");
+  assert.deepEqual(result.data.platform.channels, [{ channel: "alipay", ready: true }]);
+  assert.deepEqual(result.data.mismatches, []);
+});
+
+test("contract reports platform drift instead of treating local declarations as truth", async () => {
+  const result = await runCommand("contract", {}, env, mockFetch([
+    { match: "/commerce/products", body: { items: [{ product_code: "qimen", access_scope: "wrong-scope", capabilities: ["identity"] }] } },
+    { match: "/commerce/products/qimen/plans", body: { items: [{ plan_code: "unexpected-plan", product_code: "qimen", access_scope: "wrong-scope" }], channels: [] } },
+  ]));
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.data.mismatches, ["platform_product_inactive", "platform_access_scope_mismatch", "platform_capabilities_mismatch", "platform_plan_coordinates_mismatch", "platform_plan_set_mismatch"]);
+});
+
 test("orders and usage lifecycle stay product-scoped", async () => {
   const calls = [];
   const fetcher = mockFetch([
