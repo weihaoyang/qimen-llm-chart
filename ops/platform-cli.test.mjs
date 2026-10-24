@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import { createServer } from "node:http";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -176,6 +177,38 @@ test("login timeout removes pending PKCE state and releases the loopback port", 
       throw new Error("timeout must not exchange a token");
     }, timeoutEnv, { openBrowser: async () => {}, timeoutMs: 20 });
     assert.equal(result.reason_code, "oauth_callback_timeout");
+    assert.equal(existsSync(config.oauthStateFile), false);
+    await new Promise((resolve, reject) => {
+      const server = createServer();
+      server.once("error", reject);
+      server.listen(port, "127.0.0.1", () => server.close((error) => error ? reject(error) : resolve()));
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("login interruption removes pending PKCE state and releases the loopback port", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "qimen-cli-interrupt-"));
+  const port = await findFreePort();
+  const interruptEnv = {
+    ...env,
+    QIMEN_CLI_OAUTH_REDIRECT_URI: `http://127.0.0.1:${port}/oauth/callback`,
+    QIMEN_CLI_SESSION_FILE: join(dir, "session.json"),
+    QIMEN_CLI_OAUTH_STATE_FILE: join(dir, "oauth.json"),
+  };
+  try {
+    const auth = await runCommand("auth-url", {}, interruptEnv);
+    const config = resolveConfig(interruptEnv);
+    const signalSource = new EventEmitter();
+    const resultPromise = waitForOAuthCallback(config, { state: auth.data.state }, async () => {}, interruptEnv, {
+      openBrowser: async () => {},
+      timeoutMs: 2_000,
+      signalSource,
+    });
+    setTimeout(() => signalSource.emit("SIGINT"), 20);
+    const result = await resultPromise;
+    assert.equal(result.reason_code, "oauth_login_interrupted");
     assert.equal(existsSync(config.oauthStateFile), false);
     await new Promise((resolve, reject) => {
       const server = createServer();

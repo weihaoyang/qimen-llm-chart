@@ -175,6 +175,7 @@ fetch('/oauth/callback/complete', { method: 'POST', headers: { 'content-type': '
 export const waitForOAuthCallback = (config, request, fetchImpl, env, {
   openBrowser = openExternalUrl,
   timeoutMs = 120_000,
+  signalSource = process,
 } = {}) => new Promise((resolve) => {
   let completed = false;
   let settled = false;
@@ -190,11 +191,20 @@ export const waitForOAuthCallback = (config, request, fetchImpl, env, {
     if (settled) return;
     settled = true;
     if (timer) clearTimeout(timer);
+    signalSource.removeListener("SIGINT", onInterrupt);
+    signalSource.removeListener("SIGTERM", onInterrupt);
     if (!result.ok) controller.abort();
     removeOAuthState(config);
     closeServer();
     resolve(result);
   };
+  const onInterrupt = () => settle({
+    ok: false,
+    command: "login",
+    status: 130,
+    reason_code: "oauth_login_interrupted",
+    message: "Qimen sign-in was interrupted. Start login again.",
+  });
   const finish = async (code, state, outgoing) => {
     if (completed) {
       outgoing.writeHead(409, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
@@ -263,6 +273,8 @@ export const waitForOAuthCallback = (config, request, fetchImpl, env, {
       void finish(typeof payload?.code === "string" ? payload.code : "", typeof payload?.state === "string" ? payload.state : "", outgoing);
     });
   });
+  signalSource.once("SIGINT", onInterrupt);
+  signalSource.once("SIGTERM", onInterrupt);
   server.on("error", (error) => settle({ ok: false, command: "login", status: 500, error: error.message }));
   const redirect = new URL(config.oauthRedirectUri);
   server.listen(Number(redirect.port), "127.0.0.1", async () => {
