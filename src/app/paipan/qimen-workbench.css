@@ -562,43 +562,63 @@
   }
 }
 
-/* 窗口矮（≤760px，例如 1366×768 笔记本的浏览器视口只有 ~640px）时不再把盘面压扁：
-   压扁会让卡片内容溢出、事实栏（天/地/暗/支/势）整行变成 0 高度而完全看不见。
-   改为让画布列滚动：盘面按内容定高，卡片保底高度放得下自己的内容。 */
-@media (min-width: 721px) and (max-height: 760px) {
-  html body .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart > .canvas-panel {
-    grid-template-rows: auto auto auto !important;
-    overflow: auto !important;
+/* 窗口矮（≤876px，覆盖 1280×800 / 1366×768 / 1024×768 等笔记本视口）时不再把盘面压扁：
+   .palace-grid 的宽度按 84dvh 计算，但可用高度不足时 max-height 只压高度、不缩宽度，
+   宫格就变成扁矩形，卡片事实栏（天/地/暗/支/势）被裁成 0 高度。
+   这里给卡片确定高度（108px 能完整放下宫名 + 主区 + 两列事实栏），盘面按内容定高；
+   宫格壳、格局折叠条同步收紧，保证整块盘面和格局入口都在画布可视区内。 */
+@media (min-width: 721px) and (max-height: 876px) {
+  /* 只有内容行可以滚动：时间步进器和底部摘要仍固定，盘面纵向溢出的部分始终可达。 */
+  html body .product-chart[data-mode="qimen"] .canvas-panel__content {
+    overflow-y: auto !important;
+    align-content: start !important;
+    grid-template-rows: auto auto !important;
   }
   /* 整条链（内容壳 → 盘面布局 → 宫格壳）都要"按内容定高、不裁切"：任何一层留着 1fr 行或
      overflow: hidden，都会把盘面压扁或从顶部裁掉。 */
-  html body .product-chart[data-mode="qimen"] .canvas-panel__content,
-  html body .product-chart[data-mode="qimen"] .qimen-board-layout,
   html body .product-chart[data-mode="qimen"] .palace-grid-shell {
     height: auto !important;
     min-height: 0 !important;
-    overflow: visible !important;
-  }
-  html body .product-chart[data-mode="qimen"] .canvas-panel__content {
-    grid-template-rows: auto auto !important;
-  }
-  html body .product-chart[data-mode="qimen"] .qimen-board-layout {
-    grid-template-rows: auto !important;
-  }
-  html body .product-chart[data-mode="qimen"] .palace-grid-shell {
     grid-template-rows: auto auto !important;
     /* 从顶部开始排：居中会让溢出的部分跑到上方（既不可达、也不计入 scrollHeight）。 */
     align-self: start !important;
   }
   html body .product-chart[data-mode="qimen"] .palace-grid {
+    width: min(100%, 84dvh) !important;
+    height: auto !important;
     max-height: none !important;
-    width: 100% !important;
+    aspect-ratio: auto !important;
     align-self: start !important;
+    grid-template-rows: repeat(3, 108px) !important;
   }
   html body .product-chart[data-mode="qimen"] .palace-card {
-    /* 给确定高度，避免"卡片高 → 壳层高 → 卡片高"的循环收缩（矮窗口下会把壳层压到 189px）；
-       124px 足以放下宫名 + 主区（窄卡片是两行）+ 两列事实栏。 */
-    height: 124px !important;
+    /* 给确定高度，避免"卡片高 → 壳层高 → 卡片高"的循环收缩（矮窗口下会把壳层压到 189px）。 */
+    height: 108px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-grid-shell__legend {
+    padding: 3px 8px !important;
+    gap: 4px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-grid-shell__legend > span {
+    min-height: 20px !important;
+    padding: 1px 6px !important;
+    font-size: 11px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure {
+    margin-top: 6px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure > summary {
+    min-height: 32px !important;
+    padding: 4px 12px !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__mark,
+  html body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__hint {
+    display: none !important;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-pattern-disclosure__toggle {
+    font-size: 18px !important;
   }
 }
 
