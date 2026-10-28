@@ -1,5 +1,7 @@
 import productManifest from "../../../config/ai-product-manifest.json";
 
+import { buildPlatformAuthorizeUrl } from "@singularity-sequence/web-sdk";
+
 export type PlatformClientConfig = {
   baseUrl: string;
   productCode: string;
@@ -180,17 +182,17 @@ export const buildPlatformOAuthLoginUrl = ({
   // app.singseq.com fallback makes every unauthenticated paid flow fail before
   // Captcha, order creation, or payment can even be reached.
   const resolvedLoginUrl = loginUrl || "https://singseq.com/oauth/authorize";
-  const url = new URL(
+  const authorizeUrl = new URL(
     resolvedLoginUrl,
     /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
-  );
-  url.searchParams.set("product_code", productCode);
-  url.searchParams.set("access_scope", accessScope);
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("code_challenge", codeChallenge);
-  url.searchParams.set("code_challenge_method", "S256");
-  url.searchParams.set("state", state);
-  return url.toString();
+  ).toString();
+  return buildPlatformAuthorizeUrl({
+    authorizeUrl,
+    clientId,
+    productCode,
+    accessScope,
+    redirectUri,
+    state,
+    codeChallenge,
+  });
 };
