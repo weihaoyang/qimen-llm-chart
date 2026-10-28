@@ -24,7 +24,7 @@ export type PlatformOAuthCallback = {
 
 const PLATFORM_OAUTH_STORAGE_KEY = "qmdj.platform.oauth.v1";
 // The registered production callback is a hash route handled by the workbench.
-export const PLATFORM_OAUTH_CALLBACK_PATH = "/#/auth/callback";
+export const PLATFORM_OAUTH_CALLBACK_PATH = "/auth/callback";
 
 export type PlatformAccessState = {
   session: PlatformSession;

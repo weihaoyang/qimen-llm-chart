@@ -99,13 +99,13 @@ describe("platform config", () => {
       clientId: "qimen",
       productCode: "qimen",
       accessScope: "qimen-core",
-      redirectUri: "https://qmdj.singseq.com/#/auth/callback",
+      redirectUri: "https://qmdj.singseq.com/auth/callback",
       codeChallenge: "challenge",
       state: "state",
     });
 
     expect(url).toBe(
-      "https://singseq.com/oauth/authorize?client_id=qimen&product_code=qimen&access_scope=qimen-core&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2F%23%2Fauth%2Fcallback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
+      "https://singseq.com/oauth/authorize?client_id=qimen&product_code=qimen&access_scope=qimen-core&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2Fauth%2Fcallback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
     );
     expect(url).not.toContain("app.singseq.com");
   });
