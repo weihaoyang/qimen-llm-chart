@@ -168,6 +168,7 @@ export const buildPlatformOAuthLoginUrl = ({
   redirectUri,
   codeChallenge,
   state,
+  prompt,
 }: {
   baseUrl: string;
   loginUrl?: string;
@@ -177,6 +178,7 @@ export const buildPlatformOAuthLoginUrl = ({
   redirectUri: string;
   codeChallenge: string;
   state: string;
+  prompt?: "select_account" | "login";
 }) => {
   // Keep OAuth on the canonical, deployed authorization endpoint. A stale
   // app.singseq.com fallback makes every unauthenticated paid flow fail before
@@ -194,5 +196,6 @@ export const buildPlatformOAuthLoginUrl = ({
     redirectUri,
     state,
     codeChallenge,
+    prompt,
   });
 };

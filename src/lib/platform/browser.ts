@@ -203,6 +203,7 @@ export const createPlatformOAuthRequest = async () => {
 export const preparePlatformOAuthLogin = async (
   config: PlatformClientConfig,
   origin: string,
+  prompt?: "select_account" | "login",
 ) => {
   const request = await createPlatformOAuthRequest();
   const redirectUri = `${origin.replace(/\/$/, "")}${PLATFORM_OAUTH_CALLBACK_PATH}`;
@@ -217,6 +218,7 @@ export const preparePlatformOAuthLogin = async (
       redirectUri,
       codeChallenge: request.challenge,
       state: request.state,
+      prompt,
     }),
   };
 };

@@ -1079,12 +1079,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
     };
   }, [platformConfig]);
 
-  const handlePlatformLogin = async () => {
+  const handlePlatformLogin = async (prompt?: "select_account" | "login") => {
     if (typeof window === "undefined" || platformLoginBusy) return;
     setPlatformLoginBusy(true);
     setPlatformLoginError(null);
     try {
-      const login = await preparePlatformOAuthLogin(platformConfig, window.location.origin);
+      const login = await preparePlatformOAuthLogin(platformConfig, window.location.origin, prompt);
       savePlatformOAuthRequest(login.request);
       window.location.assign(login.url);
     } catch (loginError) {
@@ -1112,7 +1112,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const handlePlatformSwitchAccount = async () => {
     await handlePlatformLogout();
-    await handlePlatformLogin();
+    await handlePlatformLogin("select_account");
   };
 
   const qimenStructuredText = useMemo(() => {
