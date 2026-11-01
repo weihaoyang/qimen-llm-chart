@@ -4,9 +4,6 @@ import { requirePlatformClientConfig } from "@/lib/platform/config";
 
 type ClientOptions = {
   accessToken?: string | null;
-  csrfToken?: string | null;
-  onUnauthorized?: () => void;
-  getTraceId?: () => string | null;
 };
 
 const buildOptions = (options?: ClientOptions) => {

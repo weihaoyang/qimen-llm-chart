@@ -52,7 +52,7 @@ describe("platform browser helpers", () => {
     }));
 
     try {
-      const usage = await fetchPlatformUsage("access-token", "csrf-token", "analysis_turn");
+      const usage = await fetchPlatformUsage("access-token", "analysis_turn");
       expect(requestUrl).toContain("/api/v1/usage/balance?product_code=qimen");
       expect(usage.usage_unit).toBe("analysis_turn");
       expect(usage.usage_label).toBe("analysis_turn");

@@ -682,7 +682,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         clearCallback();
         const access = await restorePlatformAccessState(session);
         const [usageResult] = await Promise.allSettled([
-          fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_USAGE_METRIC),
+          fetchPlatformUsage(access.session.access_token, AGENT_USAGE_METRIC),
         ]);
         if (!active) return;
         const usage = usageResult.status === "fulfilled" ? usageResult.value : null;
@@ -801,7 +801,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       }
 
       const [usageResult] = await Promise.allSettled([
-        fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_USAGE_METRIC),
+        fetchPlatformUsage(access.session.access_token, AGENT_USAGE_METRIC),
       ]);
       if (cancelled) return;
       const usage = usageResult.status === "fulfilled" ? usageResult.value : null;

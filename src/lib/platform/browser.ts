@@ -242,7 +242,6 @@ export const restorePlatformAccessState = async (
 
   const authenticatedClient = createProductPlatformClient({
     accessToken: current.access_token,
-    csrfToken: current.csrf_token,
   });
 
   try {
@@ -278,7 +277,6 @@ export const restorePlatformAccessState = async (
 
     const revalidated = await createProductPlatformClient({
       accessToken: refreshedSession.access_token,
-      csrfToken: refreshedSession.csrf_token,
     }).GET("/api/v1/account/me");
     if (revalidated.error || !revalidated.data) throw new Error("平台账户读取失败。");
     const nextSession = { ...refreshedSession, user_id: revalidated.data.subject_id, current_subject_id: revalidated.data.subject_id };
@@ -293,12 +291,11 @@ export const restorePlatformAccessState = async (
 
 export const fetchPlatformUsage = async (
   accessToken = "",
-  csrfToken = "",
   metric = AGENT_USAGE_METRIC,
 ): Promise<PlatformUsage> => {
   const config = requirePlatformClientConfig();
   // Keep the displayed balance scoped to the matching usage metric.
-  const result = await createProductPlatformClient({ accessToken, csrfToken }).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } });
+  const result = await createProductPlatformClient({ accessToken }).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } });
   if (result.error || !result.data) throw new Error("无法读取平台用量余额。");
   const body = result.data.find((entry) => entry.metric === metric);
   return {

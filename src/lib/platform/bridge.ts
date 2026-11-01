@@ -42,20 +42,6 @@ export const readRequestCookie = (headers: Headers, name: string) =>
     .find((part) => part.startsWith(`${name}=`))
     ?.slice(name.length + 1) ?? "";
 
-/** Read one cookie value out of an upstream response's `Set-Cookie` header(s). */
-export const readResponseCookie = (headers: Headers, name: string) => {
-  const values =
-    typeof headers.getSetCookie === "function"
-      ? headers.getSetCookie()
-      : [headers.get("set-cookie") ?? ""];
-  return (
-    values
-      .find((value) => value.startsWith(`${name}=`))
-      ?.split(";", 1)[0]
-      ?.slice(name.length + 1) ?? ""
-  );
-};
-
 /**
  * Install a platform token pair into the bridge cookies.
  *
