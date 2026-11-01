@@ -18,27 +18,13 @@
   },
   "capabilities": [
     "identity",
-    "catalog",
-    "entitlement_gate",
     "usage_reserve",
     "ai_analysis"
   ],
-  "plans": [
-    {
-      "plan_code": "qimen-analysis-10",
-      "billing_mode": "per_use",
-      "access_scope": "qimen-core",
-      "usage_quantity": 10,
-      "usage_unit": "analysis_turn",
-      "usage_label": "研究对话轮次"
-    },
-    {
-      "plan_code": "qimen-kline-precise-1",
-      "billing_mode": "per_use",
-      "access_scope": "qimen-core",
-      "usage_quantity": 1,
-      "usage_unit": "kline_report",
-      "usage_label": "K 线 AI 分析报告"
-    }
-  ]
+  "usage": {
+    "metrics": [
+      "analysis_turn",
+      "kline_report"
+    ]
+  }
 }
