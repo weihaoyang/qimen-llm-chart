@@ -4,7 +4,7 @@
 
 ## 账户请求
 
-- OAuth 使用平台授权码 + PKCE，产品代码从 `singseq.product.json` 读取 `qimen` / `qimen-core`。
+- OAuth 使用平台授权码 + PKCE，产品代码从 `singseq.product.json` 读取 产品 `qimen`，用量指标 `analysis_turn` / `kline_report`。
 - 前端会话通过产品的 HttpOnly bridge 恢复；实际平台请求由 `@singseq/platform-sdk` 使用 Bearer access token 发出。
 - 服务端每次受限 AI 请求都要验证账户及平台可用用量。UI 余额、缓存状态或 OAuth 回跳本身都不能放行。
 - 缺失身份、额度不足或平台不可用时，服务端拒绝模型调用。
@@ -12,7 +12,7 @@
 ## AI 用量生命周期
 
 ```text
-Bearer → platform balance → reserve → provider → consume
+Bearer → reserve（原子授权） → provider → consume
                                       └→ failure: release
 ```
 

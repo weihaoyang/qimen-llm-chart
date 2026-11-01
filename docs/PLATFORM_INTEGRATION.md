@@ -6,9 +6,9 @@
 | --- | --- |
 | 平台 API | `https://platform.singseq.com` |
 | `product_code` | `qimen` |
-| `access_scope` | `qimen-core` |
-| Agent 套餐 | `qimen-analysis-10` |
-| K 线套餐 | `qimen-kline-precise-1` |
+| OAuth scopes | `account.read usage.write` |
+| Agent 用量指标 | `analysis_turn` |
+| K 线用量指标 | `kline_report` |
 | SDK | `@singseq/platform-sdk`，固定到 commit `8ba59cdc762602a34930101f6443bc6f9c2cdcbd` |
 
 权威产品坐标在 `singseq.product.json` 和 `config/ai-product-manifest.json`。两者必须保持一致。
@@ -24,9 +24,11 @@
 ## AI 结算顺序
 
 ```text
-platform Bearer → balance/authorization → reserve → provider → consume
+platform Bearer → reserve（原子授权） → provider → consume
                                                    └→ provider failure: release
 ```
+
+余额读取仅供展示，不能代替预留授权。产品不维护套餐编号、价格或支付状态，商业方案由平台管理。
 
 平台请求必须 fail closed。reservation 使用稳定请求幂等键；凭据不得进入 URL、日志或浏览器存储。具体账户和 AI 运行约束见 [AI_ACCESS_RUNBOOK.md](./AI_ACCESS_RUNBOOK.md)。
 

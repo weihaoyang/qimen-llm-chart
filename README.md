@@ -63,17 +63,17 @@ GEMINI_MODEL=gemini-2.5-flash
 
 ```text
 NEXT_PUBLIC_PLATFORM_BASE_URL=https://platform.singseq.com
+NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID=8766d44c460e495994ec6f2011cfcbf2
 NEXT_PUBLIC_PLATFORM_PRODUCT_CODE=qimen
-NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE=qimen-core
 PLATFORM_BASE_URL=https://platform.singseq.com
+PLATFORM_OAUTH_CLIENT_ID=8766d44c460e495994ec6f2011cfcbf2
 PLATFORM_PRODUCT_CODE=qimen
-PLATFORM_ACCESS_SCOPE=qimen-core
 ```
 
-产品标识与授权范围固定为 `qimen` / `qimen-core`；生产 OAuth client 仍需在平台登记并完成账户、额度验收后才能发布新版本。
+产品标识固定为 `qimen`；OAuth scope 为 `account.read usage.write`。发布仍需验证真实账户和用量结算。
 
 统一登录由 Casdoor 提供，账户、支付与额度由 SingSeq Platform 提供。本仓库只发起
-OAuth/PKCE、恢复平台 session，并在受限 AI 调用前查询 gate；不得在知几内部
+OAuth/PKCE、恢复平台 session，并由平台用量预留原子授权受限 AI 调用；不得在知几内部
 实现 CAPTCHA、OTP、用户或会员真相。
 
 ## 构建与测试
