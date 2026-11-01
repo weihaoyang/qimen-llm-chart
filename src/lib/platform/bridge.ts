@@ -128,12 +128,8 @@ const trustedBridgeWriteOrigins = (request: Request, extraOrigins: readonly stri
 /**
  * Reject cross-site writes to the bridge.
  *
- * `POST /api/platform/session` installs a caller-supplied token pair into
- * first-party cookies, and it is reachable by a top-level cross-site `<form>`
- * POST — which `SameSite=Lax` does not stop. The body token is attacker-chosen,
- * so a CSRF token cannot help; Origin is the only reliable signal. A missing
- * Origin (same-origin `fetch`, curl, the test client) is allowed, because
- * browsers always attach it to the cross-site writes we intend to reject.
+ * OAuth exchange, refresh and logout must originate from this product.
+ * A missing Origin is allowed for same-origin clients and server-side tooling.
  */
 export const isTrustedBridgeWriteOrigin = (request: Request, extraOrigins: readonly string[] = []): boolean => {
   const origin = request.headers.get("origin");

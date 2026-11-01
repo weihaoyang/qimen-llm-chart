@@ -47,30 +47,6 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-  const rejected = untrustedOrigin(request);
-  if (rejected) return rejected;
-  let body: { access_token?: unknown; refresh_token?: unknown; csrf_token?: unknown };
-  try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return noStore({ error: "会话数据格式无效。" }, { status: 400 });
-  }
-  if (!isBridgeToken(body.access_token) || !isBridgeToken(body.refresh_token)) {
-    return noStore({ error: "平台会话不完整。" }, { status: 400 });
-  }
-
-  const response = noStore({ ok: true });
-  const secure = process.env.NODE_ENV === "production";
-  const common = { httpOnly: true, secure, sameSite: "lax" as const, path: "/" };
-  response.cookies.set(PLATFORM_BRIDGE_ACCESS_COOKIE, body.access_token, { ...common, maxAge: 60 * 60 });
-  response.cookies.set(PLATFORM_BRIDGE_REFRESH_COOKIE, body.refresh_token, { ...common, maxAge: 60 * 60 * 24 * 30 });
-  if (typeof body.csrf_token === "string" && body.csrf_token.length < 4096) {
-    response.cookies.set(PLATFORM_BRIDGE_CSRF_COOKIE, body.csrf_token, { ...common, httpOnly: false, maxAge: 60 * 60 * 24 * 30 });
-  }
-  return response;
-}
-
 /**
  * Read-only view of the bridge session.
  *

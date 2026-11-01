@@ -75,47 +75,6 @@ describe("GET /api/platform/session", () => {
   });
 });
 
-describe("POST /api/platform/session", () => {
-  it("installs the supplied token pair into httpOnly bridge cookies", async () => {
-    const { POST } = await import("./route");
-    const response = await POST(
-      request(undefined, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ access_token: ACCESS, refresh_token: REFRESH, csrf_token: CSRF }),
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    const cookies = response.headers.getSetCookie();
-    const accessCookie = cookies.find((value) => value.startsWith("qmdj_platform_access="));
-    expect(accessCookie).toContain(ACCESS);
-    expect(accessCookie).toContain("HttpOnly");
-    expect(accessCookie).toContain("Max-Age=3600");
-    const refreshCookie = cookies.find((value) => value.startsWith("qmdj_platform_refresh="));
-    expect(refreshCookie).toContain(REFRESH);
-    expect(refreshCookie).toContain("HttpOnly");
-    // The CSRF cookie is the one value the browser SDK must be able to read.
-    const csrfCookie = cookies.find((value) => value.startsWith("qmdj_platform_csrf="));
-    expect(csrfCookie).toContain(CSRF);
-    expect(csrfCookie).not.toContain("HttpOnly");
-  });
-
-  it("rejects an incomplete token pair", async () => {
-    const { POST } = await import("./route");
-    const response = await POST(
-      request(undefined, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ access_token: ACCESS, refresh_token: "short" }),
-      }),
-    );
-
-    expect(response.status).toBe(400);
-    expect(response.headers.get("set-cookie")).toBeNull();
-  });
-});
-
 describe("DELETE /api/platform/session", () => {
   it("expires every bridge cookie", async () => {
     const { DELETE } = await import("./route");
@@ -146,19 +105,10 @@ describe("bridge write Origin guard", () => {
   const writeInit: RequestInit = { method: "POST", headers: { "content-type": "application/json" }, body: tokenBody };
 
   it("rejects a cross-site Origin on every write method", async () => {
-    const { PUT, POST, DELETE } = await import("./route");
+    const { PUT, DELETE } = await import("./route");
 
     expect((await PUT(withOrigin("https://evil.example", writeInit))).status).toBe(403);
-    expect((await POST(withOrigin("https://evil.example", writeInit))).status).toBe(403);
     expect((await DELETE(withOrigin("https://evil.example", { method: "DELETE" }))).status).toBe(403);
-  });
-
-  it("accepts the request's own Origin", async () => {
-    const { POST } = await import("./route");
-    const response = await POST(withOrigin("http://local", writeInit));
-
-    expect(response.status).toBe(200);
-    expect(response.headers.getSetCookie().some((value) => value.startsWith("qmdj_platform_access="))).toBe(true);
   });
 
   it("accepts an absent Origin (same-origin fetch, curl, the test client)", async () => {
