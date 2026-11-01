@@ -40,7 +40,7 @@ export const buildContentSecurityPolicy = (isDevelopment: boolean) =>
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'self'",
-    "form-action 'self' https://singseq.com",
+    "form-action 'self' https://platform.singseq.com",
     `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",

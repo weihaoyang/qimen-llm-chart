@@ -1,0 +1,13 @@
+node_modules
+.next
+.next-*
+.git
+.env*
+*.pem
+*.key
+.qmdj-local-pg
+.codex
+.workbuddy-ai
+.gods-eye-upstream
+outputs
+coverage

@@ -6,12 +6,14 @@ import {
 } from "./config";
 
 describe("platform config", () => {
-  it("uses the checked-in product contract when public build env is absent", () => {
+  it("keeps platform API coordinates from the product contract but requires a registered client ID", () => {
     expect(resolvePlatformClientConfig({})).toEqual({
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
+      clientId: undefined,
     });
+    expect(resolvePlatformClientConfig({ NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID: "registered-qimen" })).toMatchObject({ clientId: "registered-qimen" });
   });
 
   it("resolves public client configuration from env", () => {
