@@ -1,7 +1,6 @@
 import { ChartWorkbenchEntry } from "@/components/app-shell-entry";
 
-// Keep the path callback available during the platform's hash-to-path
-// transition. The client workbench owns PKCE validation and session exchange.
+// The registered callback delegates PKCE validation and session exchange to the workbench.
 export const dynamic = "force-dynamic";
 
 export default function OAuthCallbackPage() {

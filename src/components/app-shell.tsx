@@ -647,7 +647,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       const callback = parsePlatformOAuthCallback(`${window.location.pathname}${window.location.search}`);
       if (!callback) return;
       const clearCallback = () => {
-        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+        window.history.replaceState({}, document.title, "/");
       };
       try {
         const oauthRequest = consumePlatformOAuthRequest(callback.state);
@@ -2134,7 +2134,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         <>
           <span className="platform-account__status">未登录统一账户</span>
           <button type="button" className="platform-account__button is-primary" disabled={platformLoginBusy} onClick={() => void handlePlatformLogin()}>{platformLoginBusy ? "正在打开登录…" : "登录平台账户"}</button>
-          {platformLoginError ? <span className="platform-account__error" role="alert">{platformLoginError}</span> : null}
+          {platformLoginError || platformWorkspace.error ? <span className="platform-account__error" role="alert">{platformLoginError || platformWorkspace.error}</span> : null}
         </>
       )}
     </div>
