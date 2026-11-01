@@ -47,8 +47,7 @@
     "react-resizable-panels": "^4.12.2",
     "recharts": "^3.10.1",
     "taibu-core": "^3.5.0",
-    "tailwindcss": "^4.3.2",
-    "taobi": "^0.4.5"
+    "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

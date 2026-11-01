@@ -24,7 +24,6 @@ const createProps = (
     timeBasis: "civil",
   },
   qimenSettings: overrides?.qimenSettings ?? {
-    method: "default",
     solarTerm: "auto",
     dunType: "auto",
     juNumber: "auto",
@@ -65,7 +64,7 @@ describe("ChartForm", () => {
     expect(screen.getAllByText("阴阳遁").length).toBeGreaterThan(0);
     expect(screen.getAllByText("局数").length).toBeGreaterThan(0);
     expect(screen.getAllByText("年界").length).toBeGreaterThan(0);
-    expect(screen.getByText("用局法")).toBeInTheDocument();
+    expect(screen.queryByText("用局法")).not.toBeInTheDocument();
     expect(screen.queryByText("已接入")).not.toBeInTheDocument();
     expect(screen.queryByText("未接入")).not.toBeInTheDocument();
     expect(screen.queryByText("置闰")).not.toBeInTheDocument();

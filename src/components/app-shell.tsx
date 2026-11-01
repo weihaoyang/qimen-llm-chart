@@ -1048,7 +1048,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           primary: qimenChart.engine,
           reference: "taibu-core/qimen",
           status: "unavailable",
-          note: qimenChart.input.qimenSettings?.method === "default" ? "参考盘正在计算。" : "历史口径（拆补/茅山）已撤下：上游实现未自验且跨引擎拼接，本仓只保留默认符头定元口径。",
+          note: "参考盘正在计算。",
         });
       }
       return {
@@ -1070,7 +1070,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   useEffect(() => {
     let cancelled = false;
     setQimenVerificationRows([]);
-    if (!qimenChart || qimenChart.input.qimenSettings?.method !== "default") return () => undefined;
+    if (!qimenChart) return () => undefined;
     void buildQimenReferenceVerification(normalizedProfile, qimenChart)
       .then((rows) => {
         if (!cancelled) setQimenVerificationRows(rows);

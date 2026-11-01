@@ -18,7 +18,6 @@ import { DEFAULT_BAZI_SETTINGS } from "@/lib/bazi/settings";
 import { getSelectableTimeZones } from "@/lib/qimen/defaults";
 import {
   QIMEN_SOLAR_TERMS,
-  SUPPORTED_QIMEN_JU_METHODS,
   type QimenJuNumber,
   type QimenSettings,
 } from "@/lib/qimen/settings";
@@ -433,25 +432,6 @@ export function ChartForm({
 
           {mode === "qimen" ? (
             <>
-              <label className="control-field">
-                <span>用局法</span>
-                <Select
-                  value={qimenSettings.method}
-                  onValueChange={(method) =>
-                    updateQimenSettings({
-                      method: method as QimenSettings["method"],
-                    })
-                  }
-                >
-                  <SelectTrigger className="control-select">
-                    <SelectValue placeholder="选择用局法" />
-                  </SelectTrigger>
-                  <SelectContent className="control-select-content">
-                    <SelectItem value="default">{SUPPORTED_QIMEN_JU_METHODS[0]}（符头定元）</SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
-
               <label className="control-field">
                 <span>节气</span>
                 <Select

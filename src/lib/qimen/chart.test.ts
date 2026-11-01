@@ -59,7 +59,6 @@ describe("buildChart", () => {
       datetime: "2026-07-03T11:30",
       timeZone: "Asia/Shanghai",
       qimenSettings: {
-        method: "default",
         solarTerm: "夏至",
         dunType: "yin",
         juNumber: 3,
@@ -79,46 +78,4 @@ describe("buildChart", () => {
     expect(chart.raw.fourPillars.hour).toEqual(direct.fourPillars.hour);
   });
 
-  it("degrades retired split/maoshan settings to the default 3meta chart", () => {
-    const input = {
-      datetime: "2026-07-06T23:30",
-      timeZone: "Asia/Shanghai",
-    } as const;
-    // `copyright.generatedAt` 是出盘时间戳，比较盘面时剔除它。
-    const stableRaw = (chart: ReturnType<typeof buildChart>) => {
-      const { copyright: _copyright, ...raw } = chart.raw as ReturnType<typeof buildChart>["raw"] & {
-        copyright?: unknown;
-      };
-      return { raw, hiddenStemsByPalace: chart.hiddenStemsByPalace };
-    };
-    const defaultChart = buildChart({
-      ...input,
-      qimenSettings: {
-        method: "default",
-        solarTerm: "auto",
-        dunType: "auto",
-        juNumber: "auto",
-        yearDivide: "exact",
-      },
-    });
-
-    for (const method of ["split", "maoshan"] as const) {
-      const chart = buildChart({
-        ...input,
-        qimenSettings: {
-          method,
-          solarTerm: "auto",
-          dunType: "auto",
-          juNumber: "auto",
-          yearDivide: "exact",
-        },
-      });
-
-      // 产线只有一条引擎路径：历史设置不再触发跨引擎盘，也不再缺暗干/格局。
-      expect(chart.engine).toBe("3meta");
-      expect(stableRaw(chart)).toEqual(stableRaw(defaultChart));
-      // 生效口径回写为 default，避免下游把 3meta 盘当成跨引擎对照盘解释。
-      expect(chart.input.qimenSettings?.method).toBe("default");
-    }
-  });
 });
