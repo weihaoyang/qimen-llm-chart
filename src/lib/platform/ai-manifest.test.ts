@@ -19,5 +19,10 @@ describe("AI product manifest", () => {
     expect(manifest.capabilities.agent.usage_unit).toBe("analysis_turn");
     expect(manifest.capabilities.kline.usage_unit).toBe("kline_report");
     expect(manifest.capabilities.kline.usage_label).toBe("K 线 AI 分析报告");
+    const product = JSON.parse(readFileSync(resolve(process.cwd(), "singseq.product.json"), "utf8")) as {
+      capabilities: string[];
+    };
+    expect(product.capabilities).not.toContain("token_usage");
+    expect(product.capabilities).toContain("usage_reserve");
   });
 });

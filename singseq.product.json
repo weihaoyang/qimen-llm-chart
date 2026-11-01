@@ -21,7 +21,6 @@
     "catalog",
     "entitlement_gate",
     "usage_reserve",
-    "token_usage",
     "ai_analysis"
   ],
   "plans": [
