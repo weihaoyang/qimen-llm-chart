@@ -88,6 +88,7 @@ import {
   AGENT_SESSION_TURNS,
   loadActiveAgentSession,
   loadKlineAiResult,
+  saveKlineAiResult,
   clearActiveAgentSession,
   saveActiveAgentSession,
 } from "@/lib/platform/pending-analysis";
@@ -1400,29 +1401,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
     window.setTimeout(() => setAgentResultCopied(false), 1800);
   };
 
-  // Entitlement truth belongs to the platform, never to local storage.
-  //
-  // An account state carries a `usageAvailable` that was restored from local
-  // storage, so it must not decide the account path: only the live
-  // `platformWorkspace.usage` may. Reading the cached count here would let a
-  // stale "9 次" from a previous session re-enable the analysis entry after the
-  // platform has already exhausted (or revoked) the entitlement, and the user
-  // would only find out from a server-side gate error mid-conversation.
-  //
-  const canUseAgentState = (state: AgentModeState) =>
-    platformWorkspace.status === "authenticated"
-      && Boolean(platformWorkspace.session)
-      && (platformWorkspace.usage?.available ?? 0) > 0;
+  // Identity enables the request; only the platform reservation authorizes spending.
+  const canUseAgentState = (_state: AgentModeState) =>
+    platformWorkspace.status === "authenticated" && Boolean(platformWorkspace.session);
 
-  // The platform balance is the only authority for starting an analysis.
   const getAccountAgentState = (state: AgentModeState): AgentModeState | null => {
-    if (platformWorkspace.status !== "authenticated" || !platformWorkspace.session || !platformWorkspace.usage || platformWorkspace.usage.available <= 0) {
-      return null;
-    }
+    if (!canUseAgentState(state)) return null;
     return {
       ...state,
-      usageAvailable: platformWorkspace.usage.available,
-      usageConsumed: platformWorkspace.usage.consumed,
+      usageAvailable: platformWorkspace.usage?.available ?? state.usageAvailable,
+      usageConsumed: platformWorkspace.usage?.consumed ?? state.usageConsumed,
     };
   };
 
@@ -1513,7 +1501,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       }
       openPlatformAccount();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "双人合盘支付失败。");
+      setError(nextError instanceof Error ? nextError.message : "双人合盘分析失败。");
       setCompatibilityLoading(false);
     }
   };
@@ -1524,12 +1512,35 @@ export function AppShell({ platformConfig }: AppShellProps) {
     setKlineAiError(null);
     setKlineAiLoading(true);
     try {
-      const relationshipSequence = kind === "relationship"
-        ? buildChartSequenceByCount(formState.datetime, formState.timeZone, scale ?? "double-hour", 20, qimenSettings)
-        : [];
-      openPlatformAccount();
+      if (!platformWorkspace.session) {
+        await handlePlatformLogin();
+        return;
+      }
+      const access = await refreshPlatformAccount();
+      const sourceMode = kind === "life" ? "bazi" : "qimen";
+      const sourceText = kind === "life" && baziChart
+        ? serializeBaziToStructuredText(baziChart)
+        : activeQimenChart ? serializeChartToStructuredText(activeQimenChart) : "";
+      if (!sourceText) throw new Error("请先生成对应盘面。");
+      const response = await fetch("/api/agent", {
+        method: "POST",
+        headers: buildAgentRequestHeaders(agentState[sourceMode], access.session.access_token),
+        body: JSON.stringify({
+          mode: sourceMode,
+          analysisProduct: "kline",
+          question: "请依据盘面与趋势证据生成上、中、下三条世界线；分别说明触发条件、时间窗、行动建议和验证边界，不作确定性预测。",
+          structuredText: `${sourceText}\nK线趋势证据：${JSON.stringify(series)}`,
+          jsonPayload: JSON.stringify({ kind, scale: scale ?? "double-hour", series }),
+        }),
+      });
+      const result = await response.json() as { content?: string; model?: string; error?: string };
+      if (!response.ok || !result.content) throw new Error(result.error ?? "K线分析失败，请重试。");
+      setKlineAiContent(result.content);
+      setKlineAiKind(kind);
+      saveKlineAiResult({ content: result.content, model: result.model ?? null, klineKind: kind, klineSeries: series });
     } catch (nextError) {
       setKlineAiError(nextError instanceof Error ? nextError.message : "K线 AI 请求失败。");
+    } finally {
       setKlineAiLoading(false);
     }
   };
