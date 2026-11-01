@@ -22,7 +22,6 @@
 //   QMDJ_CONTAINER   container name          (default qmdj)
 //   QMDJ_IMAGE_NAME  image repository        (default qmdj)
 //   QMDJ_VOLUME_DIR  persistent build dir    (default <releases>/qmdj-build)
-//   QMDJ_SDK_SRC     web-sdk package path    (default <releases>/…/web-sdk)
 //   QMDJ_NODE_BIN    node bin for builds     (default nvm v24.16.0)
 //   QMDJ_HEALTH_URL  health endpoint         (default http://127.0.0.1:3002/api/version)
 //   QMDJ_NO_SUDO=1   never prefix docker with sudo
@@ -46,7 +45,6 @@ const config = {
   healthUrl: process.env.QMDJ_HEALTH_URL ?? "http://127.0.0.1:3002/api/version",
   nodeBin: process.env.QMDJ_NODE_BIN ?? "/home/ubuntu/.nvm/versions/node/v24.16.0/bin",
   buildDir: process.env.QMDJ_VOLUME_DIR ?? resolve(RELEASES_DIR, "qmdj-build"),
-  sdkSrc: process.env.QMDJ_SDK_SRC ?? resolve(RELEASES_DIR, "singularity-sequence-consumer-platform/packages/web-sdk"),
 };
 
 const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
@@ -109,7 +107,6 @@ const releaseScript = (id, extraEnv = {}) => {
     QMDJ_ENV_FILE: config.envFile,
     QMDJ_NODE_BIN: config.nodeBin,
     QMDJ_BUILD_DIR: config.buildDir,
-    QMDJ_SDK_SRC: config.sdkSrc,
     QMDJ_HEALTH_URL: config.healthUrl,
     ...extraEnv,
   };
@@ -162,7 +159,6 @@ Config (env overridable):
       platformProduct === "qimen" && platformScope === "qimen-core",
       `product=${platformProduct || "(missing)"} scope=${platformScope || "(missing)"}`,
     );
-    ok("web-sdk package", existsSync(config.sdkSrc), config.sdkSrc);
 
     const dfLine = capture("df", ["-Pk", ROOT]).split("\n")[1] ?? "";
     const freeGb = Number(dfLine.split(/\s+/)[3] ?? "0") / 1024 / 1024;

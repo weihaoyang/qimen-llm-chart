@@ -174,7 +174,7 @@ SOFTWARE.
 | `taibu-core` | ^3.5.0 | MIT | **仅用其大六壬域**（天地盘/四课三传），底层为 `liuren-ts-lib` | <https://github.com/hhszzzz/taibu> |
 | `@cometpisces/tarot-kit` | ^0.2.0 | MIT | 78 张塔罗牌数据、正逆位与中文牌义 | npm（CometPisces） |
 
-- 其余依赖（如 `react-iztro` 的紫微盘渲染组件、`@singularity-sequence/web-sdk` 平台 SDK、AI 与 UI 相关包等）见 `package.json` 的 `dependencies` / `devDependencies`；其许可随各自发布物提供。本表列出的是**会产出术数计算结果**、或其口径直接影响结果的依赖。
+- 其余依赖（如 `react-iztro` 的紫微盘渲染组件、`@singseq/platform-sdk` 平台 SDK、AI 与 UI 相关包等）见 `package.json` 的 `dependencies` / `devDependencies`；其许可随各自发布物提供。本表列出的是**会产出术数计算结果**、或其口径直接影响结果的依赖。
 - `taobi` 为 **MPL-2.0**（文件级 copyleft）：本仓只把其作为依赖调用、未修改其文件，也不内嵌其源码；MPL-2.0 允许与 GPL 项目组合（其 §3.3 明确允许在 GPL 等次级许可下分发）。
 - 其余依赖均为 MIT，MIT 代码可并入 GPL-3.0-only 项目（保留署名与许可声明）。
 

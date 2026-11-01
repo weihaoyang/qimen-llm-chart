@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildPlatformOAuthLoginUrl,
-  buildPlatformSocialLoginStartUrl,
-  buildPlatformUnifiedLoginUrl,
   requirePlatformServerConfig,
   resolvePlatformClientConfig,
   resolvePlatformServerConfig,
@@ -11,10 +8,9 @@ import {
 describe("platform config", () => {
   it("uses the checked-in product contract when public build env is absent", () => {
     expect(resolvePlatformClientConfig({})).toEqual({
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
-      loginUrl: undefined,
     });
   });
 
@@ -29,7 +25,6 @@ describe("platform config", () => {
       baseUrl: "https://platform.example.com",
       productCode: "qmdj-pro",
       accessScope: "ai-analysis",
-      loginUrl: undefined,
     });
   });
 
@@ -47,67 +42,7 @@ describe("platform config", () => {
       baseUrl: "https://internal.example.com",
       productCode: "server-product",
       accessScope: "server-scope",
-      loginUrl: undefined,
     });
-  });
-
-  it("resolves optional public unified login url", () => {
-    expect(
-      resolvePlatformClientConfig({
-        NEXT_PUBLIC_PLATFORM_BASE_URL: "https://api.example.com/",
-        NEXT_PUBLIC_PLATFORM_PRODUCT_CODE: "qmdj-pro",
-        NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE: "ai-analysis",
-        NEXT_PUBLIC_PLATFORM_LOGIN_URL: "https://account.example.com/login/",
-      }),
-    ).toEqual({
-      baseUrl: "https://api.example.com",
-      productCode: "qmdj-pro",
-      accessScope: "ai-analysis",
-      loginUrl: "https://account.example.com/login",
-    });
-  });
-
-  it("builds a social login start url with redirect parameter", () => {
-    expect(
-      buildPlatformSocialLoginStartUrl({
-        baseUrl: "https://platform.example.com",
-        provider: "wechat",
-        redirectUrl: "https://qmdj.example.com/#/auth/callback",
-      }),
-    ).toBe(
-      "https://platform.example.com/api/v1/identity/social/wechat/start?redirect=https%3A%2F%2Fqmdj.example.com%2F%23%2Fauth%2Fcallback",
-    );
-  });
-
-  it("builds a unified company login url with product context", () => {
-    expect(
-      buildPlatformUnifiedLoginUrl({
-        baseUrl: "https://platform.example.com",
-        loginUrl: "https://account.example.com/login",
-        productCode: "qimen",
-        accessScope: "qimen-core",
-        returnUrl: "https://qmdj.example.com/#/auth/callback",
-      }),
-    ).toBe(
-      "https://account.example.com/login?product_code=qimen&access_scope=qimen-core",
-    );
-  });
-
-  it("defaults OAuth login to the deployed canonical authorize endpoint", () => {
-    const url = buildPlatformOAuthLoginUrl({
-      baseUrl: "https://api.singseq.com",
-      clientId: "qimen",
-      productCode: "qimen",
-      accessScope: "qimen-core",
-      redirectUri: "https://qmdj.singseq.com/auth/callback",
-      codeChallenge: "challenge",
-      state: "state",
-    });
-
-    expect(url).toBe(
-      "https://singseq.com/oauth/authorize?client_id=qimen&product_code=qimen&access_scope=qimen-core&redirect_uri=https%3A%2F%2Fqmdj.singseq.com%2Fauth%2Fcallback&response_type=code&code_challenge=challenge&code_challenge_method=S256&state=state",
-    );
-    expect(url).not.toContain("app.singseq.com");
   });
 
   it("throws when required server config is missing", () => {

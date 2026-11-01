@@ -62,15 +62,15 @@ GEMINI_MODEL=gemini-2.5-flash
 如需接入公司统一用户与支付平台，还需要配置：
 
 ```text
-NEXT_PUBLIC_PLATFORM_BASE_URL=https://api.singseq.com
+NEXT_PUBLIC_PLATFORM_BASE_URL=https://platform.singseq.com
 NEXT_PUBLIC_PLATFORM_PRODUCT_CODE=qimen
 NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE=qimen-core
-PLATFORM_BASE_URL=https://api.singseq.com
+PLATFORM_BASE_URL=https://platform.singseq.com
 PLATFORM_PRODUCT_CODE=qimen
 PLATFORM_ACCESS_SCOPE=qimen-core
 ```
 
-本产品已经在平台正式注册，线上平台地址为 `https://api.singseq.com`。
+本产品已经在平台正式注册，线上平台地址为 `https://platform.singseq.com`。
 
 统一登录由 `https://singseq.com` 与 Consumer Platform 承担。本仓库只发起
 OAuth/PKCE、恢复平台 session，并在受限 AI 调用前查询 gate；不得在知几内部
@@ -120,7 +120,7 @@ createdb -h 127.0.0.1 -p 55433 -U qmdj qmdj
 NEXT_DIST_DIR=.next-verify npm run build
 ```
 
-统一账户、邀请码兑换、游客凭证与 AI 权益链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
+统一账户、邀请码兑换与 AI 权益链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
 
 ## 部署（一键发布）
 

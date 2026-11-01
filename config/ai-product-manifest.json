@@ -1,9 +1,7 @@
 {
   "format": "singseq-ai-product-manifest-v1",
-  "platform_api_origin": "https://api.singseq.com",
-  "oauth_authorize_url": "https://singseq.com/oauth/authorize",
+  "platform_api_origin": "https://platform.singseq.com",
   "product_origin_url": "https://qmdj.singseq.com",
-  "oauth_callback_path": "/#/auth/callback",
   "product_code": "qimen",
   "access_scope": "qimen-core",
   "capabilities": {
@@ -13,7 +11,7 @@
       "usage_label": "研究对话轮次",
       "provider_route": "/api/agent",
       "gate_required": true,
-      "token_metering": "platform_token_usage"
+      "usage_owner": "consumer-platform"
     },
     "kline": {
       "plan_code": "qimen-kline-precise-1",
@@ -21,10 +19,10 @@
       "usage_label": "K 线 AI 分析报告",
       "provider_route": "/api/agent",
       "gate_required": true,
-      "token_metering": "platform_token_usage"
+      "usage_owner": "consumer-platform"
     }
   },
-  "lifecycle": ["gate", "reserve", "provider", "commit_or_release", "report_token_usage", "audit"],
+  "lifecycle": ["balance", "reserve", "provider", "consume_or_release", "audit"],
   "payment_owned_by": "consumer-platform",
   "identity_owned_by": "consumer-platform",
   "entitlement_owned_by": "consumer-platform"

@@ -45,7 +45,7 @@ export type AiAuditEvent = {
   accessScope: string;
   capability: string;
   planCode: string;
-  subjectMode: "account" | "guest";
+  subjectMode: "account";
   status: "reserved" | "succeeded" | "released" | "reconciled" | "failed";
   reservationId?: string;
   usage?: AiUsage;
@@ -69,11 +69,11 @@ export type AiBillingAdapter = {
  */
 export const runBilledAi = async <T>(
   adapter: AiBillingAdapter,
-  input: { productCode: string; accessScope: string; capability: string; planCode: string; subjectMode?: "account" | "guest"; requestId?: string },
+  input: { productCode: string; accessScope: string; capability: string; planCode: string; requestId?: string },
   invoke: (context: { requestId: string; reservationId: string }) => Promise<{ result: T; usage?: AiUsage }>,
 ): Promise<{ result: T; usage: PlatformUsage | SettledUsage; requestId: string }> => {
   const requestId = input.requestId?.trim() || randomUUID();
-  const subjectMode = input.subjectMode ?? "account";
+  const subjectMode = "account" as const;
   let reserved: { reservation_id: string };
   try {
     reserved = await adapter.reserve({ planCode: input.planCode, requestId });

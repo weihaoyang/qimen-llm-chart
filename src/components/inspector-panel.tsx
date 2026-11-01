@@ -22,7 +22,7 @@ export type InspectorPanelProps = {
   agentUsageConsumed: number;
   isInterviewZeroState?: boolean;
   agentPurchaseLabel?: string;
-  platformStatus?: "checking" | "guest" | "authenticated" | "error";
+  platformStatus?: "checking" | "unauthenticated" | "authenticated" | "error";
   literatureContext: string;
   copyState: "idle" | "text" | "json";
   onAgentQuestionChange: (value: string) => void;

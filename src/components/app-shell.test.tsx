@@ -35,7 +35,7 @@ describe("AppShell", () => {
 
   it("keeps single-chart and sequence analysis in the chart product", async () => {
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -58,7 +58,7 @@ describe("AppShell", () => {
 
   it("wires the normalized Ziwei chart into the visible workbench panel", async () => {
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -72,7 +72,7 @@ describe("AppShell", () => {
 
   it("exposes the 从八字逆推生日 entry point in the BaZi workspace", async () => {
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -100,7 +100,7 @@ describe("AppShell", () => {
   // per-mount random `data-uuid` is normalised away.
   it("renders only the chart surface, with none of the retired 胜天半子 copy or panes", async () => {
     const { container } = render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -146,7 +146,7 @@ describe("AppShell", () => {
       { id: "seed-1", name: "旧名", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -166,7 +166,7 @@ describe("AppShell", () => {
 
   it("imports a 出生档案 JSON export into the library", async () => {
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -199,7 +199,7 @@ describe("AppShell", () => {
       { id: "s-2", name: "小红", profile: { calendarMode: "solar", datetime: "2000-12-31T20:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -226,7 +226,7 @@ describe("AppShell", () => {
       { id: "r-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -244,7 +244,7 @@ describe("AppShell", () => {
       { id: "o-1", name: "待更新", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -268,7 +268,7 @@ describe("AppShell", () => {
       { id: "d-1", name: "需要确认", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -293,7 +293,7 @@ describe("AppShell", () => {
       { id: "n-1", name: "甲", profile: { calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -319,7 +319,7 @@ describe("AppShell", () => {
       { id: "e-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -340,7 +340,7 @@ describe("AppShell", () => {
       { id: "p-2", name: "乙", profile: { calendarMode: "solar", datetime: "1992-02-02T09:00", timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" } },
     ]));
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -359,7 +359,7 @@ describe("AppShell", () => {
 
   it("opens the 资料库 drawer with full-text search over the provenance registry", async () => {
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -389,7 +389,7 @@ describe("AppShell", () => {
   it("guides first-time users to 改时间 and 复制盘面资料", async () => {
     localStorage.removeItem("qmdj-first-run-guide-dismissed");
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -432,7 +432,7 @@ describe("AppShell", () => {
 
   it("在非奇门体系里也能直接前后推移排盘时间", async () => {
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);
@@ -452,7 +452,7 @@ describe("AppShell", () => {
   it("首次进入自动走一次分步指引，且只自动一次", async () => {
     localStorage.removeItem("qmdj-guided-tour-seen");
     render(<AppShell platformConfig={{
-      baseUrl: "https://api.singseq.com",
+      baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
       accessScope: "qimen-core",
     }} />);

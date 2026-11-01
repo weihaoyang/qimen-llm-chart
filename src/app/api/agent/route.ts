@@ -2,21 +2,16 @@ import { noStore } from "@/lib/http";
 import { errorResponse, UserFacingError } from "@/lib/api-error";
 import { createAgentEventStreamResponse, requestAgentAnalysis, streamAgentAnalysis } from "@/lib/agent/chat";
 import {
-  commitGuestUsage,
   commitPlatformUsage,
   fetchPlatformGate,
-  readGuestCheckoutToken,
   readBearerToken,
   releasePlatformUsage,
-  releaseGuestUsage,
   reservePlatformUsage,
-  reserveGuestUsage,
+  readCookieValue,
   AGENT_PLAN_CODE,
   KLINE_PLAN_CODE,
 } from "@/lib/platform/server";
 import { settledCommit, type SettledUsage } from "@/lib/platform/settled-commit";
-import { readProviderUsage } from "@/lib/platform/ai-contract";
-import { reportPlatformTokenUsage } from "@/lib/platform/ai-platform-adapter";
 import type { WorkbenchMode } from "@/lib/workbench/types";
 
 const WORKBENCH_MODES: WorkbenchMode[] = ["qimen", "bazi", "ziwei", "combined", "research", "astro", "human-design", "tarot", "fourth-way", "harmonic", "huangji", "qizheng", "sacred-geometry", "runes", "uranian", "maya", "vedic", "qabalah", "taiyi-shenshu", "akasha", "ziwei-flying", "bazi-tcm"];
@@ -30,55 +25,23 @@ const MAX_HISTORY_MESSAGES = 18;
 const MAX_STRUCTURED_TEXT_LENGTH = 60_000;
 const MAX_JSON_LENGTH = 80_000;
 const MAX_TOTAL_PAYLOAD_LENGTH = 120_000;
-const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
-const COOKIE_ALIASES: Record<string, string> = {
-  qmdj_platform_access: "ssp_access",
-  qmdj_platform_refresh: "ssp_refresh",
-  qmdj_platform_csrf: "ssp_csrf",
-};
-const readPlatformCookieHeader = (cookieHeader: string | null) => (cookieHeader ?? "")
-  .split(";")
-  .map((part) => part.trim())
-  .map((part) => {
-    const separator = part.indexOf("=");
-    if (separator < 1) return "";
-    const name = COOKIE_ALIASES[part.slice(0, separator)] ?? part.slice(0, separator);
-    return PLATFORM_COOKIE_NAMES.has(name) ? `${name}=${part.slice(separator + 1)}` : "";
-  })
-  .filter(Boolean)
-  .join("; ");
-const readCookieValue = (cookieHeader: string | null, name: string) => {
-  const names = [name, ...Object.entries(COOKIE_ALIASES).filter(([, target]) => target === name).map(([source]) => source)];
-  return (cookieHeader ?? "").split(";").map((part) => part.trim()).map((part) => {
-    const separator = part.indexOf("=");
-    return separator < 1 ? null : { name: part.slice(0, separator), value: part.slice(separator + 1) };
-  }).find((part) => part && names.includes(part.name))?.value ?? "";
-};
 const isWorkbenchMode = (value: unknown): value is WorkbenchMode =>
   typeof value === "string" && WORKBENCH_MODES.includes(value as WorkbenchMode);
 
 export async function POST(request: Request) {
   let reservationId = "";
-  let guestToken = "";
   let accessToken = "";
   let reservationPlanCode = AGENT_PLAN_CODE;
-  let reservationMode: "account" | "guest" = "guest";
-  let platformCookieHeader = "";
-  let platformCsrfToken = "";
   // Set once the model has produced output. From that moment the reservation
   // must never be released: releasing refunds a user who already holds the
   // analysis, so a platform hiccup would become a free analysis.
   let delivered = false;
   try {
     accessToken = readBearerToken(request.headers.get("authorization")) ?? "";
-    platformCookieHeader = readPlatformCookieHeader(request.headers.get("cookie"));
-    platformCsrfToken = readCookieValue(request.headers.get("cookie"), "ssp_csrf");
-    const qmdjAccessToken = readCookieValue(request.headers.get("cookie"), "ssp_access");
-    if (!accessToken && qmdjAccessToken) accessToken = qmdjAccessToken;
-    guestToken = readGuestCheckoutToken(request.headers.get("x-guest-checkout-token")) ?? "";
-    if (!accessToken && !platformCookieHeader && !guestToken) {
+    if (!accessToken) accessToken = readCookieValue(request.headers.get("cookie"), "qmdj_platform_access");
+    if (!accessToken) {
       return noStore(
-        { error: "请先登录并开通 AI 分析，或使用已完成支付的游客凭证。", reasonCode: "analysis_access_required" },
+        { error: "请先登录平台账户并开通 AI 分析。", reasonCode: "analysis_access_required" },
         { status: 401 },
       );
     }
@@ -181,8 +144,7 @@ export async function POST(request: Request) {
     }
 
     // AI SDK UI transports send the complete message list. Normalize it to
-    // the product's compact conversation contract so follow-up turns use the
-    // same server-side prompt path as the legacy JSON client.
+    // the product's compact conversation contract.
     let transportHistory: Array<{ role: "user" | "assistant"; content: string }> | undefined;
     if (body.messages !== undefined) {
       if (!Array.isArray(body.messages) || body.messages.length > MAX_HISTORY_MESSAGES) {
@@ -203,27 +165,18 @@ export async function POST(request: Request) {
     }
 
     reservationPlanCode = analysisProduct === "kline" ? KLINE_PLAN_CODE : AGENT_PLAN_CODE;
-    let reservation: { reservation_id: string };
-    if (accessToken || platformCookieHeader) {
-      reservationMode = "account";
-      const accountOptions = accessToken ? undefined : { cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken };
-      const gate = await fetchPlatformGate(accessToken || null, accountOptions);
-      if (!gate.allowed) {
-        return noStore(
-          {
-            error: gate.message || "当前账户还没有这项 AI 分析权益。",
-            reasonCode: gate.reason_code || "entitlement_gate_blocked",
-            gate,
-          },
-          { status: 402 },
-        );
-      }
-      reservation = accessToken
-        ? await reservePlatformUsage(accessToken, { planCode: reservationPlanCode })
-        : await reservePlatformUsage(null, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
-    } else {
-      reservation = await reserveGuestUsage(guestToken, { planCode: reservationPlanCode });
+    const gate = await fetchPlatformGate(accessToken);
+    if (!gate.allowed) {
+      return noStore(
+        {
+          error: gate.message || "当前账户还没有这项 AI 分析权益。",
+          reasonCode: gate.reason_code || "entitlement_gate_blocked",
+          gate,
+        },
+        { status: 402 },
+      );
     }
+    const reservation: { reservation_id: string } = await reservePlatformUsage(accessToken, { planCode: reservationPlanCode });
     reservationId = reservation.reservation_id;
     if (!reservationId) {
       throw new UserFacingError("无法预留本次分析。请刷新后重试。");
@@ -250,7 +203,6 @@ export async function POST(request: Request) {
 
     if (request.headers.get("x-agent-stream") === "1" && analysisProduct === "agent") {
       let streamSettled = false;
-      const requestId = crypto.randomUUID();
       // One decision point for the whole stream. The previous split between a
       // `release` callback and a `commit` callback could mark the stream settled
       // in `release`, notice the analysis had already been delivered, and return
@@ -261,38 +213,16 @@ export async function POST(request: Request) {
       // Reading `delivered` and flipping the flag happen in the same synchronous
       // block (no `await` in between), so the choice cannot be raced: a delivered
       // analysis is always committed, an undelivered one is always released.
-      const settle = async (providerUsage?: unknown, providerModel?: string) => {
+      const settle = async () => {
         if (streamSettled || !reservationId) return;
         const deliveredToClient = delivered;
         streamSettled = true;
         try {
-          if (reservationMode === "account") {
-            if (deliveredToClient) {
-              // A settled reservation is not a failure to retry — see `settled-commit.ts`.
-              await settledCommit("agent", `reservation ${reservationId}`, () => accessToken
-                ? commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode })
-                : commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken }));
-            } else if (accessToken) {
-              await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
-            } else {
-              await releasePlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
-            }
-          } else if (deliveredToClient) {
-            // The guest commit raises the same terminal 409 as the account one.
-            await settledCommit("agent", `reservation ${reservationId}`, () => commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode }));
-          } else {
-            await releaseGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
-          }
           if (deliveredToClient) {
-            const usage = readProviderUsage(providerUsage);
-            if (usage?.inputTokens !== undefined || usage?.outputTokens !== undefined) {
-              await reportPlatformTokenUsage({
-                providerCode: process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? "gemini" : "openai-compatible",
-                modelCode: providerModel || process.env.OPENAI_MODEL || process.env.GEMINI_MODEL || "unknown",
-                usage,
-                idempotencyKey: `${requestId}:agent-token-usage`,
-              });
-            }
+            // A settled reservation is not a failure to retry — see `settled-commit.ts`.
+            await settledCommit("agent", `reservation ${reservationId}`, () => commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode }));
+          } else {
+            await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
           }
         } finally {
           // Clearing the id in `finally` is what makes this the *only* settle:
@@ -305,18 +235,14 @@ export async function POST(request: Request) {
       const result = streamAgentAnalysis(analysisPayload, {
         abortSignal: request.signal,
         onChunk: () => { delivered = true; },
-        onFinish: async (_text, usage, model) => settle(usage, model),
+        onFinish: async () => settle(),
         onError: async () => { await settle(); },
         onAbort: async () => { await settle(); },
       });
       return createAgentEventStreamResponse(result as { fullStream: AsyncIterable<unknown> });
     }
 
-    const commitUsage = () => reservationMode === "account"
-      ? accessToken
-        ? commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode })
-        : commitPlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken })
-      : commitGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+    const commitUsage = () => commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
 
     const result = await requestAgentAnalysis(analysisPayload);
     // The analysis now exists, so the reservation is no longer releasable.
@@ -341,34 +267,14 @@ export async function POST(request: Request) {
     }
     reservationId = "";
 
-    const providerUsage = readProviderUsage(result.usage);
-    if (providerUsage?.inputTokens !== undefined || providerUsage?.outputTokens !== undefined) {
-      await reportPlatformTokenUsage({
-        providerCode: process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? "gemini" : "openai-compatible",
-        modelCode: result.model || process.env.OPENAI_MODEL || process.env.GEMINI_MODEL || "unknown",
-        usage: providerUsage,
-        idempotencyKey: `${crypto.randomUUID()}:agent-token-usage`,
-      });
-    }
-
     return noStore({ ...result, usage });
   } catch (error) {
     // Only release when the analysis was never produced. Releasing after
     // delivery would refund a user who already received the content.
     if (reservationId && !delivered) {
-      if (reservationMode === "account" && (accessToken || platformCookieHeader)) {
+      if (accessToken) {
         try {
-          if (accessToken) {
-            await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
-          } else {
-            await releasePlatformUsage(null, reservationId, { planCode: reservationPlanCode, cookieHeader: platformCookieHeader, csrfToken: platformCsrfToken });
-          }
-        } catch {
-          // Preserve the original failure; the platform will release stale reservations.
-        }
-      } else if (guestToken) {
-        try {
-          await releaseGuestUsage(guestToken, reservationId, { planCode: reservationPlanCode });
+          await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
         } catch {
           // Preserve the original failure; the platform will release stale reservations.
         }

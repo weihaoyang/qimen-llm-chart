@@ -1,4 +1,6 @@
+import { exchangeAuthorizationCode } from "@singseq/platform-sdk";
 import { noStore } from "@/lib/http";
+import { reportSwallowedError } from "@/lib/internal-log";
 import { requirePlatformServerConfig } from "@/lib/platform/config";
 import {
   PLATFORM_BRIDGE_ACCESS_COOKIE,
@@ -8,7 +10,6 @@ import {
   isBridgeToken,
   isTrustedBridgeWriteOrigin,
   readRequestCookie,
-  readResponseCookie,
   setBridgeCookies,
 } from "@/lib/platform/bridge";
 
@@ -26,19 +27,24 @@ export async function PUT(request: Request) {
   try { body = (await request.json()) as typeof body; } catch { return noStore({ error: "登录参数格式无效。" }, { status: 400 }); }
   if (typeof body.code !== "string" || typeof body.verifier !== "string" || typeof body.redirect_uri !== "string") return noStore({ error: "登录参数不完整。" }, { status: 400 });
   const config = requirePlatformServerConfig(process.env);
-  const upstream = await fetch(new URL("/api/v1/oauth/token", config.baseUrl), {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ grant_type: "authorization_code", code: body.code, client_id: config.productCode, redirect_uri: body.redirect_uri, code_verifier: body.verifier }), cache: "no-store",
-  });
-  const payload = await upstream.json().catch(() => ({}));
-  if (!upstream.ok) return noStore({ error: payload.message ?? payload.detail?.message ?? "平台登录交换失败。" }, { status: upstream.status });
-  const access = readResponseCookie(upstream.headers, "ssp_access");
-  const refresh = readResponseCookie(upstream.headers, "ssp_refresh");
-  const csrf = readResponseCookie(upstream.headers, "ssp_csrf") || payload.csrf_token || "";
-  if (!isBridgeToken(access) || !isBridgeToken(refresh)) return noStore({ error: "平台未下发有效登录会话。" }, { status: 502 });
-  const response = noStore({ session: payload.session, profile: payload.profile, csrf_token: csrf });
-  setBridgeCookies(response, access, refresh, csrf);
-  return response;
+  if (!config.clientId) return noStore({ error: "缺少登记的平台 OAuth client id。" }, { status: 503 });
+  try {
+    const tokens = await exchangeAuthorizationCode({
+      baseUrl: config.baseUrl,
+      clientId: config.clientId,
+      code: body.code,
+      redirectUri: body.redirect_uri,
+      verifier: body.verifier,
+    });
+    if (!isBridgeToken(tokens.access_token) || !isBridgeToken(tokens.refresh_token)) return noStore({ error: "平台未返回有效 OAuth token。" }, { status: 502 });
+    const response = noStore({ session: { access_token: tokens.access_token, csrf_token: "", expires_at_iso: new Date(Date.now() + tokens.expires_in * 1000).toISOString() }, csrf_token: "" });
+    setBridgeCookies(response, tokens.access_token, tokens.refresh_token, "");
+    return response;
+  } catch (error) {
+    reportSwallowedError("platform-session", "OAuth code exchange failed", error);
+    const status = typeof error === "object" && error !== null && "status" in error && typeof error.status === "number" ? error.status : 502;
+    return noStore({ error: "平台登录交换失败。" }, { status });
+  }
 }
 
 export async function POST(request: Request) {

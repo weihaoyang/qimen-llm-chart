@@ -1,4 +1,4 @@
-import type { PlatformSession } from "@singularity-sequence/web-sdk";
+import type { PlatformSession } from "./types";
 
 const PLATFORM_SESSION_STORAGE_KEY = "qmdj.platform.session.v1";
 
@@ -33,7 +33,6 @@ export const loadPlatformSession = (): PlatformSession | null => {
       current_subject_type: parsed.current_subject_type ?? "user",
       current_subject_id: parsed.current_subject_id ?? parsed.user_id,
     };
-    // Replace any legacy token-bearing record immediately on read.
     window.localStorage.setItem(PLATFORM_SESSION_STORAGE_KEY, JSON.stringify({
       csrf_token: safeSession.csrf_token,
       expires_at_iso: safeSession.expires_at_iso,

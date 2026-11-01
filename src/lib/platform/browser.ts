@@ -1,6 +1,7 @@
-import { PlatformHttpError, type EntitlementGateResponse, type InvitationCodeRedemption, type PlanCatalogItem, type PlatformProfile, type PlatformSession } from "@singularity-sequence/web-sdk";
+import { buildAuthorizeUrl, createPkcePair, randomOAuthState, revokeOAuthToken } from "@singseq/platform-sdk";
+import type { PlatformProfile, PlatformSession, PlanCatalogItem } from "./types";
 import { createProductPlatformClient } from "@/lib/platform/client";
-import { buildPlatformOAuthLoginUrl, requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
+import { requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
 import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
 import {
   clearPlatformSession,
@@ -8,22 +9,13 @@ import {
   savePlatformSession,
 } from "@/lib/platform/session";
 
-export type PlatformCallbackSession = {
-  access_token: string;
-  refresh_token: string;
-  expires_at_iso: string;
-  refresh_expires_at_iso: string;
-  user_id: string;
-  phone_number: string;
-};
-
 export type PlatformOAuthCallback = {
   code: string;
   state: string;
 };
 
 const PLATFORM_OAUTH_STORAGE_KEY = "qmdj.platform.oauth.v1";
-// The registered production callback is a hash route handled by the workbench.
+// OAuth redirects to this registered path handled by the workbench.
 export const PLATFORM_OAUTH_CALLBACK_PATH = "/auth/callback";
 
 export type PlatformAccessState = {
@@ -61,165 +53,38 @@ export type PlatformUsage = {
   by_plan: PlatformPlanUsage[];
 };
 
-export type PlatformCheckout = {
-  orderId: string;
-  checkoutToken: string;
-  checkoutMode: "account" | "guest";
-  providerCheckoutUrl: string;
-};
-
-export type GuestCheckout = {
-  order: { order_id: string; amount_cny: number; status: string };
-  checkout_token: string;
-  checkout_token_expires_at_iso: string;
-};
-
-const createIdempotencyKey = (scope: string) => {
-  const random = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `qmdj-${scope}-${random}`.slice(0, 128);
-};
-
-export const createGuestCheckout = (planCode: string, paymentChannel: string, idempotencyKey = createIdempotencyKey(planCode)) =>
-  createProductPlatformClient().createGuestOrder({
-      product_code: requirePlatformClientConfig().productCode,
-      plan_code: planCode,
-      payment_channel: paymentChannel,
-      idempotency_key: idempotencyKey,
-    }) as Promise<GuestCheckout>;
-
-export const createGuestPaymentAttempt = (checkout: GuestCheckout, paymentChannel: string, returnUrl: string, paymentScene: "web" | "wap" = "web") =>
-  createProductPlatformClient().createGuestPaymentAttempt(checkout.checkout_token, {
-      order_id: checkout.order.order_id,
-      product_code: requirePlatformClientConfig().productCode,
-      payment_channel: paymentChannel,
-      payment_scene: paymentScene,
-      return_url: returnUrl,
-    }) as Promise<{ provider_checkout_url: string }>;
-
-export const getGuestPaymentResult = (orderId: string, checkoutToken: string) => {
-  const config = requirePlatformClientConfig();
-  return createProductPlatformClient().getGuestPaymentResult(checkoutToken, orderId, config.productCode) as Promise<{ order: { status: string }; entitlement_active: boolean }>;
-};
-
-const asOrderId = (value: unknown) => {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (value && typeof value === "object" && typeof (value as { order_id?: unknown }).order_id === "string") {
-    return (value as { order_id: string }).order_id;
-  }
-  return "";
-};
-
-const asProviderCheckoutUrl = (value: unknown) => {
-  if (typeof value === "string") return value;
-  if (value && typeof value === "object") {
-    const candidate = value as { provider_checkout_url?: unknown; checkout_url?: unknown; url?: unknown };
-    return [candidate.provider_checkout_url, candidate.checkout_url, candidate.url].find(
-      (item): item is string => typeof item === "string" && item.trim().length > 0,
-    ) ?? "";
-  }
-  return "";
-};
-
-export const createAccountCheckout = async (
-  accessToken: string,
-  planCode: string,
-  paymentChannel: string,
-  returnUrl: string | ((orderId: string) => string),
-  options?: { csrfToken?: string; idempotencyKey?: string },
-  paymentScene: "web" | "wap" = "web",
-): Promise<PlatformCheckout> => {
-  const config = requirePlatformClientConfig();
-  const client = createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken });
-  const orderResponse = await client.createOrder({
-    product_code: config.productCode,
-    plan_code: planCode,
-    payment_channel: paymentChannel,
-    idempotency_key: options?.idempotencyKey ?? createIdempotencyKey(planCode),
-  } as { product_code: string; plan_code: string; payment_channel: string; idempotency_key: string }) as { order?: unknown; order_id?: unknown };
-  const orderId = asOrderId(orderResponse.order ?? orderResponse.order_id);
-  if (!orderId) throw new Error("平台没有返回订单号，未继续发起支付。");
-  const paymentResponse = await client.createPaymentAttempt({
-    order_id: orderId,
-    product_code: config.productCode,
-    payment_channel: paymentChannel,
-    payment_scene: paymentScene,
-    return_url: typeof returnUrl === "function" ? returnUrl(orderId) : returnUrl,
-  } as { order_id: string; product_code: string; payment_channel: string; payment_scene: "web" | "wap"; return_url: string }) as { provider_checkout_url?: unknown; checkout_url?: unknown; url?: unknown };
-  const providerCheckoutUrl = asProviderCheckoutUrl(paymentResponse);
-  if (!providerCheckoutUrl) throw new Error("平台没有返回收银台地址，未继续发起支付。");
-  return { orderId, checkoutToken: "", checkoutMode: "account", providerCheckoutUrl };
-};
-
-export const getAccountPaymentResult = async (
-  accessToken: string,
-  orderId: string,
-  productCode = requirePlatformClientConfig().productCode,
-  options?: { csrfToken?: string },
-) => createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).getPaymentResult(orderId, productCode) as Promise<{
-  order?: { status?: string; order_id?: string };
-  entitlement_active?: boolean;
-  payment_status?: string;
-  status?: string;
-  message?: string;
-}>;
-
 export const getAccountGate = (
   accessToken: string,
   productCode = requirePlatformClientConfig().productCode,
-  accessScope = requirePlatformClientConfig().accessScope,
   options?: { csrfToken?: string },
-) => createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).getCurrentGate(productCode, accessScope) as Promise<EntitlementGateResponse>;
-
-export const redeemInvitationCode = (accessToken: string, code: string, options?: { csrfToken?: string }) =>
-  createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).redeemInvitationCode(code) as Promise<InvitationCodeRedemption>;
-
-const base64UrlEncode = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-
-const randomUrlToken = (byteLength: number) => {
-  const bytes = new Uint8Array(byteLength);
-  crypto.getRandomValues(bytes);
-  return base64UrlEncode(bytes);
+) => {
+  const config = requirePlatformClientConfig();
+  return createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).GET("/api/v1/usage/balance", {
+    params: { query: { product_code: productCode } },
+  }).then(({ data, error }) => {
+    if (error || !data) throw new Error("无法读取平台权益余额。");
+    const allowed = data.some((entry) => entry.product_code === config.productCode && (entry.remaining === null || (entry.remaining ?? 0) > 0));
+    return { allowed, mode: allowed ? "usage_balance" : "blocked", product_code: config.productCode, access_scope: config.accessScope, subject_type: "user", subject_id: "", reason_code: allowed ? "" : "usage_exhausted", message: "" };
+  });
 };
 
-export const createPlatformOAuthRequest = async () => {
-  const verifier = randomUrlToken(48);
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(verifier),
-  );
-  return {
-    verifier,
-    challenge: base64UrlEncode(new Uint8Array(digest)),
-    state: randomUrlToken(32),
-  };
+export const revokePlatformSession = async (accessToken: string) => {
+  const config = requirePlatformClientConfig();
+  if (!config.clientId || !accessToken) return;
+  await revokeOAuthToken({ baseUrl: config.baseUrl, clientId: config.clientId, token: accessToken, tokenTypeHint: "access_token" });
 };
+
+export const createPlatformOAuthRequest = async () => ({ ...(await createPkcePair()), state: randomOAuthState() });
 
 export const preparePlatformOAuthLogin = async (
   config: PlatformClientConfig,
   origin: string,
-  prompt?: "select_account" | "login",
 ) => {
   const request = await createPlatformOAuthRequest();
   const redirectUri = `${origin.replace(/\/$/, "")}${PLATFORM_OAUTH_CALLBACK_PATH}`;
   return {
     request,
-    url: buildPlatformOAuthLoginUrl({
-      baseUrl: config.baseUrl,
-      loginUrl: config.loginUrl,
-      clientId: config.productCode,
-      productCode: config.productCode,
-      accessScope: config.accessScope,
-      redirectUri,
-      codeChallenge: request.challenge,
-      state: request.state,
-      prompt,
-    }),
+    url: buildAuthorizeUrl({ baseUrl: config.baseUrl, clientId: (() => { if (!config.clientId) throw new Error("缺少平台登记的 OAuth client id。"); return config.clientId; })(), redirectUri, scope: ["account.read", "usage.write"], state: request.state, codeChallenge: request.challenge }),
   };
 };
 
@@ -244,7 +109,7 @@ export const consumePlatformOAuthRequest = (state: string) => {
 };
 
 export const parsePlatformOAuthCallback = (value: string): PlatformOAuthCallback | null => {
-  const normalized = value.startsWith("#") ? value.slice(1) : value;
+  const normalized = value;
   if (!normalized.startsWith("/auth/callback")) return null;
   const query = normalized.slice("/auth/callback".length);
   if (query && !query.startsWith("?")) return null;
@@ -253,54 +118,6 @@ export const parsePlatformOAuthCallback = (value: string): PlatformOAuthCallback
   const state = params.get("state")?.trim() ?? "";
   return code.startsWith("ssp_oauth_") && state ? { code, state } : null;
 };
-
-const CALLBACK_KEYS = [
-  "access_token",
-  "refresh_token",
-  "expires_at",
-  "refresh_expires_at",
-  "user_id",
-  "phone_number",
-] as const;
-
-export const parsePlatformCallbackFragment = (
-  hash: string,
-): PlatformCallbackSession | null => {
-  const normalized = hash.startsWith("#") || hash.startsWith("?") ? hash.slice(1) : hash;
-  if (!normalized) {
-    return null;
-  }
-
-  const params = new URLSearchParams(normalized);
-  const values = Object.fromEntries(CALLBACK_KEYS.map((key) => [key, params.get(key)?.trim() ?? ""]));
-
-  if (CALLBACK_KEYS.some((key) => !values[key])) {
-    return null;
-  }
-
-  return {
-    access_token: values.access_token,
-    refresh_token: values.refresh_token,
-    expires_at_iso: values.expires_at,
-    refresh_expires_at_iso: values.refresh_expires_at,
-    user_id: values.user_id,
-    phone_number: values.phone_number,
-  };
-};
-
-export const toPlatformSession = (value: PlatformCallbackSession): PlatformSession => ({
-  access_token: value.access_token,
-  refresh_token: value.refresh_token,
-  // The legacy cross-origin callback carries bearer credentials but not the
-  // browser-only CSRF token. Bearer-authenticated SDK requests do not use it.
-  csrf_token: "",
-  expires_at_iso: value.expires_at_iso,
-  refresh_expires_at_iso: value.refresh_expires_at_iso,
-  user_id: value.user_id,
-  phone_number: value.phone_number,
-  current_subject_type: "user",
-  current_subject_id: value.user_id,
-});
 
 /** Readable-by-JS companion to the httpOnly bridge cookies. Used only as a hint
  * that a session may still exist in the bridge after local storage is gone. */
@@ -455,15 +272,17 @@ export const restorePlatformAccessState = async (
   });
 
   try {
-    const result = await authenticatedClient.me();
-    const nextSession = { ...current, ...result.session };
+    const { data, error, response } = await authenticatedClient.GET("/api/v1/account/me");
+    if (error || !data) throw Object.assign(new Error("平台账户读取失败。"), { status: (response as Response).status });
+    const profile: PlatformProfile = { user_id: data.subject_id, phone_number: "", display_name: data.name, locale: "zh-CN", region_code: "CN" };
+    const nextSession = { ...current, user_id: data.subject_id, current_subject_id: data.subject_id };
     savePlatformSession(nextSession);
     return {
       session: nextSession,
-      profile: result.profile,
+      profile,
     };
   } catch (error) {
-    if (!(error instanceof PlatformHttpError) || error.status !== 401) {
+    if ((error as { status?: number })?.status !== 401) {
       // Network/transient failure: keep the local record so the next load can
       // recover instead of forcing a fresh login.
       throw error;
@@ -486,24 +305,21 @@ export const restorePlatformAccessState = async (
     const revalidated = await createProductPlatformClient({
       accessToken: refreshedSession.access_token,
       csrfToken: refreshedSession.csrf_token,
-    }).me();
-    const nextSession = { ...refreshedSession, ...revalidated.session };
+    }).GET("/api/v1/account/me");
+    if (revalidated.error || !revalidated.data) throw new Error("平台账户读取失败。");
+    const nextSession = { ...refreshedSession, user_id: revalidated.data.subject_id, current_subject_id: revalidated.data.subject_id };
     savePlatformSession(nextSession);
 
     return {
       session: nextSession,
-      profile: revalidated.profile,
+      profile: { user_id: revalidated.data.subject_id, phone_number: "", display_name: revalidated.data.name, locale: "zh-CN", region_code: "CN" },
     };
   }
 };
 
 export const listPlatformPlans = async (productCode: string): Promise<PlatformPlanState> => {
-  const client = createProductPlatformClient();
-  const result = (await client.listPlans(productCode)) as PlatformPlanState;
-  return {
-    items: result.items ?? [],
-    channels: result.channels ?? [],
-  };
+  void productCode;
+  return { items: [], channels: [] };
 };
 
 export const fetchPlatformUsage = async (
@@ -516,14 +332,14 @@ export const fetchPlatformUsage = async (
   // kline_report). Reading usage without a plan code makes the platform sum the
   // units into one "mixed" balance, which would show K-line reports as agent
   // turns and mis-open the agent entry. Always scope the read to one plan.
-  const body = await createProductPlatformClient({ accessToken, csrfToken }).getUsageSummary(config.productCode, planCode);
+  const result = await createProductPlatformClient({ accessToken, csrfToken }).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } });
+  if (result.error || !result.data) throw new Error("无法读取平台用量余额。");
+  const metric = planCode === "qimen-kline-precise-1" ? "kline_report" : "analysis_turn";
+  const body = result.data.find((entry) => entry.metric === metric);
   return {
-    product_code: body.product_code ?? config.productCode,
-    available: Number(body.available ?? 0),
-    reserved: Number(body.reserved ?? 0),
-    consumed: Number(body.consumed ?? 0),
-    usage_unit: body.usage_unit ?? "",
-    usage_label: body.usage_label ?? "",
-    by_plan: Array.isArray(body.by_plan) ? body.by_plan : [],
+    product_code: config.productCode,
+    available: Number(body?.remaining ?? 0), reserved: 0, consumed: 0,
+    usage_unit: metric, usage_label: metric,
+    by_plan: body ? [{ plan_code: planCode, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }] : [],
   };
 };

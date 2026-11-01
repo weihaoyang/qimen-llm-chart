@@ -1,11 +1,12 @@
+import { refreshOAuthToken } from "@singseq/platform-sdk";
 import { noStore } from "@/lib/http";
+import { reportSwallowedError } from "@/lib/internal-log";
 import { requirePlatformServerConfig } from "@/lib/platform/config";
 import {
   PLATFORM_BRIDGE_REFRESH_COOKIE,
   isBridgeToken,
   isTrustedBridgeWriteOrigin,
   readRequestCookie,
-  readResponseCookie,
   setBridgeCookies,
 } from "@/lib/platform/bridge";
 
@@ -32,20 +33,15 @@ export async function POST(request: Request) {
   const refreshToken = readRequestCookie(request.headers, PLATFORM_BRIDGE_REFRESH_COOKIE);
   if (!isBridgeToken(refreshToken)) return noStore({ error: "平台登录已过期。" }, { status: 401 });
   const config = requirePlatformServerConfig(process.env);
-  const platformResponse = await fetch(new URL("/api/v1/identity/refresh", config.baseUrl), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-    cache: "no-store",
-  });
-  const body = await platformResponse.json().catch(() => ({})) as { session?: unknown; csrf_token?: string };
-  const access = readResponseCookie(platformResponse.headers, "ssp_access");
-  const refresh = readResponseCookie(platformResponse.headers, "ssp_refresh") || refreshToken;
-  const csrf = readResponseCookie(platformResponse.headers, "ssp_csrf") || body.csrf_token || "";
-  if (!platformResponse.ok || !isBridgeToken(access) || !isBridgeToken(refresh)) {
+  if (!config.clientId) return noStore({ error: "缺少登记的平台 OAuth client id。" }, { status: 503 });
+  try {
+    const tokens = await refreshOAuthToken({ baseUrl: config.baseUrl, clientId: config.clientId, refreshToken });
+    if (!isBridgeToken(tokens.access_token) || !isBridgeToken(tokens.refresh_token)) return noStore({ error: "平台未返回有效 OAuth token。" }, { status: 502 });
+    const response = noStore({ session: { access_token: tokens.access_token, csrf_token: "", expires_at_iso: new Date(Date.now() + tokens.expires_in * 1000).toISOString() }, csrf_token: "" });
+    setBridgeCookies(response, tokens.access_token, tokens.refresh_token, "");
+    return response;
+  } catch (error) {
+    reportSwallowedError("platform-session-refresh", "OAuth refresh failed", error);
     return noStore({ error: "平台登录已过期。" }, { status: 401 });
   }
-  const response = noStore({ session: body.session, csrf_token: csrf });
-  setBridgeCookies(response, access, refresh, csrf);
-  return response;
 }

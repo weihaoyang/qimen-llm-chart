@@ -1,4 +1,5 @@
-import { ProductPlatformClient, type PlatformSession } from "@singularity-sequence/web-sdk";
+import { createPlatformClient as createSdkClient } from "@singseq/platform-sdk";
+import type { PlatformProfile, PlatformSession } from "./types";
 import { requirePlatformClientConfig } from "@/lib/platform/config";
 
 type ClientOptions = {
@@ -10,27 +11,16 @@ type ClientOptions = {
 
 const buildOptions = (options?: ClientOptions) => {
   const config = requirePlatformClientConfig();
-  return {
-    baseUrl: config.baseUrl,
-    getAccessToken: () => options?.accessToken ?? null,
-    getCsrfToken: () => options?.csrfToken ?? null,
-    getTraceId: options?.getTraceId,
-    onUnauthorized: options?.onUnauthorized,
-  };
+  return { baseUrl: config.baseUrl, accessToken: options?.accessToken ?? "" };
 };
 
 /** The only client available to ordinary qmdj product code. */
 export const createProductPlatformClient = (options?: ClientOptions) => {
-  return new ProductPlatformClient(buildOptions(options));
+  const built = buildOptions(options);
+  return createSdkClient({ baseUrl: built.baseUrl, auth: { type: "bearer", token: () => built.accessToken } });
 };
 
 export type PlatformIdentity = {
   session: PlatformSession;
-  profile: {
-    user_id: string;
-    phone_number: string;
-    display_name: string;
-    locale: string;
-    region_code: string;
-  };
+  profile: PlatformProfile;
 };

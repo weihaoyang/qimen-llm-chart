@@ -26,7 +26,7 @@ export function AgentConversation(props: InspectorPanelProps) {
   const [conversationMode, setConversationMode] = useState<AgentConversationMode>(props.conversationMode ?? "free");
   const [toolStatus, setToolStatus] = useState("");
   const [toolEvents, setToolEvents] = useState<AgentToolEvent[]>(() => [...(props.toolEvents ?? [])]);
-  const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "synced" | "failed">(props.platformStatus === "authenticated" ? "syncing" : "local");
+  const [syncStatus, setSyncStatus] = useState<"syncing" | "synced" | "failed">(props.platformStatus === "authenticated" ? "syncing" : "failed");
   const cloudLoaded = useRef(false);
   useEffect(() => {
     if (props.platformStatus !== "authenticated" || !props.agentStreamConfig || cloudLoaded.current) return;
@@ -95,7 +95,7 @@ export function AgentConversation(props: InspectorPanelProps) {
     setSavedSessions(next);
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* optional */ }
     const config = latest.current.agentStreamConfig;
-    if (latest.current.platformStatus !== "authenticated" || !config) { setSyncStatus("local"); return; }
+    if (latest.current.platformStatus !== "authenticated" || !config) { setSyncStatus("failed"); return; }
     setSyncStatus("syncing");
     try {
       const headers = { ...(await config.requestHeaders()), "Content-Type": "application/json" };

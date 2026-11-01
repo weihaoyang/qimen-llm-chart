@@ -3,30 +3,43 @@
   "product_code": "qimen",
   "product_name": "知几",
   "product_origin": "web",
-  "platform_api_origin": "https://api.singseq.com",
+  "platform_api_origin": "https://platform.singseq.com",
   "product_origin_url": "https://qmdj.singseq.com",
   "access_scope": "qimen-core",
   "oauth": {
     "client_id": "qimen",
-    "redirect_uri": "https://qmdj.singseq.com/#/auth/callback",
-    "access_scope": "qimen-core",
+    "redirect_uri": "https://qmdj.singseq.com/auth/callback",
     "response_type": "code",
     "code_challenge_method": "S256",
-    "session_mode": "platform_http_only_cookie"
+    "scopes": [
+      "account.read",
+      "usage.write"
+    ]
   },
   "capabilities": [
     "identity",
     "catalog",
-    "checkout",
-    "payment_result",
     "entitlement_gate",
     "usage_reserve",
-    "invitation_redeem",
     "token_usage",
     "ai_analysis"
   ],
   "plans": [
-    { "plan_code": "qimen-analysis-10", "billing_mode": "per_use", "access_scope": "qimen-core", "usage_quantity": 10, "usage_unit": "analysis_turn", "usage_label": "研究对话轮次" },
-    { "plan_code": "qimen-kline-precise-1", "billing_mode": "per_use", "access_scope": "qimen-core", "usage_quantity": 1, "usage_unit": "kline_report", "usage_label": "K 线 AI 分析报告" }
+    {
+      "plan_code": "qimen-analysis-10",
+      "billing_mode": "per_use",
+      "access_scope": "qimen-core",
+      "usage_quantity": 10,
+      "usage_unit": "analysis_turn",
+      "usage_label": "研究对话轮次"
+    },
+    {
+      "plan_code": "qimen-kline-precise-1",
+      "billing_mode": "per_use",
+      "access_scope": "qimen-core",
+      "usage_quantity": 1,
+      "usage_unit": "kline_report",
+      "usage_label": "K 线 AI 分析报告"
+    }
   ]
 }

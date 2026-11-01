@@ -199,12 +199,11 @@ const resolveAxisScore = (
 };
 
 // Versioned internal gateway contract (`/internal/ai/{capability}`): HMAC over
-// `timestamp.nonce.body` with `X-SS-*` headers. The legacy `x-ss-bazi-*` form
-// (HMAC over `timestamp.body`) is kept working during the migration, so a hard
-// cutover to the new path is not required.
+// `timestamp.nonce.body` with `X-SS-*` headers. There is one signature format;
+// unversioned or legacy header aliases are rejected.
 const INTERNAL_AI_CAPABILITY = "bazi-prediction";
-// Gateway nonces are one-time inside the clock-skew window; the legacy form has
-// no nonce. Bounded so a long-lived instance cannot grow without limit.
+// Gateway nonces are one-time inside the clock-skew window. Bounded so a
+// long-lived instance cannot grow without limit.
 const usedGatewayNonces = createBoundedTtlCache<string, true>({
   ttlMs: MAX_CLOCK_SKEW_SECONDS * 1000,
   maxEntries: 5000,
@@ -236,15 +235,7 @@ const verifyInternalSignature = (request: Request, rawBody: string) => {
     return true;
   }
 
-  const timestamp = request.headers.get("x-ss-bazi-timestamp")?.trim() ?? "";
-  const signature = request.headers.get("x-ss-bazi-signature")?.trim() ?? "";
-  const timestampNumber = Number(timestamp);
-  if (!timestamp || !Number.isFinite(timestampNumber)) return false;
-  if (Math.abs(Date.now() / 1000 - timestampNumber) > MAX_CLOCK_SKEW_SECONDS) return false;
-  const expected = createHmac("sha256", secret)
-    .update(`${timestamp}.${rawBody}`)
-    .digest("hex");
-  return hexSignatureMatches(signature, expected);
+  return false;
 };
 
 const parsePredictionJson = (content: string) => {

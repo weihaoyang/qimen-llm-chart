@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ gate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ gate: vi.fn(), cookieValue: vi.fn(() => "") }));
 
 vi.mock("@/lib/platform/server", () => ({
   fetchPlatformGate: mocks.gate,
   readBearerToken: (value: string | null) => (value?.startsWith("Bearer ") ? value.slice(7) : null),
-  readCookieValue: () => "",
-  readPlatformCookieHeader: (value: string | null) => value ?? "",
+  readCookieValue: mocks.cookieValue,
 }));
 
 import { AccountSubjectError, requireAccountSubject } from "./account-subject";
@@ -28,7 +27,7 @@ describe("requireAccountSubject", () => {
 
     const subject = await requireAccountSubject(request("Bearer token-1"));
 
-    expect(mocks.gate).toHaveBeenCalledWith("token-1", undefined);
+    expect(mocks.gate).toHaveBeenCalledWith("token-1");
     expect(subject).toEqual({ subjectType: "org", subjectId: "org-7" });
   });
 
@@ -69,11 +68,4 @@ describe("requireAccountSubject", () => {
     expect(mocks.gate).toHaveBeenCalledTimes(1);
   });
 
-  it("queries the gate for cookie-authenticated callers too", async () => {
-    mocks.gate.mockResolvedValue({ allowed: true, subject_id: "u-2" });
-
-    await requireAccountSubject(request(undefined, "qmdj_platform_access=abc"));
-
-    expect(mocks.gate).toHaveBeenCalledTimes(1);
-  });
 });

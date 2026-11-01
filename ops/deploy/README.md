@@ -28,8 +28,7 @@ node ops/deploy/cli.mjs logs -f    # 跟随容器日志
 - Linux 主机，已装 Docker Engine + Compose v2（`ubuntu` 能 `sudo docker`）。
 - `rsync`、`node`（默认 `/home/ubuntu/.nvm/versions/node/v24.16.0`）。
 - 运行环境文件：默认 `/srv/qmdj/.env.local`（`DATABASE_URL`、`OPENAI_API_KEY` 等）。
-- `@singularity-sequence/web-sdk` 包放在 release 目录的兄弟路径
-  （默认 `<releases>/singularity-sequence-consumer-platform/packages/web-sdk`）。
+- `npm ci` 从 lockfile 安装固定版本的 `@singseq/platform-sdk`。
 - 磁盘预留 ≥ 2GB。
 
 先跑 `doctor`，全绿再发布。
@@ -98,7 +97,6 @@ node ops/deploy/cli.mjs status            # 确认 image / health
 | `QMDJ_CONTAINER` | `qmdj` | 容器名 |
 | `QMDJ_IMAGE_NAME` | `qmdj` | 镜像仓库名 |
 | `QMDJ_VOLUME_DIR` | `<releases>/qmdj-build` | 持久构建目录（提速缓存） |
-| `QMDJ_SDK_SRC` | `<releases>/…/packages/web-sdk` | SDK 包路径 |
 | `QMDJ_NODE_BIN` | nvm v24.16.0/bin | 构建用 node |
 | `QMDJ_HEALTH_URL` | `http://127.0.0.1:3002/api/version` | 健康端点 |
 | `QMDJ_NO_SUDO` | 空 | 置 `1` 时不给 docker 加 sudo |
@@ -116,7 +114,6 @@ node ops/deploy/cli.mjs status            # 确认 image / health
 | --- | --- |
 | `low disk (<2GB free)` | 清理磁盘后重试；提速缓存在 `<releases>/qmdj-build` |
 | `release lock is held` | 有发布在跑；用 `pgrep -af ops/deploy/release.sh` 确认 |
-| `missing web-sdk at …` | 放置 `@singularity-sequence/web-sdk` 包到 `QMDJ_SDK_SRC` |
 | `did not become healthy` | `node ops/deploy/cli.mjs logs`；已自动回滚到上一版 |
 | 手动恢复旧的 systemd 版 | `sudo systemctl enable --now qmdj.service`（容器先 `docker compose -p qmdj down`） |
 

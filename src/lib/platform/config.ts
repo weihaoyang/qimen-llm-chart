@@ -1,17 +1,13 @@
 import productManifest from "../../../config/ai-product-manifest.json";
 
-import { buildPlatformAuthorizeUrl } from "@singularity-sequence/web-sdk";
-
 export type PlatformClientConfig = {
   baseUrl: string;
   productCode: string;
   accessScope: string;
-  loginUrl?: string;
+  clientId?: string;
 };
-
 type PublicProductContract = {
   platform_api_origin: string;
-  oauth_authorize_url: string;
   product_code: string;
   access_scope: string;
 };
@@ -21,7 +17,6 @@ type PublicProductContract = {
 // build from losing OAuth/gate configuration when only server env is mounted.
 const PUBLIC_PRODUCT_CONTRACT: PublicProductContract = {
   platform_api_origin: productManifest.platform_api_origin,
-  oauth_authorize_url: productManifest.oauth_authorize_url,
   product_code: productManifest.product_code,
   access_scope: productManifest.access_scope,
 };
@@ -32,14 +27,14 @@ const readPublicPlatformEnv = (): Record<string, string | undefined> => ({
   NEXT_PUBLIC_PLATFORM_BASE_URL: process.env.NEXT_PUBLIC_PLATFORM_BASE_URL,
   NEXT_PUBLIC_PLATFORM_PRODUCT_CODE: process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE,
   NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE: process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE,
-  NEXT_PUBLIC_PLATFORM_LOGIN_URL: process.env.NEXT_PUBLIC_PLATFORM_LOGIN_URL,
+  NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID: process.env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID,
 });
 
 const readServerPlatformEnv = (): Record<string, string | undefined> => ({
   PLATFORM_BASE_URL: process.env.PLATFORM_BASE_URL,
   PLATFORM_PRODUCT_CODE: process.env.PLATFORM_PRODUCT_CODE,
   PLATFORM_ACCESS_SCOPE: process.env.PLATFORM_ACCESS_SCOPE,
-  PLATFORM_LOGIN_URL: process.env.PLATFORM_LOGIN_URL,
+  PLATFORM_OAUTH_CLIENT_ID: process.env.PLATFORM_OAUTH_CLIENT_ID,
   ...readPublicPlatformEnv(),
 });
 
@@ -58,9 +53,7 @@ export const resolvePlatformClientConfig = (
     baseUrl: trimTrailingSlash(baseUrl),
     productCode,
     accessScope,
-    loginUrl: env.NEXT_PUBLIC_PLATFORM_LOGIN_URL?.trim()
-      ? trimTrailingSlash(env.NEXT_PUBLIC_PLATFORM_LOGIN_URL.trim())
-      : undefined,
+    clientId: env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID?.trim() || undefined,
   };
 };
 
@@ -96,11 +89,7 @@ export const resolvePlatformServerConfig = (
     baseUrl: trimTrailingSlash(baseUrl),
     productCode,
     accessScope,
-    loginUrl: env.PLATFORM_LOGIN_URL?.trim()
-      ? trimTrailingSlash(env.PLATFORM_LOGIN_URL.trim())
-      : env.NEXT_PUBLIC_PLATFORM_LOGIN_URL?.trim()
-        ? trimTrailingSlash(env.NEXT_PUBLIC_PLATFORM_LOGIN_URL.trim())
-        : undefined,
+    clientId: env.PLATFORM_OAUTH_CLIENT_ID?.trim() || env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID?.trim() || undefined,
   };
 };
 
@@ -116,86 +105,4 @@ export const requirePlatformServerConfig = (
   }
 
   return config;
-};
-
-export const buildPlatformSocialLoginStartUrl = ({
-  baseUrl,
-  provider,
-  redirectUrl,
-}: {
-  baseUrl: string;
-  provider: "wechat" | "qq";
-  redirectUrl: string;
-}) => {
-  const url = new URL(`/api/v1/identity/social/${provider}/start`, baseUrl);
-  url.searchParams.set("redirect", redirectUrl);
-  return url.toString();
-};
-
-export const buildPlatformUnifiedLoginUrl = ({
-  baseUrl,
-  loginUrl,
-  productCode,
-  accessScope,
-  returnUrl,
-}: {
-  baseUrl: string;
-  loginUrl?: string;
-  productCode: string;
-  accessScope: string;
-  returnUrl: string;
-}) => {
-  void returnUrl;
-  // The unified identity entrypoint is hosted by the canonical website.
-  // app.singseq.com is not a production DNS route and must never be used as
-  // an implicit fallback for product OAuth redirects.
-  const resolvedLoginUrl = loginUrl || "https://singseq.com/oauth/authorize";
-  const url = new URL(
-    resolvedLoginUrl,
-    /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
-  );
-  url.searchParams.set("product_code", productCode);
-  url.searchParams.set("access_scope", accessScope);
-  return url.toString();
-};
-
-export const buildPlatformOAuthLoginUrl = ({
-  baseUrl,
-  loginUrl,
-  clientId,
-  productCode,
-  accessScope,
-  redirectUri,
-  codeChallenge,
-  state,
-  prompt,
-}: {
-  baseUrl: string;
-  loginUrl?: string;
-  clientId: string;
-  productCode: string;
-  accessScope: string;
-  redirectUri: string;
-  codeChallenge: string;
-  state: string;
-  prompt?: "select_account" | "login";
-}) => {
-  // Keep OAuth on the canonical, deployed authorization endpoint. A stale
-  // app.singseq.com fallback makes every unauthenticated paid flow fail before
-  // Captcha, order creation, or payment can even be reached.
-  const resolvedLoginUrl = loginUrl || "https://singseq.com/oauth/authorize";
-  const authorizeUrl = new URL(
-    resolvedLoginUrl,
-    /^https?:\/\//i.test(resolvedLoginUrl) ? undefined : baseUrl,
-  ).toString();
-  return buildPlatformAuthorizeUrl({
-    authorizeUrl,
-    clientId,
-    productCode,
-    accessScope,
-    redirectUri,
-    state,
-    codeChallenge,
-    prompt,
-  });
 };

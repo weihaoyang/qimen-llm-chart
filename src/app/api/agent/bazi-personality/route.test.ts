@@ -86,15 +86,18 @@ const predictionJson = {
 
 const signedRequest = (body: object = requestBody, timestamp = Math.floor(Date.now() / 1000).toString()) => {
   const rawBody = JSON.stringify(body);
+  const nonce = `nonce-${Math.random().toString(36).slice(2)}`;
   const signature = createHmac("sha256", SECRET)
-    .update(`${timestamp}.${rawBody}`)
+    .update(`${timestamp}.${nonce}.${rawBody}`)
     .digest("hex");
   return new Request("http://localhost/api/agent/bazi-personality", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-SS-Bazi-Timestamp": timestamp,
-      "X-SS-Bazi-Signature": signature,
+      "X-SS-Capability": "bazi-prediction",
+      "X-SS-Timestamp": timestamp,
+      "X-SS-Nonce": nonce,
+      "X-SS-Signature": signature,
     },
     body: rawBody,
   });

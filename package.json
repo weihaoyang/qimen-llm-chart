@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "node ops/build-linked-web-sdk.mjs",
+    "build": "next build --webpack",
     "db:migrate": "node ops/migrate.mjs apply",
     "db:status": "node ops/migrate.mjs status",
     "css:audit": "node ops/prune-css.mjs src/app/globals.css src/app/platform-views.css src/app/paipan/paipan.css src/app/paipan/bazi.css src/app/paipan/research.css src/app/paipan/classic.css src/app/paipan/ziwei.css src/app/paipan/workbench-responsive.css src/app/paipan/analysis-panels.css src/app/paipan/workbench-shell.css src/app/paipan/qimen-workbench.css && node ops/dedupe-css.mjs src/app/globals.css src/app/platform-views.css src/app/paipan/paipan.css src/app/paipan/bazi.css src/app/paipan/research.css src/app/paipan/classic.css src/app/paipan/ziwei.css src/app/paipan/workbench-responsive.css src/app/paipan/analysis-panels.css src/app/paipan/workbench-shell.css src/app/paipan/qimen-workbench.css",
@@ -14,12 +14,10 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run typecheck && eslint src && npm test && npm run test:platform-cli && npm run build",
+    "ci": "npm run typecheck && eslint src && npm test && npm run build",
     "test": "vitest run",
-    "test:platform-cli": "node --test ops/platform-cli.test.mjs",
     "test:concurrency": "vitest run src/lib/db/concurrency.test.ts",
-    "deploy": "node ops/deploy/cli.mjs",
-    "platform:cli": "node ops/platform-cli.mjs"
+    "deploy": "node ops/deploy/cli.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.47",
@@ -28,7 +26,7 @@
     "@cometpisces/tarot-kit": "^0.2.0",
     "@douyinfe/semi-ui": "^2.102.0",
     "@radix-ui/react-tooltip": "^1.2.16",
-    "@singularity-sequence/web-sdk": "file:../singularity-sequence-consumer-platform/packages/web-sdk",
+    "@singseq/platform-sdk": "https://codeload.github.com/weihaoyang/singseq-platform-sdk/tar.gz/8ba59cdc762602a34930101f6443bc6f9c2cdcbd",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/canvas-confetti": "^1.9.0",
     "3meta": "^2.6.0",

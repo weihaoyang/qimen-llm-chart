@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PlatformSession } from "@singularity-sequence/web-sdk";
+import type { PlatformSession } from "./types";
 import { hasBridgeSessionHint, recoverPlatformSessionFromBridge, restorePlatformAccessState } from "./browser";
 
 const STORAGE_KEY = "qmdj.platform.session.v1";
@@ -16,24 +16,6 @@ const CSRF = "bridge-csrf-0123456789abcdef";
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
-
-const meBody = {
-  session: {
-    expires_at_iso: FUTURE,
-    refresh_expires_at_iso: FUTURE,
-    user_id: "user-1",
-    phone_number: "13900139000",
-    current_subject_type: "user",
-    current_subject_id: "user-1",
-  },
-  profile: {
-    user_id: "user-1",
-    phone_number: "13900139000",
-    display_name: "",
-    locale: "zh-CN",
-    region_code: "CN",
-  },
-};
 
 const storedSession = (overrides: Partial<PlatformSession> = {}): PlatformSession => ({
   access_token: "",
@@ -58,23 +40,19 @@ type Handlers = {
   bridgeGet?: () => Response | Promise<Response>;
   bridgeRefresh?: () => Response | Promise<Response>;
   me?: () => Response | Promise<Response>;
-  platformRefresh?: () => Response | Promise<Response>;
 };
 
 const installFetch = (handlers: Handlers) => {
   fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-    const url = String(input);
+    const url = input instanceof Request ? input.url : String(input);
     if (url === "/api/platform/session") {
       return handlers.bridgeGet ? handlers.bridgeGet() : jsonResponse({ error: "expired" }, 401);
     }
     if (url === "/api/platform/session/refresh") {
       return handlers.bridgeRefresh ? handlers.bridgeRefresh() : jsonResponse({ error: "expired" }, 401);
     }
-    if (url === `${BASE_URL}/api/v1/identity/me`) {
-      return handlers.me ? handlers.me() : jsonResponse(meBody);
-    }
-    if (url === `${BASE_URL}/api/v1/identity/refresh`) {
-      return handlers.platformRefresh ? handlers.platformRefresh() : jsonResponse({ message: "expired" }, 401);
+    if (url === `${BASE_URL}/api/v1/account/me`) {
+      return handlers.me ? handlers.me() : jsonResponse({ subject_id: "user-1", name: "Test User" });
     }
     throw new Error(`unexpected fetch: ${url}`);
   });
@@ -130,7 +108,7 @@ describe("restorePlatformAccessState", () => {
     installFetch({
       bridgeGet: () => jsonResponse({ error: "expired" }, 401),
       // Both attempts 401: another tab rotated first. This must not wipe local
-      // storage, or the next load reports a logged-out guest.
+      // storage, or the next load reports a logged-out user.
       bridgeRefresh: () => jsonResponse({ error: "expired" }, 401),
     });
 
@@ -154,7 +132,6 @@ describe("restorePlatformAccessState", () => {
     installFetch({
       bridgeGet: () => jsonResponse({ session: { access_token: ACCESS, csrf_token: CSRF } }),
       me: () => jsonResponse({ message: "expired" }, 401),
-      platformRefresh: () => jsonResponse({ message: "expired" }, 401),
       bridgeRefresh: () => jsonResponse({ error: "expired" }, 401),
     });
 

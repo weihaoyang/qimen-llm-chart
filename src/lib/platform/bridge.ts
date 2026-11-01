@@ -8,9 +8,9 @@ import type { NextResponse } from "next/server";
  * CSRF cookie holds the token the browser SDK reads.
  *
  * These names are deliberately distinct from the platform's own `ssp_*` cookies
- * so that a cookie set by `api.singseq.com` can never be mistaken for one set by
- * this origin (and vice versa). `readPlatformCookieHeader` in `./server.ts` maps
- * the bridge names back onto the `ssp_*` names when forwarding upstream.
+ * so that a cookie set by `platform.singseq.com` can never be mistaken for one set by
+ * this origin (and vice versa). The server reads only this product's access cookie
+ * and passes the token to the platform SDK as a bearer credential.
  */
 export const PLATFORM_BRIDGE_ACCESS_COOKIE = "qmdj_platform_access";
 export const PLATFORM_BRIDGE_REFRESH_COOKIE = "qmdj_platform_refresh";

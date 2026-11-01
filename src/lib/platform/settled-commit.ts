@@ -55,9 +55,7 @@ export type SettledUsage = { reconciled: "already_settled"; reason_code: string 
  * settled" rather than a failure.
  *
  * `commit` is a thunk instead of a token/reservation pair so each caller keeps its
- * own account-versus-guest choice visible at the call site: the platform exposes
- * separate `commit` and `guest/.../commit` endpoints, and **both** raise the same
- * terminal 409, so both need this reconciliation.
+ * account commit remains a terminal 409 when its reservation has already settled.
  */
 export const settledCommit = async <T>(
   /** Log scope for the reconciled case, e.g. `"battle-ai"`. */

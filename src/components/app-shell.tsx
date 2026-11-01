@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Position } from "3meta";
 import { Clock, GripVertical } from "lucide-react";
@@ -17,7 +17,6 @@ import {
 import {
   AGENT_ANALYSIS_ANGLES,
   AGENT_FOLLOW_UP_QUESTIONS,
-  AGENT_INTERVIEW_START_LABEL,
   AGENT_INTERVIEW_START_QUESTION,
   DEFAULT_AGENT_QUESTIONS,
   type AgentConversationMessage,
@@ -71,12 +70,10 @@ import {
 } from "@/lib/ziwei/serializer";
 import { type PlatformClientConfig } from "@/lib/platform/config";
 import {
-  createAccountCheckout,
-  createGuestCheckout,
-  createGuestPaymentAttempt,
   fetchPlatformUsage,
+  revokePlatformSession,
+  getAccountGate,
   listPlatformPlans,
-  redeemInvitationCode,
   restorePlatformAccessState,
   recoverPlatformSessionFromBridge,
   hasBridgeSessionHint,
@@ -87,21 +84,15 @@ import {
   PLATFORM_OAUTH_CALLBACK_PATH,
   savePlatformOAuthRequest,
 } from "@/lib/platform/browser";
-import { createProductPlatformClient } from "@/lib/platform/client";
 import { loadPlatformSession, clearPlatformSession, savePlatformSession } from "@/lib/platform/session";
 import { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
-import type { PlanCatalogItem, PlatformProfile, PlatformSession } from "@singularity-sequence/web-sdk";
+import type { PlanCatalogItem, PlatformProfile, PlatformSession } from "@/lib/platform/types";
 import {
   AGENT_SESSION_TURNS,
-  clearCheckoutIdempotencyKey,
-  getCheckoutIdempotencyKey,
   loadActiveAgentSession,
   loadKlineAiResult,
-  popCompletedPaidAnalysis,
   clearActiveAgentSession,
-  saveKlineAiResult,
   saveActiveAgentSession,
-  savePendingPaidAnalysis,
 } from "@/lib/platform/pending-analysis";
 import type { NormalizedZiweiChart } from "@/lib/ziwei/types";
 import { buildLifeTrendData, lifeTrendToKlineSeries } from "@/lib/research/trend";
@@ -192,18 +183,15 @@ type AgentModeState = {
   error: string | null;
   loading: boolean;
   conversation: AgentConversationMessage[];
-  orderId: string;
-  checkoutToken: string;
   usageAvailable: number;
   usageConsumed: number;
   totalTurns: number;
   sessionStructuredText: string;
   sessionJsonPayload: string;
-  authMode: "account" | "guest";
 };
 
 type PlatformWorkspaceState = {
-  status: "checking" | "guest" | "authenticated" | "error";
+  status: "checking" | "unauthenticated" | "authenticated" | "error";
   /** The catalog is separate from identity: a transient catalog failure must
    * never masquerade as a genuinely unavailable payment provider. */
   catalogStatus: "loading" | "ready" | "error";
@@ -223,178 +211,27 @@ type PlatformWorkspaceState = {
   error: string | null;
 };
 
-const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => ({
-  qimen: {
-    question: "",
-    focus: "按主题分析",
-    content: "",
-    model: null,
-    error: null,
-    loading: false,
-    conversation: [],
-    orderId: "",
-    checkoutToken: "",
-    usageAvailable: 0,
-    usageConsumed: 0,
-    totalTurns: AGENT_SESSION_TURNS,
-    sessionStructuredText: "",
-    sessionJsonPayload: "",
-    authMode: "guest",
-  },
-  bazi: {
-    question: DEFAULT_AGENT_QUESTIONS.bazi,
-    focus: "按问题综合取证",
-    content: "",
-    model: null,
-    error: null,
-    loading: false,
-    conversation: [],
-    orderId: "",
-    checkoutToken: "",
-    usageAvailable: 0,
-    usageConsumed: 0,
-    totalTurns: AGENT_SESSION_TURNS,
-    sessionStructuredText: "",
-    sessionJsonPayload: "",
-    authMode: "guest",
-  },
-  ziwei: {
-    question: DEFAULT_AGENT_QUESTIONS.ziwei,
-    focus: "按问题综合取证",
-    content: "",
-    model: null,
-    error: null,
-    loading: false,
-    conversation: [],
-    orderId: "",
-    checkoutToken: "",
-    usageAvailable: 0,
-    usageConsumed: 0,
-    totalTurns: AGENT_SESSION_TURNS,
-    sessionStructuredText: "",
-    sessionJsonPayload: "",
-    authMode: "guest",
-  },
-  combined: {
-    question: DEFAULT_AGENT_QUESTIONS.combined,
-    focus: "按问题综合取证",
-    content: "",
-    model: null,
-    error: null,
-    loading: false,
-    conversation: [],
-    orderId: "",
-    checkoutToken: "",
-    usageAvailable: 0,
-    usageConsumed: 0,
-    totalTurns: AGENT_SESSION_TURNS,
-    sessionStructuredText: "",
-    sessionJsonPayload: "",
-    authMode: "guest",
-  },
-  research: {
-    question: DEFAULT_AGENT_QUESTIONS.research,
-    focus: "按问题综合取证",
-    content: "",
-    model: null,
-    error: null,
-    loading: false,
-    conversation: [],
-    orderId: "",
-    checkoutToken: "",
-    usageAvailable: 0,
-    usageConsumed: 0,
-    totalTurns: AGENT_SESSION_TURNS,
-    sessionStructuredText: "",
-    sessionJsonPayload: "",
-    authMode: "guest",
-  },
-  astro: {
-    question: DEFAULT_AGENT_QUESTIONS.astro,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  "human-design": {
-    question: DEFAULT_AGENT_QUESTIONS["human-design"],
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  tarot: {
-    question: DEFAULT_AGENT_QUESTIONS.tarot,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  "fourth-way": {
-    question: DEFAULT_AGENT_QUESTIONS["fourth-way"],
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  harmonic: {
-    question: DEFAULT_AGENT_QUESTIONS.harmonic,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  huangji: {
-    question: DEFAULT_AGENT_QUESTIONS.huangji,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  qizheng: {
-    question: DEFAULT_AGENT_QUESTIONS.qizheng,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  "sacred-geometry": {
-    question: DEFAULT_AGENT_QUESTIONS["sacred-geometry"],
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  runes: {
-    question: DEFAULT_AGENT_QUESTIONS.runes,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  uranian: {
-    question: DEFAULT_AGENT_QUESTIONS.uranian,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  maya: {
-    question: DEFAULT_AGENT_QUESTIONS.maya,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  vedic: {
-    question: DEFAULT_AGENT_QUESTIONS.vedic,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  qabalah: {
-    question: DEFAULT_AGENT_QUESTIONS.qabalah,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  "taiyi-shenshu": {
-    question: DEFAULT_AGENT_QUESTIONS["taiyi-shenshu"],
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  akasha: {
-    question: DEFAULT_AGENT_QUESTIONS.akasha,
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  "ziwei-flying": {
-    question: DEFAULT_AGENT_QUESTIONS["ziwei-flying"],
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
-  "bazi-tcm": {
-    question: DEFAULT_AGENT_QUESTIONS["bazi-tcm"],
-    focus: "按问题综合取证",
-    content: "", model: null, error: null, loading: false, conversation: [], orderId: "", checkoutToken: "", usageAvailable: 0, usageConsumed: 0, totalTurns: AGENT_SESSION_TURNS, sessionStructuredText: "", sessionJsonPayload: "", authMode: "guest",
-  },
+const initialAgentModeState = (question: string, focus = "按问题综合取证"): AgentModeState => ({
+  question,
+  focus,
+  content: "",
+  model: null,
+  error: null,
+  loading: false,
+  conversation: [],
+  usageAvailable: 0,
+  usageConsumed: 0,
+  totalTurns: AGENT_SESSION_TURNS,
+  sessionStructuredText: "",
+  sessionJsonPayload: "",
 });
+
+const createInitialAgentState = (): Record<WorkbenchMode, AgentModeState> => Object.fromEntries(
+  Object.entries(DEFAULT_AGENT_QUESTIONS).map(([mode, question]) => [
+    mode,
+    initialAgentModeState(question, mode === "qimen" ? "按主题分析" : undefined),
+  ]),
+) as Record<WorkbenchMode, AgentModeState>;
 
 type GeneratedWorkbenchCharts = {
   normalizedProfile: NormalizedProfileInput;
@@ -743,13 +580,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const parametersPopoverRef = useRef<HTMLElement | null>(null);
   const [researchTool, setResearchTool] = useState<ResearchTool>("trend");
   const [qimenVerificationRows, setQimenVerificationRows] = useState<VerificationRow[]>([]);
-  const [platformCheckoutLoading, setPlatformCheckoutLoading] = useState<string | null>(null);
-  const checkoutInFlightRef = useRef(false);
-  const [invitationCodeOpen, setInvitationCodeOpen] = useState(false);
-  const [invitationCode, setInvitationCode] = useState("");
-  const [invitationCodeLoading, setInvitationCodeLoading] = useState(false);
-  const [invitationCodeMessage, setInvitationCodeMessage] = useState<string | null>(null);
-  const [invitationCodeError, setInvitationCodeError] = useState<string | null>(null);
   const [platformWorkspace, setPlatformWorkspace] = useState<PlatformWorkspaceState>({
     status: "checking",
     catalogStatus: "loading",
@@ -804,8 +634,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const isMobile = useIsMobileViewport();
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
   const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
-  // A guest checkout token is forwarded explicitly to the paid Agent endpoint;
-  // login is only required for persistence, not for consuming a paid guest turn.
   const clock = useResolvedClock();
   // Replace the hydration-safe defaults with the visitor's real clock and time
   // zone exactly once. The initial `useState` seeds above run with the fixed
@@ -834,11 +662,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     let active = true;
     const restoreOAuthCallback = async () => {
       if (typeof window === "undefined") return;
-      const callback = parsePlatformOAuthCallback(
-        window.location.pathname === "/auth/callback"
-          ? `${window.location.pathname}${window.location.search}`
-          : window.location.hash,
-      );
+      const callback = parsePlatformOAuthCallback(`${window.location.pathname}${window.location.search}`);
       if (!callback) return;
       const clearCallback = () => {
         window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
@@ -875,14 +699,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
         savePlatformSession(session);
         clearCallback();
         const access = await restorePlatformAccessState(session);
-        const client = createProductPlatformClient({
-          accessToken: access.session.access_token,
-          csrfToken: access.session.csrf_token,
-        });
         // A failed or slow catalog / gate / usage read must not undo a login
         // that already succeeded.
         const [gateResult, usageResult, plansResult] = await Promise.allSettled([
-          client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
+          getAccountGate(access.session.access_token, platformConfig.productCode, { csrfToken: access.session.csrf_token }),
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
           withPlatformCatalogTimeout(listPlatformPlans(platformConfig.productCode)),
         ]);
@@ -906,7 +726,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         if (usage) {
           setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
             key,
-            { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
+            { ...state, usageAvailable: usage.available, usageConsumed: usage.consumed },
           ])) as Record<WorkbenchMode, AgentModeState>);
         }
       } catch (error) {
@@ -915,7 +735,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         if (!active) return;
         setPlatformWorkspace((current) => ({
           ...current,
-          status: "guest",
+          status: "unauthenticated",
           session: null,
           profile: null,
           gate: null,
@@ -961,11 +781,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   useEffect(() => {
     let cancelled = false;
     const loadPlatformWorkspace = async () => {
-      if (typeof window !== "undefined" && parsePlatformOAuthCallback(
-        window.location.pathname === "/auth/callback"
-          ? `${window.location.pathname}${window.location.search}`
-          : window.location.hash,
-      )) {
+      if (typeof window !== "undefined" && parsePlatformOAuthCallback(`${window.location.pathname}${window.location.search}`)) {
         // The callback effect owns this mount while the authorization code is exchanged.
         return;
       }
@@ -978,7 +794,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       // `loadPlatformSession` only knows about local storage. If its record was
       // evicted (private mode, a storage-capped/ITP browser, a manual clear) the
       // httpOnly bridge cookies may still carry a live session, so recover from
-      // them before declaring the visitor a guest.
+      // them before declaring the account unauthenticated.
       let session = loadPlatformSession();
       if (!session && hasBridgeSessionHint()) {
         try {
@@ -991,13 +807,13 @@ export function AppShell({ platformConfig }: AppShellProps) {
         try {
           const plans = await withPlatformCatalogTimeout(plansPromise);
           if (cancelled) return;
-          setPlatformWorkspace({ status: "guest", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: null });
+        setPlatformWorkspace({ status: "unauthenticated", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: null });
         } catch (nextError) {
           if (cancelled) return;
           setPlatformWorkspace({
-            status: "guest",
+            status: "unauthenticated",
             // A slow public catalog must never hide the account action. The
-            // catalog can be retried by the next checkout interaction.
+            // catalog can be retried by the next account action.
             catalogStatus: nextError instanceof Error && nextError.message === "平台目录请求超时。" ? "loading" : "error",
             session: null,
             profile: null,
@@ -1029,7 +845,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         try { plans = await withPlatformCatalogTimeout(plansPromise); } catch { /* catalog is retried later */ }
         if (cancelled) return;
         setPlatformWorkspace({
-          status: retained ? "authenticated" : "guest",
+          status: retained ? "authenticated" : "unauthenticated",
           catalogStatus: "ready",
           session: retained,
           profile: null,
@@ -1042,9 +858,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return;
       }
 
-      const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
       const [gateResult, usageResult, plansResult] = await Promise.allSettled([
-        client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
+        getAccountGate(access.session.access_token, platformConfig.productCode, { csrfToken: access.session.csrf_token }),
         fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
         withPlatformCatalogTimeout(plansPromise),
       ]);
@@ -1068,7 +883,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       if (usage) {
         setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
           key,
-          { ...state, authMode: "account", usageAvailable: usage.available, usageConsumed: usage.consumed },
+          { ...state, usageAvailable: usage.available, usageConsumed: usage.consumed },
         ])) as Record<WorkbenchMode, AgentModeState>);
       }
     };
@@ -1079,12 +894,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
     };
   }, [platformConfig]);
 
-  const handlePlatformLogin = async (prompt?: "select_account" | "login") => {
+  const handlePlatformLogin = async () => {
     if (typeof window === "undefined" || platformLoginBusy) return;
     setPlatformLoginBusy(true);
     setPlatformLoginError(null);
     try {
-      const login = await preparePlatformOAuthLogin(platformConfig, window.location.origin, prompt);
+      const login = await preparePlatformOAuthLogin(platformConfig, window.location.origin);
       savePlatformOAuthRequest(login.request);
       window.location.assign(login.url);
     } catch (loginError) {
@@ -1096,23 +911,23 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const handlePlatformLogout = async () => {
     const session = platformWorkspace.session;
     try {
-      if (session) await createProductPlatformClient({ accessToken: session.access_token, csrfToken: session.csrf_token }).logout();
+      if (session) await revokePlatformSession(session.access_token);
     } catch {
       // The local session is cleared even if the platform logout request has expired.
     }
     await fetch("/api/platform/session", { method: "DELETE" }).catch(() => undefined);
     clearPlatformSession();
     clearActiveAgentSession();
-    setPlatformWorkspace((current) => ({ ...current, status: "guest", session: null, profile: null, gate: null, usage: null }));
+    setPlatformWorkspace((current) => ({ ...current, status: "unauthenticated", session: null, profile: null, gate: null, usage: null }));
     setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
       key,
-      { ...state, authMode: "guest", usageAvailable: 0, usageConsumed: 0 },
+      { ...state, usageAvailable: 0, usageConsumed: 0 },
     ])) as Record<WorkbenchMode, AgentModeState>);
   };
 
   const handlePlatformSwitchAccount = async () => {
     await handlePlatformLogout();
-    await handlePlatformLogin("select_account");
+    await handlePlatformLogin();
   };
 
   const qimenStructuredText = useMemo(() => {
@@ -1663,31 +1478,18 @@ export function AppShell({ platformConfig }: AppShellProps) {
   // platform has already exhausted (or revoked) the entitlement, and the user
   // would only find out from a server-side gate error mid-conversation.
   //
-  // Guests are different: the platform exposes reserve/commit/release for a
-  // guest checkout token but no read-only balance endpoint, so the cached count
-  // stays a hint for them. That is safe because every turn re-reserves against
-  // the platform, so a stale hint can send a guest into a conversation that
-  // fails — it can never hand out a free analysis.
   const canUseAgentState = (state: AgentModeState) =>
-    state.authMode === "account"
-      ? platformWorkspace.status === "authenticated"
-        && Boolean(platformWorkspace.session)
-        && (platformWorkspace.usage?.available ?? 0) > 0
-      : state.usageAvailable > 0 && Boolean(state.checkoutToken);
+    platformWorkspace.status === "authenticated"
+      && Boolean(platformWorkspace.session)
+      && (platformWorkspace.usage?.available ?? 0) > 0;
 
-  // The account balance is the authoritative source after login/redeem. An
-  // active guest session can be restored from local storage at the same time
-  // as the platform session, so never let that stale mode shadow an account
-  // entitlement that is already visible in the account bar.
+  // The platform balance is the only authority for starting an analysis.
   const getAccountAgentState = (state: AgentModeState): AgentModeState | null => {
     if (platformWorkspace.status !== "authenticated" || !platformWorkspace.session || !platformWorkspace.usage || platformWorkspace.usage.available <= 0) {
       return null;
     }
     return {
       ...state,
-      authMode: "account",
-      checkoutToken: "",
-      orderId: "",
       usageAvailable: platformWorkspace.usage.available,
       usageConsumed: platformWorkspace.usage.consumed,
     };
@@ -1710,12 +1512,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
     } catch (error) {
       // `restorePlatformAccessState` clears the stored record only once the
       // refresh token is genuinely past its expiry. A transient failure must not
-      // drop the account, or the user is bounced to guest for a slow network.
+      // drop the account during a transient network failure.
       if (!loadPlatformSession()) {
         clearPlatformSession();
         setPlatformWorkspace((current) => ({
           ...current,
-          status: "guest",
+          status: "unauthenticated",
           session: null,
           profile: null,
           gate: null,
@@ -1732,182 +1534,16 @@ export function AppShell({ platformConfig }: AppShellProps) {
     }
   };
 
-  const handleInvitationRedeem = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const code = invitationCode.trim();
-    if (!code) {
-      setInvitationCodeError("请输入邀请码。");
-      setInvitationCodeMessage(null);
-      return;
-    }
-    if (platformWorkspace.status !== "authenticated" || !platformWorkspace.session || !platformConfig) {
-      setInvitationCodeError("请先登录平台账户，再兑换邀请码。");
-      setInvitationCodeMessage(null);
-      return;
-    }
-
-    setInvitationCodeLoading(true);
-    setInvitationCodeError(null);
-    setInvitationCodeMessage(null);
-    try {
-      const access = await refreshPlatformAccount();
-      const redemption = await redeemInvitationCode(access.session.access_token, code, { csrfToken: access.session.csrf_token });
-      let gate = platformWorkspace.gate;
-      let usage = platformWorkspace.usage;
-      let refreshWarning = "";
-      try {
-        const client = createProductPlatformClient({ accessToken: access.session.access_token, csrfToken: access.session.csrf_token });
-        [gate, usage] = await Promise.all([
-          client.getCurrentGate(platformConfig.productCode, platformConfig.accessScope),
-          fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
-        ]);
-      } catch {
-        // The redemption has already been committed by the platform. Keep the
-        // success state visible even if the follow-up read is temporarily down;
-        // use the platform's redemption result until the next refresh.
-        usage = {
-          available: redemption.available,
-          reserved: usage?.reserved ?? 0,
-          consumed: usage?.consumed ?? 0,
-        };
-        refreshWarning = "（账户余额将在下次刷新时重新核对）";
-      }
-      const nextUsage = usage ?? {
-        available: redemption.available,
-        reserved: 0,
-        consumed: 0,
-      };
-      setPlatformWorkspace((current) => ({
-        ...current,
-        status: "authenticated",
-        session: access.session,
-        profile: access.profile,
-        gate,
-        usage: nextUsage,
-        error: null,
-      }));
-      setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
-        key,
-        { ...state, authMode: "account", usageAvailable: nextUsage.available, usageConsumed: nextUsage.consumed },
-      ])) as Record<WorkbenchMode, AgentModeState>);
-      setInvitationCode("");
-      setInvitationCodeMessage(`兑换成功：${redemption.plan_title}，获得 ${redemption.credits_granted} ${redemption.usage_label}；当前可用 ${redemption.available}。${refreshWarning}`);
-    } catch (error) {
-      setInvitationCodeError(error instanceof Error ? error.message : "邀请码兑换失败，请稍后重试。");
-    } finally {
-      setInvitationCodeLoading(false);
-    }
-  };
-
   const buildAgentRequestHeaders = (state: AgentModeState, accountAccessToken = platformWorkspace.session?.access_token) => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (state.authMode === "account" && accountAccessToken) {
+    if (accountAccessToken) {
       headers.Authorization = `Bearer ${accountAccessToken}`;
-    } else if (state.checkoutToken) {
-      headers["X-Guest-Checkout-Token"] = state.checkoutToken;
     }
     return headers;
   };
 
-  const beginPaidCheckout = async (
-    planCode: string,
-    pending: Omit<Parameters<typeof savePendingPaidAnalysis>[0], "orderId" | "checkoutToken" | "checkoutMode">,
-  ) => {
-    if (!platformConfig || typeof window === "undefined") {
-      throw new Error("平台支付暂不可用，请稍后重试。");
-    }
-    if (checkoutInFlightRef.current) {
-      throw new Error("已有支付流程正在处理中，请勿重复点击。");
-    }
-    if (platformWorkspace.status === "checking") {
-      throw new Error("正在读取登录和权益状态，请稍候再发起支付。");
-    }
-    if (platformWorkspace.status !== "authenticated" && platformWorkspace.status !== "guest") {
-      throw new Error(platformWorkspace.error || "平台状态异常，请刷新后重试。");
-    }
-    const paymentScene: "web" | "wap" = window.matchMedia("(max-width: 767px)").matches ? "wap" : "web";
-    const supportsScene = (channel: { ready: boolean; mobile_ready: boolean }) => paymentScene === "wap" ? channel.mobile_ready : channel.ready;
-    let paymentChannel = platformWorkspace.channels.find(supportsScene)?.channel ?? "";
-    if (!paymentChannel) {
-      if (platformWorkspace.catalogStatus === "loading") {
-        throw new Error("正在读取支付方式，请稍候再发起支付。");
-      }
-      try {
-        const catalog = await listPlatformPlans(platformConfig.productCode);
-        paymentChannel = catalog.channels.find(supportsScene)?.channel ?? "";
-        setPlatformWorkspace((current) => ({
-          ...current,
-          catalogStatus: "ready",
-          plans: catalog.items,
-          channels: catalog.channels,
-          error: current.status === "error" ? null : current.error,
-        }));
-      } catch (nextError) {
-        const message = nextError instanceof Error ? nextError.message : "未知网络错误";
-        setPlatformWorkspace((current) => ({ ...current, catalogStatus: "error", error: `无法读取支付方式：${message}` }));
-        throw new Error(`无法读取支付方式，请检查网络后重试。${message}`);
-      }
-      if (!paymentChannel) {
-        throw new Error(paymentScene === "wap" ? "平台当前没有已开通的手机支付方式，请稍后重试或使用电脑完成支付。" : "当前支付方式暂不可用，请稍后重试。");
-      }
-    }
-    const returnUrl = (orderId: string) => `${window.location.origin}/billing/result?order_id=${encodeURIComponent(orderId)}&product_code=${encodeURIComponent(platformConfig.productCode)}`;
-    checkoutInFlightRef.current = true;
-    setPlatformCheckoutLoading(planCode);
-    try {
-      if (platformWorkspace.status === "authenticated" && platformWorkspace.session) {
-        // The workspace may have been open long enough for the short-lived
-        // access token to expire. Refresh/revalidate immediately before
-        // creating the order so a valid logged-in user never falls through to
-        // guest checkout or loses the pending analysis.
-        const access = await refreshPlatformAccount();
-        const idempotencyKey = getCheckoutIdempotencyKey(planCode, "account");
-        const checkout = await createAccountCheckout(
-          access.session.access_token,
-          planCode,
-          paymentChannel,
-          returnUrl,
-          { csrfToken: access.session.csrf_token, idempotencyKey },
-          paymentScene,
-        );
-        const recoverySaved = savePendingPaidAnalysis({
-          ...pending,
-          orderId: checkout.orderId,
-          productCode: platformConfig.productCode,
-          checkoutToken: "",
-          checkoutMode: "account",
-          returnPath: "/paipan",
-        });
-        if (!recoverySaved) throw new Error("浏览器无法保存订单恢复信息，未跳转到支付页面。");
-        clearCheckoutIdempotencyKey(planCode, "account", idempotencyKey);
-        window.location.assign(checkout.providerCheckoutUrl);
-        return;
-      }
-
-      const idempotencyKey = getCheckoutIdempotencyKey(planCode, "guest");
-      const checkout = await createGuestCheckout(planCode, paymentChannel, idempotencyKey);
-      const payment = await createGuestPaymentAttempt(
-        checkout,
-        paymentChannel,
-        returnUrl(checkout.order.order_id),
-        paymentScene,
-      );
-      if (!payment.provider_checkout_url) throw new Error("平台没有返回收银台地址，未继续发起支付。");
-      const recoverySaved = savePendingPaidAnalysis({
-        ...pending,
-        orderId: checkout.order.order_id,
-        productCode: platformConfig.productCode,
-        checkoutToken: checkout.checkout_token,
-        checkoutMode: "guest",
-        returnPath: "/paipan",
-      });
-      if (!recoverySaved) throw new Error("浏览器无法保存订单恢复信息，未跳转到支付页面。");
-      clearCheckoutIdempotencyKey(planCode, "guest", idempotencyKey);
-      window.location.href = payment.provider_checkout_url;
-    } finally {
-      checkoutInFlightRef.current = false;
-      setPlatformCheckoutLoading(null);
-    }
+  const openPlatformAccount = () => {
+    window.location.assign("https://platform.singseq.com/account");
   };
 
   const handleCompatibilityPurchase = async () => {
@@ -1929,33 +1565,23 @@ export function AppShell({ platformConfig }: AppShellProps) {
         ?? Object.values(agentState).find((state) => canUseAgentState(state))
         ?? agentState.bazi;
       if (canUseAgentState(existing)) {
-        const accessToken = existing.authMode === "account" ? (await refreshPlatformAccount()).session.access_token : undefined;
+        const accessToken = (await refreshPlatformAccount()).session.access_token;
         const response = await fetch("/api/agent", { method: "POST", headers: buildAgentRequestHeaders(existing, accessToken), body: JSON.stringify({ mode: "bazi", question: "请做八字双人合盘的 AI 详细分析：分别列出两人的盘面事实，再分析互动协同、冲突、现实验证与具体建议；不要替任何一方断言想法或结果。", focus: "双人合盘", history: existing.conversation, structuredText: pairText, jsonPayload: pairJson }) });
         const result = await response.json() as { content?: string; model?: string; error?: string; usage?: { available?: number; consumed?: number } };
         if (!response.ok || !result.content) throw new Error(result.error ?? "合盘分析失败，请重试。");
         const nextConversation = [...existing.conversation, { role: "user" as const, content: "双人合盘" }, { role: "assistant" as const, content: result.content ?? "" }];
         const nextAvailable = Number(result.usage?.available ?? Math.max(existing.usageAvailable - 1, 0));
         const nextConsumed = Number(result.usage?.consumed ?? existing.usageConsumed + 1);
-        if (existing.authMode === "account") {
-          setPlatformWorkspace((current) => ({
-            ...current,
-            usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextConsumed } : current.usage,
-          }));
-        }
+        setPlatformWorkspace((current) => ({
+          ...current,
+          usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextConsumed } : current.usage,
+        }));
         setAgentState((current) => ({ ...current, bazi: { ...existing, content: result.content ?? "", model: result.model ?? null, question: "", error: null, loading: false, conversation: nextConversation, sessionStructuredText: pairText, sessionJsonPayload: pairJson, usageAvailable: nextAvailable, usageConsumed: nextConsumed } }));
-        saveActiveAgentSession({ orderId: existing.orderId, checkoutToken: existing.checkoutToken, checkoutMode: existing.authMode, mode: "bazi", focus: "双人合盘", structuredText: pairText, jsonPayload: pairJson, messages: nextConversation, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: existing.totalTurns, updatedAt: Date.now() });
+        saveActiveAgentSession({ mode: "bazi", focus: "双人合盘", structuredText: pairText, jsonPayload: pairJson, messages: nextConversation, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: existing.totalTurns, updatedAt: Date.now() });
         setCompatibilityLoading(false);
         return;
       }
-      await beginPaidCheckout(AGENT_PLAN_CODE, {
-        mode: "bazi",
-        question: "请做八字双人合盘的 AI 详细分析：分别列出两人的盘面事实，再分析互动协同、冲突、现实验证与具体建议；不要替任何一方断言想法或结果。",
-        focus: "双人合盘",
-        structuredText: pairText,
-        jsonPayload: pairJson,
-        analysisProduct: "agent",
-        createdAt: Date.now(),
-      });
+      openPlatformAccount();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "双人合盘支付失败。");
       setCompatibilityLoading(false);
@@ -1971,36 +1597,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       const relationshipSequence = kind === "relationship"
         ? buildChartSequenceByCount(formState.datetime, formState.timeZone, scale ?? "double-hour", 20, qimenSettings)
         : [];
-      const sourceText = kind === "life"
-        ? ["原始来源：八字盘", baziStructuredText].join("\n")
-        : ["原始来源：奇门序列盘", serializeSequenceToCompactJson(relationshipSequence)].join("\n");
-      const sourceJson = kind === "life"
-        ? { type: "bazi", payload: baziChart ? JSON.parse(serializeBaziToCompactJson(baziChart)) : {} }
-        : { type: "qimen-sequence", payload: JSON.parse(serializeSequenceToCompactJson(relationshipSequence)) };
-      const context = {
-        text: [
-          `研究工具：${series.title}`,
-          series.methodology,
-          series.disclaimer,
-          sourceText,
-          "K线点：",
-          ...series.points.map((point) => `${point.index + 1}. ${point.datetime} score=${point.score} delta=${point.delta} phase=${point.phase} key=${point.keyPoint || "常规点"} prediction=${point.prediction} evidence=${point.evidence.join("；")}`),
-        ].join("\n"),
-        json: JSON.stringify({ format: "qmdj-kline-precise-v2", kind, scale: scale ?? null, series, source: sourceJson }),
-      };
-      await beginPaidCheckout(KLINE_PLAN_CODE, {
-        mode: kind === "life" ? "bazi" : "qimen",
-        question: kind === "life"
-          ? "请对这组基于八字大运与流年的‘人生 K 线’做精确 AI 取象。必须吸收载荷中每一个规则 K 点的 evidence、score、delta、phase 与八字原始字段；以当前条件分出上、中、下三条可验证的人生世界线，各自给出触发条件、观察时间窗、现实行动建议、停止条件和复盘条件。不得把任何路径写成确定结果。"
-          : "请对这组奇门序列盘的感情 K 线做精确的 AI 取象。必须吸收载荷中每一个规则 K 点的 evidence、score、delta、phase 与原始序列盘字段；以当前条件分出上、中、下三条可验证的可能路径，各自给出触发条件、观察时间窗、现实行动建议、停止条件和复盘条件。不得把任何路径写成确定结果。",
-        focus: kind === "life" ? "人生 K 线" : "感情 K 线",
-        structuredText: context.text,
-        jsonPayload: context.json,
-        analysisProduct: "kline",
-        klineKind: kind,
-        klineSeries: series,
-        createdAt: Date.now(),
-      });
+      openPlatformAccount();
     } catch (nextError) {
       setKlineAiError(nextError instanceof Error ? nextError.message : "K线 AI 请求失败。");
       setKlineAiLoading(false);
@@ -2028,10 +1625,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
     }
 
     const currentQuestion = enteredQuestion || AGENT_INTERVIEW_START_QUESTION;
-    const conversationQuestion = enteredQuestion || AGENT_INTERVIEW_START_LABEL;
-    const selectedAngle = AGENT_ANALYSIS_ANGLES[mode].find((angle) => angle.question === enteredQuestion);
-    const focus = selectedAngle?.label ?? (isInterviewStart ? "人生议题访谈" : "自定义问题");
-    const planCode = AGENT_PLAN_CODE;
     if (!platformConfig || typeof window === "undefined") {
       setAgentState((current) => ({ ...current, [mode]: { ...current[mode], error: "支付暂不可用。" } }));
       return;
@@ -2047,81 +1640,32 @@ export function AppShell({ platformConfig }: AppShellProps) {
     }));
     setAgentResultCopied(false);
 
-    // Chat submission is owned by assistant-ui. This entry handles checkout only.
     if (canUseAgentState(sharedState)) {
       handleAgentQuestionChange(currentQuestion);
       setAgentState(current => ({ ...current, [mode]: { ...current[mode], loading: false } }));
       return;
     }
-    try {
-
-      await beginPaidCheckout(planCode, {
-        mode,
-        question: currentQuestion,
-        displayQuestion: conversationQuestion,
-        focus,
-        structuredText,
-        jsonPayload,
-        createdAt: Date.now(),
-      });
-    } catch (nextError) {
-      setAgentState((current) => ({
-        ...current,
-        [mode]: {
-          ...current[mode],
-          error: nextError instanceof Error ? nextError.message : "AI 分析失败。",
-          loading: false,
-        },
-      }));
-    } finally {
-      setPlatformCheckoutLoading(null);
-    }
+    openPlatformAccount();
   };
 
-  // `popCompletedPaidAnalysis` below is a destructive read, so this effect is not
-  // idempotent — and React double-invokes mount effects in development, which is
-  // exactly the shape a remount has too. On the second run the completed record is
-  // gone, so the effect falls through to the session restore and rebuilds the mode
-  // state from a snapshot that has no `model` (the session deliberately stores
-  // messages, not the model label): the paid turn keeps its content but silently
-  // loses which model produced it, and a stale session can pull the workspace back
-  // to another mode. The work is genuinely once-per-page-load, so latch it.
-  //
-  // The latch cannot make a *remount* behave like the first run — by then the
-  // record really is consumed — so the destructive read itself stays a known
-  // limitation of the storage API rather than something this effect can repair.
-  const consumedCompletedAnalysis = useRef(false);
   useEffect(() => {
-    if (consumedCompletedAnalysis.current) return;
-    consumedCompletedAnalysis.current = true;
     const savedKline = loadKlineAiResult();
     if (savedKline?.content) {
       setKlineAiContent(savedKline.content);
       setKlineAiKind(savedKline.klineKind ?? null);
     }
-    const completed = popCompletedPaidAnalysis();
-    const active = completed ?? loadActiveAgentSession();
+    const active = loadActiveAgentSession();
     if (!active) return;
-    if (completed?.analysisProduct === "kline") {
-      setKlineAiContent(completed.content);
-      setKlineAiKind(completed.klineKind ?? null);
-      saveKlineAiResult({ content: completed.content, model: completed.model, klineKind: completed.klineKind, klineSeries: completed.klineSeries });
-      setKlineAiLoading(false);
-      return;
-    }
     setMode(active.mode);
     const nextState: AgentModeState = {
       ...createInitialAgentState()[active.mode],
       question: "",
       focus: active.focus,
-      content: "content" in active ? active.content : active.messages.at(-1)?.content ?? "",
-      model: "model" in active ? active.model : null,
+      content: active.messages.at(-1)?.content ?? "",
+      model: null,
       error: null,
       loading: false,
       conversation: active.messages,
-      orderId: active.orderId,
-      checkoutToken: active.checkoutToken,
-      authMode: active.checkoutMode === "account" ? "account" : "guest",
       usageAvailable: active.usageAvailable,
       usageConsumed: active.usageConsumed,
       totalTurns: active.totalTurns || AGENT_SESSION_TURNS,
@@ -2130,9 +1674,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
     };
     setAgentState((current) => ({ ...current, [active.mode]: nextState }));
     saveActiveAgentSession({
-      orderId: nextState.orderId,
-      checkoutToken: nextState.checkoutToken,
-      checkoutMode: nextState.authMode,
       mode: active.mode,
       focus: active.focus,
       structuredText: active.structuredText,
@@ -2173,9 +1714,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       jsonPayload: agentState[mode].sessionJsonPayload || jsonPayload,
     } satisfies Record<string, unknown>,
     requestHeaders: async () => {
-      const accessToken = streamSharedState.authMode === "account"
-        ? (await refreshPlatformAccount()).session.access_token
-        : undefined;
+      const accessToken = (await refreshPlatformAccount()).session.access_token;
       return buildAgentRequestHeaders(streamSharedState, accessToken);
     },
     onStart: () => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: true, error: null } })),
@@ -2185,17 +1724,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
       const latest = latestAgentState.current;
       const previous = latest[mode];
       // Re-resolve the shared state from the latest snapshot for the same reason.
-      const latestShared = getAccountAgentState(previous)
-        ?? (canUseAgentState(previous)
-          ? previous
-          : Object.values(latest).find((state) => canUseAgentState(state)) ?? previous);
       const nextAvailable = Math.max(previous.usageAvailable - delta, 0);
       const nextConsumed = previous.usageConsumed + delta;
       const nextState = {
         ...previous,
-        authMode: latestShared.authMode,
-        checkoutToken: latestShared.checkoutToken,
-        orderId: latestShared.orderId,
         question: "",
         content: assistant,
         loading: false,
@@ -2207,7 +1739,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         sessionJsonPayload: previous.sessionJsonPayload || jsonPayload,
       };
       setAgentState((current) => ({ ...current, [mode]: nextState }));
-      saveActiveAgentSession({ orderId: nextState.orderId, checkoutToken: nextState.checkoutToken, checkoutMode: nextState.authMode, mode, focus: nextState.focus, structuredText: nextState.sessionStructuredText, jsonPayload: nextState.sessionJsonPayload, messages, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
+      saveActiveAgentSession({ mode, focus: nextState.focus, structuredText: nextState.sessionStructuredText, jsonPayload: nextState.sessionJsonPayload, messages, usageAvailable: nextAvailable, usageConsumed: nextConsumed, totalTurns: nextState.totalTurns, updatedAt: Date.now() });
       setPlatformWorkspace((current) => ({ ...current, usage: current.usage ? { ...current.usage, available: nextAvailable, consumed: nextConsumed } : current.usage }));
     },
     onError: (message: string) => setAgentState((current) => ({ ...current, [mode]: { ...current[mode], loading: false, error: message } })),
@@ -2246,7 +1778,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       agentError={agentState[mode].error}
       agentConversation={agentState[mode].conversation}
       agentFollowUps={AGENT_FOLLOW_UP_QUESTIONS[mode]}
-      agentLoading={agentState[mode].loading || Boolean(platformCheckoutLoading)}
+      agentLoading={agentState[mode].loading}
       agentModel={agentState[mode].model}
       agentQuestion={agentState[mode].question}
       isInterviewZeroState={agentState[mode].focus === "人生议题访谈" && !agentState[mode].question.trim() && agentState[mode].conversation.length === 0}
@@ -2417,7 +1949,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             aiContent={klineAiContent}
             aiKind={klineAiKind}
             aiError={klineAiError}
-            loading={klineAiLoading || Boolean(platformCheckoutLoading === KLINE_PLAN_CODE)}
+            loading={klineAiLoading}
             onAnalyze={handleKlineAnalyze}
             now={clock.resolved ? clock.now : undefined}
             aiPriceLabel={(() => {
@@ -2566,46 +2098,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
     />
   ) : null;
 
-  const invitationRedeemControl = (
-    <div className="platform-account__redeem-wrap">
-      <button
-        type="button"
-        className="platform-account__button platform-account__redeem-button"
-        aria-expanded={invitationCodeOpen}
-        onClick={() => {
-          setInvitationCodeOpen((open) => !open);
-          setInvitationCodeError(null);
-          setInvitationCodeMessage(null);
-        }}
-      >
-        邀请码兑换
-      </button>
-      {invitationCodeOpen ? (
-        <form className="platform-account__redeem-popover" onSubmit={(event) => void handleInvitationRedeem(event)}>
-          <strong>兑换平台权益</strong>
-          <p>额度类型、数量和有效期由平台套餐及邀请码配置决定。</p>
-          <Input
-            aria-label="邀请码"
-            autoComplete="off"
-            maxLength={64}
-            placeholder="输入邀请码"
-            value={invitationCode}
-            onChange={(event) => {
-              setInvitationCode(event.target.value);
-              setInvitationCodeError(null);
-            }}
-            disabled={invitationCodeLoading}
-          />
-          <button type="submit" className="platform-account__button is-primary" disabled={invitationCodeLoading || !invitationCode.trim()}>
-            {invitationCodeLoading ? "正在兑换…" : "确认兑换"}
-          </button>
-          {invitationCodeError ? <span className="platform-account__redeem-error" role="alert">{invitationCodeError}</span> : null}
-          {invitationCodeMessage ? <span className="platform-account__redeem-success" role="status">{invitationCodeMessage}</span> : null}
-        </form>
-      ) : null}
-    </div>
-  );
-
   // 移动端（无侧栏）与需要临时放大时才用抽屉；桌面非三盘模式的 AI 常驻右侧对话区，
   // 因此不再提供重复的「盘面分析」按钮。
   const chartAnalysisOverlay = chartAnalysisOpen
@@ -2702,14 +2194,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
             {platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录"}
             <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "权益已连接"}</small>
           </span>
-          {invitationRedeemControl}
           <button type="button" className="platform-account__button" onClick={() => void handlePlatformSwitchAccount()}>切换账户</button>
           <button type="button" className="platform-account__button" onClick={() => void handlePlatformLogout()}>退出登录</button>
         </>
       ) : (
         <>
-          <span className="platform-account__status">游客模式 · 当前标签页可恢复 <small>关闭页面或换设备可能丢失恢复信息</small></span>
-          {invitationRedeemControl}
+          <span className="platform-account__status">未登录统一账户</span>
           <button type="button" className="platform-account__button is-primary" disabled={platformLoginBusy} onClick={() => void handlePlatformLogin()}>{platformLoginBusy ? "正在打开登录…" : "登录平台账户"}</button>
           {platformLoginError ? <span className="platform-account__error" role="alert">{platformLoginError}</span> : null}
         </>
@@ -2861,7 +2351,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             {/* 两个入口成组靠右：早先它们各自作为 space-between 的一项，中间被撑出近百像素空档。 */}
             <div className="mobile-hero__actions">
               <button type="button" className="mobile-account-trigger" onClick={() => setMobileAccountOpen(true)} aria-haspopup="dialog" aria-expanded={mobileAccountOpen}>
-                <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "游客模式"}</span>
+                <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "未登录"}</span>
                 <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "账户与权益"}</small>
               </button>
               <button type="button" className="mobile-account-trigger" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>

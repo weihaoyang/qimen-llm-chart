@@ -2,6 +2,8 @@
 
 Record only decisions that affect boundaries, data contracts, dependencies, deployment, safety, or reversibility.
 
+This file retains historical decisions. The current identity, payment, and usage contract is defined only by `docs/PLATFORM_INTEGRATION.md`; decisions below that describe the retired platform facade, guest usage, or old SDK are historical and must not be used to restore those paths.
+
 ## Format
 
 ### ADR-001 — title

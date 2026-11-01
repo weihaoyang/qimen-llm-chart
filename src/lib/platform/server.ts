@@ -1,10 +1,6 @@
 import { requirePlatformServerConfig } from "@/lib/platform/config";
-import { PlatformHttpError, ProductPlatformClient } from "@singularity-sequence/web-sdk";
-import {
-  PLATFORM_BRIDGE_ACCESS_COOKIE,
-  PLATFORM_BRIDGE_CSRF_COOKIE,
-  PLATFORM_BRIDGE_REFRESH_COOKIE,
-} from "@/lib/platform/bridge";
+import { createPlatformClient } from "@singseq/platform-sdk";
+import { randomUUID } from "node:crypto";
 import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
 export { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 
@@ -63,51 +59,9 @@ export const readBearerToken = (authorizationHeader: string | null) => {
   return token;
 };
 
-export const readGuestCheckoutToken = (value: string | null) => {
-  const token = value?.trim();
-  return token || null;
-};
-
-const PLATFORM_COOKIE_NAMES = new Set(["ssp_access", "ssp_refresh", "ssp_csrf"]);
-const QMDJ_COOKIE_ALIASES: Record<string, string> = {
-  [PLATFORM_BRIDGE_ACCESS_COOKIE]: "ssp_access",
-  [PLATFORM_BRIDGE_REFRESH_COOKIE]: "ssp_refresh",
-  [PLATFORM_BRIDGE_CSRF_COOKIE]: "ssp_csrf",
-};
-
-export const readPlatformCookieHeader = (cookieHeader: string | null) => {
-  const values = (cookieHeader ?? "")
-    .split(";")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const selected = new Map<string, string>();
-  for (const part of values.filter((value) => PLATFORM_COOKIE_NAMES.has(value.split("=", 1)[0] ?? ""))) {
-    const separator = part.indexOf("=");
-    if (separator < 1) continue;
-    const sourceName = part.slice(0, separator);
-    selected.set(sourceName, part);
-  }
-  for (const part of values) {
-    const separator = part.indexOf("=");
-    if (separator < 1) continue;
-    const targetName = QMDJ_COOKIE_ALIASES[part.slice(0, separator)];
-    if (!targetName || selected.has(targetName)) continue;
-    selected.set(targetName, `${targetName}=${part.slice(separator + 1)}`);
-  }
-  return [...selected.values()].join("; ");
-};
-
 export const readCookieValue = (cookieHeader: string | null, name: string) => {
-  const names = [name, ...Object.entries(QMDJ_COOKIE_ALIASES).filter(([, target]) => target === name).map(([source]) => source)];
-  const parts = (cookieHeader ?? "")
-    .split(";")
-    .map((part) => part.trim());
-  for (const candidate of names) {
-    const prefix = `${candidate}=`;
-    const found = parts.find((part) => part.startsWith(prefix));
-    if (found) return found.slice(prefix.length);
-  }
-  return "";
+  const prefix = `${name}=`;
+  return cookieHeader?.split(";").map((part) => part.trim()).find((part) => part.startsWith(prefix))?.slice(prefix.length) ?? "";
 };
 
 type PlatformRequestOptions = {
@@ -115,8 +69,8 @@ type PlatformRequestOptions = {
   fetchImpl?: typeof fetch;
   method?: "GET" | "POST";
   planCode?: string;
-  cookieHeader?: string;
-  csrfToken?: string;
+  idempotencyKey?: string;
+  requestId?: string;
 };
 
 const PLATFORM_REQUEST_TIMEOUT_MS = 10_000;
@@ -149,21 +103,24 @@ const createServerProductClient = (
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   const fetchImpl = options?.fetchImpl ?? fetch;
-  return new ProductPlatformClient({
+  return createPlatformClient({
     baseUrl: config.baseUrl,
-    getAccessToken: () => accessToken,
-    getCookieHeader: () => options?.cookieHeader ?? null,
-    getCsrfToken: () => options?.csrfToken ?? null,
-    refreshOnUnauthorized: false,
-    fetchImpl: (input, init) => fetchPlatform(fetchImpl, new URL(String(input)), init ?? {}),
+    auth: { type: "bearer", token: () => accessToken ?? "" },
+    fetch: (input, init) => fetchPlatform(fetchImpl, input instanceof Request ? new URL(input.url) : new URL(String(input)), init ?? {}),
   });
 };
 
 const mapPlatformError = (error: unknown): never => {
-  if (error instanceof PlatformHttpError) {
-    throw new PlatformServerRequestError(error.status, error.reasonCode, error.message);
-  }
   throw error;
+};
+
+const metricForPlan = (planCode: string) => planCode === "qimen-kline-precise-1" ? "kline_report" : "analysis_turn";
+
+const unwrap = <T,>(result: { data?: T; error?: unknown; response: Response }): T => {
+  if (result.error || result.data === undefined) {
+    throw new PlatformServerRequestError(result.response.status || 502, "platform_request_failed", "平台请求未成功。");
+  }
+  return result.data;
 };
 
 export const fetchPlatformGate = async (
@@ -171,51 +128,24 @@ export const fetchPlatformGate = async (
   options?: {
     env?: Record<string, string | undefined>;
     fetchImpl?: typeof fetch;
-    cookieHeader?: string;
-    csrfToken?: string;
   },
 ): Promise<PlatformGate> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    const body = await createServerProductClient(accessToken, options).getCurrentGate(config.productCode, config.accessScope);
+    const balances = unwrap(await createServerProductClient(accessToken, options).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } }));
+    const balance = balances.find((item) => item.metric === metricForPlan(AGENT_PLAN_CODE));
+    const allowed = Boolean(balance && (balance.remaining === null || balance.remaining > 0));
     return {
-      allowed: Boolean(body.allowed),
-      mode: body.mode ?? "blocked",
-      product_code: body.product_code ?? config.productCode,
-      access_scope: body.access_scope ?? config.accessScope,
-      subject_type: body.subject_type ?? "user",
-      subject_id: body.subject_id ?? "",
-      entitlement_source: body.entitlement_source ?? "none",
-      reason_code: body.reason_code ?? "",
-      message: body.message ?? "",
+      allowed,
+      mode: allowed ? "usage_balance" : "blocked",
+      product_code: config.productCode,
+      access_scope: config.accessScope,
+      subject_type: "user",
+      subject_id: "",
+      entitlement_source: "usage_balance",
+      reason_code: allowed ? "" : "usage_exhausted",
+      message: allowed ? "" : "当前账户没有可用分析额度。",
     };
-  } catch (error) {
-    return mapPlatformError(error);
-  }
-};
-
-export const reserveGuestUsage = async (checkoutToken: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
-  try {
-    return await createServerProductClient(null, options).reserveGuestUsage(config.productCode, checkoutToken, options?.planCode ?? AGENT_PLAN_CODE);
-  } catch (error) {
-    return mapPlatformError(error);
-  }
-};
-
-export const commitGuestUsage = async (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
-  try {
-    return await createServerProductClient(null, options).commitGuestUsage(config.productCode, checkoutToken, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
-  } catch (error) {
-    return mapPlatformError(error);
-  }
-};
-
-export const releaseGuestUsage = async (checkoutToken: string, reservationId: string, options?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch; planCode?: string }) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
-  try {
-    return await createServerProductClient(null, options).releaseGuestUsage(config.productCode, checkoutToken, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
   } catch (error) {
     return mapPlatformError(error);
   }
@@ -227,20 +157,15 @@ export const fetchPlatformUsage = async (
 ): Promise<PlatformUsage> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    // Scope to a plan code: with two per-use units (analysis_turn / kline_report)
-    // an unscoped read returns a "mixed" balance that adds unlike units together.
-    const body = await createServerProductClient(accessToken, options).getUsageSummary(
-      config.productCode,
-      options?.planCode ?? AGENT_PLAN_CODE,
-    );
+    const metric = metricForPlan(options?.planCode ?? AGENT_PLAN_CODE);
+    const balances = unwrap(await createServerProductClient(accessToken, options).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } }));
+    const body = balances.find((item) => item.metric === metric);
+    if (!body) return { product_code: config.productCode, available: 0, reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric, by_plan: [] };
     return {
-      product_code: body.product_code ?? config.productCode,
-      available: Number(body.available ?? 0),
-      reserved: Number(body.reserved ?? 0),
-      consumed: Number(body.consumed ?? 0),
-      usage_unit: body.usage_unit ?? "",
-      usage_label: body.usage_label ?? "",
-      by_plan: Array.isArray(body.by_plan) ? body.by_plan : [],
+      product_code: body.product_code,
+      available: Number(body.remaining ?? 0), reserved: 0, consumed: 0,
+      usage_unit: metric, usage_label: metric,
+      by_plan: [{ plan_code: metric, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }],
     };
   } catch (error) {
     return mapPlatformError(error);
@@ -253,7 +178,8 @@ export const reservePlatformUsage = async (
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    return await createServerProductClient(accessToken, options).reserveUsage(config.productCode, options?.planCode ?? AGENT_PLAN_CODE);
+    const result = unwrap(await createServerProductClient(accessToken, options).POST("/api/v1/usage/reservations", { body: { product_code: config.productCode, metric: metricForPlan(options?.planCode ?? AGENT_PLAN_CODE), quantity: 1, idempotency_key: (options?.idempotencyKey ?? options?.requestId ?? randomUUID()).slice(0, 128) } }));
+    return { reservation_id: result.id };
   } catch (error) {
     return mapPlatformError(error);
   }
@@ -264,9 +190,10 @@ export const commitPlatformUsage = async (
   reservationId: string,
   options?: PlatformRequestOptions,
 ) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
+  requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    return await createServerProductClient(accessToken, options).commitUsage(config.productCode, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
+    unwrap(await createServerProductClient(accessToken, options).POST("/api/v1/usage/reservations/{reservation_id}/consume", { params: { path: { reservation_id: reservationId } } }));
+    return fetchPlatformUsage(accessToken, options);
   } catch (error) {
     return mapPlatformError(error);
   }
@@ -277,9 +204,10 @@ export const releasePlatformUsage = async (
   reservationId: string,
   options?: PlatformRequestOptions,
 ) => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
+  requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    return await createServerProductClient(accessToken, options).releaseUsage(config.productCode, reservationId, options?.planCode ?? AGENT_PLAN_CODE);
+    unwrap(await createServerProductClient(accessToken, options).POST("/api/v1/usage/reservations/{reservation_id}/release", { params: { path: { reservation_id: reservationId } } }));
+    return fetchPlatformUsage(accessToken, options);
   } catch (error) {
     return mapPlatformError(error);
   }

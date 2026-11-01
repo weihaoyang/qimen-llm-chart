@@ -24,7 +24,6 @@ RELEASE_ID="${RELEASE_ID:?RELEASE_ID is required}"
 
 IMAGE="${QMDJ_IMAGE:-qmdj:${RELEASE_ID}}"
 BUILD_DIR="${QMDJ_BUILD_DIR:-$(dirname "$SRC")/qmdj-build}"
-SDK_SRC="${QMDJ_SDK_SRC:-$(dirname "$SRC")/singularity-sequence-consumer-platform/packages/web-sdk}"
 NPM_CACHE="${QMDJ_NPM_CACHE:-/srv/qmdj-npm-cache}"
 NODE_BIN="${QMDJ_NODE_BIN:-/home/ubuntu/.nvm/versions/node/v24.16.0/bin}"
 ENV_FILE="${QMDJ_ENV_FILE:-/srv/qmdj/.env.local}"
@@ -37,7 +36,6 @@ LOCK="${QMDJ_LOCK:-/var/lock/qmdj-release.lock}"
 exec 9>"$LOCK"
 flock -n 9 || { echo "release lock is held" >&2; exit 20; }
 
-test -d "$SDK_SRC" || { echo "missing web-sdk at $SDK_SRC" >&2; exit 3; }
 test -f "$ENV_FILE" || { echo "missing env file $ENV_FILE" >&2; exit 4; }
 command -v rsync >/dev/null || { echo "rsync is required" >&2; exit 5; }
 mkdir -p "$BUILD_DIR"

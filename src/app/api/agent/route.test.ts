@@ -1,36 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  readGuestCheckoutTokenMock,
   readBearerTokenMock,
   fetchPlatformGateMock,
-  reserveGuestUsageMock,
   reservePlatformUsageMock,
-  commitGuestUsageMock,
   commitPlatformUsageMock,
-  releaseGuestUsageMock,
   releasePlatformUsageMock,
   requestAgentAnalysisMock,
   streamAgentAnalysisMock,
   createAgentEventStreamResponseMock,
   agentPlanCode,
   klinePlanCode,
-} = vi.hoisted(() => ({
-  readGuestCheckoutTokenMock: vi.fn(),
+} = vi.hoisted(() => {
+  const reservePlatformUsageMock = vi.fn();
+  const commitPlatformUsageMock = vi.fn();
+  const releasePlatformUsageMock = vi.fn();
+  return {
   readBearerTokenMock: vi.fn(),
   fetchPlatformGateMock: vi.fn(),
-  reserveGuestUsageMock: vi.fn(),
-  reservePlatformUsageMock: vi.fn(),
-  commitGuestUsageMock: vi.fn(),
-  commitPlatformUsageMock: vi.fn(),
-  releaseGuestUsageMock: vi.fn(),
-  releasePlatformUsageMock: vi.fn(),
+  reservePlatformUsageMock,
+  commitPlatformUsageMock,
+  releasePlatformUsageMock,
   requestAgentAnalysisMock: vi.fn(),
   streamAgentAnalysisMock: vi.fn(),
   createAgentEventStreamResponseMock: vi.fn(() => new Response("stream-events", { headers: { "Content-Type": "application/x-ndjson" } })),
   agentPlanCode: "qimen-analysis-10",
   klinePlanCode: "qimen-kline-precise-1",
-}));
+  };
+});
 
 // `PlatformServerRequestError` is passed through from the real module rather than
 // stubbed: `settledCommit` distinguishes a reservation the platform already settled
@@ -40,14 +37,11 @@ vi.mock("@/lib/platform/server", async () => {
   const actual = await vi.importActual<typeof import("@/lib/platform/server")>("@/lib/platform/server");
   return {
   PlatformServerRequestError: actual.PlatformServerRequestError,
-  readGuestCheckoutToken: readGuestCheckoutTokenMock,
   readBearerToken: readBearerTokenMock,
+  readCookieValue: vi.fn(() => ""),
   fetchPlatformGate: fetchPlatformGateMock,
-  reserveGuestUsage: reserveGuestUsageMock,
   reservePlatformUsage: reservePlatformUsageMock,
-  commitGuestUsage: commitGuestUsageMock,
   commitPlatformUsage: commitPlatformUsageMock,
-  releaseGuestUsage: releaseGuestUsageMock,
   releasePlatformUsage: releasePlatformUsageMock,
   AGENT_PLAN_CODE: agentPlanCode,
   KLINE_PLAN_CODE: klinePlanCode,
@@ -67,7 +61,7 @@ import { UserFacingError } from "@/lib/user-facing-error";
 const validRequest = () =>
   new Request("http://localhost/api/agent", {
     method: "POST",
-    headers: { "X-Guest-Checkout-Token": "token-1" },
+    headers: { Authorization: "Bearer token-1" },
     body: JSON.stringify({ mode: "qimen", structuredText: "structured", jsonPayload: "{}" }),
   });
 
@@ -80,32 +74,29 @@ const validAccountRequest = () =>
 
 describe("POST /api/agent", () => {
   beforeEach(() => {
-    readGuestCheckoutTokenMock.mockReset();
     readBearerTokenMock.mockReset();
-    readBearerTokenMock.mockReturnValue(null);
+    readBearerTokenMock.mockReturnValue("token-1");
     fetchPlatformGateMock.mockReset();
-    reserveGuestUsageMock.mockReset();
+    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "", subject_type: "user", subject_id: "user-1" });
     reservePlatformUsageMock.mockReset();
-    commitGuestUsageMock.mockReset();
     commitPlatformUsageMock.mockReset();
-    releaseGuestUsageMock.mockReset();
     releasePlatformUsageMock.mockReset();
     requestAgentAnalysisMock.mockReset();
     streamAgentAnalysisMock.mockReset();
   });
 
-  it("returns 402 when the checkout token is missing", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue(null);
+  it("returns 402 when the platform bearer token is missing", async () => {
+    readBearerTokenMock.mockReturnValue(null);
 
     const response = await POST(new Request("http://localhost/api/agent", { method: "POST", body: "{}" }));
 
     expect(response.status).toBe(401);
-    expect(reserveGuestUsageMock).not.toHaveBeenCalled();
+    expect(reservePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("preserves a rejected usage reservation status", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockRejectedValue({
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockRejectedValue({
       status: 403,
       reasonCode: "usage_credit_unavailable",
       message: "没有可用分析次数。",
@@ -122,10 +113,10 @@ describe("POST /api/agent", () => {
   });
 
   it("reserves one credit, runs the model, then commits it", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "分析完成", model: "mock-model" });
-    commitGuestUsageMock.mockResolvedValue({
+    commitPlatformUsageMock.mockResolvedValue({
       product_code: "qimen",
       available: 0,
       reserved: 0,
@@ -145,9 +136,9 @@ describe("POST /api/agent", () => {
         consumed: 1,
       },
     });
-    expect(reserveGuestUsageMock).toHaveBeenCalledWith("token-1", { planCode: agentPlanCode });
-    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
-    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+    expect(reservePlatformUsageMock).toHaveBeenCalledWith("token-1", { planCode: agentPlanCode });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+    expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   // The platform's commit is a compare-and-set, so a credit the earlier attempt
@@ -156,10 +147,10 @@ describe("POST /api/agent", () => {
   // before the commit runs) yet the response was an error, so a user who *had* been
   // charged could never open what they paid for, and every retry reproduced the 409.
   it("delivers the analysis when the platform reports the reservation already settled", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "分析完成", model: "mock-model" });
-    commitGuestUsageMock.mockRejectedValue(new PlatformServerRequestError(409, "usage_reservation_expired", "本次分析预留已过期，请重新发起。"));
+    commitPlatformUsageMock.mockRejectedValue(new PlatformServerRequestError(409, "usage_reservation_expired", "本次分析预留已过期，请重新发起。"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const response = await POST(validRequest());
@@ -172,8 +163,8 @@ describe("POST /api/agent", () => {
       });
       // Terminal means terminal: not retried, and a settled reservation is never
       // refunded.
-      expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
-      expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+      expect(commitPlatformUsageMock).toHaveBeenCalledTimes(1);
+      expect(releasePlatformUsageMock).not.toHaveBeenCalled();
     } finally {
       errorSpy.mockRestore();
     }
@@ -234,10 +225,10 @@ describe("POST /api/agent", () => {
   });
 
   it("rejects an oversized question before reserving usage", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    readBearerTokenMock.mockReturnValue("token-1");
     const request = new Request("http://localhost/api/agent", {
       method: "POST",
-      headers: { "X-Guest-Checkout-Token": "token-1" },
+      headers: { Authorization: "Bearer token-1" },
       body: JSON.stringify({
         mode: "qimen",
         question: "问".repeat(2001),
@@ -250,14 +241,14 @@ describe("POST /api/agent", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "分析问题不能超过 2000 字。" });
-    expect(reserveGuestUsageMock).not.toHaveBeenCalled();
+    expect(reservePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("rejects an unknown analysis product before reserving usage", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
+    readBearerTokenMock.mockReturnValue("token-1");
     const request = new Request("http://localhost/api/agent", {
       method: "POST",
-      headers: { "X-Guest-Checkout-Token": "token-1" },
+      headers: { Authorization: "Bearer token-1" },
       body: JSON.stringify({
         mode: "qimen",
         analysisProduct: "wrong-product",
@@ -270,18 +261,18 @@ describe("POST /api/agent", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "无效的分析产品。" });
-    expect(reserveGuestUsageMock).not.toHaveBeenCalled();
+    expect(reservePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("accepts a Bazi life K line and reserves the dedicated K line entitlement", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "kline-reservation" });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "kline-reservation" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "人生 K 线深度报告", model: "mock-model" });
-    commitGuestUsageMock.mockResolvedValue({ product_code: "qimen", available: 0, reserved: 0, consumed: 1 });
+    commitPlatformUsageMock.mockResolvedValue({ product_code: "qimen", available: 0, reserved: 0, consumed: 1 });
 
     const response = await POST(new Request("http://localhost/api/agent", {
       method: "POST",
-      headers: { "X-Guest-Checkout-Token": "token-1" },
+      headers: { Authorization: "Bearer token-1" },
       body: JSON.stringify({
         mode: "bazi",
         analysisProduct: "kline",
@@ -291,34 +282,34 @@ describe("POST /api/agent", () => {
     }));
 
     expect(response.status).toBe(200);
-    expect(reserveGuestUsageMock).toHaveBeenCalledWith("token-1", { planCode: klinePlanCode });
-    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "kline-reservation", { planCode: klinePlanCode });
+    expect(reservePlatformUsageMock).toHaveBeenCalledWith("token-1", { planCode: klinePlanCode });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "kline-reservation", { planCode: klinePlanCode });
     expect(requestAgentAnalysisMock).toHaveBeenCalledWith(expect.objectContaining({ mode: "bazi", analysisProduct: "kline" }));
   });
 
   it("releases the reserved credit when the model fails", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
     // `requestAgentAnalysis` marks its deliberate messages as user-facing; the
     // route must forward them verbatim.
     requestAgentAnalysisMock.mockRejectedValue(new UserFacingError("分析服务暂时不可用，请稍后再试。"));
-    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+    releasePlatformUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
 
     const response = await POST(validRequest());
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({ error: "分析服务暂时不可用，请稍后再试。" });
-    expect(releaseGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
-    expect(commitGuestUsageMock).not.toHaveBeenCalled();
+    expect(releasePlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+    expect(commitPlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("never echoes an internal failure to the browser", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
     requestAgentAnalysisMock.mockRejectedValue(
       new Error('relation "agent_usage_ledger" does not exist (SQLSTATE 42P01) at 127.0.0.1:5432'),
     );
-    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+    releasePlatformUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
 
     const response = await POST(validRequest());
     const body = await response.json();
@@ -326,16 +317,16 @@ describe("POST /api/agent", () => {
     expect(response.status).toBe(500);
     expect(body).toEqual({ error: "AI 分析请求失败。" });
     // The reservation still has to be returned when nothing was delivered.
-    expect(releaseGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+    expect(releasePlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
   });
 
   it("does not echo an unconfigured-provider message", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
     requestAgentAnalysisMock.mockRejectedValue(
       new Error("未配置 OPENAI_API_KEY、AI_API_KEY、GEMINI_API_KEY 或 GOOGLE_GENERATIVE_AI_API_KEY。"),
     );
-    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+    releasePlatformUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
 
     const response = await POST(validRequest());
 
@@ -355,7 +346,7 @@ describe("POST /api/agent (streaming settle)", () => {
   const streamRequest = () =>
     new Request("http://localhost/api/agent", {
       method: "POST",
-      headers: { "X-Guest-Checkout-Token": "token-1", "x-agent-stream": "1" },
+      headers: { Authorization: "Bearer token-1", "x-agent-stream": "1" },
       body: JSON.stringify({ mode: "qimen", structuredText: "structured", jsonPayload: "{}" }),
     });
 
@@ -373,12 +364,14 @@ describe("POST /api/agent (streaming settle)", () => {
   };
 
   beforeEach(() => {
-    readGuestCheckoutTokenMock.mockReset();
     readBearerTokenMock.mockReset();
-    readBearerTokenMock.mockReturnValue(null);
-    reserveGuestUsageMock.mockReset();
-    commitGuestUsageMock.mockReset();
-    releaseGuestUsageMock.mockReset();
+    readBearerTokenMock.mockReset();
+    readBearerTokenMock.mockReturnValue("token-1");
+    fetchPlatformGateMock.mockReset();
+    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "", subject_type: "user", subject_id: "user-1" });
+    reservePlatformUsageMock.mockReset();
+    commitPlatformUsageMock.mockReset();
+    releasePlatformUsageMock.mockReset();
     streamAgentAnalysisMock.mockReset();
   });
 
@@ -387,37 +380,37 @@ describe("POST /api/agent (streaming settle)", () => {
     // settles. The old split callbacks marked the stream settled in `release`,
     // noticed the delivery, and returned — leaving the reservation dangling and
     // `commit` permanently blocked, so the platform decided whether it was paid.
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
-    commitGuestUsageMock.mockResolvedValue({ available: 0, reserved: 0, consumed: 1 });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitPlatformUsageMock.mockResolvedValue({ available: 0, reserved: 0, consumed: 1 });
 
     const callbacks = await startStream();
     callbacks.onChunk();
     await callbacks.onAbort();
     await callbacks.onFinish();
 
-    expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
-    expect(commitGuestUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: "qimen-analysis-10" });
-    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+    expect(commitPlatformUsageMock).toHaveBeenCalledTimes(1);
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: "qimen-analysis-10" });
+    expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("releases the reservation when the client aborts before any text", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
-    releaseGuestUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    releasePlatformUsageMock.mockResolvedValue({ available: 1, reserved: 0, consumed: 0 });
 
     const callbacks = await startStream();
     await callbacks.onAbort();
     await callbacks.onFinish();
 
-    expect(releaseGuestUsageMock).toHaveBeenCalledTimes(1);
-    expect(commitGuestUsageMock).not.toHaveBeenCalled();
+    expect(releasePlatformUsageMock).toHaveBeenCalledTimes(1);
+    expect(commitPlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("settles exactly once no matter how many callbacks fire", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
-    commitGuestUsageMock.mockResolvedValue({ available: 0, reserved: 0, consumed: 1 });
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitPlatformUsageMock.mockResolvedValue({ available: 0, reserved: 0, consumed: 1 });
 
     const callbacks = await startStream();
     callbacks.onChunk();
@@ -425,14 +418,14 @@ describe("POST /api/agent (streaming settle)", () => {
     await callbacks.onAbort();
     await callbacks.onError();
 
-    expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
-    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+    expect(commitPlatformUsageMock).toHaveBeenCalledTimes(1);
+    expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   it("does not retry a failed commit, which would double-charge", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
-    commitGuestUsageMock.mockRejectedValue(new Error("network lost after commit"));
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitPlatformUsageMock.mockRejectedValue(new Error("network lost after commit"));
 
     const callbacks = await startStream();
     callbacks.onChunk();
@@ -440,8 +433,8 @@ describe("POST /api/agent (streaming settle)", () => {
     // A later callback must not pick the same reservation up again.
     await callbacks.onAbort();
 
-    expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
-    expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+    expect(commitPlatformUsageMock).toHaveBeenCalledTimes(1);
+    expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
   // The same defect on the streaming path. The text is already on the wire when the
@@ -449,9 +442,9 @@ describe("POST /api/agent (streaming settle)", () => {
   // has the analysis: the reservation is settled, nothing needs retrying, and the
   // settlement must not be mistaken for a reason to refund.
   it("does not raise a stream error when the platform reports the reservation already settled", async () => {
-    readGuestCheckoutTokenMock.mockReturnValue("token-1");
-    reserveGuestUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
-    commitGuestUsageMock.mockRejectedValue(new PlatformServerRequestError(409, "usage_reservation_expired", "本次分析预留已过期，请重新发起。"));
+    readBearerTokenMock.mockReturnValue("token-1");
+    reservePlatformUsageMock.mockResolvedValue({ reservation_id: "reservation-1" });
+    commitPlatformUsageMock.mockRejectedValue(new PlatformServerRequestError(409, "usage_reservation_expired", "本次分析预留已过期，请重新发起。"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const callbacks = await startStream();
@@ -461,8 +454,8 @@ describe("POST /api/agent (streaming settle)", () => {
       // A later callback must not pick the same reservation up again.
       await callbacks.onAbort();
 
-      expect(commitGuestUsageMock).toHaveBeenCalledTimes(1);
-      expect(releaseGuestUsageMock).not.toHaveBeenCalled();
+      expect(commitPlatformUsageMock).toHaveBeenCalledTimes(1);
+      expect(releasePlatformUsageMock).not.toHaveBeenCalled();
     } finally {
       errorSpy.mockRestore();
     }
