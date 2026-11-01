@@ -18,7 +18,7 @@ export const loadPlatformSession = (): PlatformSession | null => {
 
   try {
     const parsed = JSON.parse(raw) as Partial<PlatformSession> & StoredPlatformSession;
-    if (!parsed.user_id || !parsed.expires_at_iso || !parsed.refresh_expires_at_iso) {
+    if (!parsed.user_id || !parsed.expires_at_iso) {
       window.localStorage.removeItem(PLATFORM_SESSION_STORAGE_KEY);
       return null;
     }
@@ -27,7 +27,7 @@ export const loadPlatformSession = (): PlatformSession | null => {
       refresh_token: "",
       csrf_token: typeof parsed.csrf_token === "string" ? parsed.csrf_token : "",
       expires_at_iso: parsed.expires_at_iso,
-      refresh_expires_at_iso: parsed.refresh_expires_at_iso,
+      refresh_expires_at_iso: parsed.refresh_expires_at_iso ?? "",
       user_id: parsed.user_id,
       phone_number: parsed.phone_number ?? "",
       current_subject_type: parsed.current_subject_type ?? "user",
@@ -79,6 +79,8 @@ export const isPlatformSessionExpired = (session: PlatformSession) => {
 };
 
 export const isPlatformRefreshExpired = (session: PlatformSession) => {
+  // OAuth does not publish the refresh credential expiry; the server validates it.
+  if (!session.refresh_expires_at_iso) return false;
   const expiresAt = Date.parse(session.refresh_expires_at_iso);
   return Number.isFinite(expiresAt) ? expiresAt <= Date.now() : true;
 };
