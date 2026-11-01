@@ -7,8 +7,8 @@ import {
   releasePlatformUsage,
   reservePlatformUsage,
   readCookieValue,
-  AGENT_PLAN_CODE,
-  KLINE_PLAN_CODE,
+  AGENT_USAGE_METRIC,
+  KLINE_USAGE_METRIC,
 } from "@/lib/platform/server";
 import { settledCommit, type SettledUsage } from "@/lib/platform/settled-commit";
 import type { WorkbenchMode } from "@/lib/workbench/types";
@@ -30,7 +30,7 @@ const isWorkbenchMode = (value: unknown): value is WorkbenchMode =>
 export async function POST(request: Request) {
   let reservationId = "";
   let accessToken = "";
-  let reservationPlanCode = AGENT_PLAN_CODE;
+  let reservationMetric = AGENT_USAGE_METRIC;
   // Set once the model has produced output. From that moment the reservation
   // must never be released: releasing refunds a user who already holds the
   // analysis, so a platform hiccup would become a free analysis.
@@ -163,8 +163,8 @@ export async function POST(request: Request) {
       }
     }
 
-    reservationPlanCode = analysisProduct === "kline" ? KLINE_PLAN_CODE : AGENT_PLAN_CODE;
-    const reservation: { reservation_id: string } = await reservePlatformUsage(accessToken, { planCode: reservationPlanCode });
+    reservationMetric = analysisProduct === "kline" ? KLINE_USAGE_METRIC : AGENT_USAGE_METRIC;
+    const reservation: { reservation_id: string } = await reservePlatformUsage(accessToken, { metric: reservationMetric });
     reservationId = reservation.reservation_id;
     if (!reservationId) {
       throw new UserFacingError("无法预留本次分析。请刷新后重试。");
@@ -208,9 +208,9 @@ export async function POST(request: Request) {
         try {
           if (deliveredToClient) {
             // A settled reservation is not a failure to retry — see `settled-commit.ts`.
-            await settledCommit("agent", `reservation ${reservationId}`, () => commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode }));
+            await settledCommit("agent", `reservation ${reservationId}`, () => commitPlatformUsage(accessToken, reservationId, { metric: reservationMetric }));
           } else {
-            await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
+            await releasePlatformUsage(accessToken, reservationId, { metric: reservationMetric });
           }
         } finally {
           // Clearing the id in `finally` is what makes this the *only* settle:
@@ -230,7 +230,7 @@ export async function POST(request: Request) {
       return createAgentEventStreamResponse(result as { fullStream: AsyncIterable<unknown> });
     }
 
-    const commitUsage = () => commitPlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
+    const commitUsage = () => commitPlatformUsage(accessToken, reservationId, { metric: reservationMetric });
 
     const result = await requestAgentAnalysis(analysisPayload);
     // The analysis now exists, so the reservation is no longer releasable.
@@ -262,7 +262,7 @@ export async function POST(request: Request) {
     if (reservationId && !delivered) {
       if (accessToken) {
         try {
-          await releasePlatformUsage(accessToken, reservationId, { planCode: reservationPlanCode });
+          await releasePlatformUsage(accessToken, reservationId, { metric: reservationMetric });
         } catch {
           // Preserve the original failure; the platform will release stale reservations.
         }

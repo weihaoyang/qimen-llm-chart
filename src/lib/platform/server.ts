@@ -1,11 +1,11 @@
 import { requirePlatformServerConfig } from "@/lib/platform/config";
 import { createPlatformClient } from "@singseq/platform-sdk";
 import { randomUUID } from "node:crypto";
-import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
-export { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
+import { AGENT_USAGE_METRIC } from "@/lib/platform/contracts";
+export { AGENT_USAGE_METRIC, KLINE_USAGE_METRIC } from "@/lib/platform/contracts";
 
-export type PlatformPlanUsage = {
-  plan_code: string;
+export type PlatformMetricUsage = {
+  metric: string;
   available: number;
   reserved: number;
   consumed: number;
@@ -20,7 +20,7 @@ export type PlatformUsage = {
   consumed: number;
   usage_unit?: string;
   usage_label?: string;
-  by_plan?: PlatformPlanUsage[];
+  by_metric?: PlatformMetricUsage[];
 };
 
 export class PlatformServerRequestError extends Error {
@@ -56,7 +56,7 @@ type PlatformRequestOptions = {
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
   method?: "GET" | "POST";
-  planCode?: string;
+  metric?: string;
   idempotencyKey?: string;
   requestId?: string;
 };
@@ -102,7 +102,6 @@ const mapPlatformError = (error: unknown): never => {
   throw error;
 };
 
-const metricForPlan = (planCode: string) => planCode === "qimen-kline-precise-1" ? "kline_report" : "analysis_turn";
 
 const unwrap = <T,>(result: { data?: T; error?: unknown; response: Response }): T => {
   if (result.error || result.data === undefined) {
@@ -132,15 +131,15 @@ export const fetchPlatformUsage = async (
 ): Promise<PlatformUsage> => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    const metric = metricForPlan(options?.planCode ?? AGENT_PLAN_CODE);
+    const metric = (options?.metric ?? AGENT_USAGE_METRIC);
     const balances = unwrap(await createServerProductClient(accessToken, options).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } }));
     const body = balances.find((item) => item.metric === metric);
-    if (!body) return { product_code: config.productCode, available: 0, reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric, by_plan: [] };
+    if (!body) return { product_code: config.productCode, available: 0, reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric, by_metric: [] };
     return {
       product_code: body.product_code,
       available: Number(body.remaining ?? 0), reserved: 0, consumed: 0,
       usage_unit: metric, usage_label: metric,
-      by_plan: [{ plan_code: metric, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }],
+      by_metric: [{ metric: metric, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }],
     };
   } catch (error) {
     return mapPlatformError(error);
@@ -153,7 +152,7 @@ export const reservePlatformUsage = async (
 ) => {
   const config = requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    const result = unwrap(await createServerProductClient(accessToken, options).POST("/api/v1/usage/reservations", { body: { product_code: config.productCode, metric: metricForPlan(options?.planCode ?? AGENT_PLAN_CODE), quantity: 1, idempotency_key: (options?.idempotencyKey ?? options?.requestId ?? randomUUID()).slice(0, 128) } }));
+    const result = unwrap(await createServerProductClient(accessToken, options).POST("/api/v1/usage/reservations", { body: { product_code: config.productCode, metric: (options?.metric ?? AGENT_USAGE_METRIC), quantity: 1, idempotency_key: (options?.idempotencyKey ?? options?.requestId ?? randomUUID()).slice(0, 128) } }));
     return { reservation_id: result.id };
   } catch (error) {
     return mapPlatformError(error);

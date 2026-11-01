@@ -2,7 +2,7 @@ import { buildAuthorizeUrl, createPkcePair, randomOAuthState, revokeOAuthToken }
 import type { PlatformProfile, PlatformSession } from "./types";
 import { createProductPlatformClient } from "@/lib/platform/client";
 import { requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
-import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
+import { AGENT_USAGE_METRIC } from "@/lib/platform/contracts";
 import {
   clearPlatformSession,
   isPlatformRefreshExpired,
@@ -23,8 +23,8 @@ export type PlatformAccessState = {
   profile: PlatformProfile;
 };
 
-export type PlatformPlanUsage = {
-  plan_code: string;
+export type PlatformMetricUsage = {
+  metric: string;
   available: number;
   reserved: number;
   consumed: number;
@@ -39,7 +39,7 @@ export type PlatformUsage = {
   consumed: number;
   usage_unit: string;
   usage_label: string;
-  by_plan: PlatformPlanUsage[];
+  by_metric: PlatformMetricUsage[];
 };
 
 export const revokePlatformSession = async (accessToken: string) => {
@@ -294,18 +294,17 @@ export const restorePlatformAccessState = async (
 export const fetchPlatformUsage = async (
   accessToken = "",
   csrfToken = "",
-  planCode = AGENT_PLAN_CODE,
+  metric = AGENT_USAGE_METRIC,
 ): Promise<PlatformUsage> => {
   const config = requirePlatformClientConfig();
   // Keep the displayed balance scoped to the matching usage metric.
   const result = await createProductPlatformClient({ accessToken, csrfToken }).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } });
   if (result.error || !result.data) throw new Error("无法读取平台用量余额。");
-  const metric = planCode === "qimen-kline-precise-1" ? "kline_report" : "analysis_turn";
   const body = result.data.find((entry) => entry.metric === metric);
   return {
     product_code: config.productCode,
     available: Number(body?.remaining ?? 0), reserved: 0, consumed: 0,
     usage_unit: metric, usage_label: metric,
-    by_plan: body ? [{ plan_code: planCode, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }] : [],
+    by_metric: body ? [{ metric: metric, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }] : [],
   };
 };

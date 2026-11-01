@@ -22,8 +22,8 @@ const {
   requestAgentAnalysisMock: vi.fn(),
   streamAgentAnalysisMock: vi.fn(),
   createAgentEventStreamResponseMock: vi.fn(() => new Response("stream-events", { headers: { "Content-Type": "application/x-ndjson" } })),
-  agentPlanCode: "qimen-analysis-10",
-  klinePlanCode: "qimen-kline-precise-1",
+  agentPlanCode: "analysis_turn",
+  klinePlanCode: "kline_report",
   };
 });
 
@@ -40,8 +40,8 @@ vi.mock("@/lib/platform/server", async () => {
   reservePlatformUsage: reservePlatformUsageMock,
   commitPlatformUsage: commitPlatformUsageMock,
   releasePlatformUsage: releasePlatformUsageMock,
-  AGENT_PLAN_CODE: agentPlanCode,
-  KLINE_PLAN_CODE: klinePlanCode,
+  AGENT_USAGE_METRIC: agentPlanCode,
+  KLINE_USAGE_METRIC: klinePlanCode,
   };
 });
 
@@ -131,8 +131,8 @@ describe("POST /api/agent", () => {
         consumed: 1,
       },
     });
-    expect(reservePlatformUsageMock).toHaveBeenCalledWith("token-1", { planCode: agentPlanCode });
-    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+    expect(reservePlatformUsageMock).toHaveBeenCalledWith("token-1", { metric: agentPlanCode });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { metric: agentPlanCode });
     expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
@@ -174,8 +174,8 @@ describe("POST /api/agent", () => {
     const response = await POST(validAccountRequest());
 
     expect(response.status).toBe(200);
-    expect(reservePlatformUsageMock).toHaveBeenCalledWith("account-token", { planCode: agentPlanCode });
-    expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "account-reservation", { planCode: agentPlanCode });
+    expect(reservePlatformUsageMock).toHaveBeenCalledWith("account-token", { metric: agentPlanCode });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "account-reservation", { metric: agentPlanCode });
     expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
@@ -202,7 +202,7 @@ describe("POST /api/agent", () => {
 
     expect(response.status).toBe(200);
     expect(requestAgentAnalysisMock).toHaveBeenCalledWith(expect.objectContaining({ history }));
-    expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "follow-up-reservation", { planCode: agentPlanCode });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "follow-up-reservation", { metric: agentPlanCode });
   });
 
   it("blocks an authenticated account when the platform denies a reservation", async () => {
@@ -274,8 +274,8 @@ describe("POST /api/agent", () => {
     }));
 
     expect(response.status).toBe(200);
-    expect(reservePlatformUsageMock).toHaveBeenCalledWith("token-1", { planCode: klinePlanCode });
-    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "kline-reservation", { planCode: klinePlanCode });
+    expect(reservePlatformUsageMock).toHaveBeenCalledWith("token-1", { metric: klinePlanCode });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "kline-reservation", { metric: klinePlanCode });
     expect(requestAgentAnalysisMock).toHaveBeenCalledWith(expect.objectContaining({ mode: "bazi", analysisProduct: "kline" }));
   });
 
@@ -291,7 +291,7 @@ describe("POST /api/agent", () => {
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({ error: "分析服务暂时不可用，请稍后再试。" });
-    expect(releasePlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+    expect(releasePlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { metric: agentPlanCode });
     expect(commitPlatformUsageMock).not.toHaveBeenCalled();
   });
 
@@ -309,7 +309,7 @@ describe("POST /api/agent", () => {
     expect(response.status).toBe(500);
     expect(body).toEqual({ error: "AI 分析请求失败。" });
     // The reservation still has to be returned when nothing was delivered.
-    expect(releasePlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: agentPlanCode });
+    expect(releasePlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { metric: agentPlanCode });
   });
 
   it("does not echo an unconfigured-provider message", async () => {
@@ -380,7 +380,7 @@ describe("POST /api/agent (streaming settle)", () => {
     await callbacks.onFinish();
 
     expect(commitPlatformUsageMock).toHaveBeenCalledTimes(1);
-    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { planCode: "qimen-analysis-10" });
+    expect(commitPlatformUsageMock).toHaveBeenCalledWith("token-1", "reservation-1", { metric: "analysis_turn" });
     expect(releasePlatformUsageMock).not.toHaveBeenCalled();
   });
 
