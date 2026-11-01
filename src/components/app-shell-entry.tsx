@@ -7,6 +7,7 @@ const getPublicPlatformConfig = () => {
     baseUrl: config.baseUrl,
     productCode: config.productCode,
     accessScope: config.accessScope,
+    clientId: config.clientId,
   };
 };
 
