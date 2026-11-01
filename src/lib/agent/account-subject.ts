@@ -1,4 +1,4 @@
-import { fetchPlatformGate, readBearerToken, readCookieValue } from "@/lib/platform/server";
+import { fetchPlatformAccount, readBearerToken, readCookieValue } from "@/lib/platform/server";
 
 export class AccountSubjectError extends Error {
   constructor(public status: number, message: string) {
@@ -13,7 +13,7 @@ export const requireAccountSubject = async (request: Request): Promise<AccountSu
     ?? readCookieValue(request.headers.get("cookie"), "qmdj_platform_access");
   if (!accessToken) throw new AccountSubjectError(401, "请先登录平台账户。");
 
-  const gate = await fetchPlatformGate(accessToken);
-  if (!gate.subject_id) throw new AccountSubjectError(401, "平台账户身份无效，请重新登录。");
-  return { subjectType: gate.subject_type || "user", subjectId: gate.subject_id };
+  const account = await fetchPlatformAccount(accessToken);
+  if (!account.subject_id) throw new AccountSubjectError(401, "平台账户身份无效，请重新登录。");
+  return { subjectType: "user", subjectId: account.subject_id };
 };

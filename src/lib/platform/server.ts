@@ -4,18 +4,6 @@ import { randomUUID } from "node:crypto";
 import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
 export { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
 
-export type PlatformGate = {
-  allowed: boolean;
-  mode: string;
-  product_code: string;
-  access_scope: string;
-  subject_type: string;
-  subject_id: string;
-  entitlement_source: string;
-  reason_code: string;
-  message: string;
-};
-
 export type PlatformPlanUsage = {
   plan_code: string;
   available: number;
@@ -123,29 +111,16 @@ const unwrap = <T,>(result: { data?: T; error?: unknown; response: Response }): 
   return result.data;
 };
 
-export const fetchPlatformGate = async (
+export const fetchPlatformAccount = async (
   accessToken: string | null,
   options?: {
     env?: Record<string, string | undefined>;
     fetchImpl?: typeof fetch;
   },
-): Promise<PlatformGate> => {
-  const config = requirePlatformServerConfig(options?.env ?? process.env);
+): Promise<{ subject_id: string; name: string }> => {
+  requirePlatformServerConfig(options?.env ?? process.env);
   try {
-    const balances = unwrap(await createServerProductClient(accessToken, options).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } }));
-    const balance = balances.find((item) => item.metric === metricForPlan(AGENT_PLAN_CODE));
-    const allowed = Boolean(balance && (balance.remaining === null || balance.remaining > 0));
-    return {
-      allowed,
-      mode: allowed ? "usage_balance" : "blocked",
-      product_code: config.productCode,
-      access_scope: config.accessScope,
-      subject_type: "user",
-      subject_id: "",
-      entitlement_source: "usage_balance",
-      reason_code: allowed ? "" : "usage_exhausted",
-      message: allowed ? "" : "当前账户没有可用分析额度。",
-    };
+    return unwrap(await createServerProductClient(accessToken, options).GET("/api/v1/account/me"));
   } catch (error) {
     return mapPlatformError(error);
   }

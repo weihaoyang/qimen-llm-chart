@@ -18,7 +18,6 @@ type KlinePanelProps = {
   aiError?: string | null;
   loading: boolean;
   onAnalyze: (kind: KlineKind, scale?: KlineScale) => void;
-  aiPriceLabel?: string;
   /**
    * Hydration-resolved clock. Omitted until the visitor's real clock is known,
    * so the server render never pins a "今" marker to the placeholder year.
@@ -48,7 +47,7 @@ const markerFor = (points: KlinePoint[], index: number): KlineMarker | null => {
   return null;
 };
 
-export function KlinePanel({ life, relationship, relationshipScales, aiContent, aiKind, aiError, loading, onAnalyze, aiPriceLabel = "¥29.90", now }: KlinePanelProps) {
+export function KlinePanel({ life, relationship, relationshipScales, aiContent, aiKind, aiError, loading, onAnalyze, now }: KlinePanelProps) {
   const [kind, setKind] = useState<KlineKind>("life");
   const [scale, setScale] = useState<KlineScale>("double-hour");
   // `null` means "no explicit pick yet" — not "row 0". The chart opens on a
@@ -154,7 +153,7 @@ export function KlinePanel({ life, relationship, relationshipScales, aiContent, 
           {kind === "life" && markers.length ? <div className="kline-panel__markers" aria-label="人生 K 线拐点与拉升说明"><div className="kline-panel__markers-head"><strong>拐点与拉升</strong><span>规则识别 · 原因可复核</span></div>{markers.slice(0, 8).map(({ point, marker }) => <button type="button" key={`marker-${point.index}`} className={`kline-panel__marker-row is-${marker.kind}`} onClick={() => setPickedIndex(point.index)}><b>{marker.label}</b><span>{point.datetime.slice(0, 4)} · {point.label}</span><em>{marker.reason}</em></button>)}</div> : null}
           <div className="kline-panel__keypoints"><strong>关键点</strong>{series.keyPoints.map((point) => <button type="button" key={`${point.datetime}-${point.index}`} onClick={() => setPickedIndex(point.index)}><span>{point.datetime.replace("T", " ")}</span><b>{point.score}</b><em>{point.keyPoint}</em></button>)}</div>
           {kind === "life" ? <KLineTextTable rows={rows} now={now} /> : null}
-          <div className="kline-panel__ai"><div><strong>AI 三线取象</strong><span>{kind === "life" ? "从大运、流年与阶段趋势推演上／中／下三档人生世界线" : "从奇门关系结构推演上／中／下三档感情世界线"}</span><small>每条世界线都给出触发条件、时间窗、行动建议与复盘边界。</small></div><button type="button" className="kline-panel__ai-button" onClick={() => onAnalyze(kind, kind === "relationship" ? scale : undefined)} disabled={loading}><Sparkles size={16} />{loading ? "正在生成" : `解锁三条世界线 · ${aiPriceLabel}`}</button></div>
+          <div className="kline-panel__ai"><div><strong>AI 三线取象</strong><span>{kind === "life" ? "从大运、流年与阶段趋势推演上／中／下三档人生世界线" : "从奇门关系结构推演上／中／下三档感情世界线"}</span><small>每条世界线都给出触发条件、时间窗、行动建议与复盘边界。</small></div><button type="button" className="kline-panel__ai-button" onClick={() => onAnalyze(kind, kind === "relationship" ? scale : undefined)} disabled={loading}><Sparkles size={16} />{loading ? "正在生成" : "生成三条世界线"}</button></div>
           {aiError ? <p className="kline-panel__error">{aiError}</p> : null}
           {aiContent && aiKind === kind ? <section className="kline-panel__ai-report" aria-label={`${kind === "life" ? "人生" : "感情"} K线 AI 三条世界线报告`}><div><span>AI WORLDLINE REPORT · 上／中／下</span><strong>{kind === "life" ? "人生 K 线 · 三条世界线" : "感情 K 线 · 三条世界线"}</strong></div><pre className="kline-panel__ai-result">{aiContent}</pre></section> : null}
           <p className="kline-panel__disclaimer">{series.disclaimer}</p>

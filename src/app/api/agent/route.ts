@@ -3,7 +3,6 @@ import { errorResponse, UserFacingError } from "@/lib/api-error";
 import { createAgentEventStreamResponse, requestAgentAnalysis, streamAgentAnalysis } from "@/lib/agent/chat";
 import {
   commitPlatformUsage,
-  fetchPlatformGate,
   readBearerToken,
   releasePlatformUsage,
   reservePlatformUsage,
@@ -165,17 +164,6 @@ export async function POST(request: Request) {
     }
 
     reservationPlanCode = analysisProduct === "kline" ? KLINE_PLAN_CODE : AGENT_PLAN_CODE;
-    const gate = await fetchPlatformGate(accessToken);
-    if (!gate.allowed) {
-      return noStore(
-        {
-          error: gate.message || "当前账户还没有这项 AI 分析权益。",
-          reasonCode: gate.reason_code || "entitlement_gate_blocked",
-          gate,
-        },
-        { status: 402 },
-      );
-    }
     const reservation: { reservation_id: string } = await reservePlatformUsage(accessToken, { planCode: reservationPlanCode });
     reservationId = reservation.reservation_id;
     if (!reservationId) {

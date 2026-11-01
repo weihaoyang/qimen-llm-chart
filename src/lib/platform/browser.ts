@@ -1,5 +1,5 @@
 import { buildAuthorizeUrl, createPkcePair, randomOAuthState, revokeOAuthToken } from "@singseq/platform-sdk";
-import type { PlatformProfile, PlatformSession, PlanCatalogItem } from "./types";
+import type { PlatformProfile, PlatformSession } from "./types";
 import { createProductPlatformClient } from "@/lib/platform/client";
 import { requirePlatformClientConfig, type PlatformClientConfig } from "@/lib/platform/config";
 import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
@@ -23,17 +23,6 @@ export type PlatformAccessState = {
   profile: PlatformProfile;
 };
 
-export type PlatformPlanState = {
-  items: PlanCatalogItem[];
-  channels: Array<{
-    channel: string;
-    ready: boolean;
-    mobile_ready: boolean;
-    reason_code: string;
-    message: string;
-  }>;
-};
-
 export type PlatformPlanUsage = {
   plan_code: string;
   available: number;
@@ -51,21 +40,6 @@ export type PlatformUsage = {
   usage_unit: string;
   usage_label: string;
   by_plan: PlatformPlanUsage[];
-};
-
-export const getAccountGate = (
-  accessToken: string,
-  productCode = requirePlatformClientConfig().productCode,
-  options?: { csrfToken?: string },
-) => {
-  const config = requirePlatformClientConfig();
-  return createProductPlatformClient({ accessToken, csrfToken: options?.csrfToken }).GET("/api/v1/usage/balance", {
-    params: { query: { product_code: productCode } },
-  }).then(({ data, error }) => {
-    if (error || !data) throw new Error("无法读取平台权益余额。");
-    const allowed = data.some((entry) => entry.product_code === config.productCode && (entry.remaining === null || (entry.remaining ?? 0) > 0));
-    return { allowed, mode: allowed ? "usage_balance" : "blocked", product_code: config.productCode, access_scope: config.accessScope, subject_type: "user", subject_id: "", reason_code: allowed ? "" : "usage_exhausted", message: "" };
-  });
 };
 
 export const revokePlatformSession = async (accessToken: string) => {
@@ -317,21 +291,13 @@ export const restorePlatformAccessState = async (
   }
 };
 
-export const listPlatformPlans = async (productCode: string): Promise<PlatformPlanState> => {
-  void productCode;
-  return { items: [], channels: [] };
-};
-
 export const fetchPlatformUsage = async (
   accessToken = "",
   csrfToken = "",
   planCode = AGENT_PLAN_CODE,
 ): Promise<PlatformUsage> => {
   const config = requirePlatformClientConfig();
-  // This product sells two per-use plans with different units (analysis_turn and
-  // kline_report). Reading usage without a plan code makes the platform sum the
-  // units into one "mixed" balance, which would show K-line reports as agent
-  // turns and mis-open the agent entry. Always scope the read to one plan.
+  // Keep the displayed balance scoped to the matching usage metric.
   const result = await createProductPlatformClient({ accessToken, csrfToken }).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } });
   if (result.error || !result.data) throw new Error("无法读取平台用量余额。");
   const metric = planCode === "qimen-kline-precise-1" ? "kline_report" : "analysis_turn";

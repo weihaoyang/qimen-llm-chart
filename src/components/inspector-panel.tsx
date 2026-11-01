@@ -21,7 +21,6 @@ export type InspectorPanelProps = {
   agentUsageAvailable: number;
   agentUsageConsumed: number;
   isInterviewZeroState?: boolean;
-  agentPurchaseLabel?: string;
   platformStatus?: "checking" | "unauthenticated" | "authenticated" | "error";
   literatureContext: string;
   copyState: "idle" | "text" | "json";

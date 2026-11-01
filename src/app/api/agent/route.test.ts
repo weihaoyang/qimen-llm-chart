@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   readBearerTokenMock,
-  fetchPlatformGateMock,
   reservePlatformUsageMock,
   commitPlatformUsageMock,
   releasePlatformUsageMock,
@@ -17,7 +16,6 @@ const {
   const releasePlatformUsageMock = vi.fn();
   return {
   readBearerTokenMock: vi.fn(),
-  fetchPlatformGateMock: vi.fn(),
   reservePlatformUsageMock,
   commitPlatformUsageMock,
   releasePlatformUsageMock,
@@ -39,7 +37,6 @@ vi.mock("@/lib/platform/server", async () => {
   PlatformServerRequestError: actual.PlatformServerRequestError,
   readBearerToken: readBearerTokenMock,
   readCookieValue: vi.fn(() => ""),
-  fetchPlatformGate: fetchPlatformGateMock,
   reservePlatformUsage: reservePlatformUsageMock,
   commitPlatformUsage: commitPlatformUsageMock,
   releasePlatformUsage: releasePlatformUsageMock,
@@ -76,8 +73,6 @@ describe("POST /api/agent", () => {
   beforeEach(() => {
     readBearerTokenMock.mockReset();
     readBearerTokenMock.mockReturnValue("token-1");
-    fetchPlatformGateMock.mockReset();
-    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "", subject_type: "user", subject_id: "user-1" });
     reservePlatformUsageMock.mockReset();
     commitPlatformUsageMock.mockReset();
     releasePlatformUsageMock.mockReset();
@@ -170,9 +165,8 @@ describe("POST /api/agent", () => {
     }
   });
 
-  it("checks the platform gate and charges an authenticated account", async () => {
+  it("lets the platform reservation authorize and charge an authenticated account", async () => {
     readBearerTokenMock.mockReturnValue("account-token");
-    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "ok" });
     reservePlatformUsageMock.mockResolvedValue({ reservation_id: "account-reservation" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "账户分析完成", model: "mock-model" });
     commitPlatformUsageMock.mockResolvedValue({ product_code: "qimen", available: 9, reserved: 0, consumed: 1 });
@@ -180,7 +174,6 @@ describe("POST /api/agent", () => {
     const response = await POST(validAccountRequest());
 
     expect(response.status).toBe(200);
-    expect(fetchPlatformGateMock).toHaveBeenCalledTimes(1);
     expect(reservePlatformUsageMock).toHaveBeenCalledWith("account-token", { planCode: agentPlanCode });
     expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "account-reservation", { planCode: agentPlanCode });
     expect(releasePlatformUsageMock).not.toHaveBeenCalled();
@@ -188,7 +181,6 @@ describe("POST /api/agent", () => {
 
   it("accepts the restored paid conversation and forwards it before committing the next turn", async () => {
     readBearerTokenMock.mockReturnValue("account-token");
-    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "ok" });
     reservePlatformUsageMock.mockResolvedValue({ reservation_id: "follow-up-reservation" });
     requestAgentAnalysisMock.mockResolvedValue({ content: "基于上一轮继续分析", model: "mock-model" });
     commitPlatformUsageMock.mockResolvedValue({ product_code: "qimen", available: 8, reserved: 0, consumed: 2 });
@@ -213,15 +205,15 @@ describe("POST /api/agent", () => {
     expect(commitPlatformUsageMock).toHaveBeenCalledWith("account-token", "follow-up-reservation", { planCode: agentPlanCode });
   });
 
-  it("blocks an authenticated account before reserving when gate is denied", async () => {
+  it("blocks an authenticated account when the platform denies a reservation", async () => {
     readBearerTokenMock.mockReturnValue("account-token");
-    fetchPlatformGateMock.mockResolvedValue({ allowed: false, reason_code: "entitlement_missing", message: "请先购买。" });
+    reservePlatformUsageMock.mockRejectedValue(new PlatformServerRequestError(402, "usage_credit_unavailable", "没有可用分析次数。"));
 
     const response = await POST(validAccountRequest());
 
     expect(response.status).toBe(402);
-    await expect(response.json()).resolves.toMatchObject({ reasonCode: "entitlement_missing" });
-    expect(reservePlatformUsageMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({ reasonCode: "usage_credit_unavailable" });
+    expect(reservePlatformUsageMock).toHaveBeenCalledTimes(1);
   });
 
   it("rejects an oversized question before reserving usage", async () => {
@@ -367,8 +359,6 @@ describe("POST /api/agent (streaming settle)", () => {
     readBearerTokenMock.mockReset();
     readBearerTokenMock.mockReset();
     readBearerTokenMock.mockReturnValue("token-1");
-    fetchPlatformGateMock.mockReset();
-    fetchPlatformGateMock.mockResolvedValue({ allowed: true, reason_code: "", message: "", subject_type: "user", subject_id: "user-1" });
     reservePlatformUsageMock.mockReset();
     commitPlatformUsageMock.mockReset();
     releasePlatformUsageMock.mockReset();

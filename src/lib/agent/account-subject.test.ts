@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ gate: vi.fn(), cookieValue: vi.fn(() => "") }));
+const mocks = vi.hoisted(() => ({ account: vi.fn(), cookieValue: vi.fn(() => "") }));
 
 vi.mock("@/lib/platform/server", () => ({
-  fetchPlatformGate: mocks.gate,
+  fetchPlatformAccount: mocks.account,
   readBearerToken: (value: string | null) => (value?.startsWith("Bearer ") ? value.slice(7) : null),
   readCookieValue: mocks.cookieValue,
 }));
@@ -19,20 +19,20 @@ const request = (authorization?: string, cookie?: string) => {
 
 describe("requireAccountSubject", () => {
   beforeEach(() => {
-    mocks.gate.mockReset();
+    mocks.account.mockReset();
   });
 
-  it("derives identity from the platform gate rather than from the request", async () => {
-    mocks.gate.mockResolvedValue({ allowed: true, subject_type: "org", subject_id: "org-7" });
+  it("derives identity from the platform account endpoint rather than from the request", async () => {
+    mocks.account.mockResolvedValue({ subject_id: "user-7", name: "User" });
 
     const subject = await requireAccountSubject(request("Bearer token-1"));
 
-    expect(mocks.gate).toHaveBeenCalledWith("token-1");
-    expect(subject).toEqual({ subjectType: "org", subjectId: "org-7" });
+    expect(mocks.account).toHaveBeenCalledWith("token-1");
+    expect(subject).toEqual({ subjectType: "user", subjectId: "user-7" });
   });
 
-  it("falls back to a user subject when the platform omits the type", async () => {
-    mocks.gate.mockResolvedValue({ allowed: true, subject_id: "u-1" });
+  it("uses the canonical account subject", async () => {
+    mocks.account.mockResolvedValue({ subject_id: "u-1", name: "User" });
 
     expect(await requireAccountSubject(request("Bearer token-1"))).toEqual({
       subjectType: "user",
@@ -42,30 +42,23 @@ describe("requireAccountSubject", () => {
 
   it("rejects a request that carries no credential without calling the platform", async () => {
     await expect(requireAccountSubject(request())).rejects.toBeInstanceOf(AccountSubjectError);
-    expect(mocks.gate).not.toHaveBeenCalled();
+    expect(mocks.account).not.toHaveBeenCalled();
   });
 
-  it("rejects a gate response that carries no subject", async () => {
-    mocks.gate.mockResolvedValue({ allowed: true, subject_id: "" });
+  it("rejects an account response that carries no subject", async () => {
+    mocks.account.mockResolvedValue({ subject_id: "" });
 
     await expect(requireAccountSubject(request("Bearer token-1"))).rejects.toThrow("平台账户身份无效，请重新登录。");
   });
 
-  // This is the division of responsibility behind audit item Q: the gate is
-  // consulted on *every* authenticated request, but this helper consumes it for
-  // identity only. Whether a *denied* entitlement blocks the request is decided
-  // by each caller — at the point where it spends something (a new AI job, a new
-  // reservation), not at the point where it reads something already paid for.
-  // Keeping that split here means the identity path can never be skipped, while
-  // replays of purchased results stay readable.
-  it("returns the subject even when the entitlement is denied", async () => {
-    mocks.gate.mockResolvedValue({ allowed: false, subject_type: "user", subject_id: "u-9", reason_code: "entitlement_missing" });
+  it("returns the authenticated subject without consulting entitlement state", async () => {
+    mocks.account.mockResolvedValue({ subject_id: "u-9", name: "User" });
 
     expect(await requireAccountSubject(request("Bearer token-1"))).toEqual({
       subjectType: "user",
       subjectId: "u-9",
     });
-    expect(mocks.gate).toHaveBeenCalledTimes(1);
+    expect(mocks.account).toHaveBeenCalledTimes(1);
   });
 
 });

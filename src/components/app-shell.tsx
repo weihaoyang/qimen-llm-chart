@@ -72,12 +72,9 @@ import { type PlatformClientConfig } from "@/lib/platform/config";
 import {
   fetchPlatformUsage,
   revokePlatformSession,
-  getAccountGate,
-  listPlatformPlans,
   restorePlatformAccessState,
   recoverPlatformSessionFromBridge,
   hasBridgeSessionHint,
-  type PlatformPlanState,
   preparePlatformOAuthLogin,
   parsePlatformOAuthCallback,
   consumePlatformOAuthRequest,
@@ -85,8 +82,8 @@ import {
   savePlatformOAuthRequest,
 } from "@/lib/platform/browser";
 import { loadPlatformSession, clearPlatformSession, savePlatformSession } from "@/lib/platform/session";
-import { AGENT_PLAN_CODE, KLINE_PLAN_CODE } from "@/lib/platform/contracts";
-import type { PlanCatalogItem, PlatformProfile, PlatformSession } from "@/lib/platform/types";
+import { AGENT_PLAN_CODE } from "@/lib/platform/contracts";
+import type { PlatformProfile, PlatformSession } from "@/lib/platform/types";
 import {
   AGENT_SESSION_TURNS,
   loadActiveAgentSession,
@@ -192,12 +189,8 @@ type AgentModeState = {
 
 type PlatformWorkspaceState = {
   status: "checking" | "unauthenticated" | "authenticated" | "error";
-  /** The catalog is separate from identity: a transient catalog failure must
-   * never masquerade as a genuinely unavailable payment provider. */
-  catalogStatus: "loading" | "ready" | "error";
   session: PlatformSession | null;
   profile: PlatformProfile | null;
-  gate: { allowed: boolean; mode: string; reason_code: string; message: string } | null;
   usage: {
     available: number;
     reserved: number;
@@ -206,8 +199,6 @@ type PlatformWorkspaceState = {
     usage_unit?: string;
     usage_label?: string;
   } | null;
-  plans: PlanCatalogItem[];
-  channels: Array<{ channel: string; ready: boolean; mobile_ready: boolean; reason_code: string; message: string }>;
   error: string | null;
 };
 
@@ -405,12 +396,6 @@ const EMPTY_RELATIONSHIP_KLINES = {
   year: buildQimenKline([], "relationship"),
 };
 
-const PLATFORM_CATALOG_TIMEOUT_MS = 2500;
-const withPlatformCatalogTimeout = <T,>(promise: Promise<T>) => Promise.race([
-  promise,
-  new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error("平台目录请求超时。")), PLATFORM_CATALOG_TIMEOUT_MS)),
-]);
-
 /**
  * The phone layout is a different composition, not a style pass. A ≤720px
  * viewport cannot hold the desktop masthead (identity + account cluster +
@@ -582,13 +567,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [qimenVerificationRows, setQimenVerificationRows] = useState<VerificationRow[]>([]);
   const [platformWorkspace, setPlatformWorkspace] = useState<PlatformWorkspaceState>({
     status: "checking",
-    catalogStatus: "loading",
     session: null,
     profile: null,
-    gate: null,
     usage: null,
-    plans: [],
-    channels: [],
     error: null,
   });
   const [klineAiContent, setKlineAiContent] = useState("");
@@ -699,29 +680,17 @@ export function AppShell({ platformConfig }: AppShellProps) {
         savePlatformSession(session);
         clearCallback();
         const access = await restorePlatformAccessState(session);
-        // A failed or slow catalog / gate / usage read must not undo a login
-        // that already succeeded.
-        const [gateResult, usageResult, plansResult] = await Promise.allSettled([
-          getAccountGate(access.session.access_token, platformConfig.productCode, { csrfToken: access.session.csrf_token }),
+        const [usageResult] = await Promise.allSettled([
           fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
-          withPlatformCatalogTimeout(listPlatformPlans(platformConfig.productCode)),
         ]);
         if (!active) return;
-        const gate = gateResult.status === "fulfilled" ? gateResult.value : null;
         const usage = usageResult.status === "fulfilled" ? usageResult.value : null;
-        const plans = plansResult.status === "fulfilled" ? plansResult.value : null;
-        const catalogTimedOut = plansResult.status === "rejected" && plansResult.reason instanceof Error && plansResult.reason.message === "平台目录请求超时。";
-        const accountDataFailed = gateResult.status === "rejected" || usageResult.status === "rejected";
         setPlatformWorkspace({
           status: "authenticated",
-          catalogStatus: plans ? "ready" : catalogTimedOut ? "loading" : "error",
           session: access.session,
           profile: access.profile ?? result.profile ?? null,
-          gate,
           usage,
-          plans: plans?.items ?? [],
-          channels: plans?.channels ?? [],
-          error: accountDataFailed ? "账户数据暂时读取失败，请稍后重试。" : null,
+          error: usageResult.status === "rejected" ? "账户用量暂时读取失败，请稍后重试。" : null,
         });
         if (usage) {
           setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
@@ -738,7 +707,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
           status: "unauthenticated",
           session: null,
           profile: null,
-          gate: null,
           usage: null,
           error: error instanceof Error ? error.message : "恢复平台登录失败。",
         }));
@@ -790,7 +758,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
         return;
       }
 
-      const plansPromise = listPlatformPlans(platformConfig.productCode);
       // `loadPlatformSession` only knows about local storage. If its record was
       // evicted (private mode, a storage-capped/ITP browser, a manual clear) the
       // httpOnly bridge cookies may still carry a live session, so recover from
@@ -804,32 +771,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
         }
       }
       if (!session) {
-        try {
-          const plans = await withPlatformCatalogTimeout(plansPromise);
-          if (cancelled) return;
-        setPlatformWorkspace({ status: "unauthenticated", catalogStatus: "ready", session: null, profile: null, gate: null, usage: null, plans: plans.items, channels: plans.channels, error: null });
-        } catch (nextError) {
-          if (cancelled) return;
-          setPlatformWorkspace({
-            status: "unauthenticated",
-            // A slow public catalog must never hide the account action. The
-            // catalog can be retried by the next account action.
-            catalogStatus: nextError instanceof Error && nextError.message === "平台目录请求超时。" ? "loading" : "error",
-            session: null,
-            profile: null,
-            gate: null,
-            usage: null,
-            plans: [],
-            channels: [],
-            error: nextError instanceof Error ? `无法读取支付方式：${nextError.message}` : "无法读取支付方式，请稍后重试。",
-          });
-        }
+        if (cancelled) return;
+        setPlatformWorkspace({ status: "unauthenticated", session: null, profile: null, usage: null, error: null });
         return;
       }
 
-      // Authentication and account data are separate concerns. A failed or slow
-      // catalog / gate / usage read must never log the user out, so only the
-      // restore itself can drop the session.
+      // Only session restoration can invalidate the account; usage is independent.
       let access: Awaited<ReturnType<typeof restorePlatformAccessState>>;
       try {
         access = await restorePlatformAccessState(session);
@@ -841,44 +788,28 @@ export function AppShell({ platformConfig }: AppShellProps) {
         // this was a transient failure and the next load can recover — keep the
         // account visible instead of bouncing the user to the login screen.
         const retained = loadPlatformSession();
-        let plans: PlatformPlanState = { items: [], channels: [] };
-        try { plans = await withPlatformCatalogTimeout(plansPromise); } catch { /* catalog is retried later */ }
         if (cancelled) return;
         setPlatformWorkspace({
           status: retained ? "authenticated" : "unauthenticated",
-          catalogStatus: "ready",
           session: retained,
           profile: null,
-          gate: null,
           usage: null,
-          plans: plans.items,
-          channels: plans.channels,
           error: message,
         });
         return;
       }
 
-      const [gateResult, usageResult, plansResult] = await Promise.allSettled([
-        getAccountGate(access.session.access_token, platformConfig.productCode, { csrfToken: access.session.csrf_token }),
+      const [usageResult] = await Promise.allSettled([
         fetchPlatformUsage(access.session.access_token, access.session.csrf_token, AGENT_PLAN_CODE),
-        withPlatformCatalogTimeout(plansPromise),
       ]);
       if (cancelled) return;
-      const gate = gateResult.status === "fulfilled" ? gateResult.value : null;
       const usage = usageResult.status === "fulfilled" ? usageResult.value : null;
-      const plans = plansResult.status === "fulfilled" ? plansResult.value : null;
-      const catalogTimedOut = plansResult.status === "rejected" && plansResult.reason instanceof Error && plansResult.reason.message === "平台目录请求超时。";
-      const accountDataFailed = gateResult.status === "rejected" || usageResult.status === "rejected";
       setPlatformWorkspace({
         status: "authenticated",
-        catalogStatus: plans ? "ready" : catalogTimedOut ? "loading" : "error",
         session: access.session,
         profile: access.profile,
-        gate,
         usage,
-        plans: plans?.items ?? [],
-        channels: plans?.channels ?? [],
-        error: accountDataFailed ? "账户数据暂时读取失败，请稍后重试。" : null,
+        error: usageResult.status === "rejected" ? "账户用量暂时读取失败，请稍后重试。" : null,
       });
       if (usage) {
         setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
@@ -918,7 +849,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
     await fetch("/api/platform/session", { method: "DELETE" }).catch(() => undefined);
     clearPlatformSession();
     clearActiveAgentSession();
-    setPlatformWorkspace((current) => ({ ...current, status: "unauthenticated", session: null, profile: null, gate: null, usage: null }));
+    setPlatformWorkspace((current) => ({ ...current, status: "unauthenticated", session: null, profile: null, usage: null }));
     setAgentState((current) => Object.fromEntries(Object.entries(current).map(([key, state]) => [
       key,
       { ...state, usageAvailable: 0, usageConsumed: 0 },
@@ -1520,7 +1451,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
           status: "unauthenticated",
           session: null,
           profile: null,
-          gate: null,
           usage: null,
           error: error instanceof Error ? error.message : "平台登录状态已失效。",
         }));
@@ -1626,7 +1556,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
     const currentQuestion = enteredQuestion || AGENT_INTERVIEW_START_QUESTION;
     if (!platformConfig || typeof window === "undefined") {
-      setAgentState((current) => ({ ...current, [mode]: { ...current[mode], error: "支付暂不可用。" } }));
+      setAgentState((current) => ({ ...current, [mode]: { ...current[mode], error: "平台 AI 服务暂不可用。" } }));
       return;
     }
 
@@ -1784,10 +1714,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
       isInterviewZeroState={agentState[mode].focus === "人生议题访谈" && !agentState[mode].question.trim() && agentState[mode].conversation.length === 0}
       agentUsageAvailable={displayedUsage.usageAvailable}
       agentUsageConsumed={displayedUsage.usageConsumed}
-      agentPurchaseLabel={(() => {
-        const plan = platformWorkspace.plans.find((item) => item.plan_code === AGENT_PLAN_CODE);
-        return plan ? `${plan.title} · ¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
-      })()}
       platformStatus={platformWorkspace.status}
       defaultAgentQuestion={DEFAULT_AGENT_QUESTIONS[mode]}
       agentResult={agentState[mode].content}
@@ -1952,10 +1878,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
             loading={klineAiLoading}
             onAnalyze={handleKlineAnalyze}
             now={clock.resolved ? clock.now : undefined}
-            aiPriceLabel={(() => {
-              const plan = platformWorkspace.plans.find((item) => item.plan_code === KLINE_PLAN_CODE);
-              return plan ? `¥${(plan.price_cny / 100).toFixed(2)}` : "读取平台套餐后购买";
-            })()}
           />
         ) : null}
 

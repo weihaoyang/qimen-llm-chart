@@ -132,7 +132,7 @@ export function BaziCompatibilityPanel({
       <section className="bazi-compatibility-panel" aria-label="八字双人合盘">
         <header className="bazi-compatibility-hero">
           <div className="bazi-compatibility-hero__copy"><span className="bazi-compatibility-kicker">RELATION LAB / 八字关系实验室</span><h2>把两张盘，读成一段关系</h2><p>先看结构，再看分数。合盘只提供可复盘的互动线索，不替你决定关系。</p></div>
-          <button className="bazi-compatibility-cta" type="button" onClick={onPurchase} disabled={loading}><span>{loading ? "正在打开支付" : "解锁 Agent 深度分析"}</span><small>{loading ? "请稍候" : "两张盘面 · ¥9.9"}</small></button>
+          <button className="bazi-compatibility-cta" type="button" onClick={onPurchase} disabled={loading}><span>{loading ? "正在处理" : "解锁 Agent 深度分析"}</span><small>{loading ? "请稍候" : "两张盘面 · 使用平台分析额度"}</small></button>
         </header>
 
         <section className="bazi-compatibility-editor" aria-label="第二人资料">
