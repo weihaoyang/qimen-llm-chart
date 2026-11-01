@@ -15,7 +15,6 @@ describe("platform server helpers", () => {
       env: {
         PLATFORM_BASE_URL: "https://platform.example.com",
         PLATFORM_PRODUCT_CODE: "qmdj-pro",
-        PLATFORM_ACCESS_SCOPE: "ai-analysis",
       },
       fetchImpl,
     });
@@ -32,7 +31,7 @@ describe("platform server helpers", () => {
       status: 200, headers: { "content-type": "application/json" },
     }));
     const result = await reservePlatformUsage("access-token", {
-      env: { PLATFORM_BASE_URL: "https://platform.example.com", PLATFORM_PRODUCT_CODE: "qimen", PLATFORM_ACCESS_SCOPE: "qimen-core" },
+      env: { PLATFORM_BASE_URL: "https://platform.example.com", PLATFORM_PRODUCT_CODE: "qimen" },
       fetchImpl, requestId: "request-1",
     });
     const request = fetchImpl.mock.calls[0]?.[0] as Request;

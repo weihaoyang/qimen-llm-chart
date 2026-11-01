@@ -3,7 +3,6 @@
   "platform_api_origin": "https://platform.singseq.com",
   "product_origin_url": "https://qmdj.singseq.com",
   "product_code": "qimen",
-  "access_scope": "qimen-core",
   "oauth_client_id": "8766d44c460e495994ec6f2011cfcbf2",
   "capabilities": {
     "agent": {

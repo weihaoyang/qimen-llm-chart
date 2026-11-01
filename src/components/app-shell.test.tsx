@@ -37,7 +37,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     expect(await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 })).toBeInTheDocument();
@@ -60,7 +59,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -74,7 +72,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -102,7 +99,6 @@ describe("AppShell", () => {
     const { container } = render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -148,7 +144,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -168,7 +163,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -201,7 +195,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -228,7 +221,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -246,7 +238,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -270,7 +261,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -295,7 +285,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -321,7 +310,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -342,7 +330,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -361,7 +348,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -391,7 +377,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -434,7 +419,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });
@@ -454,7 +438,6 @@ describe("AppShell", () => {
     render(<AppShell platformConfig={{
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
     }} />);
 
     await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 });

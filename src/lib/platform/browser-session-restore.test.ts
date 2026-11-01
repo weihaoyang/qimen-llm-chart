@@ -65,7 +65,6 @@ describe("restorePlatformAccessState", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
     process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     window.localStorage.clear();
   });
 
@@ -73,7 +72,6 @@ describe("restorePlatformAccessState", () => {
     vi.unstubAllGlobals();
     delete process.env.NEXT_PUBLIC_PLATFORM_BASE_URL;
     delete process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE;
-    delete process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE;
   });
 
   it("reuses a still-valid access cookie instead of rotating the refresh token on every load", async () => {
@@ -144,7 +142,6 @@ describe("bridge session recovery", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
     process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     window.localStorage.clear();
     document.cookie = "qmdj_platform_csrf=; Max-Age=0; path=/";
   });
@@ -153,7 +150,6 @@ describe("bridge session recovery", () => {
     vi.unstubAllGlobals();
     delete process.env.NEXT_PUBLIC_PLATFORM_BASE_URL;
     delete process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE;
-    delete process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE;
   });
 
   it("detects the readable bridge hint cookie", () => {
@@ -187,7 +183,6 @@ describe("cross-tab refresh lock", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = BASE_URL;
     process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
     window.localStorage.clear();
   });
 
@@ -196,7 +191,6 @@ describe("cross-tab refresh lock", () => {
     Reflect.deleteProperty(navigator, "locks");
     delete process.env.NEXT_PUBLIC_PLATFORM_BASE_URL;
     delete process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE;
-    delete process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE;
   });
 
   it("rotates under the origin-scoped Web Lock when the browser supports it", async () => {

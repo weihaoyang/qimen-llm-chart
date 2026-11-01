@@ -10,7 +10,6 @@ describe("platform browser helpers", () => {
     const login = await preparePlatformOAuthLogin({
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
       clientId: "qimen-web",
     }, "https://qmdj.singseq.com/");
     const url = new URL(login.url);
@@ -40,11 +39,9 @@ describe("platform browser helpers", () => {
     const previous = {
       base: process.env.NEXT_PUBLIC_PLATFORM_BASE_URL,
       product: process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE,
-      scope: process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE,
     };
     process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = "https://platform.example.com";
     process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = "qimen";
-    process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = "qimen-core";
 
     let requestUrl = "";
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
@@ -64,7 +61,6 @@ describe("platform browser helpers", () => {
     } finally {
       process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = previous.base;
       process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = previous.product;
-      process.env.NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE = previous.scope;
     }
   });
 });

@@ -10,7 +10,6 @@ describe("platform config", () => {
     expect(resolvePlatformClientConfig({})).toEqual({
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
       clientId: "8766d44c460e495994ec6f2011cfcbf2",
     });
     expect(resolvePlatformClientConfig({ NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID: "registered-qimen" })).toMatchObject({ clientId: "registered-qimen" });
@@ -21,12 +20,10 @@ describe("platform config", () => {
       resolvePlatformClientConfig({
         NEXT_PUBLIC_PLATFORM_BASE_URL: "https://platform.example.com/",
         NEXT_PUBLIC_PLATFORM_PRODUCT_CODE: "qmdj-pro",
-        NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE: "ai-analysis",
       }),
     ).toEqual({
       baseUrl: "https://platform.example.com",
       productCode: "qmdj-pro",
-      accessScope: "ai-analysis",
       clientId: "8766d44c460e495994ec6f2011cfcbf2",
     });
   });
@@ -36,15 +33,12 @@ describe("platform config", () => {
       resolvePlatformServerConfig({
         PLATFORM_BASE_URL: "https://internal.example.com/",
         PLATFORM_PRODUCT_CODE: "server-product",
-        PLATFORM_ACCESS_SCOPE: "server-scope",
         NEXT_PUBLIC_PLATFORM_BASE_URL: "https://public.example.com/",
         NEXT_PUBLIC_PLATFORM_PRODUCT_CODE: "public-product",
-        NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE: "public-scope",
       }),
     ).toEqual({
       baseUrl: "https://internal.example.com",
       productCode: "server-product",
-      accessScope: "server-scope",
       clientId: "8766d44c460e495994ec6f2011cfcbf2",
     });
   });

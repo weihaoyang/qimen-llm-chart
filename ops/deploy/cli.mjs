@@ -153,11 +153,10 @@ Config (env overridable):
     ok("release script", existsSync(config.releaseScript), config.releaseScript);
     ok("env file", existsSync(config.envFile), config.envFile);
     const platformProduct = envFileValue("PLATFORM_PRODUCT_CODE") || envFileValue("NEXT_PUBLIC_PLATFORM_PRODUCT_CODE");
-    const platformScope = envFileValue("PLATFORM_ACCESS_SCOPE") || envFileValue("NEXT_PUBLIC_PLATFORM_ACCESS_SCOPE");
     ok(
       "platform product contract",
-      platformProduct === "qimen" && platformScope === "qimen-core",
-      `product=${platformProduct || "(missing)"} scope=${platformScope || "(missing)"}`,
+      platformProduct === "qimen",
+      `product=${platformProduct || "(missing)"}`,
     );
 
     const dfLine = capture("df", ["-Pk", ROOT]).split("\n")[1] ?? "";

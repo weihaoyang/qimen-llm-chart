@@ -19,7 +19,6 @@ describe("ChartWorkbenchEntry", () => {
   it("passes the registered OAuth client id into the browser workbench", () => {
     vi.stubEnv("PLATFORM_BASE_URL", "https://platform.singseq.com");
     vi.stubEnv("PLATFORM_PRODUCT_CODE", "qimen");
-    vi.stubEnv("PLATFORM_ACCESS_SCOPE", "qimen-core");
     vi.stubEnv("PLATFORM_OAUTH_CLIENT_ID", "registered-qimen-client");
 
     render(<ChartWorkbenchEntry />);
@@ -27,7 +26,6 @@ describe("ChartWorkbenchEntry", () => {
     expect(JSON.parse(screen.getByTestId("platform-config").textContent ?? "{}")).toEqual({
       baseUrl: "https://platform.singseq.com",
       productCode: "qimen",
-      accessScope: "qimen-core",
       clientId: "registered-qimen-client",
     });
   });
