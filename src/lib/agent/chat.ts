@@ -1145,7 +1145,7 @@ export const streamAgentAnalysis = (
 };
 
 /**
- * Internal consumer-platform adapter. It deliberately reuses the normal
+ * Internal product adapter. It deliberately reuses the normal
  * Bazi system prompt, classic excerpt selection, and provider configuration,
  * but asks for a small machine-readable personality hypothesis so another
  * product does not need to copy the chart/agent implementation.

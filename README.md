@@ -59,7 +59,7 @@ GEMINI_BASE_URL=https://yyrouter.cc/v1beta
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-如需接入公司统一用户与支付平台，还需要配置：
+平台 OAuth 与额度配置使用：
 
 ```text
 NEXT_PUBLIC_PLATFORM_BASE_URL=https://platform.singseq.com
@@ -70,9 +70,9 @@ PLATFORM_PRODUCT_CODE=qimen
 PLATFORM_ACCESS_SCOPE=qimen-core
 ```
 
-本产品已经在平台正式注册，线上平台地址为 `https://platform.singseq.com`。
+产品标识与授权范围固定为 `qimen` / `qimen-core`；生产 OAuth client 仍需在平台登记并完成账户、额度验收后才能发布新版本。
 
-统一登录由 `https://singseq.com` 与 Consumer Platform 承担。本仓库只发起
+统一登录由 Casdoor 提供，账户、支付与额度由 SingSeq Platform 提供。本仓库只发起
 OAuth/PKCE、恢复平台 session，并在受限 AI 调用前查询 gate；不得在知几内部
 实现 CAPTCHA、OTP、用户或会员真相。
 
@@ -145,10 +145,9 @@ node ops/deploy/cli.mjs logs -f    # 跟随容器日志
 
 知几是 SingSeq 的术数排盘产品，生产入口为 `https://qmdj.singseq.com/paipan`。
 
-本仓库只负责排盘工作台、八字/奇门/紫微/三式盘面及其分析入口。账户、订单、支付和会员权益统一通过 Consumer Platform API/SDK 处理。
+本仓库只负责排盘工作台、八字/奇门/紫微/三式盘面及其分析入口。账户、订单、支付和会员权益统一通过 SingSeq Platform API 与 `@singseq/platform-sdk` 处理。
 
-胜天半子代码已复制到独立仓库 `F:\shengtian`。本仓库保留根路径兼容入口；
-知几正式入口为 `https://qmdj.singseq.com/paipan`。
+胜天半子代码位于独立产品仓库；知几正式入口为 `https://qmdj.singseq.com/paipan`。
 
 2026-09-16 统一登录 CAPTCHA 故障已在平台与官网边界修复：平台使用
 form-urlencoded 调用 Cap siteverify，官网移动控件使用平台签发的 canonical

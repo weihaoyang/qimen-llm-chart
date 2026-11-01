@@ -1,7 +1,7 @@
 /**
  * Product routing is deliberately host-based instead of CSS or client state.
  * The 知几 workbench is served from its own hosts while sharing one deployment
- * and the Consumer Platform account/payment boundary.
+ * and the SingSeq Platform account/usage boundary.
  */
 export const PAIPAN_HOSTS = new Set([
   "qmdj.singseq.com",

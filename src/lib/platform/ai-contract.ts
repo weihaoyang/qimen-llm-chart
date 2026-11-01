@@ -63,7 +63,7 @@ export type AiBillingAdapter = {
 
 /**
  * Product-side AI billing contract. Payment and entitlement truth stay in the
- * Consumer Platform; this adapter only owns one model invocation lifecycle.
+ * SingSeq Platform; this adapter only owns one model invocation lifecycle.
  * A reserve response is never retried because an ambiguous POST can create a
  * second reservation. Commit uses the platform's terminal-settlement rule.
  */

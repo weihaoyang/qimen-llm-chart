@@ -1,12 +1,12 @@
 project: 'qmdj'
 profile: 'high-risk'
-updated: '2026-10-14'
+updated: '2026-11-01'
 objective: '完成知几排盘工作台的领域能力、平台接入与本地可验证闭环'
 success_condition: '用户可在 /paipan 使用奇门、八字、紫微、三盘联合、七政四余、太乙神数、紫微飞星、玛雅、吠陀、卡巴拉、卢恩、神圣几何、塔罗、第四道、汉堡学派、皇极经世、大六壬、阿卡西、人类图、泛音等体系排盘与相关分析；每个体系在前端可直接查阅其逐字出处与异说/未核项；首次使用有引导（首屏显示当前盘面、分步高亮、入口名实相符）；平台登录、套餐、支付恢复和受限 AI 均遵守统一平台 gate；产品业务数据留在本仓库边界且本地验证可复现'
 phase: 'deployed'
 status: 'divination_history_audited_provenance_library_and_first_run_onboarding_shipped_production_released_20261014'
-current_blocker: '生产已发布 20261015-073a6bd（容器 qmdj healthy，/paipan 200，/api/version 回显该 releaseId；中医运气标签页线上实测可切换、四表齐备、逐字原文可查、控制台 0 报错；上一版 20261014-88b0bca 保留为回滚目标）。剩余阻塞：①已登录态 gate / AI 页面点击与邀请码列表 / 创建权限的验收未执行（需可审计的管理员会话）；②RFC 阶段 3/4 计算迁出与平台生产部署阶段 3/4 需平台 owner 会签/真实拓扑；③AGENTS.md「当前产品平台参数」仍写 shengtian-banzi 与「禁止切换」——需注意本机 .env 仍指向 shengtian-banzi（本地实测平台请求为 products/shengtian-banzi/plans），仓库默认已改 qimen，**生效值取决于部署环境变量**，需平台/产品负责人确认后统一并更新文档。'
-next_action: '用可审计的已登录管理员会话完成 gate / AI 页面点击与邀请码列表 / 创建权限验收（不执行真实扣款）。质量门为本地 `npm run ci`（本仓不使用云端 CI）。'
+current_blocker: '源码已固定使用 @singseq/platform-sdk 和 qimen/qimen-core 合同；生产 qmdj 镜像仍运行旧集成版本。OAuth client 登记、已登录账号/额度验收以及新镜像发布未完成。平台管理需要 Casdoor 用户会话；没有兼容 API，发布门禁保持关闭直到新合同验收。'
+next_action: 'Casdoor 会话恢复后读取并登记精确回调 https://qmdj.singseq.com/auth/callback 与最小 scope account.read、usage.write；完成 OAuth、账户和额度验收后构建并发布当前产品提交。'
 active_workers: []
 recent_evidence:
   - '2026-10-15: **新体系「中医运气」完整上线并发布 20261015-073a6bd**。域层（前一日已发）：`src/lib/tcm/{yunqi,zangfu,chart}.ts` + 13 条回归。本次补齐：面板 `tcm-yunqi-panel.tsx`（流年输入、中运/司天/在泉摘要、六步客主加临、四柱→脏腑经络、五行并置、五行配属表、大运、逐条边界声明、出处与原文）、**6 处以 mode 为键的接线**（MODE_META/Agent 状态/默认提问/系统提示词/choice 规则，另含结构化文本、compact JSON、/api/agent 与 workspace-input 的 mode 分支，共 12 个文件）、登记册 `bazi-tcm-*` 条目（逐字原文含天元纪大论十干化运、五运行大论司天与「气相得则和」、五常政大论三套纪名、六微旨大论主气之位/岁会/天符/太一天符、至真要大论六化与「主胜逆客胜从」、藏气法时论、针灸聚英纳天干歌、针灸大全纳地支歌、阴阳应象大论与金匮真言论配属，另有一条 `异说` 记录交年三派与明文出处层次）、Agent 提示词的诊疗边界。**验证**：`npm run ci` 126 文件 / 714 通过 / 2 skipped、eslint 0 error、next build 通过；**线上实测**（部署后）：标签可切换、四表齐备（六步 6／四柱 4／五行并置 5／配属 5）、流年输入与边界声明在、逐字原文在面板内可查、控制台 0 报错。'

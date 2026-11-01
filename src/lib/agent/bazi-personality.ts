@@ -19,7 +19,7 @@ type ChatCompletionResponse = {
 };
 
 /**
- * Internal consumer-platform adapter. It reuses the normal Bazi analysis
+ * Internal product adapter. It reuses the normal Bazi analysis
  * context but requires a small, auditable structure-first personality result.
  */
 export const requestBaziPersonalityPrediction = async (

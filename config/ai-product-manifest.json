@@ -11,7 +11,7 @@
       "usage_label": "研究对话轮次",
       "provider_route": "/api/agent",
       "gate_required": true,
-      "usage_owner": "consumer-platform"
+      "usage_owner": "singseq-platform"
     },
     "kline": {
       "plan_code": "qimen-kline-precise-1",
@@ -19,11 +19,11 @@
       "usage_label": "K 线 AI 分析报告",
       "provider_route": "/api/agent",
       "gate_required": true,
-      "usage_owner": "consumer-platform"
+      "usage_owner": "singseq-platform"
     }
   },
   "lifecycle": ["balance", "reserve", "provider", "consume_or_release", "audit"],
-  "payment_owned_by": "consumer-platform",
-  "identity_owned_by": "consumer-platform",
-  "entitlement_owned_by": "consumer-platform"
+  "payment_owned_by": "singseq-platform",
+  "identity_owned_by": "singseq-platform",
+  "entitlement_owned_by": "singseq-platform"
 }
