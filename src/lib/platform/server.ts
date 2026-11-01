@@ -84,11 +84,11 @@ const PLATFORM_REQUEST_TIMEOUT_MS = 10_000;
  */
 const fetchPlatform = async (
   fetchImpl: typeof fetch,
-  url: URL,
-  init: RequestInit,
+  input: Parameters<typeof fetch>[0],
+  init?: RequestInit,
 ): Promise<Response> => {
   try {
-    return await fetchImpl(url, { ...init, signal: AbortSignal.timeout(PLATFORM_REQUEST_TIMEOUT_MS) });
+    return await fetchImpl(input, { ...init, signal: AbortSignal.timeout(PLATFORM_REQUEST_TIMEOUT_MS) });
   } catch (error) {
     if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
       throw new PlatformServerRequestError(504, "platform_request_timeout", "平台响应超时，请稍后重试。");
@@ -106,7 +106,7 @@ const createServerProductClient = (
   return createPlatformClient({
     baseUrl: config.baseUrl,
     auth: { type: "bearer", token: () => accessToken ?? "" },
-    fetch: (input, init) => fetchPlatform(fetchImpl, input instanceof Request ? new URL(input.url) : new URL(String(input)), init ?? {}),
+    fetch: (input, init) => fetchPlatform(fetchImpl, input, init),
   });
 };
 

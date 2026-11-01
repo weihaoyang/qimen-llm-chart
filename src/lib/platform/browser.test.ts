@@ -26,6 +26,9 @@ describe("platform browser helpers", () => {
   });
 
   it("parses only the canonical path callback route", () => {
+    expect(parsePlatformOAuthCallback("/auth/callback?code=opaque-platform-code&state=state-1")).toEqual({
+      code: "opaque-platform-code", state: "state-1",
+    });
     expect(parsePlatformOAuthCallback("/auth/callback?code=ssp_oauth_1&state=state-1")).toEqual({
       code: "ssp_oauth_1",
       state: "state-1",

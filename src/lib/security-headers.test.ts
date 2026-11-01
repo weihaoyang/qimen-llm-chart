@@ -26,7 +26,7 @@ describe("content security policy", () => {
       "base-uri 'self'",
       "object-src 'none'",
       "frame-ancestors 'self'",
-      "form-action 'self' https://singseq.com",
+      "form-action 'self' https://platform.singseq.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",

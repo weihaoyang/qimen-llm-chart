@@ -116,7 +116,7 @@ export const parsePlatformOAuthCallback = (value: string): PlatformOAuthCallback
   const params = new URLSearchParams(query.slice(1));
   const code = params.get("code")?.trim() ?? "";
   const state = params.get("state")?.trim() ?? "";
-  return code.startsWith("ssp_oauth_") && state ? { code, state } : null;
+  return code && state ? { code, state } : null;
 };
 
 /** Readable-by-JS companion to the httpOnly bridge cookies. Used only as a hint
