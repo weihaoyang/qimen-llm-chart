@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { AssistantRuntimeProvider, useLocalRuntime, ThreadPrimitive, MessagePrimitive, ComposerPrimitive, ActionBarPrimitive, ErrorPrimitive, type ChatModelAdapter, type TextMessagePartProps } from "@assistant-ui/react";
+import { AssistantRuntimeProvider, useLocalRuntime, ThreadPrimitive, MessagePrimitive, ComposerPrimitive, ActionBarPrimitive, ErrorPrimitive, type AssistantRuntime, type ChatModelAdapter, type TextMessagePartProps } from "@assistant-ui/react";
 import { AgentMarkdown } from "./agent-markdown";
 import type { InspectorPanelProps } from "./inspector-panel";
 import type { AgentConversationMessage, AgentConversationMode, AgentStreamEvent, AgentToolEvent } from "@/lib/agent/chat";
@@ -10,6 +10,31 @@ import styles from "./agent-conversation.module.css";
 function TextPart({ text }: TextMessagePartProps) { return <AgentMarkdown content={text} />; }
 function UserMessage() { return <MessagePrimitive.Root className={styles.user}><small>你 / QUESTION</small><MessagePrimitive.Parts components={{Text:TextPart}} /></MessagePrimitive.Root>; }
 function AssistantMessage() { return <MessagePrimitive.Root className={styles.answer}><small>知几 / ASSISTANT</small><MessagePrimitive.Parts components={{Text:TextPart}} /><MessagePrimitive.Error><ErrorPrimitive.Root className={styles.error}><ErrorPrimitive.Message /></ErrorPrimitive.Root></MessagePrimitive.Error><ActionBarPrimitive.Root className={styles.messageActions}><ActionBarPrimitive.Copy>复制</ActionBarPrimitive.Copy><ActionBarPrimitive.Reload>重新生成 ↻</ActionBarPrimitive.Reload></ActionBarPrimitive.Root></MessagePrimitive.Root>; }
+
+export function runWhenThreadReady(runtime: AssistantRuntime, callback: () => void) {
+  let active = true;
+  let completed = false;
+  let unsubscribe = () => {};
+  const run = () => {
+    if (!active || completed) return true;
+    if (runtime.thread.getState().isLoading) return false;
+    completed = true;
+    callback();
+    return true;
+  };
+
+  if (run()) return () => { active = false; };
+
+  unsubscribe = runtime.threads.subscribe(() => {
+    if (run()) unsubscribe();
+  });
+  if (run()) unsubscribe();
+
+  return () => {
+    active = false;
+    unsubscribe();
+  };
+}
 
 export function AgentConversation(props: InspectorPanelProps) {
   const latest = useRef(props);
@@ -180,9 +205,13 @@ export function AgentConversation(props: InspectorPanelProps) {
     ...props.agentFollowUps,
     ...props.agentAngles.slice(0, 4).map((angle) => angle.question),
   ])).slice(0, 6);
-  useEffect(()=>{if(props.agentConversation.length && !runtime.thread.getState().messages.length) runtime.thread.reset(props.agentConversation.map(m=>({role:m.role,content:m.content})));},[props.agentConversation,runtime]);
-  // External chart/map suggestions populate the same composer; they do not submit twice.
-  useEffect(()=>{ if(props.agentQuestion) runtime.thread.composer.setText(props.agentQuestion); },[props.agentQuestion,runtime]);
+  useEffect(() => runWhenThreadReady(runtime, () => {
+    if (props.agentConversation.length && !runtime.thread.getState().messages.length) {
+      runtime.thread.reset(props.agentConversation.map(m => ({ role: m.role, content: m.content })));
+    }
+    // External chart/map suggestions populate the same composer; they do not submit twice.
+    if (props.agentQuestion) runtime.thread.composer.setText(props.agentQuestion);
+  }), [props.agentConversation, props.agentQuestion, runtime]);
   return <AssistantRuntimeProvider runtime={runtime}><ThreadPrimitive.Root className={styles.root}>
     <header className={styles.head}><div><small>知几 / DIALOGUE</small><h3>{props.agentTitle ?? "盘面解读"}</h3></div><div className={styles.headActions}><span className={styles.syncStatus}>{syncStatus === "synced" ? "云端已同步" : syncStatus === "syncing" ? "同步中" : syncStatus === "failed" ? "云端同步失败，已保留本地草稿" : "本地会话"}</span><button type="button" onClick={() => setHistoryOpen((value) => !value)}>历史会话</button><span>{props.agentUsageAvailable>0 ? `余 ${props.agentUsageAvailable} 轮` : "未开通"}</span></div></header>
     {historyOpen ? <aside className={styles.history}><div className={styles.historyHead}><strong>历史会话</strong><button type="button" onClick={() => { activeSessionId.current = null; setActiveSessionIdState(null); runtime.thread.reset([]); setHistoryOpen(false); }}>新建</button></div>{savedSessions.length ? savedSessions.map((session) => <div className={`${styles.historyRow} ${activeSessionIdState === session.id ? styles.historyCurrent : ""}`} key={session.id}><button type="button" className={styles.historyItem} onClick={() => { activeSessionId.current = session.id; setActiveSessionIdState(session.id); runtime.thread.reset(session.messages.map((m) => ({ role: m.role, content: m.content }))); setHistoryOpen(false); }}><strong>{session.title}</strong><small>{activeSessionIdState === session.id ? "当前会话 · " : ""}{session.status === "archived" ? "已归档 · " : ""}{new Date(session.updatedAt).toLocaleString("zh-CN")}</small></button><div className={styles.historyActions}><button type="button" aria-label="重命名会话" onClick={() => renameSession(session)}>改名</button><button type="button" aria-label="归档会话" onClick={() => archiveSession(session)}>归档</button><button type="button" aria-label="删除会话" onClick={() => void deleteSession(session)}>删除</button></div></div>) : <small className={styles.historyEmpty}>暂无历史会话</small>}</aside> : null}
