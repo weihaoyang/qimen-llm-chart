@@ -10,6 +10,7 @@ type PublicProductContract = {
   platform_api_origin: string;
   product_code: string;
   access_scope: string;
+  oauth_client_id: string;
 };
 
 // Public identity and platform coordinates are product contract data, not
@@ -19,6 +20,7 @@ const PUBLIC_PRODUCT_CONTRACT: PublicProductContract = {
   platform_api_origin: productManifest.platform_api_origin,
   product_code: productManifest.product_code,
   access_scope: productManifest.access_scope,
+  oauth_client_id: productManifest.oauth_client_id,
 };
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
@@ -53,7 +55,7 @@ export const resolvePlatformClientConfig = (
     baseUrl: trimTrailingSlash(baseUrl),
     productCode,
     accessScope,
-    clientId: env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID?.trim() || undefined,
+    clientId: env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID?.trim() || PUBLIC_PRODUCT_CONTRACT.oauth_client_id,
   };
 };
 
@@ -89,7 +91,7 @@ export const resolvePlatformServerConfig = (
     baseUrl: trimTrailingSlash(baseUrl),
     productCode,
     accessScope,
-    clientId: env.PLATFORM_OAUTH_CLIENT_ID?.trim() || env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID?.trim() || undefined,
+    clientId: env.PLATFORM_OAUTH_CLIENT_ID?.trim() || env.NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID?.trim() || PUBLIC_PRODUCT_CONTRACT.oauth_client_id,
   };
 };
 

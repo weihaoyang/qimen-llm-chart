@@ -7,7 +7,7 @@
   "product_origin_url": "https://qmdj.singseq.com",
   "access_scope": "qimen-core",
   "oauth": {
-    "client_id": "qimen",
+    "client_id": "8766d44c460e495994ec6f2011cfcbf2",
     "redirect_uri": "https://qmdj.singseq.com/auth/callback",
     "response_type": "code",
     "code_challenge_method": "S256",

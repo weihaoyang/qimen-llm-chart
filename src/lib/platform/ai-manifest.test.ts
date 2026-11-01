@@ -9,11 +9,13 @@ describe("AI product manifest", () => {
       platform_api_origin: string;
       product_code: string;
       access_scope: string;
+      oauth_client_id: string;
       capabilities: Record<string, { plan_code: string; usage_unit: string; usage_label: string }>;
     };
     expect(manifest.platform_api_origin).toBe("https://platform.singseq.com");
     expect(manifest.product_code).toBe("qimen");
     expect(manifest.access_scope).toBe("qimen-core");
+    expect(manifest.oauth_client_id).toBe("8766d44c460e495994ec6f2011cfcbf2");
     expect(manifest.capabilities.agent.plan_code).toBe(AGENT_PLAN_CODE);
     expect(manifest.capabilities.kline.plan_code).toBe(KLINE_PLAN_CODE);
     expect(manifest.capabilities.agent.usage_unit).toBe("analysis_turn");
