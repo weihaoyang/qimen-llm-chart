@@ -1844,7 +1844,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
               <div className="empty-panel">等待生成盘面。</div>
             )}
 
-            {activeQimenChart ? <QimenPatternPanel chart={activeQimenChart} /> : null}
+            {activeQimenChart ? (
+              <aside className="qimen-board-info" aria-label="奇门盘面信息">
+                <SummaryStrip chart={activeQimenChart} />
+                <QimenPatternPanel chart={activeQimenChart} />
+              </aside>
+            ) : null}
           </>
         ) : null}
 
@@ -1893,7 +1898,6 @@ export function AppShell({ platformConfig }: AppShellProps) {
         ) : null}
 
       </div>
-      {mode === "qimen" && activeQimenChart ? <SummaryStrip chart={activeQimenChart} /> : null}
     </section>
   );
 

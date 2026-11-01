@@ -107,7 +107,7 @@
   min-width: 0;
   min-height: 0;
   gap: 3px;
-  padding: 5px 6px;
+  padding: 3px 6px;
   border: 0;
   background: var(--paipan-paper);
   color: var(--paipan-ink);
@@ -545,6 +545,34 @@
   html body .product-chart[data-mode="qimen"] .palace-card__fact--status { grid-column: 1 / -1 !important; }
   html body .product-chart[data-mode="qimen"] .palace-card__fact dd { font-size: 12px !important; }
   html body .product-chart[data-mode="qimen"] .palace-card__facts dt { font-size: 9px !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 6px !important;
+    padding: 0 !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__primary-item strong {
+    font-size: 15px !important;
+    line-height: 1.1 !important;
+  }
+
+  html body .product-chart[data-mode="qimen"] .palace-card__header {
+    display: flex !important; flex-wrap: wrap !important; gap: 2px !important;
+  }
+  html body .product-chart[data-mode="qimen"] .palace-card__identity { flex-shrink: 0; }
+  html body .product-chart[data-mode="qimen"] .palace-card__header h3 { font-size: 17px !important; }
+  html body .product-chart[data-mode="qimen"] .palace-card__status { margin-left: auto; }
+  html body .product-chart[data-mode="qimen"] .palace-card__status strong { font-size: 8px; }
+  html body .product-chart[data-mode="qimen"] .palace-card__facts {
+    grid-template-rows: repeat(3, minmax(13px, 1fr)) !important;
+    min-height: 41px !important;
+  }
+
 }
 }
 
@@ -562,44 +590,81 @@
   }
 }
 
-/* 窗口矮（≤760px，例如 1366×768 笔记本的浏览器视口只有 ~640px）时不再把盘面压扁：
-   压扁会让卡片内容溢出、事实栏（天/地/暗/支/势）整行变成 0 高度而完全看不见。
-   改为让画布列滚动：盘面按内容定高，卡片保底高度放得下自己的内容。 */
-@media (min-width: 721px) and (max-height: 760px) {
-  html body .product-chart[data-mode="qimen"] .paipan-workspace > #qimen-chart > .canvas-panel {
-    grid-template-rows: auto auto auto !important;
-    overflow: auto !important;
-  }
-  /* 整条链（内容壳 → 盘面布局 → 宫格壳）都要"按内容定高、不裁切"：任何一层留着 1fr 行或
-     overflow: hidden，都会把盘面压扁或从顶部裁掉。 */
-  html body .product-chart[data-mode="qimen"] .canvas-panel__content,
-  html body .product-chart[data-mode="qimen"] .qimen-board-layout,
-  html body .product-chart[data-mode="qimen"] .palace-grid-shell {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-  }
-  html body .product-chart[data-mode="qimen"] .canvas-panel__content {
-    grid-template-rows: auto auto !important;
+/* Desktop information lives beside the nine palaces, leaving their height intact. */
+.qimen-board-info { min-width: 0; min-height: 0; }
+@media (min-width: 721px) {
+  html body .product-chart[data-mode="qimen"] .canvas-panel[data-mode="qimen"] {
+    grid-template-rows: auto minmax(0, 1fr) !important;
   }
   html body .product-chart[data-mode="qimen"] .qimen-board-layout {
-    grid-template-rows: auto !important;
+    grid-template-columns: minmax(0, 1fr) clamp(154px, 14vw, 210px) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    gap: 10px;
+    padding: 8px;
+    align-items: start;
   }
+  html body .product-chart[data-mode="qimen"] .qimen-board-layout.has-sequence {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+  .qimen-board-layout > .sequence-rail { grid-column: 1 / -1; }
   html body .product-chart[data-mode="qimen"] .palace-grid-shell {
-    grid-template-rows: auto auto !important;
-    /* 从顶部开始排：居中会让溢出的部分跑到上方（既不可达、也不计入 scrollHeight）。 */
-    align-self: start !important;
+    height: 100%;
+    container-type: size;
+    grid-template-rows: minmax(0, 1fr) !important;
   }
-  html body .product-chart[data-mode="qimen"] .palace-grid {
-    max-height: none !important;
-    width: 100% !important;
-    align-self: start !important;
+  html body .product-chart[data-mode="qimen"] .palace-grid-shell__legend { display: none !important; }
+  html body .product-chart[data-mode="qimen"] .paipan-workspace .palace-grid {
+    width: min(100%, 100cqh) !important;
+    height: auto;
+    max-height: 100%;
+    align-self: start;
   }
-  html body .product-chart[data-mode="qimen"] .palace-card {
-    /* 给确定高度，避免"卡片高 → 壳层高 → 卡片高"的循环收缩（矮窗口下会把壳层压到 189px）；
-       124px 足以放下宫名 + 主区（窄卡片是两行）+ 两列事实栏。 */
-    height: 124px !important;
+  html body .product-chart[data-mode="qimen"] .qimen-board-info {
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
+  html body .product-chart[data-mode="qimen"] .qimen-board-info .summary-strip {
+    flex: 0 0 auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    gap: 1px;
+    padding: 0;
+    border: 1px solid var(--paipan-ink);
+    background: var(--paipan-ground);
+    box-shadow: none;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-board-info .summary-chip__content {
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px;
+    flex-wrap: wrap;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-board-info .summary-chip__content strong {
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-board-info .summary-chip__badge { font-size: 10px; }
+  body .product-chart[data-mode="qimen"] .qimen-board-info .qimen-pattern-disclosure { flex: 0 0 auto; }
+  body .product-chart[data-mode="qimen"] .qimen-board-info .qimen-pattern-disclosure > summary {
+    display: flex; flex-wrap: wrap; gap: 6px; padding: 10px;
+  }
+  body .product-chart[data-mode="qimen"] .qimen-board-info .qimen-pattern-list { grid-template-columns: minmax(0, 1fr); }
+  body .product-chart[data-mode="qimen"] .qimen-board-info .qimen-pattern-disclosure__mark { display: none; }
+}
+@media (max-width: 720px) {
+  html body .product-chart[data-mode="qimen"] .qimen-board-layout {
+    grid-template-rows: minmax(0, 1fr) auto !important;
+    overflow: auto;
+  }
+  html body .product-chart[data-mode="qimen"] .qimen-board-layout.has-sequence {
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+  .qimen-board-info { display: flex; flex-direction: column; gap: 6px; }
 }
 
 /* Keep sequence labels in their own row.  Older sidebar rules used a compact
