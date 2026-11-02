@@ -297,11 +297,12 @@ export const fetchPlatformUsage = async (
   // Keep the displayed balance scoped to the matching usage metric.
   const result = await createProductPlatformClient({ accessToken }).GET("/api/v1/usage/balance", { params: { query: { product_code: config.productCode } } });
   if (result.error || !result.data) throw new Error("无法读取平台用量余额。");
-  const body = result.data.find((entry) => entry.metric === metric);
+  const rows = result.data.filter((entry) => entry.product_code === config.productCode && entry.metric === metric);
+  const available = rows.some(entry => entry.remaining === null) ? Number.POSITIVE_INFINITY : rows.reduce((total, entry) => total + (entry.remaining ?? 0), 0);
   return {
     product_code: config.productCode,
-    available: Number(body?.remaining ?? 0), reserved: 0, consumed: 0,
+    available, reserved: 0, consumed: 0,
     usage_unit: metric, usage_label: metric,
-    by_metric: body ? [{ metric: metric, available: Number(body.remaining ?? 0), reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }] : [],
+    by_metric: rows.length ? [{ metric, available, reserved: 0, consumed: 0, usage_unit: metric, usage_label: metric }] : [],
   };
 };

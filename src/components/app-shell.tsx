@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { ProductAccountCenter } from "./product-account-center";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Position } from "3meta";
@@ -614,6 +615,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   }, [normalizedProfile]);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const isMobile = useIsMobileViewport();
+  const [productCenterOpen, setProductCenterOpen] = useState(false);
   const [platformLoginBusy, setPlatformLoginBusy] = useState(false);
   const [platformLoginError, setPlatformLoginError] = useState<string | null>(null);
   const clock = useResolvedClock();
@@ -1461,7 +1463,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
   };
 
   const openPlatformAccount = () => {
-    window.location.assign("https://platform.singseq.com/account");
+    window.location.assign(`https://platform.singseq.com/account?product=${encodeURIComponent(platformConfig.productCode)}&view=plans`);
   };
 
   const handleCompatibilityPurchase = async () => {
@@ -2123,13 +2125,14 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const platformAccount = (
     <div className="platform-account" aria-label="平台账户与 AI 权益">
+      <button type="button" className="platform-account__button" onClick={() => { setProductCenterOpen(true); if (platformWorkspace.status === "authenticated") void refreshPlatformAccount().catch(() => undefined); }}>用户中心</button>
       {platformWorkspace.status === "checking" ? (
         <span className="platform-account__status">正在读取账户…</span>
       ) : platformWorkspace.status === "authenticated" ? (
         <>
           <span className="platform-account__status">
             {platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录"}
-            <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "权益已连接"}</small>
+            <small>{platformWorkspace.usage ? Number.isFinite(platformWorkspace.usage.available) ? `AI 可用 ${platformWorkspace.usage.available} 次` : "AI 不限次数" : "权益已连接"}</small>
           </span>
           <button type="button" className="platform-account__button" onClick={() => void handlePlatformSwitchAccount()}>切换账户</button>
           <button type="button" className="platform-account__button" onClick={() => void handlePlatformLogout()}>退出登录</button>
@@ -2289,7 +2292,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
             <div className="mobile-hero__actions">
               <button type="button" className="mobile-account-trigger" onClick={() => setMobileAccountOpen(true)} aria-haspopup="dialog" aria-expanded={mobileAccountOpen}>
                 <span>{platformWorkspace.status === "checking" ? "读取账户…" : platformWorkspace.status === "authenticated" ? (platformWorkspace.profile?.display_name || platformWorkspace.profile?.phone_number || "已登录") : "未登录"}</span>
-                <small>{platformWorkspace.usage ? `AI 余 ${platformWorkspace.usage.available} ${platformWorkspace.usage.usage_label || "轮"}` : "账户与权益"}</small>
+                <small>{platformWorkspace.usage ? Number.isFinite(platformWorkspace.usage.available) ? `AI 可用 ${platformWorkspace.usage.available} 次` : "AI 不限次数" : "账户与权益"}</small>
               </button>
               <button type="button" className="mobile-account-trigger" aria-haspopup="dialog" onClick={() => setSourceLibraryOpen(true)}>
                 <span>资料库</span>
@@ -2412,6 +2415,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         </>
       )}
 
+      <ProductAccountCenter open={productCenterOpen} onClose={() => setProductCenterOpen(false)} accessToken={platformWorkspace.session?.access_token} baseUrl={platformConfig.baseUrl} productCode={platformConfig.productCode} productName="奇门遁甲" onLogin={() => void handlePlatformLogin()} />
       {mobileActionBar}
       {mobileSheets}
       {parametersOverlay}

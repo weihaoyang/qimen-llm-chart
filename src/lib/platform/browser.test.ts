@@ -48,6 +48,8 @@ describe("platform browser helpers", () => {
       requestUrl = input instanceof Request ? input.url : input.toString();
       return new Response(JSON.stringify([
         { id: "balance-1", product_code: "qimen", metric: "analysis_turn", remaining: 9, starts_at: "2026-01-01T00:00:00Z", ends_at: null },
+        { id: "balance-2", product_code: "qimen", metric: "analysis_turn", remaining: 4, starts_at: "2026-01-01T00:00:00Z", ends_at: null },
+        { id: "other", product_code: "other", metric: "analysis_turn", remaining: 99, starts_at: "2026-01-01T00:00:00Z", ends_at: null },
       ]), { status: 200 });
     }));
 
@@ -57,7 +59,7 @@ describe("platform browser helpers", () => {
       expect(usage.usage_unit).toBe("analysis_turn");
       expect(usage.usage_label).toBe("analysis_turn");
       expect(usage.by_metric).toHaveLength(1);
-      expect(usage.available).toBe(9);
+      expect(usage.available).toBe(13);
     } finally {
       process.env.NEXT_PUBLIC_PLATFORM_BASE_URL = previous.base;
       process.env.NEXT_PUBLIC_PLATFORM_PRODUCT_CODE = previous.product;
