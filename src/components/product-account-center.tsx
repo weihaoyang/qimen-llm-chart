@@ -12,7 +12,7 @@ const periods: Record<string, string> = { MONTHLY: "月", ANNUAL: "年", WEEKLY:
 const phaseNames: Record<string, string> = { TRIAL: "试用阶段", EVERGREEN: "常规阶段", DISCOUNT: "优惠阶段", FIXEDTERM: "固定期限" };
 const money = (price: { currency: string; value: number }) => new Intl.NumberFormat("zh-CN", { style: "currency", currency: price.currency }).format(price.value);
 
-export function ProductAccountCenter({ open, onClose, accessToken, baseUrl, productCode, productName, onLogin }: { open: boolean; onClose: () => void; accessToken?: string | null; baseUrl: string; productCode: string; productName: string; onLogin: () => void; }) {
+export function ProductAccountCenter({ open, onClose, accessToken, baseUrl, productCode, productName, subjectId, onLogin }: { open: boolean; onClose: () => void; accessToken?: string | null; baseUrl: string; productCode: string; productName: string; subjectId?: string; onLogin: () => void; }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [balances, setBalances] = useState<Balance[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -21,6 +21,7 @@ export function ProductAccountCenter({ open, onClose, accessToken, baseUrl, prod
   const [revision, setRevision] = useState(0);
   const billingUrl = new URL("/account", baseUrl);
   billingUrl.searchParams.set("product", productCode);
+  if (subjectId) billingUrl.searchParams.set("subject", subjectId);
   const plansUrl = new URL(billingUrl);
   plansUrl.searchParams.set("view", "plans");
   useEffect(() => {

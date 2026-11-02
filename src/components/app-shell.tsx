@@ -2415,7 +2415,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
         </>
       )}
 
-      <ProductAccountCenter open={productCenterOpen} onClose={() => setProductCenterOpen(false)} accessToken={platformWorkspace.session?.access_token} baseUrl={platformConfig.baseUrl} productCode={platformConfig.productCode} productName="奇门遁甲" onLogin={() => void handlePlatformLogin()} />
+      <ProductAccountCenter open={productCenterOpen} onClose={() => setProductCenterOpen(false)} accessToken={platformWorkspace.session?.access_token} baseUrl={platformConfig.baseUrl} productCode={platformConfig.productCode} productName="奇门遁甲" subjectId={platformWorkspace.session?.current_subject_id} onLogin={() => void handlePlatformLogin()} />
       {mobileActionBar}
       {mobileSheets}
       {parametersOverlay}
