@@ -29,7 +29,7 @@
 ## 本地运行
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -104,7 +104,7 @@ QMDJ_TEST_REAL_DATABASE_URL="postgresql://user@127.0.0.1:5432/db" npm run test:c
 
 ```bash
 export PATH="/c/Program Files/PostgreSQL/17/bin:$PATH"
-PGROOT="$HOME/.workbuddy-ai/tmp/pg17"
+PGROOT="$HOME/.local/share/qmdj-test-pg17"
 initdb -D "$PGROOT/data" -U qmdj --auth=trust --encoding=UTF8 --locale=C
 printf "listen_addresses = '127.0.0.1'\nport = 55433\n" >> "$PGROOT/data/postgresql.conf"
 postgres -D "$PGROOT/data" -p 55433 -c listen_addresses=127.0.0.1   # 前台跑，别用 pg_ctl（会 detach）
@@ -120,22 +120,11 @@ createdb -h 127.0.0.1 -p 55433 -U qmdj qmdj
 NEXT_DIST_DIR=.next-verify npm run build
 ```
 
-统一账户、邀请码兑换与 AI 权益链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
+统一账户与 AI 用量链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
 
-## 部署（一键发布）
+## 生产发布
 
-生产发布走仓库自带的 deploy SDK，一条命令，失败自动回滚：
-
-```bash
-node ops/deploy/cli.mjs doctor     # 发布前自检（docker/rsync/node/磁盘/env/sdk）
-node ops/deploy/cli.mjs deploy     # 构建 → 切换 → 健康门 → 失败自动回滚
-node ops/deploy/cli.mjs status     # 当前发布、镜像、健康
-node ops/deploy/cli.mjs rollback   # 切回上一版镜像
-node ops/deploy/cli.mjs logs -f    # 跟随容器日志
-```
-
-契约在所有产品上一致：**不可变镜像 + 发布锁 + 健康门 + 自动回滚**。完整说明见
-[`ops/deploy/README.md`](./ops/deploy/README.md)。
+统一使用基础设施仓库的 `k8s/ship.py qmdj --ref main`，见 [发布说明](docs/RELEASE.md)。
 
 ## 许可证
 

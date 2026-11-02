@@ -58,7 +58,6 @@ next-env.d.ts
 /.superpowers/
 /.yyrouter-image/
 /.codex-release-stage-*/
-/.next-*/
 /gods-eye-view/
 /outputs/
 *.pid
@@ -67,3 +66,5 @@ next-env.d.ts
 *.tar.gz
 *.zip
 *.tgz
+
+/.workbuddy-ai/
