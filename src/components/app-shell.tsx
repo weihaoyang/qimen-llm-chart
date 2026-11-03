@@ -649,7 +649,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       const callback = parsePlatformOAuthCallback(`${window.location.pathname}${window.location.search}`);
       if (!callback) return;
       const clearCallback = () => {
-        window.history.replaceState({}, document.title, "/");
+        window.history.replaceState(window.history.state, document.title, "/paipan");
       };
       try {
         const oauthRequest = consumePlatformOAuthRequest(callback.state);
@@ -2125,6 +2125,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
 
   const platformAccount = (
     <div className="platform-account" aria-label="平台账户与 AI 权益">
+      <button type="button" className="platform-account__button" onClick={openPlatformAccount}>购买 AI 次数</button>
       <button type="button" className="platform-account__button" onClick={() => { setProductCenterOpen(true); if (platformWorkspace.status === "authenticated") void refreshPlatformAccount().catch(() => undefined); }}>用户中心</button>
       {platformWorkspace.status === "checking" ? (
         <span className="platform-account__status">正在读取账户…</span>
