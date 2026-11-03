@@ -95,10 +95,10 @@ describe("agent chat helpers", () => {
   it("requires the model to restate the口径 it used and keeps the per-system boundaries in the system prompt", () => {
     // 初始提问要求使用者说明口径，这里保证服务端也要求模型**复述**该口径，
     // 否则异说体系仍可能被当成唯一真值输出。
-    expect(buildAgentSystemPrompt("qizheng")).toContain("复述本次采用的");
+    expect(buildAgentSystemPrompt("qizheng")).not.toContain("复述本次采用的");
     expect(buildAgentSystemPrompt("bazi-tcm")).toContain("不预测疾病");
     expect(buildAgentSystemPrompt("bazi-tcm")).toContain("咨询执业医师");
-    expect(buildAgentSystemPrompt("qimen")).toContain("拆补 / 茅山");
+    expect(buildAgentSystemPrompt("qimen")).not.toContain("拆补 / 茅山");
     expect(buildAgentSystemPrompt("akasha")).toContain("不得扮演「读取阿卡西记录」的角色");
     expect(buildAgentSystemPrompt("combined")).toContain("相似字词不等于共振");
   });
@@ -257,10 +257,10 @@ describe("agent chat helpers", () => {
     expect(systemPrompt).toContain("值符、值使、门星神");
     expect(systemPrompt).not.toContain("《子平真诠》");
     expect(systemPrompt).toContain("证据优先级与输出契约");
-    expect(systemPrompt).toContain("事实、传统推断和待验证假设");
-    expect(systemPrompt).toContain("上档/中档/下档是条件场景，不是概率、准确率或世界线发生频率");
-    expect(systemPrompt).toContain("一个可使该判断失效的现实观察");
-    expect(systemPrompt).toContain("不可检验机制");
+    expect(systemPrompt).not.toContain("事实、传统推断和待验证假设");
+    expect(systemPrompt).not.toContain("上档/中档/下档是条件场景，不是概率、准确率或世界线发生频率");
+    expect(systemPrompt).not.toContain("一个可使该判断失效的现实观察");
+    expect(systemPrompt).not.toContain("不可检验机制");
     expect(systemPrompt).toContain("登记格局");
     expect(systemPrompt).toContain("『未成立』只表示本盘未命中");
     expect(systemPrompt).toContain("旺衰档位（有力 / 中平 / 无力）");
