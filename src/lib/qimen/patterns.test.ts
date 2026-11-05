@@ -230,3 +230,22 @@ it("requires a heaven-plate qi for all three zha patterns", () => {
     expect(statusOf(report({ heavenlyStem: "丙", gate: "死门" }), id)).toBe("未成立");
   }
 });
+
+it("keeps the dragon, tiger and ghost alternatives as complete classical clauses", () => {
+  const formed = (id: string, position: number, fields: Record<string, unknown>) =>
+    statusOf(evaluateQimenPatterns(chartWith([palace(position, fields)])), id);
+  expect(formed("jiu_dun_long", 1, { heavenlyStem: "乙", gate: "开门" })).toBe("未成立");
+  expect(formed("jiu_dun_long", 1, { heavenlyStem: "乙", gate: "休门" })).toBe("成立");
+  expect(formed("jiu_dun_long", 3, { heavenlyStem: "乙", earthlyStem: "癸", gate: "休门" })).toBe("成立");
+  expect(formed("jiu_dun_hu", 8, { heavenlyStem: "乙", gate: "休门" })).toBe("未成立");
+  expect(formed("jiu_dun_hu", 3, { heavenlyStem: "乙", earthlyStem: "辛", gate: "休门" })).toBe("未成立");
+  expect(formed("jiu_dun_hu", 8, { heavenlyStem: ["戊", "乙"], earthlyStem: "辛", gate: "休门" })).toBe("成立");
+  expect(formed("jiu_dun_hu", 8, { heavenlyStem: "辛", gate: "生门" })).toBe("成立");
+  expect(formed("jiu_dun_hu", 3, { heavenlyStem: "丙", earthlyStem: "辛", gate: "生门" })).toBe("成立");
+  expect(formed("jiu_dun_hu", 7, { heavenlyStem: "庚", gate: "开门" })).toBe("未成立");
+  expect(formed("jiu_dun_gui", 8, { heavenlyStem: "丁", gate: "生门", deity: "九地" })).toBe("成立");
+  expect(formed("jiu_dun_gui", 3, { heavenlyStem: "丁", gate: "生门", deity: "九地" })).toBe("未成立");
+  expect(formed("jiu_dun_gui", 3, { heavenlyStem: "乙", gate: "杜门", deity: "九地" })).toBe("成立");
+  expect(formed("jiu_dun_gui", 3, { heavenlyStem: "丁", gate: "开门", deity: "九地" })).toBe("成立");
+  expect(formed("jiu_dun_gui", 3, { heavenlyStem: "丁", gate: "杜门", deity: "九地" })).toBe("未成立");
+});

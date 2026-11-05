@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha } from "./patterns";
+import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -67,7 +67,12 @@ export const buildChart = (
     { id: "patterns.san_za_wu_jia.xiu_zha", name: "休诈", deity: "六合" },
     { id: "patterns.san_za_wu_jia.chong_zha", name: "重诈", deity: "九地" },
   ];
-  const isCorrectedGoodPattern = (id: string | undefined) => id === sanQiId || sanZha.some(rule => rule.id === id);
+  const correctedDun = [
+    { id: "patterns.jiu_dun.long_dun", name: "龙遁", match: matchesLongDun },
+    { id: "patterns.jiu_dun.hu_dun", name: "虎遁", match: matchesHuDun },
+    { id: "patterns.jiu_dun.gui_dun", name: "鬼遁", match: matchesGuiDun },
+  ];
+  const isCorrectedGoodPattern = (id: string | undefined) => id === sanQiId || sanZha.some(rule => rule.id === id) || correctedDun.some(rule => rule.id === id);
   const fuGongId = "patterns.bad.fu_gong_ge";
   const feiGongId = "patterns.bad.fei_gong_ge";
   const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId;
@@ -77,6 +82,14 @@ export const buildChart = (
     const position = palace.position;
     if (matchesSanQiDeShi(palace)) {
       auspiciousPatterns.push({ id: sanQiId, name: "三奇得使", type: "三奇得使", position, description: "天盘三奇配地盘六甲所遁之仪" });
+    }
+    for (const rule of correctedDun) {
+      if (rule.match(palace)) {
+        auspiciousPatterns.push({
+          id: rule.id, name: rule.name, type: rule.name, position,
+          description: "依《奇门遁甲秘笈大全》奇门吉格所列条件",
+        });
+      }
     }
     for (const rule of sanZha) {
       if (matchesSanZha(palace, rule.deity)) {

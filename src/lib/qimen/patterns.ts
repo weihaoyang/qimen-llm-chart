@@ -79,6 +79,22 @@ const isZhiFu = (palace: Palace) => palace.deity === "值符" || Boolean(palace.
 const palaceLabel = (position: Position) => `第 ${position} 宫`;
 const stemsOf = (value: unknown) => valuesOf(value).join("/") || "无";
 
+export const matchesLongDun = (palace: Palace) =>
+  hasHeaven(palace, "乙") && gateIn(palace, ["休门"])
+    && (palace.position === 1 || hasEarth(palace, "癸"));
+
+export const matchesHuDun = (palace: Palace) =>
+  (palace.position === 8 && hasHeaven(palace, "乙") && hasEarth(palace, "辛") && gateIn(palace, ["休门"]))
+  || (palace.position === 8 && hasHeaven(palace, "辛") && gateIn(palace, ["生门"]))
+  || (hasHeaven(palace, "丙") && hasEarth(palace, "辛") && gateIn(palace, ["生门"]));
+
+export const matchesGuiDun = (palace: Palace) =>
+  deityIn(palace, ["九地"]) && (
+    (hasHeaven(palace, "丁") && gateIn(palace, ["生门"]) && palace.position === 8)
+    || (hasHeaven(palace, "乙") && gateIn(palace, ["杜门"]))
+    || (hasHeaven(palace, "丁") && gateIn(palace, ["开门"]))
+  );
+
 export const matchesSanZha = (palace: Palace, deity: string) =>
   gateIn(palace, SAN_MEN) && hasHeaven(palace, ...SAN_QI) && palace.deity === deity;
 
@@ -158,20 +174,17 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("jiu_dun_yun", "云遁", "九遁", "天盘乙 + 开/休/生门 + 地盘辛", "主遮掩、过渡与缓和；宜暗中准备、避开正面冲突。", (p) =>
     hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && hasEarth(p, "辛") ? pairEvidence(p) : null,
   ),
-  good("jiu_dun_long", "龙遁", "九遁", "天盘乙 + 开/休/生门 + 坎 1 宫或地盘癸", "主潜藏蓄势、后发制人；宜谋定而后动。", (p) =>
-    hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && (p.position === 1 || hasEarth(p, "癸")) ? gateEvidence(p) : null,
+  good("jiu_dun_long", "龙遁", "九遁", "天盘乙 + 休门 + 坎 1 宫或地盘癸", "主潜藏蓄势、后发制人；宜谋定而后动。", (p) =>
+    matchesLongDun(p) ? gateEvidence(p) : null,
   ),
-  good("jiu_dun_hu", "虎遁", "九遁", "(天盘乙 + 休/生门 + 艮 8 宫或地盘辛) 或 (天盘庚 + 开门 + 兑 7 宫)", "主威势、攻取与决断；宜竞争、出手，但忌过刚。", (p) =>
-    (hasHeaven(p, "乙") && gateIn(p, ["休门", "生门"]) && (p.position === 8 || hasEarth(p, "辛"))) ||
-    (hasHeaven(p, "庚") && gateIn(p, ["开门"]) && p.position === 7)
-      ? gateEvidence(p)
-      : null,
+  good("jiu_dun_hu", "虎遁", "九遁", "乙加辛休门在艮；或辛生门在艮；一云丙加辛生门", "主威势、攻取与决断；宜竞争、出手，但忌过刚。", (p) =>
+    matchesHuDun(p) ? pairEvidence(p) : null,
   ),
   good("jiu_dun_shen", "神遁", "九遁", "天盘丙 + 生门 + 九天", "主声势、上位与号召；宜树立形象、争取支持。", (p) =>
     hasHeaven(p, "丙") && gateIn(p, ["生门"]) && deityIn(p, ["九天"]) ? gateEvidence(p) : null,
   ),
-  good("jiu_dun_gui", "鬼遁", "九遁", "天盘丁 + 杜门 + 九地", "主隐蔽、暗查与回避；宜调查防守，不宜张扬。", (p) =>
-    hasHeaven(p, "丁") && gateIn(p, ["杜门"]) && deityIn(p, ["九地"]) ? gateEvidence(p) : null,
+  good("jiu_dun_gui", "鬼遁", "九遁", "九地下丁生门临艮，或乙杜门；一云丁开门九地", "主隐蔽、暗查与回避；宜调查防守，不宜张扬。", (p) =>
+    matchesGuiDun(p) ? gateEvidence(p) : null,
   ),
 
   // ---- 三诈五假 ----

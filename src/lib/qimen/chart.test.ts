@@ -326,3 +326,24 @@ it("keeps the three zha palace, global and catalog results consistent with heave
   }
   expect(formed).toBeGreaterThan(0);
 });
+
+it("keeps corrected dragon, tiger and ghost labels consistent across chart surfaces", () => {
+  const ids = ["long", "hu", "gui"];
+  for (let day = 1; day <= 8; day += 1) {
+    for (let hour = 0; hour < 24; hour += 2) {
+      const chart = buildChart({
+        datetime: `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:30`,
+        timeZone: "Asia/Shanghai",
+      });
+      const report = evaluateQimenPatterns(chart);
+      for (const id of ids) {
+        const engineId = "patterns.jiu_dun." + id + "_dun";
+        const positions = report.checks.find(item => item.id === "jiu_dun_" + id)?.positions;
+        expect(chart.raw.palaces.filter(p => (p.auspiciousPatterns ?? []).some(item => item.id === engineId))
+          .map(p => p.position)).toEqual(positions);
+        expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(item => item.id === engineId)
+          .map(item => item.position)).toEqual(positions);
+      }
+    }
+  }
+});
