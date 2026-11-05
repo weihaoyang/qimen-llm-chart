@@ -474,3 +474,15 @@ for (const format of ["mjs", "cjs"]) {
     writeFileSync(bazi, baziSource.replace(beforeBazi, afterBazi));
   }
 }
+
+// 神峰通考卷四原扫描「甲乙午申」: Yi matches Shen, not Wu.
+{
+  const file = new URL("../node_modules/taibu-core/dist/data/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = "export const HONG_YAN = {\n    '甲': '午', '乙': '午', '丙': '寅', '丁': '未',";
+  const after = "export const HONG_YAN = {\n    '甲': '午', '乙': '申', '丙': '寅', '丁': '未',";
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core Shen Feng Hong Yan table patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+}

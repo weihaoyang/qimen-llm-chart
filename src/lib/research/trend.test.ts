@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildBaziCalculationContext, buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { buildLifeTrendDayun, buildLifeTrendData } from "./trend";
+import shenfengEvidence from "../../../docs/research/sources/shenfeng-hongyan-liuxia.json";
 
 const profile = {
   original: { calendarMode: "solar", datetime: "1990-06-15T10:30", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" },
@@ -283,4 +284,35 @@ it("reports the food-god Lu position rather than an unqualified Tian Chu noble",
       expect(names).not.toContain("天厨");
     }
   }
+});
+
+it("matches the photographed Shen Feng Hong Yan and Liu Xia tables for all ten day stems", () => {
+  // NLC511-027032013020556-10361，第19–20页、卷四版心十七–十八。
+  const red: Record<string, string> = shenfengEvidence.hongYan;
+  const mist: Record<string, string> = shenfengEvidence.liuXia;
+  const seen = new Set<string>();
+  for (let date = 15; date <= 24; date++) {
+    const input = profileFor(`1990-01-${date}T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    const stem = buildBaziCalculationContext(input).eightChar.getDayGan();
+    seen.add(stem);
+    const periods = buildLifeTrendDayun(input).list;
+    const years = periods.flatMap(period => period.liunianList);
+    expect(new Set(years.map(year => year.zhi)).size).toBe(12);
+    for (const [branch, names] of [
+      ...periods.map(period => [period.branch, period.shenSha] as const),
+      ...years.map(year => [year.zhi, year.shenSha] as const),
+    ]) {
+      expect(names.includes("红艳煞"), `${stem}日见${branch}`).toBe(branch === red[stem]);
+      expect(names.includes("流霞"), `${stem}日见${branch}`).toBe(branch === mist[stem]);
+    }
+  }
+  expect(seen.size).toBe(10);
+});
+
+it("uses Shen Feng's Yi-at-Shen reading without retaining the Wu alternative", () => {
+  const input = profileFor("1990-01-20T12:00", "Asia/Shanghai", "li-chun", "midnight");
+  expect(buildBaziCalculationContext(input).eightChar.getDayGan()).toBe("乙");
+  const years = buildLifeTrendDayun(input).list.flatMap(period => period.liunianList);
+  expect(years.find(year => year.year === 2028)?.shenSha).toContain("红艳煞");
+  expect(years.find(year => year.year === 2026)?.shenSha).not.toContain("红艳煞");
 });
