@@ -86,7 +86,8 @@ export function TcmYunqiPanel({
         <span>六步客主加临</span>
         <small>主气六步（《六微旨大论》）× 客气六步（《六元正纪大论》）</small>
       </div>
-      <p>古法交司刻序（百刻制，初至终）：{value.yunqi.handoverKe.join("、")}</p>
+      <p>古法交司（寅初起百刻，初至终）：{value.yunqi.handoverKe.join("、")}</p>
+      <p>当地等时钟面：{value.yunqi.handoverLocalTime.join("、")}（寅初按 03:00 折算）</p>
       <div className="hd-grid tcm-steps">
         {value.yunqi.steps.map((step) => (
           <div className="hd-cell" key={step.name}>

@@ -334,3 +334,22 @@ describe("《太乙秘書》阳局 1–24 · 阴局 1–12 逐局回归（36 局
     expect(MISHU_CORPUS.every((entry) => (entry.skip ?? []).length === 0 || entry.notes)).toBe(true);
   });
 });
+
+it("matches the annual generals in the Ji Cheng charts for 430 and 441", () => {
+  // 《古今图书集成》艺术典695卷，阳遁43局与54局。
+  const cases = [
+    { year: 430, ju: 43, host: 8, guest: 17, generals: [8, 4, 7, 1] },
+    { year: 441, ju: 54, host: 38, guest: 24, generals: [8, 4, 4, 2] },
+  ];
+  for (const entry of cases) {
+    const chart = buildTaiyiChart({ year: entry.year, cycle: 360, dun: "阳遁", ruJu: null });
+    expect(chart.input.ruJu).toBe(entry.ju);
+    expect(chart.patterns.some(pattern => pattern.startsWith("关："))).toBe(true);
+    expect(chart.counts.host).toBe(entry.host);
+    expect(chart.counts.guest).toBe(entry.guest);
+    expect([
+      chart.counts.hostGeneralPalace, chart.counts.hostSuPalace,
+      chart.counts.guestGeneralPalace, chart.counts.guestSuPalace,
+    ]).toEqual(entry.generals);
+  }
+});

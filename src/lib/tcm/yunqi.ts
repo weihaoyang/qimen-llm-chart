@@ -172,7 +172,8 @@ export type YunQiAnalysis = {
   keQiSteps: readonly QiName[];
   /** 六步客主加临。 */
   steps: readonly QiStep[];
-  handoverKe: readonly number[];
+  handoverKe: readonly string[];
+  handoverLocalTime: readonly string[];
   movementPeriods: readonly { host: WuXing; guest: WuXing; startDate: string | null; endDateExclusive: string | null }[];
 };
 
@@ -235,10 +236,19 @@ export const analyzeYunQi = (year: number): YunQiAnalysis => {
     endDateExclusive: movementDates[index + 1],
   }));
 
-  // 《素问入式运气论奥》百刻制。子、丑、寅、卯四组每组递进二十五刻，
-  // 每步六十日八十七刻半。用零基偏移推算，再还原古籍的一基刻序。
+  // 《素问要旨论》从寅初计百刻。《素问》区分终刻与下一刻的起点，
+  // 整刻边界写下一刻，半刻边界写当刻六分，不能统一加一刻。
   const initialOffset = (DI_ZHI.indexOf(zhi) % 4) * 25;
-  const handoverKe = keQiSteps.map((_, index) => (initialOffset + index * 87.5) % 100 + 1);
+  const handoverOffsets = keQiSteps.map((_, index) => (initialOffset + index * 87.5) % 100);
+  const handoverKe = handoverOffsets.map(offset => Number.isInteger(offset)
+    ? `${offset + 1}刻`
+    : `${Math.floor(offset)}刻6分`);
+  // 寅初按当地等时钟面 03:00 标示，一百刻合二十四小时。
+  const handoverLocalTime = handoverOffsets.map(offset => {
+    const seconds = (3 * 3600 + offset * 864) % 86400;
+    return [Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60), seconds % 60]
+      .map(value => String(value).padStart(2, "0")).join(":");
+  });
 
   const steps: QiStep[] = keQiSteps.map((keQi, index) => ({
     step: index + 1,
@@ -275,6 +285,7 @@ export const analyzeYunQi = (year: number): YunQiAnalysis => {
     zaiQuan,
     keQiSteps,
     handoverKe,
+    handoverLocalTime,
     steps,
     movementPeriods,
   };

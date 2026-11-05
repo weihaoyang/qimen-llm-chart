@@ -252,9 +252,11 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   for (const general of generals) pushPo(general.label, positionOfPalace(general.palace));
   // 囚：采用局注的宽判，文昌或任一将与太乙同宫。
   const qiu = [tianMuPalace, ...generals.map((general) => general.palace)].some((palace) => palace !== null && palace === taiyiPalace);
-  // 关：主客大小将同宫数齐
+  // 关：大小将同宫，或目与将同宫（《图书集成》阳局43文昌关主大）。
   const generalPalaces = generals.map((general) => general.palace);
-  const guan = new Set(generalPalaces).size < generalPalaces.length;
+  const generalsGuan = new Set(generalPalaces).size < generalPalaces.length;
+  const guan = generalsGuan
+    || [tianMuPalace, shiJiPalace].some(eye => eye !== null && generalPalaces.includes(eye));
   // 格：客目及客大小将与太乙对宫
   const ge = opposite(shiJiPalace, taiyiPalace) || opposite(input.guestGeneralPalace, taiyiPalace) || opposite(input.guestSuPalace, taiyiPalace);
   // 对：下目文昌将与太乙冲而相当
@@ -280,7 +282,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     if (ties) break;
   }
   // 四郭固：二相掩囚（目与太乙同宫）又值四将相关（关）
-  const siGuoGu = (tianMuPalace !== null && tianMuPalace === taiyiPalace || shiJiPalace !== null && shiJiPalace === taiyiPalace) && guan;
+  const siGuoGu = (tianMuPalace !== null && tianMuPalace === taiyiPalace || shiJiPalace !== null && shiJiPalace === taiyiPalace) && generalsGuan;
   // 四郭杜：客参将与文昌将并、主大将与客大将并，兼之掩迫关格提挟
   const siGuoDu = tianMuPalace !== null && input.guestSuPalace === tianMuPalace
     && input.hostGeneralPalace === input.guestGeneralPalace
@@ -292,7 +294,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     outer.length ? `迫（外迫）：${outer.join("、")}` : "",
     inner.length ? `迫（内迫）：${inner.join("、")}` : "",
     qiu ? "囚：文昌或四将与太乙同宫" : "",
-    guan ? "关：主客大小将同宫" : "",
+    guan ? "关：大小将或目与将同宫" : "",
     ge ? "格：客目或客大小将与太乙对宫" : "",
     dui ? "对：文昌与太乙对冲" : "",
     siGuoGu ? "四郭固：二目掩囚太乙宫，又值四将相关" : "",

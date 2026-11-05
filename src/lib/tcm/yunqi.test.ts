@@ -155,9 +155,18 @@ it("keeps the Jin Jian five movement periods separate from the six qi steps", ()
 
 it("reproduces the four traditional handover groups and six half-ke steps", () => {
   expect([2024, 2025, 2026, 2027].map(year => analyzeYunQi(year).handoverKe)).toEqual([
-    [1, 88.5, 76, 63.5, 51, 38.5],
-    [26, 13.5, 1, 88.5, 76, 63.5],
-    [51, 38.5, 26, 13.5, 1, 88.5],
-    [76, 63.5, 51, 38.5, 26, 13.5],
+    ["1刻", "87刻6分", "76刻", "62刻6分", "51刻", "37刻6分"],
+    ["26刻", "12刻6分", "1刻", "87刻6分", "76刻", "62刻6分"],
+    ["51刻", "37刻6分", "26刻", "12刻6分", "1刻", "87刻6分"],
+    ["76刻", "62刻6分", "51刻", "37刻6分", "26刻", "12刻6分"],
+  ]);
+});
+
+it("anchors the traditional clock at yin-chu and handles midnight without ordinal drift", () => {
+  expect(analyzeYunQi(2026).handoverLocalTime).toEqual([
+    "15:00:00", "12:00:00", "09:00:00", "06:00:00", "03:00:00", "00:00:00",
+  ]);
+  expect(analyzeYunQi(2024).handoverLocalTime).toEqual([
+    "03:00:00", "00:00:00", "21:00:00", "18:00:00", "15:00:00", "12:00:00",
   ]);
 });
