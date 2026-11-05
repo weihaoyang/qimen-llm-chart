@@ -26,5 +26,6 @@ describe("QizhengPanel", () => {
     expect(screen.getByText("七政落宫")).toBeInTheDocument();
     expect(screen.getByText("四余落宫")).toBeInTheDocument();
     expect(screen.getByText("罗睺")).toBeInTheDocument();
+    expect(screen.getByText(/部分排盘/)).toBeInTheDocument();
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { ayanamsa } from "@/lib/vedic/ayanamsa";
 import { buildQizhengChart, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
-import { serializeQizhengToStructuredText } from "./serializer";
+import { serializeQizhengToCompactJson, serializeQizhengToStructuredText } from "./serializer";
 
 const profile = () => {
   const input: ProfileInput = getDefaultProfileInput(new Date("1990-05-20T08:30:00+08:00"), "Asia/Shanghai");
@@ -152,7 +152,7 @@ describe("qizheng siyu chart", () => {
   it("places seven luminaries and the three calculable remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
-    expect(chart.complete).toBe(true);
+    expect(chart.complete).toBe(false);
     const luminaries = chart.stars.filter((star) => star.kind === "七政");
     const remainders = chart.stars.filter((star) => star.kind === "四余");
     expect(luminaries).toHaveLength(SEVEN_LUMINARIES.length);
@@ -238,8 +238,10 @@ describe("qizheng siyu chart", () => {
     expect(text).toContain("四余·罗睺");
     expect(text).toContain("果老旧法");
     expect(text).toContain("二十八宿黄道经纬度钤");
+    expect(text).toContain("完整性：部分排盘");
     expect(text).toContain("紫气缺少可核验的历元");
     expect(text).not.toContain("四余·紫气：");
+    expect(JSON.parse(serializeQizhengToCompactJson(buildQizhengChart(profile()))).complete).toBe(false);
   });
 });
 

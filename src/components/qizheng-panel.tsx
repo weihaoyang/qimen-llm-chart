@@ -24,7 +24,7 @@ const StarTable = ({ title, stars }: { title: string; stars: QizhengStar[] }) =>
 export function QizhengPanel({ value, onCopyJson, jsonCopied }: { value: QizhengChart; onCopyJson?: () => void; jsonCopied?: boolean }) {
   return (
     <section className="divination-panel divination-panel--qizheng" aria-label="七政四余">
-      <div className="divination-panel__topline"><span>QIZHENG SIYU / 07</span><span className={value.complete ? "status status--live" : "status"}>命宫 {value.mingPalace.branch}</span></div>
+      <div className="divination-panel__topline"><span>QIZHENG SIYU / 07</span><span className={value.complete ? "status status--live" : "status"}>命宫 {value.mingPalace.branch}{value.complete ? "" : " · 部分排盘"}</span></div>
       <header className="divination-panel__header">
         <div>
           <p className="divination-panel__kicker">SEVEN LUMINARIES / FOUR REMNANTS</p>
