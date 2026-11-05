@@ -424,3 +424,53 @@ for (const format of ["mjs", "cjs"]) {
     writeFileSync(dayun, dayunSource.replace(beforeContext, afterContext));
   }
 }
+
+// Keep 飞刃 (the opposite blade position) under the same selected blade convention.
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = "    matchMapValue(FEI_REN, dayStem, targetBranch, '飞刃', names);";
+  const after = `    if (!options?.yangRenYangOnly || ['甲', '丙', '戊', '庚', '壬'].includes(dayStem)) {
+    matchMapValue(FEI_REN, dayStem, targetBranch, '飞刃', names);
+    }`;
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core flying blade convention patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+}
+
+// 三车一览逐干列食神禄位: 戊申己酉壬寅癸卯，非原表的戊巳己午壬亥癸子。
+{
+  const file = new URL("../node_modules/taibu-core/dist/data/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = `export const TIAN_CHU = {
+    '甲': '巳', '乙': '午', '丙': '巳', '丁': '午',
+    '戊': '巳', '己': '午', '庚': '亥', '辛': '子',
+    '壬': '亥', '癸': '子',
+};`;
+  const after = `export const TIAN_CHU = {
+    '甲': '巳', '乙': '午', '丙': '巳', '丁': '午',
+    '戊': '申', '己': '酉', '庚': '亥', '辛': '子',
+    '壬': '寅', '癸': '卯',
+};`;
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core food-god Lu table patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+  const shared = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const sharedSource = readFileSync(shared, "utf8");
+  const beforeLabel = "matchMapValue(TIAN_CHU, dayStem, targetBranch, '天厨', names);";
+  const afterLabel = "matchMapValue(TIAN_CHU, dayStem, targetBranch, '天厨禄位（日）', names);";
+  if (!sharedSource.includes(afterLabel)) {
+    if (sharedSource.split(beforeLabel).length !== 2) throw new Error("Review taibu-core food-god Lu label patch");
+    writeFileSync(shared, sharedSource.replace(beforeLabel, afterLabel));
+  }
+  const bazi = new URL("../node_modules/taibu-core/dist/domains/bazi/calculate.js", import.meta.url);
+  const baziSource = readFileSync(bazi, "utf8");
+  const beforeBazi = "if (TIAN_CHU[dayStem] === targetBranch)\n        addUnique('天厨');";
+  const afterBazi = "if (TIAN_CHU[dayStem] === targetBranch)\n        addUnique('天厨禄位（日）');";
+  if (!baziSource.includes(afterBazi)) {
+    if (baziSource.split(beforeBazi).length !== 2) throw new Error("Review taibu-core Bazi food-god Lu label patch");
+    writeFileSync(bazi, baziSource.replace(beforeBazi, afterBazi));
+  }
+}

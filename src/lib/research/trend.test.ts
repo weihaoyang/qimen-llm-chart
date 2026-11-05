@@ -252,3 +252,35 @@ it("uses the selected natal year for Gou Jiao polarity and branch origin", () =>
     }
   }
 });
+
+it("keeps flying blades opposite the selected five-Yang blades", () => {
+  const targets: Record<string, string> = { 甲: "酉", 丙: "子", 戊: "子", 庚: "卯", 壬: "午" };
+  for (let date = 15; date <= 24; date++) {
+    const input = profileFor(`1990-01-${date}T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    const stem = buildBaziCalculationContext(input).eightChar.getDayGan();
+    const periods = buildLifeTrendDayun(input).list;
+    for (const [branch, names] of [
+      ...periods.map(period => [period.branch, period.shenSha] as const),
+      ...periods.flatMap(period => period.liunianList.map(year => [year.zhi, year.shenSha] as const)),
+    ]) expect(names.includes("飞刃"), `${stem}日见${branch}`).toBe(branch === targets[stem]);
+  }
+});
+
+it("reports the food-god Lu position rather than an unqualified Tian Chu noble", () => {
+  // 三车一览逐干说明的食神禄支；这是日干查位，不声称食神透干等贵格条件齐备。
+  const targets: Record<string, string> = {
+    甲: "巳", 乙: "午", 丙: "巳", 丁: "午", 戊: "申", 己: "酉", 庚: "亥", 辛: "子", 壬: "寅", 癸: "卯",
+  };
+  for (let date = 15; date <= 24; date++) {
+    const input = profileFor(`1990-01-${date}T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    const stem = buildBaziCalculationContext(input).eightChar.getDayGan();
+    const periods = buildLifeTrendDayun(input).list;
+    for (const [branch, names] of [
+      ...periods.map(period => [period.branch, period.shenSha] as const),
+      ...periods.flatMap(period => period.liunianList.map(year => [year.zhi, year.shenSha] as const)),
+    ]) {
+      expect(names.includes("天厨禄位（日）"), `${stem}日见${branch}`).toBe(branch === targets[stem]);
+      expect(names).not.toContain("天厨");
+    }
+  }
+});
