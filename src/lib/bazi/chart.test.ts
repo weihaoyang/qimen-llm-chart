@@ -4,6 +4,40 @@ import { Solar } from "lunar-typescript";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "./chart";
 
+describe("classical day-pillar Xun Kong", () => {
+  it("matches all sixty pillars against the six ten-day void pairs", () => {
+    const stems = Array.from("甲乙丙丁戊己庚辛壬癸");
+    const branches = Array.from("子丑寅卯辰巳午未申酉戌亥");
+    const xunHeads = ["甲子", "甲戌", "甲申", "甲午", "甲辰", "甲寅"];
+    const voidPairs = ["戌亥", "申酉", "午未", "辰巳", "寅卯", "子丑"];
+    // Fixed civil-date anchor; test旬 lookup separately from any prediction or year-void method.
+    for (let index = 0; index < 60; index++) {
+      const date = new Date(Date.UTC(1990, 1, 28 + index)).toISOString().slice(0, 10);
+      const raw = buildBaziChartFromProfile(normalizeProfileInput({
+        calendarMode: "solar", datetime: `${date}T12:00`, timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+      })).raw;
+      const day = raw.pillars.find(pillar => pillar.key === "day");
+      expect(day?.pillar).toBe(stems[index % 10] + branches[index % 12]);
+      expect(day?.xun).toBe(xunHeads[Math.floor(index / 10)]);
+      expect(day?.xunKong).toBe(voidPairs[Math.floor(index / 10)]);
+      // Within each ten-day run the two void branches never occur as the day's own branch.
+      expect(day?.xunKong.includes(day.earthlyBranch)).toBe(false);
+    }
+  });
+
+  it("changes the day void pair at a Xun boundary using the selected late-Zi convention", () => {
+    for (const dayBoundary of ["midnight", "zi-start"] as const) {
+      const raw = buildBaziChartFromProfile(normalizeProfileInput({
+        calendarMode: "solar", datetime: "1990-03-09T23:30", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+        baziSettings: { dayBoundary, yearBoundary: "li-chun" },
+      })).raw;
+      expect(raw.pillars.find(pillar => pillar.key === "day")).toMatchObject(dayBoundary === "midnight"
+        ? { pillar: "癸酉", xun: "甲子", xunKong: "戌亥" }
+        : { pillar: "甲戌", xun: "甲戌", xunKong: "申酉" });
+    }
+  });
+});
+
 describe("buildBaziChartFromProfile", () => {
   it("keeps solar term pillars and luck offsets aligned for the same instant", () => {
     const calculate = (datetime: string, timeZone: string) => buildBaziChartFromProfile(normalizeProfileInput({
