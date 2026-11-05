@@ -47,7 +47,8 @@ describe("qizheng siyu chart", () => {
   });
 
   it("keeps the 牛 boundary from 推步法解 at 29°37′ in the first palace", () => {
-    // 五礼通考 digital transcription reads 29°27′, so 29°32′ distinguishes the two.
+    // 五礼通考 CADAL06066771 原扫描第126页（卷195版心十三）刻29°27′；
+    // 这是已目验的传本异文，29°32′区分两种宿界，不是转录错误的假设。
     expect(longitudeToMansion(299 + 32 / 60, EPOCH_UT)).toBe("斗");
     expect(longitudeToMansion(299 + 36.99 / 60, EPOCH_UT)).toBe("斗");
     expect(longitudeToMansion(299 + 37.01 / 60, EPOCH_UT)).toBe("牛");

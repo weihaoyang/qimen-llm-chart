@@ -353,3 +353,22 @@ it("matches the annual generals in the Ji Cheng charts for 430 and 441", () => {
     ]).toEqual(entry.generals);
   }
 });
+
+it("preserves the 442 historical discrepancy without silently substituting the previous year", () => {
+  // 南齐书「大小将皆见关」不能靠把442年改排为441年来制造吻合。
+  const chart = buildTaiyiChart({ year: 442, cycle: 360, dun: "阳遁", ruJu: null });
+  expect(chart.input.ruJu).toBe(55);
+  expect([
+    chart.counts.hostGeneralPalace, chart.counts.hostSuPalace,
+    chart.counts.guestGeneralPalace, chart.counts.guestSuPalace,
+  ]).toEqual([6, 8, 3, 9]);
+  // 当前「关」兼收目与将同宫，不能用一个布尔标签证明四将皆关。
+  expect(new Set([
+    chart.counts.hostGeneralPalace, chart.counts.hostSuPalace,
+    chart.counts.guestGeneralPalace, chart.counts.guestSuPalace,
+  ]).size).toBe(4);
+  expect(chart.patterns.some(pattern => pattern.startsWith("关："))).toBe(true);
+  const previous = buildTaiyiChart({ year: 441, cycle: 360, dun: "阳遁", ruJu: null });
+  expect(previous.input.ruJu).toBe(54);
+  expect(previous.patterns.some(pattern => pattern.startsWith("关："))).toBe(true);
+});
