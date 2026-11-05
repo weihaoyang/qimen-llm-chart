@@ -140,13 +140,29 @@ describe("qizheng siyu chart", () => {
     expect(mingPalaceIndex(10, 0)).toBe(1);
   });
 
-  it("reaches the classical dignity table now that palaces use the classical mapping", () => {
+  it("maps the imported table using the selected twelve-palace mapping", () => {
     const input: ProfileInput = getDefaultProfileInput(new Date("1990-03-21T12:00:00+08:00"), "Asia/Shanghai");
     input.location = { city: "上海", timeZone: "Asia/Shanghai", latitude: 31.2304, longitude: 121.4737 };
     const chart = buildQizhengChart(normalizeProfileInput(input));
     const sun = chart.stars.find((star) => star.name === "太阳");
     expect(sun?.branch).toBe("戌"); // 太阳位于白羊
     expect(sun?.dignity).toBe("庙"); // 太阳庙于戌宫
+  });
+
+  it("keeps the imported lunar dignity table distinct from Xingxue Dacheng volume 19", () => {
+    // 卷十九太阴论：庙戌、旺酉；同卷又把巨蟹（未）称为本宫。
+    const cases = [
+      ["2026-01-24T12:00:00+08:00", "戌", "平", "庙"],
+      ["2026-01-26T12:00:00+08:00", "酉", "陷", "旺"],
+      ["2026-01-03T12:00:00+08:00", "未", "庙", "本宫"],
+    ] as const;
+    for (const [date, branch, imported, classical] of cases) {
+      const input = getDefaultProfileInput(new Date(date), "Asia/Shanghai");
+      const moon = buildQizhengChart(normalizeProfileInput(input)).stars.find((star) => star.name === "太阴");
+      expect(moon?.branch).toBe(branch);
+      expect(moon?.dignity).toBe(imported);
+      expect(moon?.dignity).not.toBe(classical);
+    }
   });
 
   it("places seven luminaries and the three calculable remainders", () => {
