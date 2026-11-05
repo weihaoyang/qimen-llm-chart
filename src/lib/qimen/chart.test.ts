@@ -374,3 +374,36 @@ it("synchronizes promotion and salary palace labels with independent heaven-stem
     }
   }
 });
+
+
+it("synchronizes the Jia palace, summary and catalog matches against heaven-stem clauses", () => {
+  const rules = [
+    ["di_jia", ["丁", "己", "癸"], "杜门", ["九地", "太阴", "六合"]],
+    ["ren_jia", ["壬"], "惊门", ["九天"]],
+    ["shen_jia", ["丁", "己", "癸"], "伤门", ["九地"]],
+    ["gui_jia", ["丁", "己", "癸"], "死门", ["九地"]],
+  ] as const;
+  let formed = 0;
+  for (let day = 1; day <= 8; day += 1) {
+    for (let hour = 0; hour < 24; hour += 2) {
+      const chart = buildChart({
+        datetime: `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:30`,
+        timeZone: "Asia/Shanghai",
+      });
+      const report = evaluateQimenPatterns(chart);
+      for (const [name, stems, gate, deities] of rules) {
+        const expected = chart.raw.palaces.filter(p => {
+          const heaven = Array.isArray(p.heavenlyStem) ? p.heavenlyStem : [p.heavenlyStem];
+          return heaven.some(value => stems.some(stem => stem === value))
+            && p.gate === gate && deities.some(deity => deity === p.deity);
+        }).map(p => p.position);
+        formed += expected.length;
+        const id = "patterns.san_za_wu_jia." + name;
+        expect(report.checks.find(item => item.id === name)?.positions).toEqual(expected);
+        expect(chart.raw.palaces.filter(p => (p.auspiciousPatterns ?? []).some(item => item.id === id)).map(p => p.position)).toEqual(expected);
+        expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(item => item.id === id).map(item => item.position)).toEqual(expected);
+      }
+    }
+  }
+  expect(formed).toBeGreaterThan(0);
+});

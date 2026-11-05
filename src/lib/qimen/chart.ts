@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian } from "./patterns";
+import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -71,6 +71,10 @@ export const buildChart = (
     { id: "patterns.jiu_dun.long_dun", name: "龙遁", match: matchesLongDun },
     { id: "patterns.jiu_dun.hu_dun", name: "虎遁", match: matchesHuDun },
     { id: "patterns.jiu_dun.gui_dun", name: "鬼遁", match: matchesGuiDun },
+    { id: "patterns.san_za_wu_jia.di_jia", name: "地假", match: matchesDiJia },
+    { id: "patterns.san_za_wu_jia.ren_jia", name: "人假", match: matchesRenJia },
+    { id: "patterns.san_za_wu_jia.shen_jia", name: "神假", match: matchesShenJia },
+    { id: "patterns.san_za_wu_jia.gui_jia", name: "鬼假", match: matchesGuiJia },
     { id: "patterns.common.qi_you_lu_wei", name: "奇游禄位", match: matchesQiYouLuWei },
     { id: "patterns.common.san_qi_sheng_dian", name: "三奇贵人升殿", match: matchesSanQiShengDian },
   ];
@@ -91,7 +95,9 @@ export const buildChart = (
           id: rule.id, name: rule.name, type: rule.name, position,
           description: rule.id.startsWith("patterns.jiu_dun.")
             ? "依《奇门遁甲秘笈大全》奇门吉格所列条件"
-            : "天盘三奇临本宫，依《奇门法窍》升殿、奇游禄位条",
+            : rule.id.startsWith("patterns.san_za_wu_jia.")
+              ? "五假以天盘干合门神；人假取《奇门法窍》六壬读法"
+              : "天盘三奇临本宫，依《奇门法窍》升殿、奇游禄位条",
         });
       }
     }

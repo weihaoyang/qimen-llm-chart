@@ -270,3 +270,27 @@ it("uses heaven stems for promotion and salary palaces, keeping their different 
     expect(statusOf(report, "san_qi_sheng_dian")).toBe(dian ? "成立" : "未成立");
   }
 });
+
+
+it("matches the four Jia heaven-stem clauses and rejects earth-only substitutes", () => {
+  const rules = [
+    ["di_jia", ["丁", "己", "癸"], "杜门", ["九地", "太阴", "六合"]],
+    ["ren_jia", ["壬"], "惊门", ["九天"]],
+    ["shen_jia", ["丁", "己", "癸"], "伤门", ["九地"]],
+    ["gui_jia", ["丁", "己", "癸"], "死门", ["九地"]],
+  ] as const;
+  for (const [id, stems, gate, deities] of rules) {
+    for (const stem of stems) {
+      for (const deity of deities) {
+        const formed = (overrides: Record<string, unknown>) => statusOf(evaluateQimenPatterns(chartWith([
+          palace(6, { heavenlyStem: stem, earthlyStem: "庚", gate, deity, ...overrides }),
+        ])), id);
+        expect(formed({})).toBe("成立");
+        expect(formed({ heavenlyStem: "庚", earthlyStem: stem })).toBe("未成立");
+        expect(formed({ heavenlyStem: ["戊", stem] })).toBe("成立");
+        expect(formed({ gate: "开门" })).toBe("未成立");
+        expect(formed({ deity: "白虎" })).toBe("未成立");
+      }
+    }
+  }
+});

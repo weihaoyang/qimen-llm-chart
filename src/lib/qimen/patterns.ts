@@ -95,6 +95,16 @@ export const matchesGuiDun = (palace: Palace) =>
     || (hasHeaven(palace, "丁") && gateIn(palace, ["开门"]))
   );
 
+// 五假中的干取天盘；人假取《奇门法窍》的六壬读法。
+export const matchesDiJia = (palace: Palace) =>
+  hasHeaven(palace, ...DING_JI_GUI) && gateIn(palace, ["杜门"]) && deityIn(palace, ["九地", "太阴", "六合"]);
+export const matchesRenJia = (palace: Palace) =>
+  hasHeaven(palace, "壬") && gateIn(palace, ["惊门"]) && deityIn(palace, ["九天"]);
+export const matchesShenJia = (palace: Palace) =>
+  hasHeaven(palace, ...DING_JI_GUI) && gateIn(palace, ["伤门"]) && deityIn(palace, ["九地"]);
+export const matchesGuiJia = (palace: Palace) =>
+  hasHeaven(palace, ...DING_JI_GUI) && gateIn(palace, ["死门"]) && deityIn(palace, ["九地"]);
+
 export const matchesQiYouLuWei = (palace: Palace) => {
   const stem = ({ 3: "乙", 4: "丙", 9: "丁" } as Record<number, string>)[palace.position];
   return Boolean(stem && hasHeaven(palace, stem) && gateIn(palace, SAN_MEN));
@@ -210,17 +220,17 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("tian_jia", "天假", "三诈五假", "天盘乙/丙/丁 + 景门 + 九天", "主名分、文书与声势扶助；宜申请、报批、公开发布。", (p) =>
     hasHeaven(p, ...SAN_QI) && gateIn(p, ["景门"]) && deityIn(p, ["九天"]) ? gateEvidence(p) : null,
   ),
-  good("di_jia", "地假", "三诈五假", "地盘丁/己/癸 + 杜门 + 九地/太阴/六合", "主地利与掩护；宜占地、守成、避开锋芒。", (p) =>
-    hasEarth(p, ...DING_JI_GUI) && gateIn(p, ["杜门"]) && deityIn(p, ["九地", "太阴", "六合"]) ? gateEvidence(p) : null,
+  good("di_jia", "地假", "三诈五假", "天盘丁/己/癸 + 杜门 + 九地/太阴/六合", "主地利与掩护；宜占地、守成、避开锋芒。", (p) =>
+    matchesDiJia(p) ? gateEvidence(p) : null,
   ),
-  good("ren_jia", "人假", "三诈五假", "地盘壬 + 惊门 + 九天", "主借他人之名行事；宜代理、转达，慎防冒用。", (p) =>
-    hasEarth(p, "壬") && gateIn(p, ["惊门"]) && deityIn(p, ["九天"]) ? gateEvidence(p) : null,
+  good("ren_jia", "人假", "三诈五假", "天盘壬 + 惊门 + 九天", "主借他人之名行事；宜代理、转达，慎防冒用。", (p) =>
+    matchesRenJia(p) ? gateEvidence(p) : null,
   ),
-  good("shen_jia", "神假", "三诈五假", "地盘丁/己/癸 + 伤门 + 九地", "主借势压人、以快取胜；出手前先留证据。", (p) =>
-    hasEarth(p, ...DING_JI_GUI) && gateIn(p, ["伤门"]) && deityIn(p, ["九地"]) ? gateEvidence(p) : null,
+  good("shen_jia", "神假", "三诈五假", "天盘丁/己/癸 + 伤门 + 九地", "主借势压人、以快取胜；出手前先留证据。", (p) =>
+    matchesShenJia(p) ? gateEvidence(p) : null,
   ),
-  good("gui_jia", "鬼假", "三诈五假", "地盘丁/己/癸 + 死门 + 九地", "主收束、了结与清算；宜处理旧账、止损退出。", (p) =>
-    hasEarth(p, ...DING_JI_GUI) && gateIn(p, ["死门"]) && deityIn(p, ["九地"]) ? gateEvidence(p) : null,
+  good("gui_jia", "鬼假", "三诈五假", "天盘丁/己/癸 + 死门 + 九地", "主收束、了结与清算；宜处理旧账、止损退出。", (p) =>
+    matchesGuiJia(p) ? gateEvidence(p) : null,
   ),
 
   // ---- 常用吉格 ----
