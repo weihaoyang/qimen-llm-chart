@@ -12,6 +12,19 @@ import type { ProvenanceMaterialSet } from "../types";
 export const MATERIALS: ProvenanceMaterialSet = {
   "runes-source": [
     {
+      title: "符文诗之间的词义差异",
+      lines: [
+        "Thurisaz：古英语为刺，挪威与冰岛为巨人。",
+        "Ansuz：古英语 Os 诗节与言语相关，词源有争议；挪威 Óss 为河口，冰岛 Óss 为神。",
+        "Kaunan：古英语 Cen 为火炬，挪威与冰岛 Kaun 为疮。",
+        "Perthro：古英语 Peorth 诗节涉及宴厅游乐，骰杯是后世解释，词源未定。",
+        "Algiz：古英语 Eolh-secg 为沼泽中能刺伤人的植物；麋鹿属重建名称，保护属现代占义。",
+        "Tiwaz：古英语 Tir 诗节指向守信运行的标志或星，北欧诗节指独臂神。",
+        "Ingwaz：古英语诗中是东丹人的 Ing；种子属现代象征。",
+      ],
+      note: "据 Dickins 1915 编译的三部符文诗及其校注。晚出的古英语和北欧诗各有字母变化，不能把所有释义都称作古弗萨克时代的直接记载。",
+    },
+    {
       title: "24 符文名与字形（runes-data.js 逐条，传统次序）",
       lines: [
         "Fehu ᚠ／Uruz ᚢ／Thurisaz ᚦ／Ansuz ᚨ／Raidho ᚱ／Kaunan ᚲ／Gebo ᚷ／Wunjo ᚹ",

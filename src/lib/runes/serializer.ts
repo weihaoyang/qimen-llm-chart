@@ -9,7 +9,7 @@ export const serializeRunesToStructuredText = (reading: RuneReading) => [
   ...reading.draws.map((draw, index) => {
     const position = reading.spread.positions[index];
     const meaning = draw.orientation === "reversed" ? draw.rune.reversed : draw.rune.upright;
-    return `${index + 1}. ${position.name}（${position.q}）：${draw.rune.name} ${draw.rune.char} · ${draw.orientation === "reversed" ? "逆位" : "正位"} · ${AETTIR[draw.rune.aett].name} · 读音 ${draw.rune.sound} · 关键词 ${draw.rune.keywords.join("、")} · ${meaning} 建议：${draw.rune.advice}`;
+    return `${index + 1}. ${position.name}（${position.q}）：${draw.rune.name} ${draw.rune.char} · ${draw.orientation === "reversed" ? "逆位" : "正位"} · ${AETTIR[draw.rune.aett].name} · 读音 ${draw.rune.sound} · 词义来源 ${draw.rune.lore} · 关键词 ${draw.rune.keywords.join("、")} · ${meaning} 建议：${draw.rune.advice}`;
   }),
   "",
   "北欧宇宙九界（Yggdrasil 三层）：",
