@@ -391,3 +391,36 @@ for (const format of ["mjs", "cjs"]) {
     writeFileSync(file, source.replace(before, after));
   }
 }
+
+// 三命通会: 阳男阴女前勾后绞，阴男阳女前绞后勾，均距生年支三辰。
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = `    matchMapValue(GOU_SHA, yearBranch, targetBranch, '勾煞', names);
+    matchMapValue(JIAO_SHA, yearBranch, targetBranch, '绞煞', names);`;
+  const after = `    if (context.gender === 'male' || context.gender === 'female') {
+        const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const birthIndex = branches.indexOf(yearBranch);
+        const yangYear = ['甲', '丙', '戊', '庚', '壬'].includes(yearStem);
+        const gouForward = (context.gender === 'male') === yangYear;
+        if (birthIndex >= 0) {
+            if (targetBranch === branches[(birthIndex + (gouForward ? 3 : 9)) % 12]) addUnique(names, '勾煞');
+            if (targetBranch === branches[(birthIndex + (gouForward ? 9 : 3)) % 12]) addUnique(names, '绞煞');
+        }
+    } else {
+    matchMapValue(GOU_SHA, yearBranch, targetBranch, '勾煞', names);
+    matchMapValue(JIAO_SHA, yearBranch, targetBranch, '绞煞', names);
+    }`;
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core gendered Gou Jiao patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+  const dayun = new URL("../node_modules/taibu-core/dist/domains/bazi-dayun/calculate.js", import.meta.url);
+  const dayunSource = readFileSync(dayun, "utf8");
+  const beforeContext = "yearNaYinElement: getNaYin(yearStem, yearBranch).slice(-1),";
+  const afterContext = beforeContext + "\n        gender,";
+  if (!dayunSource.includes(afterContext)) {
+    if (dayunSource.split(beforeContext).length !== 2) throw new Error("Review taibu-core luck gender context patch");
+    writeFileSync(dayun, dayunSource.replace(beforeContext, afterContext));
+  }
+}

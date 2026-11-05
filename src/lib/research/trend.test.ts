@@ -213,3 +213,42 @@ it("retains the annual Fu Xing attribution in visible trend signals", () => {
   const signals = points.flatMap(point => point.signals);
   expect(signals.some(signal => signal.text === "流年神煞：福星贵人（年）" && signal.kind === "support")).toBe(true);
 });
+
+it("places Gou and Jiao three branches away and swaps them by gender and birth-year polarity", () => {
+  // 三命通会〈论勾绞〉甲子男卯勾酉绞、乙丑男戌勾辰绞；十二年支独立列期望。
+  const malePairs = [
+    ["卯", "酉"], ["戌", "辰"], ["巳", "亥"], ["子", "午"],
+    ["未", "丑"], ["寅", "申"], ["酉", "卯"], ["辰", "戌"],
+    ["亥", "巳"], ["午", "子"], ["丑", "未"], ["申", "寅"],
+  ];
+  for (const [index, [maleGou, maleJiao]] of malePairs.entries()) {
+    for (const gender of ["male", "female"] as const) {
+      const original = profileFor(`${1984 + index}-07-15T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+      const input = { ...original, original: { ...original.original, gender } };
+      const periods = buildLifeTrendDayun(input).list;
+      const years = periods.flatMap(period => period.liunianList);
+      expect(new Set(years.map(year => year.zhi)).size).toBe(12);
+      const [gou, jiao] = gender === "male" ? [maleGou, maleJiao] : [maleJiao, maleGou];
+      for (const [branch, names] of [
+        ...periods.map(period => [period.branch, period.shenSha] as const),
+        ...years.map(year => [year.zhi, year.shenSha] as const),
+      ]) {
+        expect(names.includes("勾煞"), `${1984 + index} ${gender} 见${branch}`).toBe(branch === gou);
+        expect(names.includes("绞煞"), `${1984 + index} ${gender} 见${branch}`).toBe(branch === jiao);
+        expect(names.includes("勾煞") && names.includes("绞煞")).toBe(false);
+      }
+    }
+  }
+});
+
+it("uses the selected natal year for Gou Jiao polarity and branch origin", () => {
+  for (const yearBoundary of ["li-chun", "lunar-new-year"] as const) {
+    const input = profileFor("2024-02-08T12:00", "Asia/Shanghai", yearBoundary, "midnight");
+    const [gou, jiao] = yearBoundary === "li-chun" ? ["未", "丑"] : ["子", "午"];
+    const years = buildLifeTrendDayun(input).list.flatMap(period => period.liunianList);
+    for (const year of years) {
+      expect(year.shenSha.includes("勾煞")).toBe(year.zhi === gou);
+      expect(year.shenSha.includes("绞煞")).toBe(year.zhi === jiao);
+    }
+  }
+});
