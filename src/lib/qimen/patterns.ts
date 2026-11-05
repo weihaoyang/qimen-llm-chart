@@ -2,8 +2,7 @@
  * 奇门格局的正面判定。
  *
  * `3meta` 只返回**已成立**的吉格/凶格；盘面上没有的格局它不会说。这里登记一批
- * 经典格局，逐个在九宫里判「成立 / 未成立」，并给出一句侧边提示。判定条件与
- * `3meta` 的 `detectPatterns` / `detectGlobalPatterns` 保持一致（照抄，不臆造）。
+ * 经典格局，逐个在九宫里判「成立 / 未成立」，并给出一句侧边提示。判定以逐项核对的规则为准，已核修订同步应用到引擎汇总。
  * 它仍**不是**穷举所有传统格局：未登记的格局不能据此推断不存在。
  */
 import type { Position } from "3meta";
@@ -79,6 +78,9 @@ const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes
 const isZhiFu = (palace: Palace) => palace.deity === "值符" || Boolean(palace.isZhiFu);
 const palaceLabel = (position: Position) => `第 ${position} 宫`;
 const stemsOf = (value: unknown) => valuesOf(value).join("/") || "无";
+
+export const matchesSanZha = (palace: Palace, deity: string) =>
+  gateIn(palace, SAN_MEN) && hasHeaven(palace, ...SAN_QI) && palace.deity === deity;
 
 export const matchesSanQiDeShi = (palace: Palace) =>
   (hasHeaven(palace, "乙") && hasEarth(palace, "己", "辛")) ||
@@ -173,14 +175,14 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   ),
 
   // ---- 三诈五假 ----
-  good("zhen_zha", "真诈", "三诈五假", "开/休/生门 + 太阴", "主以巧取胜、借智成事；善用信息差与内应。", (p) =>
-    gateIn(p, SAN_MEN) && deityIn(p, ["太阴"]) ? gateEvidence(p) : null,
+  good("zhen_zha", "真诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 太阴", "主以巧取胜、借智成事；善用信息差与内应。", (p) =>
+    matchesSanZha(p, "太阴") ? gateEvidence(p) : null,
   ),
-  good("xiu_zha", "休诈", "三诈五假", "开/休/生门 + 地盘乙/丙/丁 + 六合", "主合作与撮合；宜联姻、结盟、居间调停。", (p) =>
-    gateIn(p, SAN_MEN) && hasEarth(p, ...SAN_QI) && deityIn(p, ["六合"]) ? gateEvidence(p) : null,
+  good("xiu_zha", "休诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 六合", "主合作与撮合；宜联姻、结盟、居间调停。", (p) =>
+    matchesSanZha(p, "六合") ? gateEvidence(p) : null,
   ),
-  good("chong_zha", "重诈", "三诈五假", "开/休/生门 + 地盘乙/丙/丁 + 九地", "主层层设局、以静制动；宜长线规划与埋伏。", (p) =>
-    gateIn(p, SAN_MEN) && hasEarth(p, ...SAN_QI) && deityIn(p, ["九地"]) ? gateEvidence(p) : null,
+  good("chong_zha", "重诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 九地", "主层层设局、以静制动；宜长线规划与埋伏。", (p) =>
+    matchesSanZha(p, "九地") ? gateEvidence(p) : null,
   ),
   good("tian_jia", "天假", "三诈五假", "天盘乙/丙/丁 + 景门 + 九天", "主名分、文书与声势扶助；宜申请、报批、公开发布。", (p) =>
     hasHeaven(p, ...SAN_QI) && gateIn(p, ["景门"]) && deityIn(p, ["九天"]) ? gateEvidence(p) : null,

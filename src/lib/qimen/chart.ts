@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi } from "./patterns";
+import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -62,15 +62,29 @@ export const buildChart = (
     options,
   ).toJSON() as RawChartData;
   const sanQiId = "patterns.common.san_qi_de_shi";
+  const sanZha = [
+    { id: "patterns.san_za_wu_jia.zhen_zha", name: "真诈", deity: "太阴" },
+    { id: "patterns.san_za_wu_jia.xiu_zha", name: "休诈", deity: "六合" },
+    { id: "patterns.san_za_wu_jia.chong_zha", name: "重诈", deity: "九地" },
+  ];
+  const isCorrectedGoodPattern = (id: string | undefined) => id === sanQiId || sanZha.some(rule => rule.id === id);
   const fuGongId = "patterns.bad.fu_gong_ge";
   const feiGongId = "patterns.bad.fei_gong_ge";
   const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId;
   const palaces = sortPalaces(rawChart).map((palace) => {
-    const auspiciousPatterns = (palace.auspiciousPatterns ?? []).filter(({ id }) => id !== sanQiId);
+    const auspiciousPatterns = (palace.auspiciousPatterns ?? []).filter(({ id }) => !isCorrectedGoodPattern(id));
     const inauspiciousPatterns = (palace.inauspiciousPatterns ?? []).filter(({ id }) => !isCorrectedBadPattern(id));
     const position = palace.position;
     if (matchesSanQiDeShi(palace)) {
       auspiciousPatterns.push({ id: sanQiId, name: "三奇得使", type: "三奇得使", position, description: "天盘三奇配地盘六甲所遁之仪" });
+    }
+    for (const rule of sanZha) {
+      if (matchesSanZha(palace, rule.deity)) {
+        auspiciousPatterns.push({
+          id: rule.id, name: rule.name, type: rule.name, position,
+          description: "天盘三奇合开休生三吉门，下临" + rule.deity,
+        });
+      }
     }
     if (matchesFuGong(palace, rawChart.zhiFu.heavenlyStem)) {
       inauspiciousPatterns.push({ id: fuGongId, name: "伏宫格", type: "伏宫格", position, description: "天盘庚临地盘本旬值符原宫" });
@@ -80,8 +94,8 @@ export const buildChart = (
     }
     return { ...palace, auspiciousPatterns, inauspiciousPatterns };
   });
-  const auspiciousPatterns = (rawChart.specialPatterns.auspiciousPatterns ?? []).filter(({ id }) => id !== sanQiId);
-  auspiciousPatterns.push(...palaces.flatMap((palace) => palace.auspiciousPatterns.filter(({ id }) => id === sanQiId)));
+  const auspiciousPatterns = (rawChart.specialPatterns.auspiciousPatterns ?? []).filter(({ id }) => !isCorrectedGoodPattern(id));
+  auspiciousPatterns.push(...palaces.flatMap((palace) => palace.auspiciousPatterns.filter(({ id }) => isCorrectedGoodPattern(id))));
   const inauspiciousPatterns = (rawChart.specialPatterns.inauspiciousPatterns ?? []).filter(({ id }) => !isCorrectedBadPattern(id));
   inauspiciousPatterns.push(...palaces.flatMap((palace) => palace.inauspiciousPatterns.filter(({ id }) => isCorrectedBadPattern(id))));
   const hiddenStemsByPalace = Object.fromEntries(

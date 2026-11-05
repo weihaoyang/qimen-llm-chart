@@ -295,3 +295,34 @@ it("reproduces the winter-solstice Yang One 伏吟 and 反吟 examples", () => {
   expect(patternsAt("00")).toEqual(["fu_yin_star", "fu_yin_gate", "fu_yin_zhi_fu"]);
   expect(patternsAt("02")).toEqual(["fan_yin_star", "fan_yin_zhi_fu"]);
 });
+
+it("keeps the three zha palace, global and catalog results consistent with heaven stems", () => {
+  const rules = [
+    ["zhen_zha", "太阴"], ["xiu_zha", "六合"], ["chong_zha", "九地"],
+  ];
+  let formed = 0;
+  for (let day = 1; day <= 8; day += 1) {
+    for (let hour = 0; hour < 24; hour += 2) {
+      const chart = buildChart({
+        datetime: `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:30`,
+        timeZone: "Asia/Shanghai",
+      });
+      const report = evaluateQimenPatterns(chart);
+      for (const [name, deity] of rules) {
+        const id = "patterns.san_za_wu_jia." + name;
+        const expected = chart.raw.palaces.filter(palace => {
+          const stems = Array.isArray(palace.heavenlyStem) ? palace.heavenlyStem : [palace.heavenlyStem];
+          return stems.some(stem => ["乙", "丙", "丁"].includes(stem))
+            && ["开门", "休门", "生门"].includes(palace.gate) && palace.deity === deity;
+        }).map(palace => palace.position);
+        formed += expected.length;
+        expect(chart.raw.palaces.filter(p => (p.auspiciousPatterns ?? []).some(pattern => pattern.id === id))
+          .map(p => p.position)).toEqual(expected);
+        expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(pattern => pattern.id === id)
+          .map(pattern => pattern.position)).toEqual(expected);
+        expect(report.checks.find(check => check.id === name)?.positions).toEqual(expected);
+      }
+    }
+  }
+  expect(formed).toBeGreaterThan(0);
+});

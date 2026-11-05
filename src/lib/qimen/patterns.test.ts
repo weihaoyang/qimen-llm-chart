@@ -104,7 +104,7 @@ describe("evaluateQimenPatterns", () => {
     const report = evaluateQimenPatterns(
       chartWith([
         palace(1, { heavenlyStem: "丙", earthlyStem: "丁", gate: "生门" }),
-        palace(4, { gate: "开门", deity: "太阴" }),
+        palace(4, { heavenlyStem: "乙", gate: "开门", deity: "太阴" }),
       ]),
     );
     expect(statusOf(report, "jiu_dun_tian")).toBe("成立");
@@ -218,4 +218,15 @@ describe("evaluateQimenPatterns", () => {
     expect(report.checks.find((check) => check.id === "wu_bu_yu_shi")?.strength).toBeUndefined();
     expect(report.checks.find((check) => check.id === "qing_long_fan_shou")?.strength).toBeUndefined();
   });
+});
+
+it("requires a heaven-plate qi for all three zha patterns", () => {
+  for (const [id, deity] of [["zhen_zha", "太阴"], ["xiu_zha", "六合"], ["chong_zha", "九地"]]) {
+    const report = (overrides: Record<string, unknown>) =>
+      evaluateQimenPatterns(chartWith([palace(4, { gate: "开门", deity, ...overrides })]));
+    expect(statusOf(report({}), id)).toBe("未成立");
+    expect(statusOf(report({ heavenlyStem: "庚", earthlyStem: "乙" }), id)).toBe("未成立");
+    expect(statusOf(report({ heavenlyStem: ["庚", "乙"], earthlyStem: "戊" }), id)).toBe("成立");
+    expect(statusOf(report({ heavenlyStem: "丙", gate: "死门" }), id)).toBe("未成立");
+  }
 });

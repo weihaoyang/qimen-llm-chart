@@ -12,6 +12,14 @@ import type { ProvenanceMaterialSet } from "../types";
 export const MATERIALS: ProvenanceMaterialSet = {
   "qimen-3meta": [
     {
+      title: "三诈的原文条件与本仓修订",
+      lines: [
+        "《遁甲演义》三诈五假：三门合三奇，下临太阴、六合、九地，分别为真诈、休诈、重诈。",
+        "本仓取天盘乙丙丁配开休生与对应神，不以地盘三奇替代。宫内、全盘汇总及格局清单同步。",
+      ],
+      note: "据下卷扫描三诈五假条概述，区别于3meta原实现的缺条件与地盘取奇。",
+    },
+    {
       title: "定元符头表（按 3meta 实际执行的 `lib/qimen/calculator.js:15-21` 整理）",
       lines: [
         "上元（SHANGYUAN）：甲子 乙丑 丙寅 丁卯 戊辰 己卯 庚辰 辛巳 壬午 癸未",
