@@ -114,3 +114,27 @@ it("retains the two distinct branches of the Zi Mao punishment", () => {
     expect(years.every(year => year.taiSui.includes("刑太岁"))).toBe(true);
   }
 });
+
+it("uses the natal chart's five-Yang-stem blade convention throughout luck periods", () => {
+  // 三命通会〈论羊刃〉所载子平法；阴干禄前一辰属同篇另一种口径。
+  const yangBlades: Record<string, string> = { 甲: "卯", 丙: "午", 戊: "午", 庚: "酉", 壬: "子" };
+  const seen = new Set<string>();
+  for (let date = 15; date <= 24; date++) {
+    const input = profileFor(`1990-01-${date}T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    const stem = buildBaziCalculationContext(input).eightChar.getDayGan();
+    seen.add(stem);
+    const periods = buildLifeTrendDayun(input).list;
+    const years = periods.flatMap(period => period.liunianList);
+    expect(new Set(years.map(year => year.zhi)).size).toBe(12);
+    for (const year of years) {
+      expect(year.shenSha.includes("羊刃"), `${stem}日 ${year.ganZhi}流年`).toBe(year.zhi === yangBlades[stem]);
+    }
+    for (const period of periods) {
+      expect(period.shenSha.includes("羊刃"), `${stem}日 ${period.ganZhi}大运`).toBe(period.branch === yangBlades[stem]);
+    }
+    for (const pillar of buildBaziChartFromProfile(input).raw.pillars) {
+      expect(pillar.shenSha.includes("羊刃")).toBe(pillar.earthlyBranch === yangBlades[stem]);
+    }
+  }
+  expect(seen.size).toBe(10);
+});

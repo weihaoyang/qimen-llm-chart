@@ -307,10 +307,30 @@ for (const format of ["mjs", "cjs"]) {
   let dayunSource = readFileSync(dayun, "utf8");
   for (const branch of ["lnBranch", "branch"]) {
     const beforeCall = `calculateBranchShenSha(shenShaContext, ${branch})`;
-    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false })`;
+    const previousCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false })`;
+    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true })`;
     if (dayunSource.includes(afterCall)) continue;
+    if (dayunSource.split(previousCall).length === 2) {
+      dayunSource = dayunSource.replace(previousCall, afterCall);
+      continue;
+    }
     if (dayunSource.split(beforeCall).length !== 2) throw new Error("Review taibu-core luck shensha call patch: " + branch);
     dayunSource = dayunSource.replace(beforeCall, afterCall);
   }
   writeFileSync(dayun, dayunSource);
+}
+
+// Bazi luck periods use the same five-Yang-stem convention as the natal chart.
+// Leave the upstream ten-stem table available to other domain callers.
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = "    matchMapValue(YANG_REN, dayStem, targetBranch, '羊刃', names);";
+  const after = `    if (!options?.yangRenYangOnly || ['甲', '丙', '戊', '庚', '壬'].includes(dayStem)) {
+    matchMapValue(YANG_REN, dayStem, targetBranch, '羊刃', names);
+    }`;
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core luck Yang blade convention patch");
+    writeFileSync(file, source.replace(before, after));
+  }
 }
