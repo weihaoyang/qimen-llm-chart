@@ -308,8 +308,13 @@ for (const format of ["mjs", "cjs"]) {
   for (const branch of ["lnBranch", "branch"]) {
     const beforeCall = `calculateBranchShenSha(shenShaContext, ${branch})`;
     const previousCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false })`;
-    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true })`;
+    const previousYangCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true })`;
+    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true, learningStarsByNaYin: true })`;
     if (dayunSource.includes(afterCall)) continue;
+    if (dayunSource.split(previousYangCall).length === 2) {
+      dayunSource = dayunSource.replace(previousYangCall, afterCall);
+      continue;
+    }
     if (dayunSource.split(previousCall).length === 2) {
       dayunSource = dayunSource.replace(previousCall, afterCall);
       continue;
@@ -318,6 +323,32 @@ for (const format of ["mjs", "cjs"]) {
     dayunSource = dayunSource.replace(beforeCall, afterCall);
   }
   writeFileSync(dayun, dayunSource);
+}
+
+// The selected Bazi luck convention uses natal-year Na Yin for 学堂/词馆.
+// A day-stem Lu branch is not the Na Yin element's 临官 branch.
+{
+  const shared = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const source = readFileSync(shared, "utf8");
+  const before = "    matchMapValue(CI_GUAN, dayStem, targetBranch, '词馆', names);";
+  const after = `    if (options?.learningStarsByNaYin) {
+        const naYinCiGuan = { '金': '申', '木': '寅', '水': '亥', '土': '亥', '火': '巳' };
+        matchMapValue(naYinCiGuan, context.yearNaYinElement, targetBranch, '词馆', names);
+    } else {
+    matchMapValue(CI_GUAN, dayStem, targetBranch, '词馆', names);
+    }`;
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core Na Yin Ci Guan patch");
+    writeFileSync(shared, source.replace(before, after));
+  }
+  const dayun = new URL("../node_modules/taibu-core/dist/domains/bazi-dayun/calculate.js", import.meta.url);
+  const dayunSource = readFileSync(dayun, "utf8");
+  const beforeContext = "const shenShaContext = {";
+  const afterContext = "const shenShaContext = {\n        yearNaYinElement: getNaYin(yearStem, yearBranch).slice(-1),";
+  if (!dayunSource.includes(afterContext)) {
+    if (dayunSource.split(beforeContext).length !== 2) throw new Error("Review taibu-core natal-year Na Yin context patch");
+    writeFileSync(dayun, dayunSource.replace(beforeContext, afterContext));
+  }
 }
 
 // Bazi luck periods use the same five-Yang-stem convention as the natal chart.

@@ -138,3 +138,38 @@ it("uses the natal chart's five-Yang-stem blade convention throughout luck perio
   }
   expect(seen.size).toBe(10);
 });
+
+it("derives luck learning stars from the natal-year Na Yin element across all five elements", () => {
+  // 三命通会〈论学堂词馆〉：长生为学堂、临官为词馆；水土同宫。
+  const cases = [
+    [1984, "金", "巳", "申"], [1986, "火", "寅", "巳"], [1988, "木", "亥", "寅"],
+    [1990, "土", "申", "亥"], [1982, "水", "申", "亥"],
+  ] as const;
+  for (const [year, element, school, academy] of cases) {
+    const input = profileFor(`${year}-07-15T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    expect(buildBaziCalculationContext(input).eightChar.getYearNaYin().endsWith(element)).toBe(true);
+    const periods = buildLifeTrendDayun(input).list;
+    const years = periods.flatMap(period => period.liunianList);
+    expect(new Set(years.map(entry => entry.zhi)).size).toBe(12);
+    for (const [branch, names] of [
+      ...periods.map(entry => [entry.branch, entry.shenSha] as const),
+      ...years.map(entry => [entry.zhi, entry.shenSha] as const),
+    ]) {
+      expect(names.includes("学堂"), `${element}命见${branch}`).toBe(branch === school);
+      expect(names.includes("词馆"), `${element}命见${branch}`).toBe(branch === academy);
+    }
+  }
+});
+
+it("uses the selected natal-year boundary for Na Yin learning stars", () => {
+  for (const yearBoundary of ["li-chun", "lunar-new-year"] as const) {
+    // 2024-02-08：立春口径甲辰覆灯火，春节口径癸卯金箔金。
+    const input = profileFor("2024-02-08T12:00", "Asia/Shanghai", yearBoundary, "midnight");
+    const years = buildLifeTrendDayun(input).list.flatMap(period => period.liunianList);
+    const [school, academy] = yearBoundary === "li-chun" ? ["寅", "巳"] : ["巳", "申"];
+    for (const entry of years) {
+      expect(entry.shenSha.includes("学堂")).toBe(entry.zhi === school);
+      expect(entry.shenSha.includes("词馆")).toBe(entry.zhi === academy);
+    }
+  }
+});
