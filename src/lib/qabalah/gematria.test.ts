@@ -38,3 +38,16 @@ it("keeps Hebrew words separate across punctuation and mixed scripts", () => {
   }
   expect(tokenize("יהו״ה")).toEqual([["י", "ה", "ו", "ה"]]);
 });
+
+it("matches all 22 Kidmi entries in Pardes Rimmonim 30:8:3", () => {
+  const letters = "אבגדהוזחטיכלמנסעפצקרשת";
+  const values = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 75, 105, 145, 195, 255, 325, 405, 495, 595, 795, 1095, 1495];
+  expect([...letters].map(letter => gematria(letter, "kidmi"))).toEqual(values);
+});
+
+it("distinguishes the general square in Pardes Rimmonim from per-letter squares", () => {
+  // 原书30:8:6以 דוד 的总数14相乘，得196；本站perati逐字平方相加。
+  expect(gematria("דוד")).toBe(14);
+  expect(gematria("דוד") ** 2).toBe(196);
+  expect(gematria("דוד", "perati")).toBe(68);
+});
