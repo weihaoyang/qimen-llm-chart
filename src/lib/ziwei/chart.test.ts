@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { astro } from "iztro";
+import { Lunar } from "lunar-typescript";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
@@ -112,4 +113,89 @@ describe("buildZiweiChartFromProfile", () => {
 
     expect(astro.getConfig().dayDivide).toBe(before);
   });
+});
+
+
+// Independent tables transcribed from 紫微斗数全书卷二, not imported from iztro.
+it("matches classical auxiliary-star placement rules across ten year stems, twelve months and hours", () => {
+  const branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+  const stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+  const lu = [2, 3, 5, 6, 5, 6, 8, 9, 11, 0];
+  const mod = (n: number) => (n % 12 + 12) % 12;
+  const seenStems = new Set<string>();
+  const ziweiPositions = new Set<number>();
+  for (let year = 1990; year < 2000; year += 1) {
+    for (let h = 0; h < 12; h += 1) {
+      const month = h + 1;
+      const day = h * 2 + 1;
+      const solarDate = Lunar.fromYmd(year, month, day).getSolar().toYmd();
+      const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${solarDate}T${String(h * 2).padStart(2, "0")}:00`));
+      const yearStem = raw.rawDates.chineseDate.yearly[0];
+      seenStems.add(yearStem);
+      const yearBranch = branches.indexOf(raw.rawDates.chineseDate.yearly[1]);
+      expect(yearBranch).toBeGreaterThanOrEqual(0);
+      const luBranch = lu[stems.indexOf(yearStem)];
+      expect(luBranch).not.toBeUndefined();
+      const expected: Record<string, number> = {
+        文昌: mod(10 - h), 文曲: mod(4 + h), 左辅: mod(4 + month - 1), 右弼: mod(10 - month + 1),
+        禄存: luBranch, 擎羊: mod(luBranch + 1), 陀罗: mod(luBranch - 1),
+        地劫: mod(11 + h), 地空: mod(11 - h),
+        天马: [2, 11, 8, 5][yearBranch % 4],
+        天刑: mod(9 + month - 1), 天姚: mod(1 + month - 1),
+        天哭: mod(6 - yearBranch), 天虚: mod(6 + yearBranch),
+        龙池: mod(4 + yearBranch), 凤阁: mod(10 - yearBranch),
+        三台: mod(4 + month - 1 + day - 1), 八座: mod(10 - month + 1 - day + 1),
+      };
+      const ziwei = branches.indexOf(raw.palaces.find(p => p.majorStars.some(star => star.name === "紫微"))!.earthlyBranch);
+      const tianfu = branches.indexOf(raw.palaces.find(p => p.majorStars.some(star => star.name === "天府"))!.earthlyBranch);
+      ziweiPositions.add(ziwei);
+      // 《全书》安天府图：寅申同宫，余宫斜作对，紫丑则府卯。
+      expect(tianfu).toBe(mod(4 - ziwei));
+      for (const [star, branch] of Object.entries(expected)) {
+        const found = raw.palaces.filter(p => [...p.majorStars, ...p.minorStars, ...p.adjectiveStars].some(s => s.name === star));
+        expect(found.map(p => p.earthlyBranch), `${year}/${month} hour ${h} ${star}`).toEqual([branches[branch]]);
+      }
+    }
+  }
+  expect(seenStems.size).toBe(10);
+  expect(ziweiPositions.size).toBe(12);
+});
+
+it("matches the two classical major-star sequences at all twelve birth hours", () => {
+  const branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+  const mod = (n: number) => (n % 12 + 12) % 12;
+  for (let h = 0; h < 12; h += 1) {
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `1990-05-20T${String(h * 2).padStart(2, "0")}:00`));
+    const position = (star: string) => {
+      const found = raw.palaces.filter(p => p.majorStars.some(s => s.name === star));
+      expect(found, star).toHaveLength(1);
+      return branches.indexOf(found[0].earthlyBranch);
+    };
+    const ziwei = position("紫微");
+    const tianfu = position("天府");
+    for (const [star, offset] of Object.entries({ 天机: -1, 太阳: -3, 武曲: -4, 天同: -5, 廉贞: -8 })) {
+      expect(position(star), `hour ${h} ${star}`).toBe(mod(ziwei + offset));
+    }
+    for (const [star, offset] of Object.entries({ 太阴: 1, 贪狼: 2, 巨门: 3, 天相: 4, 天梁: 5, 七杀: 6, 破军: 10 })) {
+      expect(position(star), `hour ${h} ${star}`).toBe(mod(tianfu + offset));
+    }
+  }
+});
+
+
+it("records the selected Kui Yue variants separately from the Wikisource wording", () => {
+  const cases = [
+    // 丙丁猪鸡 vs 卷二电子本猪狗; 辛午寅 vs its 虎马 ordering.
+    ["1996-07-01T00:00", "丙", "亥", "酉"],
+    ["1997-07-01T00:00", "丁", "亥", "酉"],
+    ["1991-07-01T00:00", "辛", "午", "寅"],
+  ];
+  for (const [datetime, yearStem, kui, yue] of cases) {
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", datetime));
+    expect(raw.rawDates.chineseDate.yearly[0]).toBe(yearStem);
+    for (const [name, expected] of [["天魁", kui], ["天钺", yue]]) {
+      expect(raw.palaces.filter(p => p.minorStars.some(s => s.name === name)).map(p => p.earthlyBranch)).toEqual([expected]);
+    }
+    if (yearStem !== "辛") expect(yue).not.toBe("戌");
+  }
 });
