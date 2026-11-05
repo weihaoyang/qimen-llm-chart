@@ -237,3 +237,18 @@ for (const format of ["js", "cjs"]) {
   if (source.split(before).length !== 2) throw new Error("Review celestine polar Whole Sign patch");
   writeFileSync(file, source.replace(before, after));
 }
+
+// The late Zi hour starts at the next day's shichen slot. Keep midnight
+// subtraction consistent with the library's twelve-slot coarse luck method.
+for (const format of ["mjs", "cjs"]) {
+  const file = new URL("../node_modules/lunar-typescript/dist/index." + format, import.meta.url);
+  let source = readFileSync(file, "utf8");
+  for (const variable of ["end", "start"]) {
+    const before = variable + ".getHour() == 23 ? 11 :";
+    const after = variable + ".getHour() == 23 ? 12 :";
+    if (source.includes(after)) continue;
+    if (source.split(before).length !== 2) throw new Error("Review lunar-typescript late Zi luck offset patch");
+    source = source.replace(before, after);
+  }
+  writeFileSync(file, source);
+}

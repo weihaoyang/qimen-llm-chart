@@ -1,5 +1,6 @@
-import { buildShenSha, getGroupStarBranch, getWenChangBranch } from "./shen-sha";
-import { describe, expect, it } from "vitest";
+import { buildShenSha, getGroupStarBranch, getWenChangBranch, getLuShenBranch } from "./shen-sha";
+import { describe, expect, it, vi } from "vitest";
+import { Solar } from "lunar-typescript";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "./chart";
 
@@ -234,4 +235,33 @@ describe("buildBaziChartFromProfile", () => {
       expect(chartFor(datetime, "male", { yearBoundary, dayBoundary }).raw.baZi.join("")).toBe(expected);
     }
   });
+});
+
+it("keeps a single zi hour together when coarse luck offsets cross midnight", () => {
+  const calculate = (datetime: string, gender: "male" | "female") =>
+    buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender, timeBasis: "civil",
+    })).raw.yun.startOffset;
+  for (const gender of ["male", "female"] as const) {
+    expect(calculate("2024-02-03T23:15", gender)).toEqual(calculate("2024-02-04T00:15", gender));
+    expect(calculate("2024-02-03T22:15", gender)).not.toEqual(calculate("2024-02-03T23:15", gender));
+  }
+});
+
+it("matches the ten stem lu positions in San Ming Tong Hui juan three", () => {
+  expect([... "甲乙丙丁戊己庚辛壬癸"].map(getLuShenBranch)).toEqual([
+    "寅", "卯", "巳", "午", "巳", "午", "申", "酉", "亥", "子",
+  ]);
+});
+
+it("reproduces the San Ming five-day three-shichen example with controlled term endpoints", () => {
+  // 复现古书的时间间隔，2000年的日期只承载两个钟面，非该年实际立春节气。
+  const lunar = Solar.fromYmdHms(2000, 1, 24, 10, 0, 0).getLunar();
+  const nextTerm = Solar.fromYmdHms(2000, 1, 29, 16, 0, 0);
+  vi.spyOn(lunar, "getYearGanIndexExact").mockReturnValue(0);
+  vi.spyOn(lunar, "getNextJie").mockReturnValue({
+    getSolar: () => nextTerm,
+  } as ReturnType<typeof lunar.getNextJie>);
+  const yun = lunar.getEightChar().getYun(1, 1);
+  expect([yun.getStartYear(), yun.getStartMonth(), yun.getStartDay()]).toEqual([1, 9, 0]);
 });
