@@ -3,7 +3,7 @@ import { LUO_SHU, MUTAGEN_NAMES, STEM_MUTAGENS, TECHNIQUES, TIAN_YI } from "./da
 
 export const serializeZiweiFlyingToStructuredText = (chart: ZiweiFlyingChart) => [
   "紫微斗数 · 飞星（飞化）/ 自化 · 河洛化象",
-  `生年 ${chart.year.ganZhi} · ${chart.laiYin?.isInner ? "来因宫" : "生年干所在宫（六外）"} ${chart.laiYin ? chart.laiYin.palace : "—"} · 天乙贵人宫 ${chart.tianYi.palaces.filter((name) => name !== "—").join("、") || "—"}（贵人支 ${chart.tianYi.branches.join("、")}）`,
+  `生年 ${chart.year.ganZhi} · 来因宫（钦天取法） ${chart.laiYin ? chart.laiYin.palace : "—"} · 天乙贵人宫 ${chart.tianYi.palaces.filter((name) => name !== "—").join("、") || "—"}（贵人支 ${chart.tianYi.branches.join("、")}）`,
   `生年四化：${chart.natives.map((item) => `${item.mutagen} ${item.star}→${item.palace}`).join("；")}`,
   "",
   "飞星矩阵（各行以其宫干起四化，箭头为其飞入之宫）：",

@@ -76,15 +76,15 @@ describe("ziwei flying chart", () => {
     }
   });
 
-  it("finds the 来因宫 among the inner palaces and the tian-yi palaces", () => {
+  it("finds the 来因宫 independently of inner/outer palace classification", () => {
     expect(chart.laiYin).not.toBeNull();
     const laiYinRow = chart.rows.find((row) => row.palace === chart.laiYin?.palace);
     expect(laiYinRow?.stem).toBe(chart.year.stem);
-    // 来因宫必须是六内宫；若年干只在六外宫，则退回并标注 isInner=false
+    // 宫职可以是六内或六外，支位排除子丑。
     expect(chart.laiYin?.isInner).toBe(laiYinRow?.isInner);
     const candidates = chart.rows.filter((row) => row.stem === chart.year.stem);
-    expect(candidates.some((row) => row.isInner)).toBe(chart.laiYin?.isInner ?? false);
-    expect(chart.rows.filter((row) => row.isLaiYin).length).toBe(chart.laiYin?.isInner ? 1 : 0);
+    expect(["子", "丑"]).not.toContain(laiYinRow?.branch);
+    expect(chart.rows.filter((row) => row.isLaiYin).length).toBe(1);
     expect(chart.rows.filter((row) => row.isYearStemPalace).length).toBe(candidates.length);
     expect(chart.tianYi.branches).toEqual(TIAN_YI[chart.year.stem]);
     for (const name of chart.tianYi.palaces) expect(name).not.toBe("—");
@@ -101,7 +101,7 @@ describe("ziwei flying chart", () => {
         .map((row) => row.stem + row.branch)).toEqual([expected]);
       if (offset === 4) {
         expect(chart.laiYin).toMatchObject({ palace: "兄弟", isInner: false });
-        expect(candidates[0]).toMatchObject({ branch: "戌", isLaiYin: false });
+        expect(candidates[0]).toMatchObject({ branch: "戌", isLaiYin: true });
       }
     }
   });
@@ -162,4 +162,19 @@ describe("ziwei flying chart", () => {
     expect(payload.rows).toHaveLength(12);
     expect(payload.natives).toHaveLength(4);
   });
+});
+
+it("keeps Xin at Mao and Ren at Yin across changing palace roles", () => {
+  for (const [year, branch] of [[2021, "卯"], [2022, "寅"]] as const) {
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = normalizeProfileInput(getDefaultProfileInput(
+        new Date(Date.UTC(year, 5, 1, hour)), "Asia/Shanghai",
+      ));
+      const chart = buildZiweiFlyingChart(input);
+      const row = chart.rows.find(item => item.isLaiYin);
+      expect(row?.branch).toBe(branch);
+      expect(chart.laiYin?.palace).toBe(row?.palace);
+      expect(chart.rows.filter(item => item.isLaiYin)).toHaveLength(1);
+    }
+  }
 });

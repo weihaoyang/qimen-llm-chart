@@ -373,6 +373,17 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
       "本仓不改该库。`insights` 的 8 类格局名与判据依传统说法整理，逐条注明所据古籍或口诀（《紫微斗数全书》《紫微斗数骨髓赋》、四化与禄存歌诀等）。",
   },
   {
+    id: "ziwei-laiyin-rule",
+    system: "ziwei-flying",
+    kind: "计算口径",
+    status: "已核",
+    title: "来因宫的钦天取法",
+    citation: "星林学苑〈来因宫是这辈子来这人世间的原因及出发点〉",
+    url: "https://www.108s.tw/article/info/45",
+    quote: "甲戌、乙酉、丙申、丁未、戊午、己巳、庚辰、辛卯、壬寅、癸亥",
+    note: "采用同生年干且排除子丑的宫位，六内六外为宫职分类。现代流派取法，分别于古籍四化口诀核对。",
+  },
+  {
     id: "ziwei-flying-own",
     system: "ziwei-flying",
     kind: "自撰/近似",
