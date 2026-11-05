@@ -84,7 +84,7 @@ describe("buildChart", () => {
   });
   it("distinguishes the site's five-status winter solstice from the 統宗 eight-status table", () => {
     // 統宗卷二〈八节应八门旺相〉的冬至例，与本站子月五行法分列。
-    const classical: Record<string, string> = { 休门: "旺", 生门: "绝", 伤门: "胎", 杜门: "沐", 景门: "死", 死门: "囚", 惊门: "休", 开门: "废" };
+    const classical: Record<string, string> = { 休门: "旺", 生门: "绝", 伤门: "胎", 杜门: "没", 景门: "死", 死门: "囚", 惊门: "休", 开门: "废" };
     const current: Record<string, string> = { 休门: "旺", 生门: "囚", 伤门: "相", 杜门: "相", 景门: "死", 死门: "囚", 惊门: "休", 开门: "休" };
     const { raw } = buildChart({ datetime: "2026-12-22T12:00", timeZone: "Asia/Shanghai" });
     const gates = raw.palaces.filter(p => p.position !== 5);
