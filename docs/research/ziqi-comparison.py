@@ -34,6 +34,20 @@ def ming_history_residual() -> Decimal:
     return (elapsed % cycle) - predicted_interval
 
 
+def ming_930_comparison() -> tuple[Decimal, Decimal]:
+    # 按《明史》宿表从1531斗十一回推；古度是距柳初的值，不是现代黄经。
+    cycle = Decimal("10227.1792")
+    anchor = Decimal("268.52") + 11 * 28
+    elapsed = Decimal("219274")
+    phase = (anchor - elapsed) % cycle
+    if phase < 0:
+        phase += cycle
+    liu_start = Decimal("6182.0192")
+    xing_start = Decimal("6546.0192")
+    assert liu_start <= phase < xing_start
+    return (phase - liu_start) / 28, xing_start + 28 - phase
+
+
 def jiajing_1531_intervals() -> tuple[list[int], int]:
     # Each month: (month length, day entering a new whole degree).
     # Leap sixth month is kept as a separate month; the eleventh has two entries.
@@ -51,6 +65,11 @@ def jiajing_1531_intervals() -> tuple[list[int], int]:
 if __name__ == "__main__":
     assert midnight_jd(1531, 2, 4, gregorian=False) == 2280289.5
     assert midnight_jd(1667, 2, 1, gregorian=True) == 2329950.5
+    assert midnight_jd(930, 10, 3, gregorian=False) == 2061015.5
+    liu_degree, delay_to_xing_one = ming_930_comparison()
+    assert abs(liu_degree - Decimal("4.230114285714285714285714286")) < Decimal("0.00000001")
+    assert delay_to_xing_one == Decimal("273.5568")
+    print(f"930 Ming-table reconstruction: Liu {liu_degree:.3f} ancient degrees; {delay_to_xing_one} days before Xing 1")
     intervals, boundary = jiajing_1531_intervals()
     assert intervals == [28] * 12
     assert boundary == 13
