@@ -54,7 +54,10 @@ export const buildZiweiInsights = ({
   );
   const jiLiang = samePalace("天机", "天梁");
   if (jiLiang) {
-    patterns.push(pattern("ji-liang-tong-gong", "机梁同宫", "good", "天机与天梁同宫，盘面同时具备谋略与护持主题。", [`${jiLiang.name}=天机、天梁`], "《紫微斗数全书·机梁同宫》"));
+    patterns.push(pattern("ji-liang-tong-gong", "机梁同宫", "neutral", "天机与天梁同宫的结构事实；《全书》将守命加吉与加刑忌分论，不能仅由同宫确定吉格。",
+      [`${jiLiang.name}（${jiLiang.earthlyBranch}）=天机、天梁`, `所在宫是否命宫=${jiLiang.branchIndex === mingGongBranch ? "是" : "否"}`,
+        ...jiLiang.majorStars.filter(star => star.name === "天机" || star.name === "天梁").map(star => `${star.name}亮度=${star.brightness ?? "未提供"}`)],
+      "《紫微斗数全书》卷三·天机：机梁守命加吉曜，与加刑忌分论"));
   }
 
   if (["七杀", "破军", "贪狼"].every((star) => sanFangStars.has(star))) {
@@ -63,7 +66,10 @@ export const buildZiweiInsights = ({
 
   const riYue = samePalace("太阳", "太阴");
   if (riYue) {
-    patterns.push(pattern("ri-yue-tong-gong", "日月同宫", "good", "太阳与太阴同宫，需结合昼夜、亮度和所在宫位判断表现。", [`${riYue.name}=太阳、太阴`], "《紫微斗数全书·日月同宫》"));
+    patterns.push(pattern("ri-yue-tong-gong", "日月同宫", "neutral", "太阳与太阴同宫的结构事实；《全书》按生时、守照及吉凶曜分论，同宫本身不等于并明或吉格。",
+      [`${riYue.name}（${riYue.earthlyBranch}）=太阳、太阴`, `所在宫是否命宫=${riYue.branchIndex === mingGongBranch ? "是" : "否"}`,
+        ...riYue.majorStars.filter(star => star.name === "太阳" || star.name === "太阴").map(star => `${star.name}亮度=${star.brightness ?? "未提供"}`)],
+      "《紫微斗数全书》卷三·太阳太阴拱照：守命吉多主吉、凶多主凶，同宫看生时"));
   }
 
   for (const [star, label] of [["火星", "贪狼会火星"], ["铃星", "贪狼会铃星"]] as const) {

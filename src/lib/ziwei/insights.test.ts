@@ -101,3 +101,27 @@ it("distinguishes real same-palace examples that do and do not meet the chosen b
     expect(raw.patterns.some(p => p.id === "tan-huo-meeting")).toBe(true);
   }
 });
+
+
+it("does not turn a generic Ji Liang or Sun Moon co-location into an auspicious judgement", () => {
+  const chart = buildZiweiChartFromProfile(profile);
+  const mingBranch = chart.raw.palaces.find(p => p.earthlyBranch === chart.raw.earthlyBranchOfSoulPalace)!.branchIndex;
+  for (const [stars, id] of [
+    [["天机", "天梁"], "ji-liang-tong-gong"],
+    [["太阳", "太阴"], "ri-yue-tong-gong"],
+  ] as const) {
+    for (const offset of [0, 3]) {
+      const palaces = structuredClone(chart.raw.palaces);
+      for (const palace of palaces) palace.majorStars = palace.majorStars.filter(s => !stars.some(name => name === s.name));
+      const target = palaces.find(p => p.branchIndex === (mingBranch + offset) % 12)!;
+      target.majorStars.push({ name: stars[0], brightness: "陷", mutagen: "忌" }, { name: stars[1], brightness: "平" });
+      target.minorStars.push({ name: "擎羊" });
+      const result = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
+      const combination = result.patterns.find(p => p.id === id)!;
+      expect(combination.level).toBe("neutral");
+      expect(combination.evidence).toContain(`所在宫是否命宫=${offset === 0 ? "是" : "否"}`);
+      expect(combination.evidence).toContain(`${stars[0]}亮度=陷`);
+      expect(combination.summary).toContain("结构事实");
+    }
+  }
+});
