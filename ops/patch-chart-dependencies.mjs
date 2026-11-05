@@ -252,3 +252,28 @@ for (const format of ["mjs", "cjs"]) {
   }
   writeFileSync(file, source);
 }
+
+
+// Reuse the canonical Bazi context for life-trend dayun. Preserve upstream's
+// relation/shensha calculations, but do not recalculate natal pillars with its defaults.
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/bazi-dayun/calculate.js", import.meta.url);
+  let source = readFileSync(file, "utf8");
+  const marker = "export function calculateDayunData(input, context = {})";
+  if (!source.includes(marker)) {
+    const patches = [
+      ["export function calculateDayunData(input) {", marker + " {"],
+      ["if (calendarType === 'lunar') {", "if (context.lunar) { lunar = context.lunar; }\n    else if (calendarType === 'lunar') {"],
+      ["const eightChar = lunar.getEightChar();", "const eightChar = context.eightChar ?? lunar.getEightChar();"],
+      ["const yearStem = eightChar.getYearGan();", "const yearStem = context.yearStem ?? eightChar.getYearGan();"],
+      ["const yearBranch = eightChar.getYearZhi();", "const yearBranch = context.yearBranch ?? eightChar.getYearZhi();"],
+      ["const yun = eightChar.getYun(genderNum);", "const yun = context.yun ?? eightChar.getYun(genderNum);"],
+      ["const startAgeDetail = formatStartAgeDetail(", "const startAgeDetail = context.startAgeDetail ?? formatStartAgeDetail("],
+    ];
+    for (const [before, after] of patches) {
+      if (source.split(before).length !== 2) throw new Error("Review taibu-core canonical dayun context patch: " + before);
+      source = source.replace(before, after);
+    }
+    writeFileSync(file, source);
+  }
+}

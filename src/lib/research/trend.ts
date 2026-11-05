@@ -1,4 +1,5 @@
 import { calculateBaziDayun, type DayunOutput } from "taibu-core/bazi-dayun";
+import { buildBaziCalculationContext } from "@/lib/bazi/chart";
 import { SEXAGENARY_CYCLE } from "@/lib/bazi/reverse";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import type { LifeTrendData, LifeTrendPoint, LifeTrendSignal } from "./types";
@@ -81,16 +82,31 @@ const toPoint = (dayun: DayunOutput["list"][number], year: DayunOutput["list"][n
   };
 };
 
-export const buildLifeTrendData = (profile: NormalizedProfileInput): LifeTrendData => {
+export const buildLifeTrendDayun = (profile: NormalizedProfileInput): DayunOutput => {
   const { year, month, day, hour, minute } = parseDateTime(profile.normalized.datetime);
-  const dayun = calculateBaziDayun({
+  const { lunar, eightChar, conventions } = buildBaziCalculationContext(profile);
+  const yun = eightChar.getYun(profile.original.gender === "male" ? 1 : 0, 1);
+  const yearPillar = conventions.yearBoundary === "lunar-new-year" ? lunar.getYearInGanZhi() : eightChar.getYear();
+  const calculateWithContext = calculateBaziDayun as unknown as (
+    input: Parameters<typeof calculateBaziDayun>[0],
+    context: { lunar: typeof lunar; eightChar: typeof eightChar; yun: typeof yun; yearStem: string; yearBranch: string; startAgeDetail: string },
+  ) => DayunOutput;
+  const dayun = calculateWithContext({
     birthYear: year,
     birthMonth: month,
     birthDay: day,
     birthHour: hour,
     birthMinute: minute,
     gender: profile.original.gender === "male" ? "male" : "female",
+  }, {
+    lunar, eightChar, yun, yearStem: yearPillar[0], yearBranch: yearPillar[1],
+    startAgeDetail: `${yun.getStartYear()}年${yun.getStartMonth()}月${yun.getStartDay()}天${yun.getStartHour()}小时起运`,
   });
+  return dayun;
+};
+
+export const buildLifeTrendData = (profile: NormalizedProfileInput): LifeTrendData => {
+  const dayun = buildLifeTrendDayun(profile);
   const points: LifeTrendPoint[] = [];
   let previousClose = 50;
   dayun.list.forEach((entry) => {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildLifeTrendData } from "./trend";
+import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
+import type { NormalizedProfileInput } from "@/lib/profile";
+import { buildLifeTrendDayun, buildLifeTrendData } from "./trend";
 
 const profile = {
   original: { calendarMode: "solar", datetime: "1990-06-15T10:30", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" },
@@ -28,4 +30,44 @@ describe("buildLifeTrendData", () => {
     expect(result.points[0]).toMatchObject({ open: expect.any(Number), high: expect.any(Number), low: expect.any(Number), close: expect.any(Number) });
     expect(result.disclaimer).toContain("不代表");
   });
+});
+
+
+const profileFor = (datetime: string, timeZone: string, yearBoundary: "li-chun" | "lunar-new-year", dayBoundary: "midnight" | "zi-start"): NormalizedProfileInput => ({
+  original: { ...profile.original, datetime, timeZone, baziSettings: { yearBoundary, dayBoundary } },
+  normalized: { ...profile.normalized, datetime, timeZone },
+});
+
+it("uses the same year-boundary direction and period years as the canonical natal chart", () => {
+  for (const yearBoundary of ["li-chun", "lunar-new-year"] as const) {
+    const input = profileFor("2024-02-08T12:00", "Asia/Shanghai", yearBoundary, "midnight");
+    const natal = buildBaziChartFromProfile(input);
+    const trend = buildLifeTrendData(input);
+    expect(trend.direction).toBe(yearBoundary === "li-chun" ? "forward" : "backward");
+    expect(trend.points[0].dayunGanZhi).toBe(yearBoundary === "li-chun" ? "丁卯" : "乙丑");
+    expect(trend.direction).toBe(natal.raw.yun.direction);
+    for (const [i, period] of natal.raw.yun.daYun.entries()) {
+      expect(trend.points[i * 10]).toMatchObject({ dayunGanZhi: period.ganZhi, dayunStartYear: period.startYear, age: period.startAge });
+    }
+    const offset = natal.raw.yun.startOffset;
+    expect(trend.startAgeDetail).toBe(`${offset.years}年${offset.months}月${offset.days}天${offset.hours}小时起运`);
+  }
+});
+
+it("uses the selected late-Zi day master for period growth stages", () => {
+  const at = (boundary: "midnight" | "zi-start") => buildLifeTrendDayun(profileFor("2026-07-03T23:30", "Asia/Shanghai", "li-chun", boundary));
+  // 戊日土随阳火长生寅，未为衰；己日阴土长生酉逆行，未为冠带。
+  expect(at("midnight").list[0]).toMatchObject({ ganZhi: "乙未", diShi: "衰" });
+  expect(at("zi-start").list[0]).toMatchObject({ ganZhi: "乙未", diShi: "冠带" });
+});
+
+it("keeps the post-Li-Chun month and luck direction aligned for the same instant in UTC", () => {
+  for (const [datetime, zone] of [["2024-02-04T08:30", "UTC"], ["2024-02-04T16:30", "Asia/Shanghai"]]) {
+    const input = profileFor(datetime, zone, "li-chun", "midnight");
+    const trend = buildLifeTrendData(input);
+    const natal = buildBaziChartFromProfile(input);
+    expect(trend.direction).toBe("forward");
+    expect(trend.points[0].dayunGanZhi).toBe("丁卯");
+    expect(trend.points[0].dayunGanZhi).toBe(natal.raw.yun.daYun[0].ganZhi);
+  }
 });

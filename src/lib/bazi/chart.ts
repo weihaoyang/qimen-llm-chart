@@ -243,16 +243,25 @@ const buildYunPreview = (
   };
 };
 
-export const buildBaziChartFromProfile = (
-  profile: NormalizedProfileInput,
-): NormalizedBaziChart => {
+/** Shared calculation context for natal charts and dayun consumers. */
+export const buildBaziCalculationContext = (profile: NormalizedProfileInput) => {
   const conventions = resolveBaziSettings(profile);
   const lunar = buildLunarFromProfile(profile);
   const instant = toZonedDate(getCivilDateTime(profile), profile.normalized.timeZone);
   setTermReference(lunar, instant);
-  const solar = lunar.getSolar();
   const eightChar = lunar.getEightChar();
   eightChar.setSect(conventions.dayBoundary === "zi-start" ? 1 : 2);
+  if (conventions.yearBoundary === "lunar-new-year") {
+    (lunar as Lunar & { _yunYearGanIndex?: number })._yunYearGanIndex = lunar.getYearGanIndex();
+  }
+  return { conventions, lunar, instant, eightChar };
+};
+
+export const buildBaziChartFromProfile = (
+  profile: NormalizedProfileInput,
+): NormalizedBaziChart => {
+  const { conventions, lunar, instant, eightChar } = buildBaziCalculationContext(profile);
+  const solar = lunar.getSolar();
   const pillars = (["year", "month", "day", "time"] as const).map((key) =>
     getPillarDetail(key, eightChar),
   );
