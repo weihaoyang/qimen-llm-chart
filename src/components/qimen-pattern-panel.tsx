@@ -116,6 +116,12 @@ export function QimenPatternPanel({
                             <dd>{check.strengthNote}</dd>
                           </>
                         ) : null}
+                        {check.usageRestrictions.length > 0 ? (
+                          <>
+                            <dt>取用</dt>
+                            <dd>{check.usageRestrictions.join("；")}</dd>
+                          </>
+                        ) : null}
                         {check.evidence.length > 0 ? (
                           <>
                             <dt>落宫</dt>
@@ -129,6 +135,7 @@ export function QimenPatternPanel({
               </section>
             ))}
 
+            <small className="qimen-pattern-disclaimer">{report.strengthMethod}</small>
             <small className="qimen-pattern-disclaimer">
               只判定本产品登记的经典格局；「未成立」表示本盘未命中其条件，既不等于传统上不存在其它格局，也不构成吉凶断语。
             </small>

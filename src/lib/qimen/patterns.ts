@@ -409,6 +409,26 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   ),
 ];
 
+export const QIMEN_STRENGTH_METHOD = "门星旺衰赋分：旺3、相2、休1、囚0、死/废-1；取成立宫位最高和分，4起有力、1起中平，其余无力。取用限制另列，不计入此分。";
+
+const usageRestrictions = (id: string, palace: Palace): string[] => {
+  const stemsById: Record<string, readonly string[]> = {
+    tian_jia: SAN_QI, di_jia: DING_JI_GUI, ren_jia: ["壬"],
+    shen_jia: DING_JI_GUI, gui_jia: DING_JI_GUI,
+  };
+  const stems = id === "san_qi_sheng_dian"
+    ? [({ 3: "乙", 9: "丙", 7: "丁" } as Record<number, string>)[palace.position]]
+    : stemsById[id];
+  if (!stems) return [];
+  const notes: string[] = [];
+  if (palace.gatePressure === "迫") notes.push(`${palaceLabel(palace.position)}：${palace.gate}门迫，未满足无迫取用条件`);
+  const branches = valuesOf(palace.earthBranch);
+  const tombStems = valuesOf(palace.heavenlyStem).filter(stem =>
+    stems.includes(stem) && branches.some(branch => (TOMB_MAP[stem] ?? []).includes(branch)));
+  if (tombStems.length) notes.push(`${palaceLabel(palace.position)}：成立所用天盘${tombStems.join("/")}入墓，未满足无墓取用条件`);
+  return notes;
+};
+
 export type QimenPatternCheck = {
   id: string;
   name: string;
@@ -419,6 +439,8 @@ export type QimenPatternCheck = {
   status: "成立" | "未成立";
   positions: Position[];
   evidence: string[];
+  /** 已成立宫位的古籍取用限制，独立于结构成立与旺衰赋分。 */
+  usageRestrictions: string[];
   /** 仅「成立」的宫位格局有旺衰档位；全局格局（伏吟反吟等）不评。 */
   strength?: QimenPatternStrength;
   /** 旺衰依据，如「第 3 宫：门旺 · 星相」。 */
@@ -433,12 +455,14 @@ export type QimenPatternReport = {
   registered: number;
   /** 成立格局按旺衰分档计数（全局格局不计入）。 */
   strengthCounts: Record<QimenPatternStrength, number>;
+  strengthMethod: string;
 };
 
 export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPatternReport => {
   const checks = QIMEN_PATTERN_CATALOG.map((entry): QimenPatternCheck => {
     const evidence: string[] = [];
     const positions: Position[] = [];
+    const restrictions: string[] = [];
     let strength: QimenPatternStrength | undefined;
     let strengthNote: string | undefined;
 
@@ -452,6 +476,7 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
         if (hit) {
           evidence.push(hit);
           positions.push(palace.position);
+          restrictions.push(...usageRestrictions(entry.id, palace));
           const score = palaceScore(palace);
           if (!best || score > best.score) best = { score, palace };
         }
@@ -472,6 +497,7 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
       status: evidence.length > 0 ? "成立" : "未成立",
       positions,
       evidence,
+      usageRestrictions: restrictions,
       strength,
       strengthNote,
     };
@@ -489,5 +515,6 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
     failed: checks.filter((check) => check.status === "未成立"),
     registered: checks.length,
     strengthCounts,
+    strengthMethod: QIMEN_STRENGTH_METHOD,
   };
 };

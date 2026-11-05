@@ -84,18 +84,21 @@ const relationOf = (entry: { relation?: string } | undefined) => entry?.relation
  * `3meta` 只给「已成立」的格局；这里补上「未成立」的名单与旺衰分档，
  * 让模型知道哪些经典格局被**正面否掉**、哪些成立且有力。
  */
-const summarizeRegisteredPatterns = (chart: NormalizedQimenChart) => {
+const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = false) => {
   const report = evaluateQimenPatterns(chart);
   return {
     registered: report.registered,
     formedCount: report.formed.length,
     failedCount: report.failed.length,
     strengthCounts: report.strengthCounts,
+    strengthMethod: report.strengthMethod,
     formed: report.formed.map((check) => ({
       name: check.name,
       kind: check.kind,
       group: check.group,
       strength: check.strength ?? "无",
+      ...(!compact && check.strengthNote ? { strengthNote: check.strengthNote } : {}),
+      ...(!compact || check.usageRestrictions.length ? { usageRestrictions: check.usageRestrictions } : {}),
       positions: check.positions,
       evidence: check.evidence,
     })),
@@ -187,6 +190,7 @@ export const serializeChartToStructuredText = (
     `全局吉格列表: ${formatPatterns(chart.raw.specialPatterns.auspiciousPatterns)}`,
     `全局凶格列表: ${formatPatterns(chart.raw.specialPatterns.inauspiciousPatterns)}`,
     `登记格局_统计: 登记 ${registeredPatterns.registered} · 成立 ${registeredPatterns.formedCount}（有力 ${registeredPatterns.strengthCounts.有力} / 中平 ${registeredPatterns.strengthCounts.中平} / 无力 ${registeredPatterns.strengthCounts.无力}）· 未成立 ${registeredPatterns.failedCount}`,
+    `登记格局_旺衰算法: ${registeredPatterns.strengthMethod}`,
     `登记格局_成立: ${JSON.stringify(registeredPatterns.formed)}`,
     `登记格局_未成立: ${JSON.stringify(registeredPatterns.failed)}`,
   ];
@@ -284,7 +288,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       normalizeValue(chart.raw.postHorse),
       normalizeValue(chart.hiddenStemsByPalace),
       normalizeValue(chart.raw.specialPatterns),
-      summarizeRegisteredPatterns(chart),
+      summarizeRegisteredPatterns(chart, true),
     ],
     palaces: chart.raw.palaces.map((palace) => [
       palace.position,
@@ -328,7 +332,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
 
 const buildCompactPayload = (chart: NormalizedQimenChart) => ({
   format: "qmdj-llm-compact-v1",
-  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。",
+  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
   ...buildCompactSections(chart),
 });
 
@@ -344,7 +348,7 @@ export const serializeSequenceToCompactJson = (
 
     return {
       format: "qmdj-llm-sequence-compact-v1",
-      note: "legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。",
+      note: "legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
       count: sequence.length,
       legend: sharedLegend,
       items: sequence.map((item) => {

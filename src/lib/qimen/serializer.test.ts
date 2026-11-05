@@ -129,3 +129,18 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeSequenceToCompactJson(sequence).length).toBeLessThan(80_000);
   });
 });
+
+
+it("exports same-palace usage restrictions and the grading method to AI context", () => {
+  const chart = buildChart({ datetime: "2026-01-05T02:00", timeZone: "Asia/Shanghai" });
+  Object.assign(chart.raw.palaces.find(p => p.position === 3)!, {
+    heavenlyStem: "乙", gate: "开门", gatePressure: "迫", status: { gate: "旺", star: "旺" },
+  });
+  const summary = summarizeRegisteredPatterns(chart);
+  const promotion = summary.formed.find(item => item.name === "三奇贵人升殿")!;
+  expect(promotion.strength).toBe("有力");
+  expect(promotion.strengthNote).toContain("门旺");
+  expect(promotion.usageRestrictions).toContain("第 3 宫：开门门迫，未满足无迫取用条件");
+  expect(serializeChartToStructuredText(chart)).toContain("登记格局_旺衰算法:");
+  expect(serializeChartToCompactJson(chart)).toContain("未满足无迫取用条件");
+});

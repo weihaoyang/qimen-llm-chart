@@ -294,3 +294,31 @@ it("matches the four Jia heaven-stem clauses and rejects earth-only substitutes"
     }
   }
 });
+
+
+it("keeps structure and seasonal grade separate from same-palace classical restrictions", () => {
+  const report = evaluateQimenPatterns(chartWith([
+    palace(3, { heavenlyStem: "乙", gate: "开门", gatePressure: "迫", status: { gate: "旺", star: "旺" } }),
+    palace(8, { heavenlyStem: ["丁", "庚"], earthlyStem: "乙", earthBranch: ["丑", "寅"], gate: "死门", deity: "九地" }),
+    // Only an unrelated hosted stem is in tomb: the forming 壬 must not inherit 丙's restriction.
+    palace(6, { heavenlyStem: ["壬", "丙"], earthBranch: ["戌", "亥"], gate: "惊门", deity: "九天" }),
+  ]));
+  const promotion = report.checks.find(item => item.id === "san_qi_sheng_dian")!;
+  expect(promotion.status).toBe("成立");
+  expect(promotion.strength).toBe("有力");
+  expect(promotion.usageRestrictions).toEqual(["第 3 宫：开门门迫，未满足无迫取用条件"]);
+  expect(report.checks.find(item => item.id === "gui_jia")?.usageRestrictions)
+    .toEqual(["第 8 宫：成立所用天盘丁入墓，未满足无墓取用条件"]);
+  expect(report.checks.find(item => item.id === "ren_jia")?.usageRestrictions).toEqual([]);
+  expect(report.strengthMethod).toContain("不计入此分");
+});
+
+it("does not transfer restrictions from another palace or a pattern that has not formed", () => {
+  const report = evaluateQimenPatterns(chartWith([
+    palace(3, { heavenlyStem: "乙", gate: "生门" }),
+    palace(6, { heavenlyStem: "丙", earthBranch: "戌", gate: "开门", gatePressure: "迫" }),
+    palace(8, { heavenlyStem: "丁", earthBranch: "丑", gate: "景门", deity: "九地" }),
+  ]));
+  expect(report.checks.find(item => item.id === "san_qi_sheng_dian")?.usageRestrictions).toEqual([]);
+  expect(report.checks.find(item => item.id === "gui_jia")?.usageRestrictions).toEqual([]);
+});

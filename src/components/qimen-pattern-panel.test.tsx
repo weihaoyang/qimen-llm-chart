@@ -75,6 +75,14 @@ describe("QimenPatternPanel", () => {
     expect(screen.queryByText("飞鸟跌穴")).not.toBeInTheDocument();
   });
 
+  it("shows a formed pattern's restrictions alongside the seasonal grading method", () => {
+    const restricted = structuredClone(chart);
+    Object.assign(restricted.raw.palaces[0], { heavenlyStem: "乙", gatePressure: "迫" });
+    render(<QimenPatternPanel chart={restricted} />);
+    expect(screen.getAllByText("第 3 宫：开门门迫，未满足无迫取用条件").length).toBeGreaterThan(0);
+    expect(screen.getByText(/门星旺衰赋分：/)).toBeInTheDocument();
+  });
+
   it("shows a placeholder before a chart exists", () => {
     render(<QimenPatternPanel chart={null} />);
     expect(screen.getByText("等待生成盘面。")).toBeInTheDocument();
