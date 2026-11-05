@@ -173,3 +173,43 @@ it("uses the selected natal-year boundary for Na Yin learning stars", () => {
     }
   }
 });
+
+it("uses the sourced annual-stem Fu Xing verse, including its two-branch entries", () => {
+  const targets: Record<string, readonly string[]> = {
+    甲: ["寅", "子"], 乙: ["丑"], 丙: ["寅", "子"], 丁: ["亥"], 戊: ["申"],
+    己: ["未"], 庚: ["午"], 辛: ["巳"], 壬: ["辰"], 癸: ["丑"],
+  };
+  const seen = new Set<string>();
+  for (let birthYear = 1984; birthYear < 1994; birthYear++) {
+    const input = profileFor(`${birthYear}-07-15T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    const stem = buildBaziCalculationContext(input).eightChar.getYearGan();
+    seen.add(stem);
+    const periods = buildLifeTrendDayun(input).list;
+    const years = periods.flatMap(period => period.liunianList);
+    expect(new Set(years.map(year => year.zhi)).size).toBe(12);
+    for (const [branch, names] of [
+      ...periods.map(period => [period.branch, period.shenSha] as const),
+      ...years.map(year => [year.zhi, year.shenSha] as const),
+    ]) {
+      expect(names.includes("福星贵人（年）"), `${stem}年见${branch}`).toBe(targets[stem].includes(branch));
+      expect(names).not.toContain("福星贵人");
+    }
+  }
+  expect(seen.size).toBe(10);
+});
+
+it("keeps Fu Xing tied to the selected year boundary rather than the day stem", () => {
+  for (const yearBoundary of ["li-chun", "lunar-new-year"] as const) {
+    const input = profileFor("2024-02-08T12:00", "Asia/Shanghai", yearBoundary, "midnight");
+    const years = buildLifeTrendDayun(input).list.flatMap(period => period.liunianList);
+    const expected = yearBoundary === "li-chun" ? ["寅", "子"] : ["丑"];
+    for (const year of years) expect(year.shenSha.includes("福星贵人（年）")).toBe(expected.includes(year.zhi));
+  }
+});
+
+it("retains the annual Fu Xing attribution in visible trend signals", () => {
+  const input = profileFor("1984-07-15T12:00", "Asia/Shanghai", "li-chun", "midnight");
+  const points = buildLifeTrendData(input).points;
+  const signals = points.flatMap(point => point.signals);
+  expect(signals.some(signal => signal.text === "流年神煞：福星贵人（年）" && signal.kind === "support")).toBe(true);
+});

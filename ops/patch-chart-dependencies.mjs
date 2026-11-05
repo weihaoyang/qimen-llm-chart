@@ -309,8 +309,13 @@ for (const format of ["mjs", "cjs"]) {
     const beforeCall = `calculateBranchShenSha(shenShaContext, ${branch})`;
     const previousCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false })`;
     const previousYangCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true })`;
-    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true, learningStarsByNaYin: true })`;
+    const previousLearningCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true, learningStarsByNaYin: true })`;
+    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false, yangRenYangOnly: true, learningStarsByNaYin: true, fuXingByYear: true })`;
     if (dayunSource.includes(afterCall)) continue;
+    if (dayunSource.split(previousLearningCall).length === 2) {
+      dayunSource = dayunSource.replace(previousLearningCall, afterCall);
+      continue;
+    }
     if (dayunSource.split(previousYangCall).length === 2) {
       dayunSource = dayunSource.replace(previousYangCall, afterCall);
       continue;
@@ -362,6 +367,27 @@ for (const format of ["mjs", "cjs"]) {
     }`;
   if (!source.includes(after)) {
     if (source.split(before).length !== 2) throw new Error("Review taibu-core luck Yang blade convention patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+}
+
+// 福星 uses the explicitly selected annual-stem reading of the 神峰 verse.
+// Preserve the other domains' day-stem table instead of conflating the variants.
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = "    matchMapValue(FU_XING, dayStem, targetBranch, '福星贵人', names);";
+  const after = `    if (options?.fuXingByYear) {
+        const yearFuXing = {
+            '甲': ['寅', '子'], '乙': ['丑'], '丙': ['寅', '子'], '丁': ['亥'],
+            '戊': ['申'], '己': ['未'], '庚': ['午'], '辛': ['巳'], '壬': ['辰'], '癸': ['丑'],
+        };
+        matchValue(yearFuXing[yearStem], targetBranch, '福星贵人（年）', names);
+    } else {
+    matchMapValue(FU_XING, dayStem, targetBranch, '福星贵人', names);
+    }`;
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core annual Fu Xing convention patch");
     writeFileSync(file, source.replace(before, after));
   }
 }
