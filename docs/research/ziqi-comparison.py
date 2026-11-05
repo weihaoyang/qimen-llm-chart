@@ -34,9 +34,28 @@ def ming_history_residual() -> Decimal:
     return (elapsed % cycle) - predicted_interval
 
 
+def jiajing_1531_intervals() -> tuple[list[int], int]:
+    # Each month: (month length, day entering a new whole degree).
+    # Leap sixth month is kept as a separate month; the eleventh has two entries.
+    months = [(30, [18]), (30, [16]), (29, [14]), (29, [13]),
+              (30, [12]), (29, [10]), (29, [9]), (30, [8]),
+              (29, [6]), (30, [5]), (30, [3]), (29, [1, 29]), (30, [13])]
+    events: list[int] = []
+    elapsed = 0
+    for length, days in months:
+        events.extend(elapsed + day - 1 for day in days)
+        elapsed += length
+    return [b - a for a, b in zip(events[:-2], events[1:-1])], events[-1] - events[-2]
+
+
 if __name__ == "__main__":
     assert midnight_jd(1531, 2, 4, gregorian=False) == 2280289.5
     assert midnight_jd(1667, 2, 1, gregorian=True) == 2329950.5
+    intervals, boundary = jiajing_1531_intervals()
+    assert intervals == [28] * 12
+    assert boundary == 13
+    assert Decimal("23.47") * 28 - 23 * 28 == Decimal("13.16")
+    print(f"Jiajing 1531: {len(intervals)} intervals of 28 days; Dou-to-Niu: {boundary} days (table 13.16)")
     assert ming_history_residual() == Decimal("0.4240")
     print(f"Ming table residual={ming_history_residual()} days")
     for cycle in (10228, 10227):
