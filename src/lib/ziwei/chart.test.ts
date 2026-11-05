@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { astro } from "iztro";
 import { Lunar } from "lunar-typescript";
+import startTables from "../../../docs/research/sources/ziwei-quanshu-start-tables.json";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
@@ -219,4 +220,30 @@ it("matches all thirty Water Two start days and the other four classical opening
       expect(raw.palaces.filter(p => p.majorStars.some(star => star.name === "紫微")).map(p => p.earthlyBranch), `${fiveElementsClass} day ${index + 1}`).toEqual([positions[index]]);
     }
   }
+});
+
+
+it("matches the readable wood, metal, earth and fire start-table cells while preserving source defects", () => {
+  let checked = 0;
+  for (const table of startTables.tables) {
+    const byDay = new Map<number, string[]>();
+    for (const [branch, days] of Object.entries(table.palaces)) {
+      for (const day of days ?? []) {
+        expect(day).toBeGreaterThanOrEqual(1);
+        expect(day).toBeLessThanOrEqual(30);
+        byDay.set(day, [...(byDay.get(day) ?? []), branch]);
+      }
+    }
+    expect(Array.from({ length: 30 }, (_, i) => i + 1).filter(day => !byDay.has(day))).toEqual(table.missing);
+    expect(Object.fromEntries([...byDay].filter(([, branches]) => branches.length > 1))).toEqual(table.conflicts);
+    for (const [day, branches] of byDay) {
+      if (branches.length !== 1) continue; // A contradictory original cell is not a passing oracle.
+      const date = Lunar.fromYmd(1990, 2, day).getSolar().toYmd();
+      const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${date}T${String(table.hourIndex * 2).padStart(2, "0")}:00`));
+      expect(raw.fiveElementsClass).toBe(table.name);
+      expect(raw.palaces.filter(p => p.majorStars.some(star => star.name === "紫微")).map(p => p.earthlyBranch), `${table.name} day ${day}`).toEqual(branches);
+      checked += 1;
+    }
+  }
+  expect(checked).toBe(117);
 });
