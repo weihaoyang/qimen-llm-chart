@@ -71,3 +71,26 @@ it("keeps the post-Li-Chun month and luck direction aligned for the same instant
     expect(trend.points[0].dayunGanZhi).toBe(natal.raw.yun.daYun[0].ganZhi);
   }
 });
+
+
+it("does not mistake every repeated natal year branch for self-punishment", () => {
+  const branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+  for (const [index, branch] of branches.entries()) {
+    const periods = buildLifeTrendDayun(profileFor(`${1984 + index}-07-01T12:00`, "Asia/Shanghai", "li-chun", "midnight"));
+    const repeated = periods.list.flatMap(period => period.liunianList).filter(year => year.zhi === branch);
+    expect(repeated.length).toBeGreaterThan(0);
+    for (const year of repeated) {
+      expect(year.taiSui).toContain("值太岁");
+      expect(year.taiSui.includes("刑太岁"), `${branch}${branch} ${year.year}`).toBe(["辰", "午", "酉", "亥"].includes(branch));
+    }
+  }
+});
+
+it("retains the two distinct branches of the Zi Mao punishment", () => {
+  for (const [birthYear, other] of [[1984, "卯"], [1987, "子"]] as const) {
+    const periods = buildLifeTrendDayun(profileFor(`${birthYear}-07-01T12:00`, "Asia/Shanghai", "li-chun", "midnight"));
+    const years = periods.list.flatMap(period => period.liunianList).filter(year => year.zhi === other);
+    expect(years.length).toBeGreaterThan(0);
+    expect(years.every(year => year.taiSui.includes("刑太岁"))).toBe(true);
+  }
+});

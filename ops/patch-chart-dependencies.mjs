@@ -277,3 +277,17 @@ for (const format of ["mjs", "cjs"]) {
     writeFileSync(file, source);
   }
 }
+
+
+// A repeated branch only forms self-punishment in 辰午酉亥, not merely
+// because both references belong to the same multi-branch punishment group.
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/bazi-dayun/calculate.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = "if (xing.combination.includes(liunianBranch) && xing.combination.includes(yearBranch)) {";
+  const after = "if (xing.combination.includes(liunianBranch) && xing.combination.includes(yearBranch) && (xing.combination.length === 1 || liunianBranch !== yearBranch)) {";
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core Tai Sui self-punishment patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+}
