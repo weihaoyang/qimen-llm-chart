@@ -92,6 +92,19 @@ describe("buildChart", () => {
     for (const palace of gates) expect(palace.status?.gate, palace.gate).toBe(current[palace.gate]);
     expect(Object.keys(classical).filter(gate => classical[gate] !== current[gate])).toEqual(["生门", "伤门", "杜门", "开门"]);
   });
+  it("compares each of the eight classical peak gates against the site's monthly statuses", () => {
+    // 《统宗》列八节的当旺门；这里只比较当旺门，不推造其余状态。
+    const cases = [
+      ["2026-02-05", "生门", "死"], ["2026-03-21", "伤门", "旺"],
+      ["2026-05-06", "杜门", "休"], ["2026-06-22", "景门", "旺"],
+      ["2026-08-08", "死门", "休"], ["2026-09-24", "惊门", "旺"],
+      ["2026-11-08", "开门", "休"], ["2026-12-22", "休门", "旺"],
+    ] as const;
+    for (const [date, gate, expected] of cases) {
+      const { raw } = buildChart({ datetime: `${date}T12:00`, timeZone: "Asia/Shanghai" });
+      expect(raw.palaces.find(p => p.position !== 5 && p.gate === gate)?.status?.gate, `${date} ${gate}`).toBe(expected);
+    }
+  });
   it("returns nine palaces for a valid datetime input", () => {
     const chart = buildChart({
       datetime: "2026-07-01T21:30",
