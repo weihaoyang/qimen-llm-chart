@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
+import { buildBaziCalculationContext, buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { buildLifeTrendDayun, buildLifeTrendData } from "./trend";
 
@@ -36,6 +36,26 @@ describe("buildLifeTrendData", () => {
 const profileFor = (datetime: string, timeZone: string, yearBoundary: "li-chun" | "lunar-new-year", dayBoundary: "midnight" | "zi-start"): NormalizedProfileInput => ({
   original: { ...profile.original, datetime, timeZone, baziSettings: { yearBoundary, dayBoundary } },
   normalized: { ...profile.normalized, datetime, timeZone },
+});
+
+it("does not copy natal-day patterns to every luck period and annual branch", () => {
+  for (const [date, day] of [["1990-01-15", "庚辰"], ["1990-01-11", "丙子"], ["1990-02-08", "甲辰"]]) {
+    const input = profileFor(`${date}T12:00`, "Asia/Shanghai", "li-chun", "midnight");
+    expect(buildBaziCalculationContext(input).eightChar.getDay()).toBe(day);
+    const periods = buildLifeTrendDayun(input).list;
+    expect(periods.length).toBeGreaterThan(0);
+    for (const names of periods.flatMap(period => [period.shenSha, ...period.liunianList.map(year => year.shenSha)])) {
+      expect(names.some(name => ["魁罡", "阴差阳错", "十恶大败"].includes(name))).toBe(false);
+    }
+  }
+});
+
+it("retains target-branch horse matches after separating natal-day patterns", () => {
+  // 己巳年庚辰日：巳酉丑马在亥，申子辰马在寅，按年/日两支分别取马。
+  const periods = buildLifeTrendDayun(profileFor("1990-01-15T12:00", "Asia/Shanghai", "li-chun", "midnight")).list;
+  const years = periods.flatMap(period => period.liunianList);
+  expect(new Set(years.map(year => year.zhi)).size).toBe(12);
+  for (const year of years) expect(year.shenSha.includes("驿马")).toBe(["寅", "亥"].includes(year.zhi));
 });
 
 it("uses the same year-boundary direction and period years as the canonical natal chart", () => {

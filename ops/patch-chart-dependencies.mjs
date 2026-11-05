@@ -291,3 +291,26 @@ for (const format of ["mjs", "cjs"]) {
     writeFileSync(file, source.replace(before, after));
   }
 }
+
+// Luck periods match the target branch against the natal context. They must
+// not inherit global natal-day patterns from the position-free (e.g. Liuyao) API.
+{
+  const file = new URL("../node_modules/taibu-core/dist/domains/shared/shensha.js", import.meta.url);
+  const source = readFileSync(file, "utf8");
+  const before = "if (!positionHint) {";
+  const after = "if (!positionHint && options?.includeNatalDayPatterns !== false) {";
+  if (!source.includes(after)) {
+    if (source.split(before).length !== 2) throw new Error("Review taibu-core natal-day shensha scope patch");
+    writeFileSync(file, source.replace(before, after));
+  }
+  const dayun = new URL("../node_modules/taibu-core/dist/domains/bazi-dayun/calculate.js", import.meta.url);
+  let dayunSource = readFileSync(dayun, "utf8");
+  for (const branch of ["lnBranch", "branch"]) {
+    const beforeCall = `calculateBranchShenSha(shenShaContext, ${branch})`;
+    const afterCall = `calculateBranchShenSha(shenShaContext, ${branch}, { includeNatalDayPatterns: false })`;
+    if (dayunSource.includes(afterCall)) continue;
+    if (dayunSource.split(beforeCall).length !== 2) throw new Error("Review taibu-core luck shensha call patch: " + branch);
+    dayunSource = dayunSource.replace(beforeCall, afterCall);
+  }
+  writeFileSync(dayun, dayunSource);
+}
