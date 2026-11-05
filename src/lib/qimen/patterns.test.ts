@@ -56,18 +56,48 @@ describe("evaluateQimenPatterns", () => {
     expect(report.checks.find((check) => check.id === "qing_long_fan_shou")?.positions).toEqual([3]);
   });
 
-  it("ties 玉女守门 and 三奇得使 to the 值使 palace", () => {
+  it("reports the fixed-stem bird pattern separately from a non-Wu chief proxy", () => {
+    const report = evaluateQimenPatterns(chartWith([
+      palace(2, { heavenlyStem: "丙", earthlyStem: "己" }),
+      palace(3, { heavenlyStem: "丙", earthlyStem: "戊" }),
+      palace(6, { heavenlyStem: "辛", earthlyStem: "乙" }),
+    ]));
+    expect(report.checks.find((check) => check.id === "fei_niao_die_xue")?.positions).toEqual([3]);
+    expect(report.checks.find((check) => check.id === "bai_hu_chang_kuang")?.positions).toEqual([6]);
+  });
+
+  it("ties 玉女守门 to 值使 and 三奇得使 to the classical stem pairings", () => {
     const report = evaluateQimenPatterns(
       chartWith([palace(6, { heavenlyStem: "丁", earthlyStem: "丁" })], { zhiShi: 6 }),
     );
     expect(statusOf(report, "yu_nu_shou_men")).toBe("成立");
-    expect(statusOf(report, "san_qi_de_shi")).toBe("成立");
+    expect(statusOf(report, "san_qi_de_shi")).toBe("未成立");
     // The same palace is not 值使 elsewhere.
     const other = evaluateQimenPatterns(
       chartWith([palace(6, { heavenlyStem: "丁", earthlyStem: "丁" })], { zhiShi: 2 }),
     );
     expect(statusOf(other, "yu_nu_shou_men")).toBe("未成立");
     expect(statusOf(other, "san_qi_de_shi")).toBe("未成立");
+    const classical = evaluateQimenPatterns(chartWith([
+      palace(3, { heavenlyStem: "乙", earthlyStem: "辛" }),
+      palace(4, { heavenlyStem: "丙", earthlyStem: "庚" }),
+      palace(9, { heavenlyStem: "丁", earthlyStem: "癸" }),
+    ], { zhiShi: 2 }));
+    expect(classical.checks.find((check) => check.id === "san_qi_de_shi")?.positions).toEqual([3, 4, 9]);
+
+  });
+
+  it("matches exactly the six classical 三奇得使 pairings", () => {
+    const expected = new Set(["乙己", "乙辛", "丙戊", "丙庚", "丁壬", "丁癸"]);
+    for (const heavenlyStem of ["乙", "丙", "丁"]) {
+      for (const earthlyStem of ["戊", "己", "庚", "辛", "壬", "癸", "乙", "丙", "丁"]) {
+        const pair = heavenlyStem + earthlyStem;
+        const chart = chartWith([palace(3, { heavenlyStem, earthlyStem })], { zhiShi: 3 });
+        expect(statusOf(evaluateQimenPatterns(chart), "san_qi_de_shi"), pair).toBe(
+          expected.has(pair) ? "成立" : "未成立",
+        );
+      }
+    }
   });
 
   it("detects 九遁 and 三诈 from the stem / gate / deity combination", () => {

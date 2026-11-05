@@ -1,4 +1,5 @@
 import { calculateBaziDayun, type DayunOutput } from "taibu-core/bazi-dayun";
+import { SEXAGENARY_CYCLE } from "@/lib/bazi/reverse";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import type { LifeTrendData, LifeTrendPoint, LifeTrendSignal } from "./types";
 import type { KlinePoint, KlineSeries } from "@/lib/qimen/kline";
@@ -100,10 +101,15 @@ export const buildLifeTrendData = (profile: NormalizedProfileInput): LifeTrendDa
     });
   });
 
+  // Even reverse luck periods move forward in calendar time. Direction is
+  // the step between their sexagenary pillars, including the 癸亥/甲子 wrap.
+  const first = SEXAGENARY_CYCLE.indexOf(dayun.list[0]?.ganZhi ?? "");
+  const second = SEXAGENARY_CYCLE.indexOf(dayun.list[1]?.ganZhi ?? "");
+
   return {
     startAge: dayun.startAge,
     startAgeDetail: dayun.startAgeDetail,
-    direction: dayun.list.length > 1 && dayun.list[1].startYear > dayun.list[0].startYear ? "forward" : "backward",
+    direction: (second - first + SEXAGENARY_CYCLE.length) % SEXAGENARY_CYCLE.length === 1 ? "forward" : "backward",
     points,
     disclaimer: "K线仅把大运、流年、十二长生、关系与神煞整理成可复核的结构波动，不代表财富、健康或事件预测。",
   };

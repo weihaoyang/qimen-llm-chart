@@ -6,7 +6,7 @@
  * 规则本身出自古典占星文献（Parashara 体系的十六分盘），属公共领域内容；
  * 此处只做 TypeScript 改写与命名整理。
  *
- * 约定：所有入参使用 0 基索引（0 = 白羊 / Mesha）。
+ * 内部使用 0 基索引（0 = 白羊 / Mesha），公开函数接收并返回 1 基宫序。
  * 「阳/阴宫」以 1 基序数为准：白羊（0 基 0）为阳宫。
  */
 
@@ -36,7 +36,7 @@ const elementStart = (rashi0: number, fireStart: number, earthStart: number, air
 const step = (start: number, part: number) => (start + part) % 12;
 
 const partIndex = (degreeInRashi: number, divisions: number) => {
-  const index = Math.floor(degreeInRashi / (30 / divisions));
+  const index = Math.floor((degreeInRashi * divisions) / 30);
   return index >= divisions ? divisions - 1 : index;
 };
 
@@ -105,7 +105,9 @@ export const vargaSign = (rashi1: number, degreeInRashi: number, code: string): 
     case "D45":
       return step(modalityStart(r0, 0, 4, 8), partIndex(d, 45)) + 1;
     case "D60":
-      return step(isOddSign(r0) ? r0 : step(r0, 6), partIndex(d, 60)) + 1;
+      // BPHS ch. 6, v. 33: count forward from the natal sign. The even-sign
+      // reversal applies to the names of the divisions, not the zodiac position.
+      return step(r0, partIndex(d, 60)) + 1;
     default:
       return r0 + 1;
   }

@@ -16,7 +16,7 @@ const toDateTimeInputValue = ({
   day: number;
   hour: number;
   minute: number;
-}) => `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`;
+}) => `${String(year).padStart(4, "0")}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`;
 
 const normalizeDateTime = (input: ProfileInput) => {
   if (input.calendarMode === "lunar" && input.lunar) {
@@ -46,7 +46,7 @@ const normalizeDateTime = (input: ProfileInput) => {
 
 const parseDateTime = (datetime: string) => {
   const match = datetime.match(
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/,
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?$/,
   );
 
   if (!match) {
@@ -72,22 +72,16 @@ const getDayOfYear = ({
   month: number;
   day: number;
 }) => {
-  const start = Date.UTC(year, 0, 0);
-  const current = Date.UTC(year, month - 1, day);
-  return Math.floor((current - start) / (24 * 60 * 60 * 1000));
+  const start = new Date(0);
+  start.setUTCFullYear(year, 0, 0);
+  const current = new Date(0);
+  current.setUTCFullYear(year, month - 1, day);
+  return Math.floor((current.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
 };
 
 const getTimeZoneOffsetMinutes = (datetime: string, timeZone: string) => {
-  const parts = parseDateTime(datetime);
   const zonedDate = toZonedDate(datetime, timeZone);
-  const naiveUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-  );
-
+  const naiveUtc = toZonedDate(datetime, "UTC").getTime();
   return (naiveUtc - zonedDate.getTime()) / (60 * 1000);
 };
 
@@ -105,13 +99,13 @@ const applyTrueSolarCorrection = (
   const localStandardMeridian = offsetHours * 15;
   const correctionMinutes =
     4 * (longitude - localStandardMeridian) + equationOfTime;
-  const civilDate = toZonedDate(datetime, timeZone);
+  const civilWallTime = toZonedDate(datetime, "UTC");
   const correctedDate = new Date(
-    Math.round((civilDate.getTime() + correctionMinutes * 60 * 1000) / 60000) *
+    Math.round((civilWallTime.getTime() + correctionMinutes * 60 * 1000) / 60000) *
       60000,
   );
 
-  return formatDateTimeInZone(correctedDate, timeZone).slice(0, 16).replace(" ", "T");
+  return formatDateTimeInZone(correctedDate, "UTC").slice(0, 16).replace(" ", "T");
 };
 
 export const normalizeProfileInput = (
@@ -133,3 +127,7 @@ export const normalizeProfileInput = (
     },
   };
 };
+
+/** The civil clock of the event, for astronomical calculations. */
+export const getCivilDateTime = (profile: NormalizedProfileInput) =>
+  profile.normalized.timeBasis === "true-solar" ? normalizeDateTime(profile.original) : profile.normalized.datetime;

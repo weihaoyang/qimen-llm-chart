@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildBaziChartFromProfile } from "./chart";
-import { deriveBirthDatesFromBazi } from "./reverse";
+import { BAZI_REVERSE_TIME_ZONE, deriveBirthDatesFromBazi } from "./reverse";
 import type { BaziSettings } from "./settings";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import type { ProfileInput } from "@/lib/profile";
@@ -12,7 +12,7 @@ const profile = (
 ): ProfileInput => ({
   calendarMode: "solar",
   datetime,
-  timeZone: "Asia/Shanghai",
+  timeZone: BAZI_REVERSE_TIME_ZONE,
   gender: "male",
   timeBasis: "civil",
   baziSettings,
@@ -65,6 +65,23 @@ describe("deriveBirthDatesFromBazi", () => {
       ]);
       expect(candidate.ganzhi).toEqual([target.year, target.month, target.day, target.time]);
     });
+  });
+
+  it("splits an hour at the first input minute after Li Chun", () => {
+    const before = "2024-02-04T16:27";
+    const after = "2024-02-04T16:28";
+    expect(chartFor(before).raw.baZi).toEqual(["癸卯", "乙丑", "戊戌", "庚申"]);
+    expect(chartFor(after).raw.baZi).toEqual(["甲辰", "丙寅", "戊戌", "庚申"]);
+
+    const lookup = (datetime: string) => deriveBirthDatesFromBazi({
+      pillars: pillarsOf(datetime),
+      startYear: 2024,
+      endYear: 2024,
+    }).candidates.find((candidate) => candidate.date === "2024-02-04");
+
+    expect(lookup(before)?.hourRanges).toEqual(["15:00-16:27"]);
+    expect(lookup(after)?.hourRanges).toEqual(["16:28-16:59"]);
+    expect(lookup(after)?.datetime).toBe(after);
   });
 
   it("keeps a whole-day answer when the time pillar is unknown", () => {

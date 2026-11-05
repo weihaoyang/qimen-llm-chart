@@ -59,7 +59,7 @@ export const HOLOGRAM_CONCEPTS: Array<{ term: string; zh: string; period: string
   { term: "Hologram", zh: "全息图", period: "1948（Gabor）", computed: "可算：碎片重建与分辨率", note: "记录干涉条纹；任一片段仍可重建整体，但分辨率随碎片面积下降。这是「部分含整体」最直接的物理实例。" },
   { term: "Implicate / Explicate Order", zh: "隐卷序 / 显卷序", period: "1980（Bohm）", computed: "不可算（哲学）", note: "显卷序是展开的现象，隐卷序是卷入的全体；Bohm 用全息类比说明「部分卷入整体」。" },
   { term: "Holonomic Brain", zh: "全息脑假说", period: "1971（Pribram）", computed: "不可算（假说）", note: "记忆以分布式干涉模式存储，故局部损伤不导致局部记忆缺失。" },
-  { term: "Holographic Principle", zh: "全息原理", period: "1993–1995（'t Hooft, Susskind）", computed: "可算：面积律与熵", note: "一个区域内的全部自由度可编码在其边界上，信息量正比于**面积**（每 4 个普朗克面积 1 比特），而非体积。" },
+  { term: "Holographic Principle", zh: "全息原理", period: "1993–1995（'t Hooft, Susskind）", computed: "可算：面积律与熵", note: "一个区域内的全部自由度可编码在其边界上，信息量正比于**面积**（每 4 个普朗克面积对应 1 nat），而非体积。" },
   { term: "Bekenstein–Hawking Entropy", zh: "贝肯斯坦–霍金熵", period: "1973–1974", computed: "可算", note: "S = k_B A /(4 l_P²)，黑洞熵只由视界面积决定。" },
   { term: "Bekenstein Bound", zh: "贝肯斯坦界", period: "1981", computed: "可算", note: "S ≤ 2π k_B R E /(ħ c)：给定半径与能量时的信息上限（以 S/k_B 计为 nat，换算比特需再除以 ln2）。" },
   { term: "AdS/CFT", zh: "反德西特/共形场对应", period: "1997（Maldacena）", computed: "不可算（本仓未实现）", note: "全息原理最具体的实现：d 维引力 ↔ (d−1) 维边界场论。" },

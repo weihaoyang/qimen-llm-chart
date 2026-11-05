@@ -14,6 +14,7 @@ export const SEXAGENARY_CYCLE: string[] = Array.from(
 
 /** lunar-typescript 的节气表在该区间内有据可查，超出即拒绝，避免给出无依据的盘面。 */
 export const BAZI_REVERSE_MIN_YEAR = 1900;
+export const BAZI_REVERSE_TIME_ZONE = "Etc/GMT-8";
 
 export const BAZI_REVERSE_MAX_YEAR = 2100;
 
@@ -37,11 +38,11 @@ export type BaziReverseQuery = {
 };
 
 export type BaziReverseCandidate = {
-  /** 可直接回填工作台的公历时间。整日命中时取 12:00，否则取该时辰首个整点。 */
+  /** 可直接回填工作台的公历时间。整日命中时取 12:00，否则取首个命中分钟。 */
   datetime: string;
   date: string;
   lunar: string;
-  /** 命中的整点区间，如 ["13:00-14:59"]；整日命中为 ["00:00-23:59"]。 */
+  /** 命中的分钟区间，如 ["13:00-14:59"]；整日命中为 ["00:00-23:59"]。 */
   hourRanges: string[];
   ganzhi: [string, string, string, string];
   dayMaster: string;
@@ -54,7 +55,7 @@ export type BaziReverseResult = {
   truncated: boolean;
   /** 实际走过天数（含被干支预筛排除的天）。 */
   scannedDays: number;
-  /** 至少有一个整点与所填干支一致的天数。 */
+  /** 至少有一分钟与所填干支一致的天数。 */
   matchedDays: number;
   givenPillars: Record<BaziPillarKey, string | null>;
   conventions: BaziSettings;
@@ -107,15 +108,6 @@ const dayCycleIndex = (year: number, month: number, day: number) => {
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-/** 每个地支覆盖的整点；子时横跨 23 时与 0 时，因此是两个元素。 */
-const HOURS_BY_BRANCH: number[][] = (() => {
-  const buckets: number[][] = Array.from({ length: 12 }, () => []);
-  for (let hour = 0; hour < 24; hour += 1) {
-    buckets[Math.floor(((hour + 1) % 24) / 2)].push(hour);
-  }
-  return buckets;
-})();
-
 /**
  * 四柱引擎的唯一入口：与 buildBaziChartFromProfile 用同一套换年、换日口径，
  * 逆推结果因此可以直接回填工作台而不会出现「搜出来的盘对不上」。
@@ -124,10 +116,10 @@ const pillarsAt = (
   year: number,
   month: number,
   day: number,
-  hour: number,
+  minute: number,
   settings: BaziSettings,
 ): [string, string, string, string] => {
-  const lunar = Solar.fromYmdHms(year, month, day, hour, 0, 0).getLunar();
+  const lunar = Solar.fromYmdHms(year, month, day, Math.floor(minute / 60), minute % 60, 0).getLunar();
   const eightChar = lunar.getEightChar();
   eightChar.setSect(settings.dayBoundary === "zi-start" ? 1 : 2);
   const yearPillar = settings.yearBoundary === "lunar-new-year"
@@ -139,25 +131,13 @@ const pillarsAt = (
 
 /** 年柱在 7 月 1 日必已越过立春与春节，可用它一次性读出该公历年的年柱。 */
 const yearGanZhiOf = (year: number, settings: BaziSettings) =>
-  pillarsAt(year, 7, 1, 12, settings)[0];
+  pillarsAt(year, 7, 1, 720, settings)[0];
 
-const mergeHourRanges = (hours: number[]) => {
-  const ranges: Array<[number, number]> = [];
+const formatMinute = (minute: number) =>
+  `${pad(Math.floor(minute / 60))}:${pad(minute % 60)}`;
 
-  hours.forEach((hour) => {
-    const last = ranges[ranges.length - 1];
-
-    if (last && hour === last[1] + 1) {
-      last[1] = hour;
-    } else {
-      ranges.push([hour, hour]);
-    }
-  });
-
-  return ranges.map(([start, end]) => `${pad(start)}:00-${pad(end)}:59`);
-};
-
-const ALL_HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+// 子时跨公历午夜，23:00 也是可选的换日边界。
+const TIME_BOUNDARIES = [0, ...Array.from({ length: 12 }, (_, i) => (2 * i + 1) * 60), 1440];
 
 /** 子初换日时，23 时的日柱已属次日；日柱预筛必须把这一天也算进候选。 */
 const dayPillarFits = (index: number, target: string, settings: BaziSettings) =>
@@ -227,42 +207,41 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
     }
   }
 
-  const timeHours = target.time ? HOURS_BY_BRANCH[parsed.time!.zhi] : null;
+  const rangesFor = (year: number, month: number, day: number) => {
+    const at = (minute: number) => pillarsAt(year, month, day, minute, settings);
+    const early = at(0);
+    const late = at(1439);
+    const boundaries = target.time || settings.dayBoundary === "zi-start" && target.day
+      ? [...TIME_BOUNDARIES]
+      : [0, 1440];
 
-  /**
-   * 未给时柱时用 0/12/23 三个探针判断当日有没有跨柱边界：年、月柱一天内最多
-   * 变一次，日柱只在 0 时与 23 时变，三个探针足以把「整日」「0-22 时」「仅 23 时」
-   * 分开；只有立春/节恰好落在当天才退化成逐时复算。
-   */
-  const hoursFor = (year: number, month: number, day: number) => {
-    if (timeHours) {
-      return timeHours.filter((hour) => matches(pillarsAt(year, month, day, hour, settings)));
-    }
-
-    const early = pillarsAt(year, month, day, 0, settings);
-    const noon = pillarsAt(year, month, day, 12, settings);
-    const late = pillarsAt(year, month, day, 23, settings);
-    const yearMonthStable =
-      early[0] === noon[0] && noon[0] === late[0] && early[1] === noon[1] && noon[1] === late[1];
-
-    if (!yearMonthStable) {
-      return ALL_HOURS.filter((hour) => matches(pillarsAt(year, month, day, hour, settings)));
-    }
-
-    const hours: number[] = [];
-
-    if (matches(early)) {
-      // 0 至 22 时共用同一组年月日柱。
-      for (let hour = 0; hour <= 22; hour += 1) {
-        hours.push(hour);
+    // 公历日内至多有一个换月的节。找首个新月柱的可输入分钟，
+    // 以免把交节前后整个小时错判为同一柱。
+    if (early[0] !== late[0] || early[1] !== late[1]) {
+      let lo = 0;
+      let hi = 1439;
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        const [yearPillar, monthPillar] = at(mid);
+        if (yearPillar === early[0] && monthPillar === early[1]) lo = mid;
+        else hi = mid;
+      }
+      if (!boundaries.includes(hi)) {
+        boundaries.push(hi);
+        boundaries.sort((a, b) => a - b);
       }
     }
 
-    if (matches(late)) {
-      hours.push(23);
+    const ranges: Array<[number, number]> = [];
+    for (let i = 0; i < boundaries.length - 1; i += 1) {
+      const start = boundaries[i];
+      const end = boundaries[i + 1] - 1;
+      if (!matches(start === 0 ? early : at(start))) continue;
+      const previous = ranges[ranges.length - 1];
+      if (previous && previous[1] + 1 === start) previous[1] = end;
+      else ranges.push([start, end]);
     }
-
-    return hours;
+    return ranges;
   };
 
   /** 只给月柱时，逐日排盘太贵：先用三个探针判断整月，再进逐日。 */
@@ -272,7 +251,7 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
     }
 
     const lastDay = new Date(year, month, 0).getDate();
-    const probed = [1, 15, lastDay].map((day) => pillarsAt(year, month, day, 12, settings)[1]);
+    const probed = [1, 15, lastDay].map((day) => pillarsAt(year, month, day, 720, settings)[1]);
 
     if (probed.every((value) => value === probed[0])) {
       return probed[0] === target.month;
@@ -301,23 +280,23 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
           continue;
         }
 
-        const hours = hoursFor(year, month, day);
+        const ranges = rangesFor(year, month, day);
 
-        if (hours.length === 0) {
+        if (ranges.length === 0) {
           continue;
         }
 
         matchedDays += 1;
-        const representativeHour = hours.length === ALL_HOURS.length ? 12 : hours[0];
+        const representative = ranges[0][0] === 0 && ranges[0][1] === 1439 ? 720 : ranges[0][0];
         const date = `${year}-${pad(month)}-${pad(day)}`;
-        const lunar = Solar.fromYmdHms(year, month, day, representativeHour, 0, 0).getLunar();
-        const ganzhi = pillarsAt(year, month, day, representativeHour, settings);
+        const lunar = Solar.fromYmdHms(year, month, day, Math.floor(representative / 60), representative % 60, 0).getLunar();
+        const ganzhi = pillarsAt(year, month, day, representative, settings);
 
         candidates.push({
-          datetime: `${date}T${pad(representativeHour)}:00`,
+          datetime: `${date}T${formatMinute(representative)}`,
           date,
           lunar: lunar.toString(),
-          hourRanges: mergeHourRanges(hours),
+          hourRanges: ranges.map(([start, end]) => `${formatMinute(start)}-${formatMinute(end)}`),
           ganzhi,
           dayMaster: ganzhi[2][0],
         });
@@ -343,9 +322,9 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
   ];
 
   if (!target.time) {
-    notes.push("未给出时柱：只按年、月、日柱匹配，代入时间取当日 12:00，生成盘面后可再改时辰。");
+    notes.push("未给出时柱：只按年、月、日柱匹配，整日命中取 12:00，否则取首个命中分钟。");
   } else {
-    notes.push("时柱已参与匹配：一个时辰含两个整点，结果按整点给出。");
+    notes.push("时柱已参与匹配，结果按分钟给出。");
   }
 
   if (settings.dayBoundary === "zi-start") {

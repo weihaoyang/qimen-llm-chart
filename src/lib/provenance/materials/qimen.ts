@@ -12,9 +12,9 @@ import type { ProvenanceMaterialSet } from "../types";
 export const MATERIALS: ProvenanceMaterialSet = {
   "qimen-3meta": [
     {
-      title: "定元符头表（3meta `lib/data/constants.js:17-19`；取值逻辑 `lib/qimen/calculator.js:15-21`）",
+      title: "定元符头表（按 3meta 实际执行的 `lib/qimen/calculator.js:15-21` 整理）",
       lines: [
-        "上元（SHANGYUAN）：甲子 乙丑 丙寅 丁卯 戊辰 己巳 庚午 辛未 壬申 癸酉",
+        "上元（SHANGYUAN）：甲子 乙丑 丙寅 丁卯 戊辰 己卯 庚辰 辛巳 壬午 癸未",
         "　　　　　　　　　甲午 乙未 丙申 丁酉 戊戌 己酉 庚戌 辛亥 壬子 癸丑",
         "中元（ZHONGYUAN）：己巳 庚午 辛未 壬申 癸酉 甲申 乙酉 丙戌 丁亥 戊子",
         "　　　　　　　　　己亥 庚子 辛丑 壬寅 癸卯 甲寅 乙卯 丙辰 丁巳 戊午",
@@ -27,7 +27,7 @@ export const MATERIALS: ProvenanceMaterialSet = {
         ":19      return '中元';",
         ":20  return '下元';",
       ],
-      note: "行号对应本仓安装的 3meta@2.6.0。符头即「三奇六仪」戊己庚辛壬癸所配之甲旬首：上元取甲子/己卯/甲午/己酉四符头及同旬干支，中元取己巳/甲申/己亥/甲寅四符头及同旬，其余归下元。`constants.js` 的 SHANGYUAN/ZHONGYUAN/XIAYUAN 三个常量与 getYuan 的内联表内容一致（前者按六十甲子序排，后者按四符头分组）。",
+      note: "行号对应本仓安装的 3meta@2.6.0。该版本 constants.js 的 SHANGYUAN 常量误列己巳至癸酉，与实际调用的 getYuan 不同，本表按后者整理。定元取当日或之前最近的甲日、己日为符头，每组五日。上元取甲子、己卯、甲午、己酉，中元取己巳、甲申、己亥、甲寅，其余四组归下元。排值符所用的甲旬首另按时柱计算。",
     },
     {
       title: "阴阳遁节气局数表（结构 + 全表；3meta `lib/data/constants.js:21-40`）",
@@ -49,7 +49,7 @@ export const MATERIALS: ProvenanceMaterialSet = {
         "　立秋: [2, 5, 8]",
         "　霜降: [5, 8, 2]　小雪: [5, 8, 2]",
         "　大雪: [4, 7, 1]",
-        "　处暑: [1, 4, 7]",
+        "　处暑: [1, 4, 7]（《奇门旨归》口径；《武备志》传录作 1、7、4）",
         "　立冬: [6, 9, 3]　寒露: [6, 9, 3]",
       ],
       note: "全表即上述 24 个键（阴阳各 12 键，其中数键共用同一数组），完整体位于 `lib/data/constants.js:21-40`，不经任何浓缩——本页列出即全表。取局逐字见 `lib/qimen/calculator.js:23-33` getJuShu：`const table = isYangdun ? YANGDUN_JIEQI : YINDUN_JIEQI; const row = table[jieqi];` 后 `yuan === '上元' ? row[0] : yuan === '中元' ? row[1] : row[2]`。",

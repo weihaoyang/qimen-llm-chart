@@ -28,14 +28,28 @@ describe("harmonic chart", () => {
     }
   });
 
+  it("keeps rounded sign degrees inside each sign across the supported harmonics", () => {
+    const input = profile();
+    for (let harmonic = 1; harmonic <= 36; harmonic += 1) {
+      const chart = buildHarmonicChart(input, harmonic);
+      for (const point of [...chart.points, ...chart.angles]) {
+        expect(point.degree).toBeGreaterThanOrEqual(0);
+        expect(point.degree).toBeLessThan(30);
+      }
+    }
+  });
+
   it("converts harmonic conjunctions back to the natal angle", () => {
     const chart = buildHarmonicChart(profile(), 5);
     expect(chart.harmonic).toBe(5);
     expect(chart.orb).toBe(HARMONIC_ORB);
     expect(chart.points.length).toBeGreaterThan(0);
+    expect(buildHarmonicChart(profile(), 2).conjunctions).toContainEqual(
+      expect.objectContaining({ a: "北交点", b: "南交点", natalAngle: 180, natalOrb: 0 }),
+    );
     for (const item of chart.conjunctions) {
       expect(item.harmonicOrb).toBeLessThanOrEqual(HARMONIC_ORB);
-      expect(item.natalAngle).toBeCloseTo(72, 3);
+
       expect(item.natalOrb).toBeCloseTo(item.harmonicOrb / 5, 2);
     }
   });

@@ -15,18 +15,20 @@ export type AkashaChart = {
 
 /** 点源位置：在 [-0.45, 0.45] 上等距分布（确定性）。 */
 export const sourcePositions = (count: number) => {
-  const n = Math.max(1, Math.min(9, Math.round(count)));
+  const n = Math.max(1, Math.min(9, Number.isFinite(count) ? Math.round(count) : 1));
   if (n === 1) return [0];
   return Array.from({ length: n }, (_, index) => Number((-0.45 + (0.9 * index) / (n - 1)).toFixed(4)));
 };
 
 export const buildAkashaChart = (settings: AkashaSettings): AkashaChart => {
   const massKg = settings.massKg > 0 && Number.isFinite(settings.massKg) ? settings.massKg : 1;
-  const fragment = Math.max(0.05, Math.min(1, settings.fragment));
-  const holographic = holographicReport(massKg, 1);  const demo = hologramDemo(sourcePositions(settings.sourceCount), fragment);
+  const fragment = Number.isFinite(settings.fragment) ? Math.max(0.05, Math.min(1, settings.fragment)) : 1;
+  const sources = sourcePositions(settings.sourceCount);
+  const holographic = holographicReport(massKg, 1);
+  const demo = hologramDemo(sources, fragment);
   return {
     format: "qmdj-akasha-v1",
-    input: { massKg, sourceCount: settings.sourceCount, fragment },
+    input: { massKg, sourceCount: sources.length, fragment },
     holographic,
     demo,
     table: MASS_PRESETS.map((preset) => {

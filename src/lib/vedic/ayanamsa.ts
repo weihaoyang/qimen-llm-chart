@@ -16,7 +16,7 @@ const ARCSEC = 1 / 3600;
 export const julianCenturies = (jd: number) => (jd - J2000) / 36525;
 export const decimalYear = (jd: number) => 2000 + (jd - J2000) / 365.25;
 
-/** ΔT（秒），Meeus / Espenak–Meeus 分段式。 */
+/** ΔT（秒），Espenak–Meeus 分段式。https://eclipse.gsfc.nasa.gov/SEcat5/deltatpoly.html */
 export const deltaSeconds = (jd: number) => {
   const y = decimalYear(jd);
   if (y >= 2005 && y < 2050) {
@@ -46,6 +46,33 @@ export const deltaSeconds = (jd: number) => {
   if (y >= 2050 && y < 2150) {
     return -20 + 32 * ((y - 1820) / 100) ** 2 - 0.5628 * (2150 - y);
   }
+  if (y >= 1860 && y < 1900) {
+    const t = y - 1860;
+    return 7.62 + 0.5737 * t - 0.251754 * t ** 2 + 0.01680668 * t ** 3 - 0.0004473624 * t ** 4 + t ** 5 / 233174;
+  }
+  if (y >= 1800 && y < 1860) {
+    const t = y - 1800;
+    return 13.72 - 0.332447 * t + 0.0068612 * t ** 2 + 0.0041116 * t ** 3 - 0.00037436 * t ** 4
+      + 0.0000121272 * t ** 5 - 0.0000001699 * t ** 6 + 0.000000000875 * t ** 7;
+  }
+  if (y >= 1700 && y < 1800) {
+    const t = y - 1700;
+    return 8.83 + 0.1603 * t - 0.0059285 * t ** 2 + 0.00013336 * t ** 3 - t ** 4 / 1174000;
+  }
+  if (y >= 1600 && y < 1700) {
+    const t = y - 1600;
+    return 120 - 0.9808 * t - 0.01532 * t ** 2 + t ** 3 / 7129;
+  }
+  if (y >= 500 && y < 1600) {
+    const u = (y - 1000) / 100;
+    return 1574.2 - 556.01 * u + 71.23472 * u ** 2 + 0.319781 * u ** 3
+      - 0.8503463 * u ** 4 - 0.005050998 * u ** 5 + 0.0083572073 * u ** 6;
+  }
+  if (y >= -500 && y < 500) {
+    const u = y / 100;
+    return 10583.6 - 1014.41 * u + 33.78311 * u ** 2 - 5.952053 * u ** 3
+      - 0.1798452 * u ** 4 + 0.022174192 * u ** 5 + 0.0090316521 * u ** 6;
+  }
   const u = (y - 1820) / 100;
   return -20 + 32 * u * u;
 };
@@ -54,7 +81,8 @@ export const jdToJDE = (jdUT: number) => jdUT + deltaSeconds(jdUT) / 86400;
 
 /** J2000.0 时的岁差基准（度）。 */
 export const AYANAMSA_AT_J2000: Record<string, number> = {
-  lahiri: 23.853064,
+  // IAE Lahiri at J2000 TT, without nutation (Swiss Ephemeris SIDM_LAHIRI).
+  lahiri: 23.8570923254552,
   raman: 22.478545,
   kp: 23.716038,
   fagan_bradley: 24.736133,
@@ -83,10 +111,7 @@ export const meanNodeLongitude = (jde: number) => {
 /**
  * 真交点（true node）的黄经（当日黄道、回归口径）。
  *
- * 直接复用 MIT 许可的 `celestine`（(c) 2025 Anonyfox）已发布的实现，避免自造公式：
- *   `node_modules/celestine/dist/index.js:2245-2260` 的 `getTrueNodeLongitude`
- *   （平交点项 125.0445479 − 1934.1362891T + … 加 17 项月球交点摄动，
- *   D / M / M′ / F 均取 Meeus《Astronomical Algorithms》第 47 章级数）。
+ * 星盘共用经修订的 celestine 实现，以月球位置及速度求瞬时轨道面与黄道的升交点。
  * 该函数以 TT（JDE）为自变量，故与 `meanNodeLongitude` 一样传入 `jdToJDE(jd)`。
  */
 export const trueNodeLongitude = (jde: number) => {

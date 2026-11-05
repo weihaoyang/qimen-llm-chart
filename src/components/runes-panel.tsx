@@ -49,7 +49,7 @@ export function RunesPanel({ reading, onSpreadChange, onRedraw, onCopyJson, json
         })}
       </div>
 
-      <div className="divination-section-heading"><span>九界 · YGGDRASIL</span><small>{NINE_WORLDS.length} 界 / 三层</small></div>
+      <div className="divination-section-heading"><span>九界 · YGGDRASIL</span><small>{NINE_WORLDS.length} 界 / 现代三层示意</small></div>
       <div className="nine-worlds">
         {(["上", "中", "下"] as const).map((level) => (
           <div className="nine-worlds__level" key={level}>

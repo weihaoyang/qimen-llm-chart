@@ -29,3 +29,33 @@ describe("tarot reading", () => {
     expect(decision.cards.map((card) => card.id)).toEqual(relationship.cards.map((card) => card.id));
   });
 });
+
+it("reaches more ordered spreads than a fixed-stride draw permits", () => {
+  const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+  const results = Array.from({ length: 128 }, (_, index) =>
+    buildTarotReading(profile, `audit-${index}`).cards.map(card => card.id).join(","),
+  );
+  expect(new Set(results).size).toBeGreaterThan(cards.length);
+});
+
+it("matches the twenty-two Waite major arcana numbers", () => {
+  const names = [
+    "the-fool", "the-magician", "the-high-priestess", "the-empress", "the-emperor",
+    "the-hierophant", "the-lovers", "the-chariot", "strength", "the-hermit",
+    "wheel-of-fortune", "justice", "the-hanged-man", "death", "temperance",
+    "the-devil", "the-tower", "the-star", "the-moon", "the-sun", "judgement", "the-world",
+  ];
+  const majors = cards.filter((card) => card.arcana === "major");
+  expect(majors.map(({ id, number }) => [id, number])).toEqual(names.map((id, number) => [id, number]));
+});
+
+it("contains each of the fifty-six minor suit and rank combinations once", () => {
+  const ranks = ["ace", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "page", "knight", "queen", "king"];
+  const minors = cards.filter((card) => card.arcana === "minor");
+  expect(minors).toHaveLength(56);
+  for (const suit of ["cups", "pentacles", "swords", "wands"]) {
+    expect(minors.filter((card) => card.suit === suit)
+      .sort((a, b) => a.number - b.number)
+      .map(({ id, number }) => [id, number])).toEqual(ranks.map((rank, index) => [`${rank}-of-${suit}`, index + 1]));
+  }
+});

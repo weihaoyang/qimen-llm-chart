@@ -85,10 +85,10 @@ export function TaiyiPanel({
 
       <div className="taiyi-controls">
         <label>年份<input type="number" value={yearInput} onChange={(event) => onYearChange?.(event.target.value)} /></label>
-        <label>元六纪周期
+        <label>岁计周纪
           <div className="rune-selector">
             {[360, 365].map((value) => (
-              <button key={value} type="button" className={value === cycle ? "is-active" : undefined} aria-pressed={value === cycle} onClick={() => onCycleChange?.(value)}>{value}</button>
+              <button key={value} type="button" className={value === cycle ? "is-active" : undefined} aria-pressed={value === cycle} onClick={() => onCycleChange?.(value)}>{value === 360 ? "360 年" : "365 年（对照）"}</button>
             ))}
           </div>
         </label>

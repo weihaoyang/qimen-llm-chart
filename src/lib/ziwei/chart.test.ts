@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { astro } from "iztro";
 import type { NormalizedProfileInput } from "@/lib/profile";
+import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
 import type { BaziDayBoundary } from "@/lib/bazi/settings";
 import { buildZiweiChartFromProfile } from "./chart";
@@ -52,6 +53,15 @@ describe("buildZiweiChartFromProfile", () => {
     expect(chart.raw.patterns).toEqual(expect.any(Array));
   });
 
+  it("matches the classical Jia-year first-day Zi-hour example", () => {
+    // 《紫微斗数全书》卷二〈安身命例〉给出正月初一子时的命身与紫微落宫。
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", "2024-02-10T00:00"));
+    expect(raw.earthlyBranchOfSoulPalace).toBe("寅");
+    expect(raw.earthlyBranchOfBodyPalace).toBe("寅");
+    expect(raw.fiveElementsClass).toBe("火六局");
+    expect(raw.palaces.find((palace) => palace.majorStars.some((star) => star.name === "紫微"))?.earthlyBranch).toBe("酉");
+  });
+
   it("agrees with the bazi engine on which day a 23:30 birth belongs to", () => {
     // iztro defaults to 晚子时算次日 while the product defaults to 子正换日. If the
     // ziwei builder ignored the setting, the two panels would place the birth on
@@ -75,6 +85,22 @@ describe("buildZiweiChartFromProfile", () => {
     // must differ. Without the fix both branches would return the same chart.
     expect(midnight.raw.rawDates.chineseDate.daily).not.toBe(ziStart.raw.rawDates.chineseDate.daily);
     expect(majorStarsByPalace(midnight)).not.toEqual(majorStarsByPalace(ziStart));
+  });
+
+  it("uses the previous lunar month when true solar correction crosses midnight", () => {
+    const profile = normalizeProfileInput({
+      ...profileAt("midnight").original,
+      calendarMode: "lunar",
+      lunar: { year: 2024, month: 1, day: 1, hour: 0, minute: 15, isLeapMonth: false },
+      timeBasis: "true-solar",
+      location: { longitude: 105, latitude: 30 },
+    });
+    expect(profile.normalized.datetime).toMatch(/^2024-02-09T23:/);
+
+    const chart = buildZiweiChartFromProfile(profile);
+    // 《紫微斗数全书》安身命例：寅起正月；子时的命、身同落生月宫。
+    expect(chart.raw.earthlyBranchOfSoulPalace).toBe("丑");
+    expect(chart.raw.earthlyBranchOfBodyPalace).toBe("丑");
   });
 
   it("leaves iztro's process-wide convention exactly as it found it", () => {

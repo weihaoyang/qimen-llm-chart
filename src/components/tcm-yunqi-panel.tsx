@@ -1,6 +1,7 @@
 "use client";
 
 import type { TcmYunqiView } from "@/lib/tcm/chart";
+import { yunTongHua } from "@/lib/tcm/serializer";
 import { ProvenanceBlock } from "./provenance-block";
 
 /**
@@ -27,7 +28,7 @@ export function TcmYunqiPanel({
 }) {
   const yun = value.yunqi.yun;
   const summaries = [
-    { label: "中运", main: `${yun.element}运 · ${yun.strength}`, sub: `${yun.jiName}之纪 · 平气名 ${yun.pingQiName}` },
+    { label: "中运", main: `${yun.element}运 · ${yun.strength}`, sub: `${yun.jiName}之纪 · 平气名 ${yun.pingQiName} · ${yunTongHua(value)}` },
     { label: "司天", main: value.yunqi.siTian, sub: "三之气（客气）" },
     { label: "在泉", main: value.yunqi.zaiQuan, sub: "终之气，与司天相对" },
   ];
@@ -66,7 +67,9 @@ export function TcmYunqiPanel({
             placeholder="如 2026"
           />
         </label>
-        <span>按干支纪年（立春交年）取年；运气「交气日」有异说，见下方边界声明与「出处与原文」。</span>
+        {Number(yearInput) !== value.year
+          ? <span role="status">请输入 1 至 9998 的整数年份。当前显示 {value.year} 年。</span>
+          : <span>六步从所选公历年的大寒日排至次年大寒前，日期按中国历日列示。</span>}
       </div>
 
       <div className="hd-summary">
@@ -83,16 +86,30 @@ export function TcmYunqiPanel({
         <span>六步客主加临</span>
         <small>主气六步（《六微旨大论》）× 客气六步（《六元正纪大论》）</small>
       </div>
+      <p>古法交司刻序（百刻制，初至终）：{value.yunqi.handoverKe.join("、")}</p>
       <div className="hd-grid tcm-steps">
         {value.yunqi.steps.map((step) => (
           <div className="hd-cell" key={step.name}>
-            <span className="hd-cell__number">{step.name}</span>
+            <span className="hd-cell__number">{step.name} · {step.startTerm}{step.startDate ? ` ${step.startDate}` : ""}</span>
             <b>主 {step.zhuQi}</b>
             <span className="hd-cell__side"><i />客 {step.keQi}</span>
             <span className="hd-cell__side">{step.verdict}</span>
           </div>
         ))}
       </div>
+
+      <div className="divination-section-heading">
+        <span>五运分段</span>
+        <small>《医宗金鉴》· 按节令所在历日推算</small>
+      </div>
+      <ol>
+        {value.yunqi.movementPeriods.map((period, index) => (
+          <li key={period.host}>
+            第 {index + 1} 运 · 主运 {period.host} · 客运 {period.guest}
+            {period.startDate && ` · ${period.startDate} 至 ${period.endDateExclusive} 前`}
+          </li>
+        ))}
+      </ol>
 
       <div className="divination-section-heading">
         <span>四柱 → 脏腑 / 经络</span>

@@ -30,11 +30,11 @@ describe("holographic physics", () => {
     expect(horizonArea(earth)).toBeCloseTo(4 * Math.PI * earth * earth, 6);
   });
 
-  it("puts one bit per four Planck areas and reproduces the known magnitudes", () => {
+  it("puts one nat per four Planck areas and reproduces the known magnitudes", () => {
     const earth = holographicReport(5.9722e24);
     expect(Math.log10(earth.bits)).toBeGreaterThan(65);
-    expect(Math.log10(earth.bits)).toBeLessThan(66); // 地球约 1e66 比特
-    expect(earth.entropyJK / earth.bits).toBeCloseTo(1.380649e-23, 34);
+    expect(Math.log10(earth.bits)).toBeLessThan(67); // 地球约 1e66 比特
+    expect(earth.entropyJK / earth.bits).toBeCloseTo(1.380649e-23 * Math.LN2, 34);
 
     const sun = holographicReport(1.98847e30);
     expect(Math.log10(sun.bits)).toBeGreaterThan(76);
@@ -49,7 +49,7 @@ describe("holographic physics", () => {
     const report = holographicReport(5.9722e24);
     expect(report.volumeBits).toBeGreaterThan(report.bits);
     expect(report.areaVsVolume).toBeGreaterThan(1);
-    expect(entropyBits(4 * 1.616255e-35 ** 2)).toBeCloseTo(1, 6); // 4 个普朗克面积 = 1 比特
+    expect(entropyBits(4 * 1.616255e-35 ** 2)).toBeCloseTo(1 / Math.LN2, 6); // 4 Planck areas correspond to one nat
   });
 
   it("computes the Bekenstein bound in nats and converts to bits (÷ ln 2)", () => {
@@ -118,7 +118,15 @@ describe("fft and hologram reconstruction", () => {
     expect(demo.peaksFull.some((peak) => Math.abs(peak.x - 0.1) < 0.02)).toBe(true);
   });
 
-  it("still recovers every peak from a fragment, with loss of resolution", () => {
+  it("uses the sampled aperture to report the broadening factor", () => {
+    const part = hologramDemo([8 / 64], 0.3, 64);
+    expect(part.usableFraction).toBe(0.2969);
+    expect(part.resolution).toBe(3.37);
+    expect(part.peaksFull[0].x).toBeCloseTo(8 / 64, 4);
+    expect(part.peaksFull[0].value).toBeCloseTo(3 * 64, 4);
+  });
+
+  it("recovers the dominant peaks in the reference example with loss of resolution", () => {
     const whole = hologramDemo([-0.45, 0, 0.45], 1);
     const part = hologramDemo([-0.45, 0, 0.45], 0.25);
     expect(part.usableFraction).toBeCloseTo(0.25, 2);
@@ -163,4 +171,49 @@ describe("akasha chart", () => {
     expect(payload.table).toHaveLength(5);
     expect(payload.akasha.concepts.length).toBeGreaterThanOrEqual(6);
   });
+});
+
+it.each([[2.6, 3], [1000, 9], [NaN, 1]])("records effective hologram settings for %s sources", (sourceCount, expected) => {
+  const chart = buildAkashaChart({ massKg: 1, sourceCount, fragment: NaN });
+  expect(chart.input).toEqual({ massKg: 1, sourceCount: expected, fragment: 1 });
+  expect(chart.demo.sources).toHaveLength(expected);
+  expect(chart.demo.fragmentFraction).toBe(1);
+});
+
+it("omits the one metre bound when the Schwarzschild radius exceeds it", () => {
+  const chart = buildAkashaChart({ massKg: 1.98847e30, sourceCount: 3, fragment: 1 });
+  expect(chart.holographic.schwarzschildRadiusM).toBeGreaterThan(1);
+  expect(chart.holographic.bekensteinBits).toBeUndefined();
+});
+
+it("rejects invalid radix-2 FFT buffers before mutating them", () => {
+  const re = Float64Array.of(1, 2, 3);
+  expect(() => fft(re, new Float64Array(3))).toThrow(RangeError);
+  expect(() => fft(new Float64Array(4), new Float64Array(2))).toThrow(RangeError);
+  expect(Array.from(re)).toEqual([1, 2, 3]);
+});
+
+it("matches a direct complex DFT at every bin", () => {
+  const real = [1, -2, 0.5, 3, 0, -1, 0.75, 2];
+  const imag = [0.25, 1, -0.5, 0, 2, -1, 0, 0.5];
+  const re = Float64Array.from(real);
+  const im = Float64Array.from(imag);
+  fft(re, im);
+  for (let k = 0; k < real.length; k += 1) {
+    let expectedReal = 0;
+    let expectedImag = 0;
+    for (let j = 0; j < real.length; j += 1) {
+      const angle = -2 * Math.PI * k * j / real.length;
+      expectedReal += real[j] * Math.cos(angle) - imag[j] * Math.sin(angle);
+      expectedImag += real[j] * Math.sin(angle) + imag[j] * Math.cos(angle);
+    }
+    expect(re[k]).toBeCloseTo(expectedReal, 12);
+    expect(im[k]).toBeCloseTo(expectedImag, 12);
+  }
+});
+
+it("agrees with horizon entropy at the Schwarzschild radius", () => {
+  const mass = 1.98847e30;
+  const report = holographicReport(mass, schwarzschildRadius(mass));
+  expect((report.bekensteinBits ?? 0) / report.bits).toBeCloseTo(1, 5);
 });

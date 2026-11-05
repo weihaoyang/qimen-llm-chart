@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { normalizeProfileInput } from "@/lib/profile";
 import type { ProfileInput } from "@/lib/profile/types";
+import { buildQimenChartFromProfile } from "@/lib/qimen/chart";
 import { resolveQimenDatetime, toQimenProfileInput } from "./chart-times";
 
 const base = (overrides: Partial<ProfileInput> = {}): ProfileInput => ({
@@ -41,4 +43,22 @@ describe("toQimenProfileInput", () => {
     expect(resolved.datetime).toBe("2026-10-10T15:30");
     expect(resolved.lunar).toBeUndefined();
   });
+});
+
+it("keeps the explicit civil question time even when it matches a lunar profile placeholder", () => {
+  const input = base({
+    calendarMode: "lunar",
+    lunar: { year: 1990, month: 4, day: 11, isLeapMonth: false },
+    splitChartTimes: true,
+    questionDatetime: "1990-05-05T08:00",
+  });
+  expect(toQimenProfileInput(input)).toMatchObject({
+    calendarMode: "solar",
+    datetime: input.questionDatetime,
+    lunar: undefined,
+  });
+  const birth = buildQimenChartFromProfile(normalizeProfileInput(input));
+  const question = buildQimenChartFromProfile(normalizeProfileInput(toQimenProfileInput(input)));
+  expect(birth.interpretedDateTime).toBe("1990-05-05 00:00:00");
+  expect(question.interpretedDateTime).toBe("1990-05-05 08:00:00");
 });

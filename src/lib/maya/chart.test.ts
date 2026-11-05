@@ -2,9 +2,41 @@ import { describe, expect, it } from "vitest";
 import { buildMayaChart } from "./chart";
 import { buildDreamspell, dreamspellKin, moonDate, PORTALS_MATRIX, zolkinPortal } from "./dreamspell";
 import { serializeMayaToCompactJson, serializeMayaToStructuredText } from "./serializer";
-import { buildTraditionalCalendar, HAAB_MONTHS, julianDayNumber, KICHE_DAY_SIGNS, YUCATEC_DAY_SIGNS } from "./traditional";
+import { buildTraditionalCalendar, HAAB_MONTHS, julianDayNumber, KICHE_DAY_SIGNS, nightLord, YUCATEC_DAY_SIGNS } from "./traditional";
 
 describe("traditional maya calendar", () => {
+  it("matches Glyph G1 on the Palenque Temple XIX platform before the era base", () => {
+    // Stuart, The Inscriptions from Temple XIX at Palenque, platform B4.
+    const days = -144000 + 10 * 7200 + 360 + 13 * 20 + 2;
+    expect(nightLord(days)).toBe(1);
+  });
+  // Mathews, Notes on the Dynastic Sequence of Bonampak, stelae 2 and 3.
+  it.each([
+    ["0776-06-13", "9.17.5.8.9", 7, 6, "Muluk", "17 Yaxkʼin"],
+    ["0785-11-04", "9.17.15.0.0", 9, 5, "Ajaw", "3 Muwan"],
+  ] as const)("matches the Bonampak stela Glyph G on %s", (date, count, glyph, number, yucatec, haab) => {
+    const calendar = buildTraditionalCalendar(date);
+    expect(calendar.longCount.label).toBe(count);
+    expect(calendar.nightLord).toBe(glyph);
+    expect(calendar.tzolkin).toMatchObject({ number, yucatec });
+    expect(calendar.haab.label).toBe(haab);
+  });
+  it("reproduces the reconstructed Quirigua Stela E date while distinguishing its disputed glyph", () => {
+    const calendar = buildTraditionalCalendar("0724-12-31");
+    expect(calendar.longCount.label).toBe("9.14.13.4.17");
+    expect(calendar.tzolkin).toMatchObject({ number: 12, yucatec: "Kabʼan" });
+    expect(calendar.haab.label).toBe("5 Kʼayabʼ");
+    expect(calendar.nightLord).toBe(7);
+  });
+  it.each([
+    ["0603-03-24", "9.8.9.13.0", 8, "Ajaw", "13 Pop"],
+    ["0683-08-29", "9.12.11.5.18", 6, "Etzʼnabʼ", "11 Yax"],
+  ] as const)("reproduces the Palenque inscription for %s under GMT 584283", (date, count, number, sign, haab) => {
+    const calendar = buildTraditionalCalendar(date);
+    expect(calendar.longCount.label).toBe(count);
+    expect(calendar.tzolkin).toMatchObject({ number, yucatec: sign });
+    expect(calendar.haab.label).toBe(haab);
+  });
   it("anchors 0.0.0.0.0 at 4 Ajaw 8 Kumkʼu (GMT 584283)", () => {
     expect(julianDayNumber([2012, 12, 21]) - 584283).toBe(1872000);
     expect(YUCATEC_DAY_SIGNS).toHaveLength(20);
@@ -174,12 +206,20 @@ describe("dreamspell 13-moon calendar", () => {
   });
 
   it("marks 25 July as the day out of time", () => {
-    expect(moonDate("2026-07-25").outOfTime).toBe(true);
+    expect(moonDate("2026-07-25")).toMatchObject({ outOfTime: true, moon: null, day: null, week: null, plasma: null });
     expect(moonDate("2026-07-26")).toMatchObject({ moon: 1, day: 1, outOfTime: false });
   });
 });
 
 describe("maya chart", () => {
+  it("exports the day out of time without a fabricated fourteenth moon", () => {
+    const chart = buildMayaChart("2026-07-25");
+    const text = serializeMayaToStructuredText(chart);
+    expect(text).toContain("十三月历：无时间日");
+    expect(text).not.toContain("第 14 月");
+    expect(JSON.parse(serializeMayaToCompactJson(chart)).dreamspell.moon)
+      .toEqual([null, null, null, null, true]);
+  });
   it("assembles both systems and serializes them", () => {
     const chart = buildMayaChart("2012-12-21");
     expect(chart.format).toBe("qmdj-maya-v1");
@@ -203,4 +243,8 @@ describe("maya chart", () => {
     expect(chart.date).toBe("1990-05-20");
     expect(chart.dreamspell.kin).toBeGreaterThan(0);
   });
+});
+it("rejects nonexistent Gregorian dates", () => {
+  expect(() => buildTraditionalCalendar("1900-02-29")).toThrow();
+  expect(() => buildTraditionalCalendar("2000-02-29")).not.toThrow();
 });

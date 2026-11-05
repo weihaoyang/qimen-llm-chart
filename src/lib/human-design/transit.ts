@@ -10,7 +10,7 @@ import type { HumanDesignActivation, HumanDesignChannel, HumanDesignChart } from
 const PLANETS = ["sun", "earth", "moon", "north_node", "south_node", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"] as const;
 
 export type HumanDesignTransit = {
-  /** 计算时刻（本地时区 ISO 串）。 */
+  /** 计算时刻（UTC，精确到秒）。 */
   at: string;
   /** 流日 13 天体激活（仅当下位置）。 */
   activations: Record<string, HumanDesignActivation>;
@@ -34,8 +34,10 @@ const natalGates = (chart: HumanDesignChart) =>
 
 export const buildHumanDesignTransit = (chart: HumanDesignChart, at: Date): HumanDesignTransit | null => {
   let raw;
+  let iso;
   try {
-    raw = calculateChart({ date: at.toISOString().slice(0, 10), time: at.toISOString().slice(11, 16), lat: 0, lon: 0, tz: "UTC" });
+    iso = at.toISOString();
+    raw = calculateChart({ date: iso.slice(0, 10), time: iso.slice(11, 19), lat: 0, lon: 0, tz: "UTC" });
   } catch {
     return null;
   }
@@ -52,7 +54,7 @@ export const buildHumanDesignTransit = (chart: HumanDesignChart, at: Date): Huma
   const natalCenters = new Set(chart.centers.filter((center) => center.defined).map((center) => center.name));
 
   return {
-    at: `${at.toISOString().slice(0, 16).replace("T", " ")} UTC`,
+    at: `${iso.slice(0, 19).replace("T", " ")} UTC`,
     activations,
     gates: [...transitGates].sort((a, b) => a - b),
     channels,

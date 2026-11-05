@@ -39,23 +39,22 @@ const parseDateTimeParts = (datetime: string) => {
   };
 };
 
-const toUtcMillis = (datetime: string) => {
+const toCalendarDate = (datetime: string) => {
   const parts = parseDateTimeParts(datetime);
-  return Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-  );
+  const date = new Date(0);
+  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  date.setUTCHours(parts.hour, parts.minute, 0, 0);
+  return date;
 };
+
+const toUtcMillis = (datetime: string) => toCalendarDate(datetime).getTime();
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
 const fromUtcMillis = (value: number) => {
   const date = new Date(value);
   return [
-    date.getUTCFullYear(),
+    String(date.getUTCFullYear()).padStart(4, "0"),
     "-",
     pad(date.getUTCMonth() + 1),
     "-",
@@ -127,8 +126,11 @@ export const buildChartSequence = (
     chart: buildChart(nextInput),
   }));
 
-const lastDayOfMonth = (year: number, monthIndex: number) =>
-  new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+const lastDayOfMonth = (year: number, monthIndex: number) => {
+  const date = new Date(0);
+  date.setUTCFullYear(year, monthIndex + 1, 0);
+  return date.getUTCDate();
+};
 
 /**
  * Step by whole months without letting the day overflow into the next month.
@@ -140,14 +142,8 @@ const lastDayOfMonth = (year: number, monthIndex: number) =>
  */
 const addMonthsClamped = (date: Date, months: number) => {
   const day = date.getUTCDate();
-  // Date.UTC normalizes out-of-range month indices, so this rolls the year too.
-  const target = new Date(Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth() + months,
-    1,
-    date.getUTCHours(),
-    date.getUTCMinutes(),
-  ));
+  const target = new Date(date);
+  target.setUTCMonth(date.getUTCMonth() + months, 1);
   target.setUTCDate(Math.min(day, lastDayOfMonth(target.getUTCFullYear(), target.getUTCMonth())));
   return target;
 };
@@ -155,20 +151,14 @@ const addMonthsClamped = (date: Date, months: number) => {
 /** Same overflow problem as `addMonthsClamped`, for 02-29 stepping a year. */
 const addYearsClamped = (date: Date, years: number) => {
   const day = date.getUTCDate();
-  const target = new Date(Date.UTC(
-    date.getUTCFullYear() + years,
-    date.getUTCMonth(),
-    1,
-    date.getUTCHours(),
-    date.getUTCMinutes(),
-  ));
+  const target = new Date(date);
+  target.setUTCFullYear(date.getUTCFullYear() + years, date.getUTCMonth(), 1);
   target.setUTCDate(Math.min(day, lastDayOfMonth(target.getUTCFullYear(), target.getUTCMonth())));
   return target;
 };
 
 function addCalendarStep(datetime: string, step: SequenceStep, count: number) {
-  const parts = parseDateTimeParts(datetime);
-  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute));
+  const date = toCalendarDate(datetime);
   if (step === "double-hour") {
     date.setUTCHours(date.getUTCHours() + count * 2);
     return fromUtcMillis(date.getTime());

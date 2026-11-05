@@ -6,7 +6,7 @@ const formatPoint = (point: AstroPoint) =>
 export const serializeAstroToStructuredText = (chart: AstroChart) => [
   "星盘（研究性计算）",
   `出生资料：${chart.input.datetime} / ${chart.input.timeZone}`,
-  ...(chart.complete ? [] : ["状态：未提供出生地，行星与相位按地心坐标计算（不依赖出生地）；上升、中天、宫位与阿拉伯点未计算。"]),
+  ...(chart.complete ? [] : ["行星与相位按地心坐标计算。"]),
   formatPoint(chart.sun),
   formatPoint(chart.moon),
   `${chart.ascendant.name}：${chart.ascendant.sign} ${chart.ascendant.degree ?? "—"}°`,

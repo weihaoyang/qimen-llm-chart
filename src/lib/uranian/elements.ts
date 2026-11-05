@@ -2,7 +2,7 @@
  * 汉堡学派（Hamburg School / Uranian astrology）八虚星（trans-Neptunian
  * planets，TNP）的轨道根数与开普勒解算。
  *
- * 要素表移植自 Astrolog（8.00）`matrix.cpp` 中的 Neely / Matrix 要素表
+ * 要素表移植自 Astrolog（8.00）`matrix.cpp` 中的 Matrix 要素表
  * （James Neely，见 Michael Erlewine《Manual of Computer Programming for
  * Astrologers》, Matrix Software；Astrolog 由 Walter D. Pullen 整理）。
  *   https://github.com/CruiserOne/Astrolog  (matrix.cpp)

@@ -36,6 +36,29 @@ describe("uranian elements", () => {
     }
   });
 
+  it.each([
+    [2415020.5, 104.7174047899],
+    [2451545, 243.9373875006],
+    [2460000, 276.3822042060],
+    [2488069.5, 20.3132695488],
+  ])("matches the independent Newton and complex-plane Cupido calculation at JD %s", (jd, expected) => {
+    const cupido = uranianPositions(jd).find((body) => body.id === "cupido");
+    expect(cupido?.geometricLongitude).toBeCloseTo(expected, 7);
+  });
+
+  it("matches the independent Matrix geometry for all eight points at JD 2488069.5", () => {
+    const expected = {
+      cupido: 20.3132695488, hades: 180.9821726929, zeus: 265.1451450471,
+      kronos: 159.2515890349, apollon: 263.2655970132, admetos: 108.1206210647,
+      vulkanus: 165.2384280876, poseidon: 262.8554200305,
+    } as const;
+    const positions = uranianPositions(2488069.5);
+    expect(positions).toHaveLength(Object.keys(expected).length);
+    for (const [id, longitude] of Object.entries(expected)) {
+      expect(positions.find((body) => body.id === id)?.geometricLongitude, id).toBeCloseTo(longitude, 7);
+    }
+  });
+
   it("solves Cupido on its circular orbit at epoch", () => {
     const cupido = heliocentricEcliptic(TNPS[0].elements, 0);
     expect(cupido.longitude).toBeCloseTo(104.5959, 3);
@@ -100,6 +123,9 @@ describe("uranian dial", () => {
     expect(dialDistance(1, 89, 90)).toBe(2);
     expect(dialDistance(10, 40, 90)).toBe(30);
     expect(midpointAxis(10, 20, 90)).toBe(15);
+    expect(midpointAxis(350, 10, 90)).toBe(0);
+    expect(dialPosition(89.9999998, 90)).toBe(0);
+    expect(dialPosition(22.4999998, 22.5)).toBe(0);
     expect(sumAxis(10, 20, 90)).toBe(30);
     expect(differenceAxis(30, 10, 90)).toBe(20);
     expect(formatDial(12.5)).toBe("12°30′");
@@ -197,4 +223,13 @@ describe("uranian chart", () => {
     expect(chart.tnps).toHaveLength(8);
     expect(julianDayFromProfile(input.normalized.datetime, input.normalized.timeZone)).toBeGreaterThan(2460000);
   });
+});
+
+it("carries rounded zodiac minutes across sign and circle boundaries", () => {
+  expect(toZodiac(10.999).label).toBe("白羊 11°00′");
+  expect(toZodiac(29.999).label).toBe("金牛 0°00′");
+  expect(toZodiac(359.999).label).toBe("白羊 0°00′");
+});
+it('retains the historical year in the Julian day conversion', () => {
+  expect(julianDayFromProfile('0099-01-01T00:00', 'UTC')).toBe(1757219.5);
 });

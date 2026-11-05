@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { ayanamsa } from "@/lib/vedic/ayanamsa";
-import { buildQizhengChart, FOUR_REMAINDERS, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
+import { buildQizhengChart, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
 import { serializeQizhengToStructuredText } from "./serializer";
 
 const profile = () => {
@@ -46,6 +46,25 @@ describe("qizheng siyu chart", () => {
     expect(longitudeToMansion(250.9, EPOCH_UT)).toBe("尾");
   });
 
+  it("keeps the 牛 boundary from 推步法解 at 29°37′ in the first palace", () => {
+    // 五礼通考 digital transcription reads 29°27′, so 29°32′ distinguishes the two.
+    expect(longitudeToMansion(299 + 32 / 60, EPOCH_UT)).toBe("斗");
+    expect(longitudeToMansion(299 + 36.99 / 60, EPOCH_UT)).toBe("斗");
+    expect(longitudeToMansion(299 + 37.01 / 60, EPOCH_UT)).toBe("牛");
+  });
+
+  it("uses the 柳 boundary corroborated by the 五礼通考 and the mansion width table", () => {
+    expect(longitudeToMansion(125 + 51.99 / 60, EPOCH_UT)).toBe("鬼");
+    expect(longitudeToMansion(125 + 54 / 60, EPOCH_UT)).toBe("柳");
+  });
+
+  it("distinguishes modern precession from the historical 51 arcseconds per year", () => {
+    const longitude = 130.68;
+    const historicalDrift = (2026 - 1684) * 51 / 3600;
+    expect(longitudeToMansion(longitude - historicalDrift, EPOCH_UT)).toBe("鬼");
+    expect(longitudeToMansion(longitude, utc("2026-01-01"))).toBe("柳");
+  });
+
   it("keeps the twenty-eight 宿度 summing to 360° and follows the 1684 参前觜后 order", () => {
     // 原表自洽性：28 宿距度（相邻距星之差）合计应恰为 360°。
     // 由本函数在历元下逐宿取样统计：把 0°–360° 以极细步长分给 28 宿并按宿名归并宽度。
@@ -58,10 +77,16 @@ describe("qizheng siyu chart", () => {
     expect(widths.size).toBe(28);
     const total = [...widths.values()].reduce((sum, value) => sum + value, 0);
     expect(total).toBeCloseTo(360, 1);
-    // 最阔为井（30°25′），最狭为参（1°21′）与房（4°50′）。
-    expect(widths.get("井") ?? 0).toBeCloseTo(30.4, 1);
-    expect(widths.get("参") ?? 0).toBeCloseTo(1.35, 1);
-    expect(widths.get("房") ?? 0).toBeCloseTo(4.83, 1);
+    // 《中西算学丛书初编》整度表，单位为角分。
+    const sourceWidths = {
+      斗: 1427, 牛: 466, 女: 698, 虚: 599, 危: 1207, 室: 941, 壁: 786,
+      奎: 699, 娄: 780, 胃: 735, 昴: 555, 毕: 838, 参: 81, 觜: 693,
+      井: 1825, 鬼: 272, 柳: 1024, 星: 503, 张: 1084, 翼: 1020, 轸: 783,
+      角: 637, 亢: 638, 氐: 1070, 房: 290, 心: 453, 尾: 956, 箕: 540,
+    };
+    for (const [name, arcminutes] of Object.entries(sourceWidths)) {
+      expect(Math.round((widths.get(name) ?? 0) * 60), name).toBe(arcminutes);
+    }
 
     // 觜／参次序：本表为康熙二十三年「参前觜后」（参 [78.0167,79.3667)，觜 [79.3667,90.9167)），
     // 与《清史稿》康熙甲子「鹑首＝觜觿一十度三十八分」一致（90° 应落于觜宿）。
@@ -80,6 +105,13 @@ describe("qizheng siyu chart", () => {
     // 因宿界即 Spica 本身，恰在界上不判；改取其两侧 0.5°：
     expect(longitudeToMansion(spica2000 + 0.5, utc("2000-01-01"))).toBe("角");
     expect(longitudeToMansion(spica2000 - 0.5, utc("2000-01-01"))).toBe("轸");
+  });
+
+  it("reproduces all twelve Kangxi ecliptic sector starts recorded in the Qing history", () => {
+    // 《清史稿》卷二十八：康熙甲子年黄道十二次初度值宿。
+    // 星纪初为冬至，顺行每三十度一宫。
+    const expected = ["箕", "牛", "危", "室", "娄", "昴", "觜", "井", "星", "翼", "角", "房"];
+    expect(expected.map((_, index) => longitudeToMansion(270 + index * 30, EPOCH_UT))).toEqual(expected);
   });
 
   it("moves mansion boundaries with precession (same tropical longitude belongs to an earlier mansion at a later epoch)", () => {
@@ -116,14 +148,14 @@ describe("qizheng siyu chart", () => {
     expect(sun?.dignity).toBe("庙"); // 太阳庙于戌宫
   });
 
-  it("places seven luminaries and four remainders", () => {
+  it("places seven luminaries and the three calculable remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
     expect(chart.complete).toBe(true);
     const luminaries = chart.stars.filter((star) => star.kind === "七政");
     const remainders = chart.stars.filter((star) => star.kind === "四余");
     expect(luminaries).toHaveLength(SEVEN_LUMINARIES.length);
-    expect(remainders.map((star) => star.name)).toEqual([...FOUR_REMAINDERS]);
+    expect(remainders.map((star) => star.name)).toEqual(["罗睺", "计都", "月孛"]);
     expect(chart.palaces).toHaveLength(12);
     expect(chart.palaces[0]?.name).toBe("命宫");
     for (const star of chart.stars) {
@@ -163,21 +195,10 @@ describe("qizheng siyu chart", () => {
     expect(40.69).toBeLessThan(classicalPerYear * 1.03);
   });
 
-  it("labels 紫气 as an upstream script convention, not the classical long-period phantom star", () => {
-    // 古典紫气只有「約廿八年一周天、顺行」（《图书编》卷二十一「气生于闰，二十八年十闰，而气行一周天」；
-    // 《果老星宗》另一传本作「二十九日一度、二十九年周天」），诸本皆不载历元位置，
-    // 清《时宪志一》且判「至紫气一余，无数可定……今俱改删」。故本仓不自造历元、如实降级。
+  it("omits Zi Qi when its historical epoch cannot be established", () => {
     const chart = buildQizhengChart(profile());
-    const ziqi = chart.stars.find((star) => star.name === "紫气");
-    expect(ziqi).toBeTruthy();
-    expect(ziqi?.note).toContain("非古典紫气");
-    expect(ziqi?.note).toContain("未实装");
-    expect(chart.disclaimer).toContain("并非古典长周期虚星");
-    expect(chart.disclaimer).toContain("未实装");
-    // 仍为「月黄经 − 90°」的上游约定值（而非自造的长周期模型）。
-    const moon = chart.stars.find((star) => star.name === "太阴");
-    const expected = (((moon?.longitude ?? 0) - 90) % 360 + 360) % 360;
-    expect(ziqi?.longitude).toBeCloseTo(expected, 1);
+    expect(chart.stars.some((star) => star.name === "紫气")).toBe(false);
+    expect(chart.disclaimer).toContain("紫气缺少可核验的历元");
   });
 
   it("reproduces the 《清史稿》 康熙甲子年黄道十二次初度值宿 (epoch 1684, 初宫起冬至)", () => {
@@ -216,6 +237,19 @@ describe("qizheng siyu chart", () => {
     expect(text).toContain("四余·罗睺");
     expect(text).toContain("果老旧法");
     expect(text).toContain("二十八宿黄道经纬度钤");
-    expect(text).toContain("非古典长周期虚星");
+    expect(text).toContain("紫气缺少可核验的历元");
+    expect(text).not.toContain("四余·紫气：");
   });
+});
+
+it("separates the instant used by the ephemeris from the clock used for 命宫", () => {
+  const input = getDefaultProfileInput(new Date("2026-03-03T06:30:00Z"), "UTC");
+  input.location = { city: "Audit fixture", timeZone: "UTC", longitude: 15, latitude: 0 };
+  const civil = buildQizhengChart(normalizeProfileInput(input));
+  const apparent = buildQizhengChart(normalizeProfileInput({ ...input, timeBasis: "true-solar" }));
+  expect(apparent.input.civilDateTime).toBe(civil.input.datetime);
+  expect(apparent.input.datetime).toMatch(/T07:/);
+  expect(apparent.mingPalace.index).toBe((civil.mingPalace.index + 11) % 12);
+  expect(apparent.stars.map((star) => star.longitude)).toEqual(civil.stars.map((star) => star.longitude));
+  expect(serializeQizhengToStructuredText(apparent)).toContain("命宫取时：2026-03-03T07:");
 });

@@ -1,7 +1,43 @@
+import { buildShenSha, getGroupStarBranch, getWenChangBranch } from "./shen-sha";
 import { describe, expect, it } from "vitest";
+import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "./chart";
 
 describe("buildBaziChartFromProfile", () => {
+  it("keeps solar term pillars and luck offsets aligned for the same instant", () => {
+    const calculate = (datetime: string, timeZone: string) => buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime, timeZone, gender: "male", timeBasis: "civil",
+    })).raw;
+    const shanghai = calculate("2024-02-04T16:28", "Asia/Shanghai");
+    const newYork = calculate("2024-02-04T03:28", "America/New_York");
+    expect(shanghai.baZi.slice(0, 2)).toEqual(["甲辰", "丙寅"]);
+    expect(newYork.baZi.slice(0, 2)).toEqual(shanghai.baZi.slice(0, 2));
+    expect(newYork.baZi[3]).toBe("甲寅");
+    expect(newYork.taiYuan).toEqual(shanghai.taiYuan);
+    expect(newYork.yun.direction).toBe(shanghai.yun.direction);
+    expect(newYork.yun.startOffset).toEqual(shanghai.yun.startOffset);
+    expect(newYork.boundaryAudit.before.slice(0, 2)).toEqual(["癸卯", "乙丑"]);
+  });
+  it("keeps an early civil year in the boundary audit", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar",
+      datetime: "0099-07-07T12:00",
+      timeZone: "UTC",
+      gender: "male",
+      timeBasis: "civil",
+    }));
+    expect(chart.raw.boundaryAudit).toMatchObject({ sensitive: false, before: chart.raw.baZi, after: chart.raw.baZi });
+  });
+
+  it("preserves the day boundary when a historical audit window crosses midnight", () => {
+    const input = {
+      calendarMode: "solar", timeZone: "UTC", gender: "male", timeBasis: "civil",
+    } as const;
+    const calculate = (datetime: string) => buildBaziChartFromProfile(normalizeProfileInput({ ...input, datetime }));
+    const chart = calculate("0099-07-07T00:15");
+    expect(chart.raw.boundaryAudit.before).toEqual(calculate("0099-07-06T23:45").raw.baZi);
+    expect(chart.raw.boundaryAudit.after).toEqual(calculate("0099-07-07T00:45").raw.baZi);
+  });
   it("builds a bazi chart from normalized profile input", () => {
     const chart = buildBaziChartFromProfile({
       original: {
@@ -45,9 +81,102 @@ describe("buildBaziChartFromProfile", () => {
       },
     });
 
+  it("uses the same corrected time for lunar and solar input", () => {
+    const solar = chartFor("2024-02-10T00:15").input.original;
+    const time = { timeBasis: "true-solar" as const, location: { longitude: 105, latitude: 30 } };
+    const lunar = normalizeProfileInput({
+      ...solar,
+      ...time,
+      calendarMode: "lunar",
+      lunar: { year: 2024, month: 1, day: 1, hour: 0, minute: 15, isLeapMonth: false },
+    });
+    const lunarChart = buildBaziChartFromProfile(lunar);
+    expect(lunarChart.raw.solar).toMatch(/^2024-02-09 23:/);
+    expect(lunarChart.raw).toEqual(buildBaziChartFromProfile(normalizeProfileInput({ ...solar, ...time })).raw);
+  });
+
+  it("derives year summaries from the selected lunar New Year pillar", () => {
+    const { raw } = chartFor("2024-02-05T12:00", "male", {
+      yearBoundary: "lunar-new-year",
+      dayBoundary: "midnight",
+    });
+    expect(raw.baZi[0]).toBe("癸卯");
+    expect(raw.naYin[0]).toBe("金箔金");
+    expect(raw.wuXing[0]).toBe("水木");
+    expect(raw.shiShenGan[0]).toBe(raw.pillars[0].shiShenGan);
+    expect(raw.shiShenZhi[0]).toBe(raw.pillars[0].shiShenZhi[0]);
+    expect(raw.yun.direction).toBe("backward");
+    expect(raw.yun.daYun[0]?.ganZhi).toBe("乙丑");
+    expect(chartFor("2024-02-05T12:00", "male").raw.yun.direction).toBe("forward");
+  });
+
   it("keeps the current lunar-typescript solar-term boundary stable", () => {
     expect(chartFor("2024-02-04T16:20").raw.baZi).toEqual(["癸卯", "乙丑", "戊戌", "庚申"]);
     expect(chartFor("2024-02-04T17:20").raw.baZi).toEqual(["甲辰", "丙寅", "戊戌", "辛酉"]);
+  });
+
+  it.each(["2024-01-17T12:00", "2024-05-16T12:00", "2024-09-13T12:00"])(
+    "finds Geng's month virtue in the three metal months (%s)", (datetime) => {
+      const day = chartFor(datetime).raw.pillars.find(({ key }) => key === "day");
+      expect(day?.heavenlyStem).toBe("庚");
+      expect(day?.shenSha).toContain("月德贵人");
+    },
+  );
+
+  it("matches all twelve 天德 targets in 渊海子平", () => {
+    const sample = chartFor("2026-02-09T06:00").raw.pillars;
+    const cases = [
+      ["寅", "丁", "子"], ["卯", "甲", "申"], ["辰", "壬", "子"], ["巳", "辛", "子"],
+      ["午", "甲", "亥"], ["未", "甲", "子"], ["申", "癸", "子"], ["酉", "甲", "寅"],
+      ["戌", "丙", "子"], ["亥", "乙", "子"], ["子", "甲", "巳"], ["丑", "庚", "子"],
+    ] as const;
+    for (const [monthBranch, heavenlyStem, earthlyBranch] of cases) {
+      const pillars = sample.map((pillar) => pillar.key === "month" ? { ...pillar, earthlyBranch: monthBranch }
+        : pillar.key === "time" ? { ...pillar, heavenlyStem, earthlyBranch } : pillar);
+      const position = pillars.findIndex((pillar) => pillar.key === "time");
+      expect(buildShenSha(pillars, "甲")[position], monthBranch).toContain("天德贵人");
+    }
+  });
+
+  it("matches the four 三合 groups for 将星, 华盖, 驿马 and 咸池", () => {
+    const groups = ["寅午戌", "巳酉丑", "申子辰", "亥卯未"];
+    const branches = Array.from("子丑寅卯辰巳午未申酉戌亥");
+    for (const group of groups) {
+      const [birth, center, store] = group;
+      const index = branches.indexOf(birth);
+      for (const branch of group) {
+        expect(getGroupStarBranch("将星", branch)).toBe(center);
+        expect(getGroupStarBranch("华盖", branch)).toBe(store);
+        expect(getGroupStarBranch("驿马", branch)).toBe(branches[(index + 6) % 12]);
+        expect(getGroupStarBranch("桃花", branch)).toBe(branches[(index + 1) % 12]);
+      }
+    }
+  });
+
+  it("takes Geng's Tian Yi from the ox-and-goat table", () => {
+    const ox = chartFor("2026-02-15T02:00").raw;
+    const snake = chartFor("2026-02-15T10:00").raw;
+    expect(ox.dayMaster).toBe("庚");
+    expect(ox.pillars.find(({ key }) => key === "time")?.shenSha).toContain("天乙贵人");
+    expect(snake.pillars.find(({ key }) => key === "time")?.shenSha).not.toContain("天乙贵人");
+  });
+
+  it("derives 文昌 from each day stem's 食神禄支", () => {
+    expect(Array.from("甲乙丙丁戊己庚辛壬癸", getWenChangBranch)).toEqual(Array.from("巳午申酉申酉亥子寅卯"));
+    const noon = chartFor("2026-02-10T12:00").raw;
+    const night = chartFor("2026-02-10T22:00").raw;
+    expect(noon.pillars.find(({ key }) => key === "time")?.shenSha).toContain("文昌贵人");
+    expect(night.pillars.find(({ key }) => key === "time")?.shenSha).not.toContain("文昌贵人");
+  });
+
+  it("uses the Zi Ping five-yang-stem rule for 羊刃", () => {
+    const yin = chartFor("2026-02-10T12:00").raw;
+    expect(yin.dayMaster).toBe("乙");
+    expect(yin.pillars.find(({ key }) => key === "month")?.earthlyBranch).toBe("寅");
+    expect(yin.pillars.flatMap(({ shenSha }) => shenSha)).not.toContain("羊刃");
+    const yang = chartFor("2026-02-09T06:00").raw;
+    expect(yang.dayMaster).toBe("甲");
+    expect(yang.pillars.find(({ key }) => key === "time")?.shenSha).toContain("羊刃");
   });
 
   it("keeps the current engine day and 子时 behavior stable", () => {

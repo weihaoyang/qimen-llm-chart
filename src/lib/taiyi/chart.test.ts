@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { accumulatedYears, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, parityLabel, ruJuNumber, shiJiPosition, taiyiPalace, tianMuPosition } from "./chart";
+
+it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
+  const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
+  expect(() => buildTaiyiChart({ ...settings, year: 2026.5 })).toThrow(RangeError);
+  expect(() => buildTaiyiChart({ ...settings, cycle: 0 })).toThrow(RangeError);
+  expect(() => buildTaiyiChart({ ...settings, ruJu: 1.5 })).toThrow(RangeError);
+  expect(() => buildTaiyiChart({ ...settings, ruJu: 73 })).toThrow(RangeError);
+});
 import { DEITIES, GENERALS, PALACES, PALACE_SEQUENCE, PATTERNS } from "./data";
 import { DEITY_POSITION, MISHU_CORPUS, type MishuField } from "./mishu-corpus";
 import { serializeTaiyiToCompactJson, serializeTaiyiToStructuredText } from "./serializer";
 
 describe("taiyi tables", () => {
+  it("uses the final chart of the 72-chart cycle at an exact multiple", () => {
+    const chart = buildTaiyiChart({ year: 1971, cycle: 360, dun: "阳遁", ruJu: null });
+    expect(chart.input.ruJu).toBe(72);
+    expect(chart.taiyi.palace).toBe(9);
+    expect(ruJuNumber(accumulatedYears(1972), 360)).toBe(1);
+  });
+
   it("ships the sixteen deities, nine palaces, eight generals and the sourced patterns", () => {
     expect(DEITIES).toHaveLength(16);
     expect(PALACES).toHaveLength(9);
@@ -16,9 +31,35 @@ describe("taiyi tables", () => {
 });
 
 describe("accumulation and palaces", () => {
+  it("preserves the cycle remainder for large safe integers and negative years", () => {
+    const cycle = Number.MAX_SAFE_INTEGER;
+    for (const year of [2026, -Number.MAX_SAFE_INTEGER]) {
+      const expectedYears = BigInt(year) + BigInt(1937281) - BigInt(724);
+      const expectedRemainder = (expectedYears % BigInt(cycle) + BigInt(cycle)) % BigInt(cycle);
+      const expectedJu = ((expectedRemainder - BigInt(1)) % BigInt(72) + BigInt(72)) % BigInt(72) + BigInt(1);
+      const chart = buildTaiyiChart({ year, cycle, dun: "阳遁", ruJu: null });
+      expect(chart.accumulation.jiyear).toBe(Number(expectedYears));
+      expect(chart.accumulation.eraRemainder).toBe(Number(expectedRemainder));
+      expect(chart.input.ruJu).toBe(Number(expectedJu));
+    }
+  });
+
+  it("matches the eleven explicit annual Taiyi palaces in 南齐书卷一", () => {
+    // Astronomical year -201 represents 202 BCE (汉高帝五年).
+    const annualPalaces = [
+      [-201, 4], [403, 7], [404, 7], [424, 6], [430, 8], [441, 2],
+      [465, 2], [466, 3], [474, 6], [476, 7], [477, 7],
+    ];
+    for (const [year, palace] of annualPalaces) {
+      const chart = buildTaiyiChart({ year, cycle: 360, dun: "阳遁", ruJu: null });
+      expect(chart.taiyi.palace, String(year)).toBe(palace);
+    }
+  });
+
   it("anchors the 金镜 epoch: 724 CE = 1937281 accumulated years", () => {
     expect(accumulatedYears(724)).toBe(1937281);
     expect(accumulatedYears(2024)).toBe(1938581);
+    expect([1937281, 1561, 30001].map((count) => ruJuNumber(count, 360))).toEqual([49, 49, 49]);
   });
 
   it("reduces the accumulated years to the 入局数", () => {

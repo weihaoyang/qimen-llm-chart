@@ -20,5 +20,13 @@ export const MATERIALS: ProvenanceMaterialSet = {
       ],
       note: "取自 npm `hd-chart-engine@0.1.1` 的 dist 打包行号。门宽为 5.625°（360/64）；固定起点 223.25°＝13°15′ 天蝎（黄经）。",
     },
+    {
+      title: "Ra Uru Hu · The Human Design System · Rave I Ching Astrological Index",
+      lines: [
+        "第 25 门：双鱼 28°15′ 至白羊 3°52′30″。",
+        "第 21 门第 1 爻：白羊 9°30′ 至 10°26′15″。",
+      ],
+      note: "原书第 34 页的坐标转录。白羊 10° 位于第 21 门第 1 爻。扫描件：https://www.barlenoble.nl/_downloads/e766a7aa93e8612f0556f063c8a180e3#page=73",
+    },
   ],
 };

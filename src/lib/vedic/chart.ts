@@ -1,19 +1,20 @@
-import { calculateChart } from "celestine";
+import { toZonedDate } from "@/lib/qimen/timezone";
+import { getCivilDateTime } from "@/lib/profile/normalize";
+import { calculateChart, ephemeris } from "celestine";
 import { offsetMinutes } from "@/lib/astro/chart";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { ayanamsa, jdToJDE, nodeLongitude, NODE_MODE_LABELS, type NodeMode } from "./ayanamsa";
 import { GRAHAS, GRAHA_ZH, NAKSHATRAS, NAKSHATRA_LORDS, RASHIS, VARGA_CODES, VARGA_DEFINITIONS, type Rashi } from "./data";
 import { vargaSign } from "./varga";
 
-const NAKSHATRA_SPAN = 360 / 27;
-const PADA_SPAN = NAKSHATRA_SPAN / 4;
-const norm360 = (value: number) => ((value % 360) + 360) % 360;
+const PADA_COUNT = 27 * 4;
+const norm360 = (value: number) => {
+  const remainder = value % 360;
+  return remainder < 0 ? (remainder + 360) % 360 : remainder + 0;
+};
 
 export const julianDayForProfile = (datetime: string, timeZone: string) => {
-  const [date, time] = datetime.split("T");
-  const [year, month, day] = date.split("-").map(Number);
-  const [hour, minute] = time.split(":").map(Number);
-  const utcMillis = Date.UTC(year, month - 1, day, hour, minute) - offsetMinutes(datetime, timeZone) * 60000;
+  const utcMillis = toZonedDate(datetime, timeZone).getTime();
   return 2440587.5 + utcMillis / 86400000;
 };
 
@@ -21,10 +22,15 @@ export type NakshatraPlacement = { index: number; name: string; pada: number; lo
 
 export const nakshatraOf = (longitude: number): NakshatraPlacement => {
   const lon = norm360(longitude);
-  const index0 = Math.floor(lon / NAKSHATRA_SPAN);
-  const within = lon - index0 * NAKSHATRA_SPAN;
+  // Compare against the same canonical boundary even when the scaled
+  // longitude rounds to the wrong side of an integer.
+  const approximate = Math.min(PADA_COUNT - 1, Math.floor((lon * PADA_COUNT) / 360));
+  const lower = (approximate * 360) / PADA_COUNT;
+  const upper = ((approximate + 1) * 360) / PADA_COUNT;
+  const quarter = lon < lower ? approximate - 1 : lon >= upper ? approximate + 1 : approximate;
+  const index0 = Math.floor(quarter / 4);
   const lord = NAKSHATRA_LORDS[index0 % 9];
-  return { index: index0 + 1, name: NAKSHATRAS[index0], pada: Math.floor(within / PADA_SPAN) + 1, lord, lordZh: GRAHA_ZH[lord] ?? lord };
+  return { index: index0 + 1, name: NAKSHATRAS[index0], pada: (quarter % 4) + 1, lord, lordZh: GRAHA_ZH[lord] ?? lord };
 };
 
 export const rashiOf = (longitude: number) => {
@@ -75,7 +81,7 @@ const vargaSignsFor = (rashi: number, degreeInRashi: number) =>
   Object.fromEntries(VARGA_CODES.map((code) => [code, vargaSign(rashi, degreeInRashi, code)]));
 
 export const buildVedicChart = (profile: NormalizedProfileInput, options: { nodeMode?: NodeMode } = {}): VedicChart => {
-  const datetime = profile.normalized.datetime;
+  const datetime = getCivilDateTime(profile);
   const timeZone = profile.normalized.timeZone;
   const latitude = profile.original.location?.latitude ?? null;
   const longitude = profile.original.location?.longitude ?? null;
@@ -92,7 +98,7 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
     day: Number(datetime.slice(8, 10)),
     hour: Number(datetime.slice(11, 13)),
     minute: Number(datetime.slice(14, 16)),
-    second: 0,
+    second: Number(datetime.slice(17, 19)),
     timezone: offsetMinutes(datetime, timeZone) / 60,
     latitude: latitude ?? 0,
     longitude: longitude ?? 0,
@@ -107,17 +113,19 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
   const tropical = new Map(chart.planets.map((planet) => [planet.name, planet]));
   const rahuMeta = GRAHAS.find((graha) => graha.id === "Rahu")!;
   const ketuMeta = GRAHAS.find((graha) => graha.id === "Ketu")!;
-  // 罗睺 / 计都：上游 celestine 亦以「交点恒逆行」处理（`dist/index.js:2241-2242`）。
+  // 平交点始终逆行，真交点的摄动可使瞬时方向反转。
   const nodes = Object.fromEntries(
     (["mean", "true"] as const).map((mode) => {
-      const north = nodeLongitude(jde, mode);
+      const trueNode = mode === "true" ? ephemeris.getTrueNode(jde) : null;
+      const north = trueNode?.northNode ?? nodeLongitude(jde);
+      const retrograde = trueNode?.isRetrograde ?? true;
       return [
         mode,
         {
           mode,
           label: NODE_MODE_LABELS[mode],
-          rahu: toGraha(rahuMeta, north, true),
-          ketu: toGraha(ketuMeta, norm360(north + 180), true),
+          rahu: toGraha(rahuMeta, north, retrograde),
+          ketu: toGraha(ketuMeta, norm360(north + 180), retrograde),
         },
       ];
     }),

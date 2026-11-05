@@ -3,7 +3,7 @@
 /**
  * 九型图（Fourth Way Enneagram）。
  *
- * 纯几何绘制：外圈九点 + 三律三角(3-6-9) + 七律六角(1-4-2-8-5-7)。
+ * 纯几何绘制：外圈九点 + 三律三角(3-6-9) + 七律内折线(1-4-2-8-5-7-1)。
  * 不含任何外部数据，只表达两条法则在同一图上的叠加关系。
  */
 
@@ -28,7 +28,7 @@ const ring = (sequence: readonly number[]) => {
 
 export function EnneagramDiagram({ className }: { className?: string }) {
   return (
-    <svg className={className ? `enneagram-svg ${className}` : "enneagram-svg"} viewBox="0 0 360 360" role="img" aria-label="第四道九型图：三律三角与七律六角">
+    <svg className={className ? `enneagram-svg ${className}` : "enneagram-svg"} viewBox="0 0 360 360" role="img" aria-label="第四道九型图：三律三角与七律内折线">
       <circle className="enneagram-svg__ring" cx={CENTER} cy={CENTER} r={RADIUS} />
       <path className="enneagram-svg__law enneagram-svg__law--three" d={ring(ENNEAGRAM_TRIANGLE)} />
       <path className="enneagram-svg__law enneagram-svg__law--seven" d={ring(ENNEAGRAM_HEXAD)} />

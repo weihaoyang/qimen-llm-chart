@@ -18,6 +18,8 @@
 
 ## 可复现命令
 
+复核补记：上述 60/61 是底层 iztro 默认子初换日的结果。产品默认子正换日，因此 `mlb_case_9` 和 `mlb_case_28` 需要显式切到子初换日才能重现紫微导出。两例在原始快照和新版快照中数据相同。新版快照、样本计数和产品测试结果见[算法审查论文](calculation-audit-paper.md#同输入的紫微口径对照)。
+
 ```powershell
 node ops/audit-fate-bench.mjs F:\temp\fate-bench\cases.json F:\temp\fate-bench\fate_bench.jsonl
 $env:FATE_BENCH_CASES_PATH='F:\temp\fate-bench\cases.json'

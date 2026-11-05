@@ -4,7 +4,7 @@
  *
  * 物理式为教科书标准式（非本仓创制）：
  * - 史瓦西半径 r_s = 2GM/c²；视界面积 A = 4πr_s²；
- * - 贝肯斯坦–霍金熵 S = k_B A /(4 l_P²)，即每 4 个普朗克面积 1 比特（自然单位）；
+ * - 贝肯斯坦–霍金熵 S = k_B A /(4 l_P²)，即每 4 个普朗克面积对应 1 nat（自然单位）；
  * - 贝肯斯坦界 S ≤ 2π k_B R E /(ħ c)；
  * - 全息图：物光与参考光的干涉强度 H(u)=|Σ a_i e^{i2πx_i u}|²，其傅里叶变换在 ±x_i
  *   出现峰；只取 H 的一段（碎片）仍能重建全部峰，但分辨率按碎片比例下降——这是
@@ -22,9 +22,9 @@ export const CONSTANTS = {
 
 export const schwarzschildRadius = (massKg: number) => (2 * CONSTANTS.G * massKg) / (CONSTANTS.c * CONSTANTS.c);
 export const horizonArea = (radiusM: number) => 4 * Math.PI * radiusM * radiusM;
-/** 面积律信息量（比特）：A /(4 l_P²)。 */
-export const entropyBits = (areaM2: number) => areaM2 / (4 * CONSTANTS.lP * CONSTANTS.lP);
-export const entropyJoulesPerKelvin = (bits: number) => bits * CONSTANTS.kB;
+/** 面积律信息量（比特）：A /(4 l_P² ln 2)。 */
+export const entropyBits = (areaM2: number) => areaM2 / (4 * CONSTANTS.lP * CONSTANTS.lP * Math.LN2);
+export const entropyJoulesPerKelvin = (bits: number) => bits * Math.LN2 * CONSTANTS.kB;
 /** 体积律对照：1 比特 / 普朗克体积。 */
 export const volumeLawBits = (radiusM: number) => ((4 / 3) * Math.PI * radiusM ** 3) / CONSTANTS.lP ** 3;
 /** 贝肯斯坦界：S ≤ 2π k_B R E /(ħ c)。返回 **S/k_B**（无量纲，单位 nat）。 */
@@ -56,13 +56,16 @@ export const holographicReport = (massKg: number, radiusM?: number): Holographic
     entropyJK: entropyJoulesPerKelvin(bits),
     volumeBits,
     areaVsVolume: volumeBits / bits,
-    ...(radiusM === undefined ? {} : { bekensteinBits: bekensteinBits(radiusM, massKg * CONSTANTS.c * CONSTANTS.c) }),
+    ...(radiusM === undefined || radiusM < rs ? {} : { bekensteinBits: bekensteinBits(radiusM, massKg * CONSTANTS.c * CONSTANTS.c) }),
   };
 };
 
 /** 就地基数-2 FFT（Cooley–Tukey，N 为 2 的幂）。 */
 export const fft = (re: Float64Array, im: Float64Array) => {
   const n = re.length;
+  if (n === 0 || n !== im.length || (n & (n - 1)) !== 0) {
+    throw new RangeError("FFT requires equal nonempty power-of-two buffers");
+  }
   for (let i = 1, j = 0; i < n; i += 1) {
     let bit = n >> 1;
     for (; j & bit; bit >>= 1) j ^= bit;
@@ -193,7 +196,7 @@ export const hologramDemo = (sources: number[], fragmentFraction = 0.25, samples
     for (let i = 0; i < n; i += 1) full[i] = Math.hypot(fr[i], fi[i]);
   }
 
-  const usable = Math.max(1, Math.round(fragmentFraction * n));
+  const usable = Math.min(n, Math.max(1, Math.round(fragmentFraction * n)));
   const frag = new Float64Array(n);
   for (let i = 0; i < usable; i += 1) frag[i] = hologram[i];
   const fragMag = new Float64Array(n);
@@ -209,7 +212,7 @@ export const hologramDemo = (sources: number[], fragmentFraction = 0.25, samples
     sources,
     fragmentFraction,
     usableFraction: Number((usable / n).toFixed(4)),
-    resolution: Number((1 / fragmentFraction).toFixed(2)),
+    resolution: Number((n / usable).toFixed(2)),
     correlation: correlation(full, fragMag),
     peaksFull: peaksOf(full, 6),
     peaksFragment: peaksOf(fragMag, 6),

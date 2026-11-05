@@ -212,7 +212,7 @@ export function UranianPanel({
         <div className="empty-state"><b>无和点等式</b><span>当前容许度 ±{orb}° 内没有两组天体的和点重合。</span></div>
       )}
 
-      <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}八虚星轨道要素与解算移植自 GPL 的 Astrolog（Neely/Matrix 要素）；八虚星并非真实天体，其原则归类属该体系象征解释。</p>
+      <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}八虚星轨道要素与解算移植自 GPL 的 Astrolog（Matrix 要素）；八虚星并非真实天体，其原则归类属该体系象征解释。</p>
       <ProvenanceBlock system="uranian" />
     </section>
   );

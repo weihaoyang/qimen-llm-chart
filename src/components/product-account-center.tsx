@@ -14,12 +14,21 @@ const money = (price: { currency: string; value: number }) => new Intl.NumberFor
 
 export function ProductAccountCenter({ open, onClose, accessToken, baseUrl, productCode, productName, subjectId, onLogin }: { open: boolean; onClose: () => void; accessToken?: string | null; baseUrl: string; productCode: string; productName: string; subjectId?: string; onLogin: () => void; }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [balances, setBalances] = useState<Balance[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [catalogLoaded, setCatalogLoaded] = useState(false);
-  const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [result, setResult] = useState<{
+    accessToken: typeof accessToken;
+    baseUrl: string;
+    productCode: string;
+    revision: number;
+    balances: Balance[];
+    plans: Plan[];
+    catalogLoaded: boolean;
+    error: string;
+  }>();
+  const current = result && result.accessToken === accessToken && result.baseUrl === baseUrl
+    && result.productCode === productCode && result.revision === revision ? result : undefined;
+  const { balances = [], plans = [], catalogLoaded = false, error = "" } = current ?? {};
+  const loading = open && !current;
   const billingUrl = new URL("/account", baseUrl);
   billingUrl.searchParams.set("product", productCode);
   if (subjectId) billingUrl.searchParams.set("subject", subjectId);
@@ -34,7 +43,6 @@ export function ProductAccountCenter({ open, onClose, accessToken, baseUrl, prod
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setBalances([]); setPlans([]); setCatalogLoaded(false); setError(""); setLoading(true);
     const api = createPlatformClient({ baseUrl, auth: { type: "bearer", token: () => accessToken || "" } });
     const load = async () => {
       const result = await Promise.allSettled([
@@ -44,19 +52,29 @@ export function ProductAccountCenter({ open, onClose, accessToken, baseUrl, prod
       if (cancelled) return;
       const [usage, catalog] = result;
       const messages: string[] = [];
+      let balances: Balance[] = [];
       if (usage.status === "fulfilled" && usage.value) {
-        if (usage.value.data) setBalances(usage.value.data.filter(item => item.product_code === productCode));
+        if (usage.value.data) balances = usage.value.data.filter(item => item.product_code === productCode);
         else messages.push(usage.value.response.status === 401 ? "登录已过期，请重新登录后刷新。" : "暂时无法读取权益，请稍后刷新。");
       } else if (usage.status === "rejected") messages.push("暂时无法读取权益，请稍后刷新。");
-      if (catalog.status === "fulfilled" && catalog.value.data) { setPlans(catalog.value.data.filter(plan => plan.benefits.some(benefit => benefit.product_code === productCode))); setCatalogLoaded(true); }
-      else messages.push("暂时无法读取会员方案，请稍后刷新。");
-      setError(messages.join(" ")); setLoading(false);
+      const catalogData = catalog.status === "fulfilled" ? catalog.value.data : undefined;
+      if (!catalogData) messages.push("暂时无法读取会员方案，请稍后刷新。");
+      setResult({
+        accessToken, baseUrl, productCode, revision, balances,
+        plans: catalogData?.filter(plan => plan.benefits.some(benefit => benefit.product_code === productCode)) ?? [],
+        catalogLoaded: Boolean(catalogData),
+        error: messages.join(" "),
+      });
     };
     void load();
     return () => { cancelled = true; };
   }, [open, accessToken, baseUrl, productCode, revision]);
-  return <dialog ref={dialog} className="sg-product-center" aria-labelledby={`sg-title-${productCode}`} onCancel={onClose} onClose={onClose}>
-    <header className="sg-center-head"><div><span>我的用户中心</span><h2 id={`sg-title-${productCode}`}>{productName}</h2></div><button type="button" onClick={onClose} aria-label="关闭用户中心">×</button></header>
+  const close = () => {
+    setRevision(value => value + 1);
+    onClose();
+  };
+  return <dialog ref={dialog} className="sg-product-center" aria-labelledby={`sg-title-${productCode}`} onClose={close}>
+    <header className="sg-center-head"><div><span>我的用户中心</span><h2 id={`sg-title-${productCode}`}>{productName}</h2></div><button type="button" onClick={() => dialog.current?.close()} aria-label="关闭用户中心">×</button></header>
     <div className="sg-center-body">
       <div className="sg-center-toolbar"><p>本产品的会员权益与 AI 使用额度</p><button type="button" onClick={() => setRevision(value => value + 1)} disabled={loading}>刷新</button></div>
       {error && <p className="sg-center-error" role="alert">{error}{error.includes("登录") && <button type="button" onClick={onLogin}>重新登录</button>}</p>}

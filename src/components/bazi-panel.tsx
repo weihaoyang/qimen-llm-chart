@@ -201,7 +201,7 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
   };
   const lumingLookup = [
     { name: "禄神", targets: [getLuShenBranch(chart.raw.dayMaster)] },
-    { name: "羊刃", targets: [getYangRenBranch(chart.raw.dayMaster)] },
+    { name: "羊刃（五阳干）", targets: [getYangRenBranch(chart.raw.dayMaster)] },
     { name: "文昌贵人", targets: [getWenChangBranch(chart.raw.dayMaster)] },
     { name: "天乙贵人", targets: getTianYiBranches(chart.raw.dayMaster) },
   ]

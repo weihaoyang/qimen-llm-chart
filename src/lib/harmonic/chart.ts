@@ -51,7 +51,7 @@ export type HarmonicConjunction = {
   harmonicOrb: number;
   /** 折算回母盘的夹角（谐波夹角 ÷ n）。 */
   natalOrb: number;
-  /** 该谐波对应的母盘基准相位 360/n。 */
+  /** 母盘中最近的 360/n 整数倍相位（0° 至 180°）。 */
   natalAngle: number;
 };
 
@@ -67,7 +67,6 @@ export type HarmonicChart = {
 };
 
 const wrap = (value: number) => ((value % 360) + 360) % 360;
-const signOf = (longitude: number) => SIGNS[Math.floor(wrap(longitude) / 30) % 12];
 
 export const harmonicLongitude = (longitude: number, harmonic: number) => wrap(longitude * harmonic);
 
@@ -78,7 +77,14 @@ const angularDistance = (a: number, b: number) => {
 
 const toHarmonicPoint = (name: string, natalLongitude: number, harmonic: number): HarmonicPoint => {
   const longitude = harmonicLongitude(natalLongitude, harmonic);
-  return { name, natalLongitude: wrap(natalLongitude), longitude, sign: signOf(longitude), degree: Number((longitude % 30).toFixed(2)) };
+  const displayLongitude = Number(longitude.toFixed(2)) % 360;
+  return {
+    name,
+    natalLongitude: wrap(natalLongitude),
+    longitude,
+    sign: SIGNS[Math.floor(displayLongitude / 30)],
+    degree: Number((displayLongitude % 30).toFixed(2)),
+  };
 };
 
 export const clampHarmonic = (value: number) => {
@@ -105,7 +111,10 @@ export const buildHarmonicChart = (profile: NormalizedProfileInput, harmonicInpu
     for (let j = i + 1; j < all.length; j += 1) {
       const harmonicOrb = angularDistance(all[i].longitude, all[j].longitude);
       if (harmonicOrb <= HARMONIC_ORB) {
-        conjunctions.push({ a: all[i].name, b: all[j].name, harmonicOrb: Number(harmonicOrb.toFixed(2)), natalOrb: Number((harmonicOrb / harmonic).toFixed(3)), natalAngle: Number((360 / harmonic).toFixed(3)) });
+        const step = 360 / harmonic;
+        const natalDistance = angularDistance(all[i].natalLongitude, all[j].natalLongitude);
+        const natalAngle = angularDistance(0, Math.round(natalDistance / step) * step);
+        conjunctions.push({ a: all[i].name, b: all[j].name, harmonicOrb: Number(harmonicOrb.toFixed(2)), natalOrb: Number((harmonicOrb / harmonic).toFixed(3)), natalAngle: Number(natalAngle.toFixed(3)) });
       }
     }
   }
@@ -119,6 +128,6 @@ export const buildHarmonicChart = (profile: NormalizedProfileInput, harmonicInpu
     angles,
     conjunctions,
     complete: points.length > 0,
-    disclaimer: `研究性谐波盘：h = (黄经 × ${harmonic}) mod 360，行星星历与星盘共用同一引擎（含凯龙、小行星、真交点与莉莉丝共 18 个点位）；${astro.complete ? "上升/中天已纳入。" : "未提供出生地，上升/中天未纳入。"}按 Addey 一系通行做法，谐波盘以合相（容许度 ${HARMONIC_ORB}°）为读取口径；盘内其它相位属复合解读、无统一容许度规则，本仓不自行发明，故不输出。谐波盘只重组角度关系，不引入新的星历，也不作现实预测。`,
+    disclaimer: `研究性谐波盘：h = (黄经 × ${harmonic}) mod 360，行星星历与星盘共用同一引擎（含凯龙、小行星、真交点与莉莉丝共 18 个点位）；${astro.complete ? "上升/中天已纳入。" : "上升/中天未纳入。"}按 Addey 一系通行做法，谐波盘以合相（容许度 ${HARMONIC_ORB}°）为读取口径；盘内其它相位属复合解读、无统一容许度规则，本仓不自行发明，故不输出。谐波盘只重组角度关系，不引入新的星历，也不作现实预测。`,
   };
 };

@@ -1,5 +1,7 @@
 import { Lunar, LunarUtil, Solar } from "lunar-typescript";
 import type { NormalizedProfileInput } from "@/lib/profile";
+import { getCivilDateTime } from "@/lib/profile/normalize";
+import { getChinaEphemerisParts, toZonedDate } from "@/lib/qimen/timezone";
 import { DEFAULT_BAZI_SETTINGS, type BaziSettings } from "./settings";
 import type {
   BaziPillarDetail,
@@ -41,27 +43,20 @@ const buildLunarFromProfile = (profile: NormalizedProfileInput) => {
     profile.normalized.datetime,
   );
 
-  if (profile.original.calendarMode === "lunar" && profile.original.lunar) {
-    const lunarMonth = profile.original.lunar.isLeapMonth
-      ? -profile.original.lunar.month
-      : profile.original.lunar.month;
-
-    return Lunar.fromYmdHms(
-      profile.original.lunar.year,
-      lunarMonth,
-      profile.original.lunar.day,
-      profile.original.lunar.hour ?? hour,
-      profile.original.lunar.minute ?? minute,
-      0,
-    );
-  }
-
   return Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar();
+};
+
+const setTermReference = (lunar: Lunar, instant: Date) => {
+  const { year, month, day, hour, minute, second } = getChinaEphemerisParts(instant);
+  const reference = Solar.fromYmdHms(year, month, day, hour, minute, second).getLunar();
+  (lunar as Lunar & { setSolarTermReference(reference: Lunar): void }).setSolarTermReference(reference);
 };
 
 const shiftedLunar = (datetime: string, minuteDelta: number) => {
   const { year, month, day, hour, minute } = parseNormalizedDateTime(datetime);
-  const shifted = new Date(Date.UTC(year, month - 1, day, hour, minute + minuteDelta));
+  const shifted = new Date(0);
+  shifted.setUTCFullYear(year, month - 1, day);
+  shifted.setUTCHours(hour, minute + minuteDelta, 0, 0);
   return Solar.fromYmdHms(
     shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate(),
     shifted.getUTCHours(), shifted.getUTCMinutes(), 0,
@@ -79,9 +74,14 @@ const baZiFor = (lunar: ReturnType<typeof shiftedLunar>, settings: BaziSettings)
   return [year, eightChar.getMonth(), eightChar.getDay(), eightChar.getTime()];
 };
 
-const buildBoundaryAudit = (datetime: string, current: string[], settings: BaziSettings) => {
-  const before = baZiFor(shiftedLunar(datetime, -30), settings);
-  const after = baZiFor(shiftedLunar(datetime, 30), settings);
+const buildBoundaryAudit = (datetime: string, instant: Date, current: string[], settings: BaziSettings) => {
+  const at = (minutes: number) => {
+    const lunar = shiftedLunar(datetime, minutes);
+    setTermReference(lunar, new Date(instant.getTime() + minutes * 60_000));
+    return baZiFor(lunar, settings);
+  };
+  const before = at(-30);
+  const after = at(30);
   const keys: BaziPillarKey[] = ["year", "month", "day", "time"];
   const changedPillars = keys.filter((_, index) => before[index] !== current[index] || after[index] !== current[index]);
   return {
@@ -210,7 +210,12 @@ const getPillarDetail = (
 const buildYunPreview = (
   gender: NormalizedProfileInput["original"]["gender"],
   eightChar: EightCharInstance,
+  settings: BaziSettings,
 ): BaziYunPreview => {
+  if (settings.yearBoundary === "lunar-new-year") {
+    const lunar = eightChar.getLunar() as Lunar & { _yunYearGanIndex?: number };
+    lunar._yunYearGanIndex = lunar.getYearGanIndex();
+  }
   const yun = eightChar.getYun(gender === "male" ? 1 : 0, 1);
 
   return {
@@ -243,6 +248,8 @@ export const buildBaziChartFromProfile = (
 ): NormalizedBaziChart => {
   const conventions = resolveBaziSettings(profile);
   const lunar = buildLunarFromProfile(profile);
+  const instant = toZonedDate(getCivilDateTime(profile), profile.normalized.timeZone);
+  setTermReference(lunar, instant);
   const solar = lunar.getSolar();
   const eightChar = lunar.getEightChar();
   eightChar.setSect(conventions.dayBoundary === "zi-start" ? 1 : 2);
@@ -260,9 +267,10 @@ export const buildBaziChartFromProfile = (
   const taiXi = { pillar: eightChar.getTaiXi(), naYin: eightChar.getTaiXiNaYin() };
   const mingGong = { pillar: eightChar.getMingGong(), naYin: eightChar.getMingGongNaYin() };
   const shenGong = { pillar: eightChar.getShenGong(), naYin: eightChar.getShenGongNaYin() };
-  const structureAudit = buildBaziStructureAudit(pillars, eightChar.getDayGan(), lunar.getBaZiNaYin(), mingGong.pillar, shenGong.pillar);
+  const naYin = pillars.map((pillar) => pillar.naYin);
+  const structureAudit = buildBaziStructureAudit(pillars, eightChar.getDayGan(), naYin, mingGong.pillar, shenGong.pillar);
   const baZi = pillars.map((pillar) => pillar.pillar);
-  const boundaryAudit = buildBoundaryAudit(profile.normalized.datetime, baZi, conventions);
+  const boundaryAudit = buildBoundaryAudit(profile.normalized.datetime, instant, baZi, conventions);
 
   return {
     input: profile,
@@ -275,10 +283,10 @@ export const buildBaziChartFromProfile = (
       conventions,
       baZi,
       dayMaster: eightChar.getDayGan(),
-      wuXing: lunar.getBaZiWuXing(),
-      naYin: lunar.getBaZiNaYin(),
-      shiShenGan: lunar.getBaZiShiShenGan(),
-      shiShenZhi: lunar.getBaZiShiShenZhi(),
+      wuXing: pillars.map((pillar) => pillar.wuXing),
+      naYin,
+      shiShenGan: pillars.map((pillar) => pillar.shiShenGan),
+      shiShenZhi: pillars.map((pillar) => pillar.shiShenZhi[0] ?? ""),
       pillars,
       taiYuan,
       taiXi,
@@ -286,7 +294,7 @@ export const buildBaziChartFromProfile = (
       shenGong,
       structureAudit,
       boundaryAudit,
-      yun: buildYunPreview(profile.original.gender, eightChar),
+      yun: buildYunPreview(profile.original.gender, eightChar, conventions),
     },
   };
 };

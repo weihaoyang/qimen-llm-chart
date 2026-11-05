@@ -92,7 +92,7 @@ export function BaziReversePanel({
       <summary>
         <span className="bazi-reverse-disclosure__mark">REVERSE / 03</span>
         <strong>从八字逆推生日</strong>
-        <span className="bazi-reverse-disclosure__hint">给出已知干支与年份范围，反查可能的公历生日</span>
+        <span className="bazi-reverse-disclosure__hint">按固定 UTC+08:00 公历钟时反查，回填时使用同一时间口径</span>
         <span className="bazi-reverse-disclosure__toggle" aria-hidden="true">+</span>
       </summary>
 

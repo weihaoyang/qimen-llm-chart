@@ -1,3 +1,5 @@
+import { Solar } from "lunar-typescript";
+
 /**
  * 五运六气推演内核（运气学说）。
  *
@@ -27,10 +29,10 @@
  *
  * 已知异说（面板与资料库里都标注）：
  * - 交气日：运气有「大寒交初气」（宋·刘温舒明文）与「立春」（《素问·六节藏象论》「皆归始春」）
- *   以及「正月朔日」（《素问·六元正纪大论》）三派；本模块按**干支纪年**取年，步序不落节令；
+ *   以及《素问·六元正纪大论》的正月朔日观测记载；本模块按**干支纪年**取年，按《医宗金鉴》的分组标出六步首节气日期；
  * - 客主加临的"相得"判据各家不一（尤其君火与相火是否算同气）：本模块按"同气或相生为相得、
  *   相克为不相得，且主胜逆／客胜从"这一通行口径实现；
- * - 同天符／同岁会（中运与在泉同气）定义分歧较大，本模块**不输出**。
+ * - 同天符／同岁会（中运与在泉同气）按《六元正纪大论》分太过与不及。
  */
 
 export const TIAN_GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"] as const;
@@ -80,6 +82,8 @@ export const SI_TIAN_BY_ZHI: Record<DiZhi, QiName> = {
 /** 主气六步（《六微旨大论》），年年不变。 */
 export const ZHU_QI_STEPS: readonly QiName[] = ["厥阴风木", "少阴君火", "少阳相火", "太阴湿土", "阳明燥金", "太阳寒水"];
 
+const STEP_TERMS = ["大寒", "春分", "小满", "大暑", "秋分", "小雪"] as const;
+
 export const STEP_NAMES = ["初之气", "二之气", "三之气", "四之气", "五之气", "终之气"] as const;
 
 /** 五运纪名（《五常政大论》）。 */
@@ -112,6 +116,9 @@ export const QI_WU_XING: Record<QiName, WuXing> = {
 
 export type QiStep = {
   step: number;
+  startTerm: (typeof STEP_TERMS)[number];
+  startDate: string | null;
+  endDateExclusive: string | null;
   name: (typeof STEP_NAMES)[number];
   zhuQi: QiName;
   keQi: QiName;
@@ -155,6 +162,8 @@ export type YunQiAnalysis = {
     tianFu: boolean;
     suiHui: boolean;
     taiYiTianFu: boolean;
+    tongTianFu: boolean;
+    tongSuiHui: boolean;
   };
   /** 司天／在泉（客气之三之气与终之气）。 */
   siTian: QiName;
@@ -163,11 +172,14 @@ export type YunQiAnalysis = {
   keQiSteps: readonly QiName[];
   /** 六步客主加临。 */
   steps: readonly QiStep[];
+  handoverKe: readonly number[];
+  movementPeriods: readonly { host: WuXing; guest: WuXing; startDate: string | null; endDateExclusive: string | null }[];
 };
 
 /** 干支纪年：以 1984 甲子为基准（与八字年柱同一套干支序）。 */
 export const ganzhiOfYear = (year: number): { ganzhi: string; gan: TianGan; zhi: DiZhi } => {
-  const offset = ((year - 4) % 60 + 60) % 60;
+  if (!Number.isSafeInteger(year)) throw new RangeError("运气年份必须是安全整数");
+  const offset = (year % 60 - 4 + 120) % 60;
   const gan = TIAN_GAN[offset % 10];
   const zhi = DI_ZHI[offset % 12];
   return { ganzhi: `${gan}${zhi}`, gan, zhi };
@@ -194,8 +206,45 @@ export const analyzeYunQi = (year: number): YunQiAnalysis => {
     return LIU_QI_ORDER[position];
   });
 
+  // The Jin Jian groups four terms per step. Dates use the Chinese
+  // calendar day of the term, without inferring a historical handover hour.
+  const terms = Number.isInteger(year) && year >= 1 && year <= 9998
+    ? Solar.fromYmd(year, 7, 1).getLunar().getJieQiTable()
+    : null;
+  const dateOfTerm = (term: string, days = 0) => {
+    const solar = terms?.[term];
+    if (!solar) return null;
+    // The source uses a Julian/Gregorian cutover. Convert its nominal China
+    // wall-clock Julian day into the proleptic Gregorian calendar used here.
+    const millis = Math.round((solar.getJulianDay() - 2440587.5) * 86400000);
+    return new Date(millis + days * 86400000).toISOString().slice(0, 10);
+  };
+  const dates = [...STEP_TERMS, "DA_HAN"].map(term => dateOfTerm(term));
+
+  // 《医宗金鉴》运气分主节令，以节气所在的中国历日为第零日。
+  const movementDates = [
+    dates[0], dateOfTerm("春分", 13), dateOfTerm("芒种", 10),
+    dateOfTerm("处暑", 7), dateOfTerm("立冬", 4), dates[6],
+  ];
+  const hostMovements = ["木", "火", "土", "金", "水"] as const;
+  const firstGuest = hostMovements.indexOf(element);
+  const movementPeriods = hostMovements.map((host, index) => ({
+    host,
+    guest: hostMovements[(firstGuest + index) % hostMovements.length],
+    startDate: movementDates[index],
+    endDateExclusive: movementDates[index + 1],
+  }));
+
+  // 《素问入式运气论奥》百刻制。子、丑、寅、卯四组每组递进二十五刻，
+  // 每步六十日八十七刻半。用零基偏移推算，再还原古籍的一基刻序。
+  const initialOffset = (DI_ZHI.indexOf(zhi) % 4) * 25;
+  const handoverKe = keQiSteps.map((_, index) => (initialOffset + index * 87.5) % 100 + 1);
+
   const steps: QiStep[] = keQiSteps.map((keQi, index) => ({
     step: index + 1,
+    startTerm: STEP_TERMS[index],
+    startDate: dates[index],
+    endDateExclusive: dates[index + 1],
     name: STEP_NAMES[index],
     zhuQi: ZHU_QI_STEPS[index],
     keQi,
@@ -204,6 +253,7 @@ export const analyzeYunQi = (year: number): YunQiAnalysis => {
 
   const tianFu = QI_WU_XING[siTian] === element;
   const suiHui = SUI_HUI_ZHI[element].includes(zhi);
+  const sameAsZaiQuan = QI_WU_XING[zaiQuan] === element;
 
   return {
     year,
@@ -218,10 +268,14 @@ export const analyzeYunQi = (year: number): YunQiAnalysis => {
       tianFu,
       suiHui,
       taiYiTianFu: tianFu && suiHui,
+      tongTianFu: sameAsZaiQuan && strength === "太过",
+      tongSuiHui: sameAsZaiQuan && strength === "不及",
     },
     siTian,
     zaiQuan,
     keQiSteps,
+    handoverKe,
     steps,
+    movementPeriods,
   };
 };

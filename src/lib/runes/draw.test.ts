@@ -58,8 +58,10 @@ describe("elder futhark runes", () => {
     expect(text).toContain("Yggdrasil");
     expect(text).toContain(reading.draws[0].rune.name);
 
-    const payload = JSON.parse(serializeRunesToCompactJson(reading)) as { format: string; draws: unknown[]; nineWorlds: unknown[] };
+    const payload = JSON.parse(serializeRunesToCompactJson(reading)) as { format: string; seed: string; draws: unknown[]; nineWorlds: unknown[] };
     expect(payload.format).toBe("qmdj-runes-v1");
+    expect(payload.seed).toBe("seed");
+    expect(buildRuneReading(payload.seed, "three")).toEqual(reading);
     expect(payload.draws).toHaveLength(3);
     expect(payload.nineWorlds).toHaveLength(9);
     expect(NINE_WORLDS.map((world) => world.level)).toContain("上");

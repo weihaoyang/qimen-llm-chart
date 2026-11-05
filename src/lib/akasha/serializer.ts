@@ -12,16 +12,16 @@ export const serializeAkashaToStructuredText = (chart: AkashaChart) => {
     "",
     "【全息物理（可算）】",
     `史瓦西半径 ${fix(h.schwarzschildRadiusM)} m · 视界面积 ${fix(h.horizonAreaM2)} m²`,
-    `面积律信息量 ${h.bits.toExponential(6)} 比特（= 每 4 个普朗克面积 1 比特）· 熵 ${h.entropyJK.toExponential(6)} J/K`,
+    `面积律信息量 ${h.bits.toExponential(6)} 比特（= 每 4 个普朗克面积对应 1 nat）· 熵 ${h.entropyJK.toExponential(6)} J/K`,
     `体积律对照（1 比特/普朗克体积）${h.volumeBits.toExponential(6)} 比特 → 面积律比体积律小 ${h.areaVsVolume.toExponential(3)} 倍`,
     h.bekensteinBits
-      ? `贝肯斯坦界（R=1 m，E=mc²）${h.bekensteinBits.toExponential(6)} 比特 = ${(h.bekensteinBits / Math.LN2).toExponential(6)} nat（S/k_B）`
-      : "",
+      ? `贝肯斯坦界（R=1 m，E=mc²）${h.bekensteinBits.toExponential(6)} 比特 = ${(h.bekensteinBits * Math.LN2).toExponential(6)} nat（S/k_B）`
+      : "贝肯斯坦界：史瓦西半径超过固定参考半径 1 m，本例省略该比较。",
     "",
     `碎片重建演示：碎片占比 ${d.usableFraction}（分辨率 ≈ ×${d.resolution}）· 与整幅重建的相关系数 ${d.correlation}`,
     `整幅重建峰：${d.peaksFull.map((peak) => `x=${peak.x}(${peak.value})`).join("、")}`,
     `碎片重建峰：${d.peaksFragment.map((peak) => `x=${peak.x}(${peak.value})`).join("、")}`,
-    "结论：碎片仍重建出全部点源位置，但峰变宽、幅值下降——即「部分含整体」在全息记录上的确切含义。",
+    "碎片缩短了采样孔径，重建峰会变宽，邻近峰可能合并。可用上面两组峰位和相关系数比较当前参数下的重建结果。",
     "",
     "典型质量对照：",
     ...chart.table.map((row) => `- ${row.label}：r_s ${row.schwarzschildRadiusM.toExponential(3)} m · ${row.bits.toExponential(3)} 比特 · ${row.entropyJK.toExponential(3)} J/K`),

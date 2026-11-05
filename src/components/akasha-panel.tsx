@@ -95,11 +95,11 @@ export function AkashaPanel({
       <div className="akasha-facts">
         <div><span>史瓦西半径</span><b>{sci(h.schwarzschildRadiusM)} m</b><em>r_s = 2GM/c²</em></div>
         <div><span>视界面积</span><b>{sci(h.horizonAreaM2)} m²</b><em>A = 4πr_s²</em></div>
-        <div><span>面积律信息量</span><b>{sci(h.bits)} 比特</b><em>S = k_B·A/(4ℓ_P²)</em></div>
+        <div><span>面积律信息量</span><b>{sci(h.bits)} 比特</b><em>比特数 = A/(4ℓ_P² ln 2)</em></div>
         <div><span>熵</span><b>{sci(h.entropyJK)} J/K</b><em>只由面积决定</em></div>
         <div><span>体积律对照</span><b>{sci(h.volumeBits)} 比特</b><em>1 比特 / 普朗克体积</em></div>
         <div><span>面积律小多少倍</span><b>{sci(h.areaVsVolume)}</b><em>体积律 ÷ 面积律</em></div>
-        <div><span>贝肯斯坦界</span><b>{h.bekensteinBits ? `${sci(h.bekensteinBits)} 比特` : "—"}</b><em>S ≤ 2πk_BRE/(ħc)，R=1 m、E=mc²（比特 = nats / ln2）</em></div>
+        <div><span>贝肯斯坦界</span><b>{h.bekensteinBits ? `${sci(h.bekensteinBits)} 比特` : "—"}</b><em>{h.bekensteinBits ? "S ≤ 2πk_BRE/(ħc)，R=1 m、E=mc²（比特 = nats / ln2）" : "史瓦西半径超过参考半径 1 m"}</em></div>
         <div><span>普朗克尺度</span><b>ℓ_P = {sci(1.616255e-35)} m</b><em>1 比特 = 4ℓ_P²</em></div>
       </div>
 
@@ -123,9 +123,8 @@ export function AkashaPanel({
         <Bars values={d.full} label="② 整幅重建" note={`峰：${d.peaksFull.map((peak) => peak.x).join("、") || "—"}`} />
         <Bars values={d.fragment} label="③ 碎片重建" note={`峰：${d.peaksFragment.map((peak) => peak.x).join("、") || "—"}`} />
         <p className="akasha-note">
-          碎片只保留全息图的 {Math.round(d.usableFraction * 100)}%，重建的**峰位与整幅一致**（全部物点都在），但主峰幅值按碎片比例下降、峰变宽——
-          分辨率受碎片大小限制（≈ ×{d.resolution}），相关系数 {d.correlation}。整幅与碎片都会出现源间互调产生的鬼峰（参考光越强越弱）。
-          这就是「部分含整体」在全息记录上的确切含义：可重建，但不是无损，也不是「读取一切」。
+          碎片保留全息图的 {Math.round(d.usableFraction * 100)}%。采样孔径缩短后，主峰通常变宽，邻近峰可能合并。
+          按实际采样长度估计，峰宽约为整幅的 {d.resolution} 倍，重建相关系数为 {d.correlation}。源间互调还可能产生额外的峰。
         </p>
       </div>
 

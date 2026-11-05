@@ -42,10 +42,11 @@ describe("Fate-Bench four-pillar audit (opt-in external corpus)", () => {
     expect(unresolved).toEqual([]);
   });
 
-  it.skipIf(!casesPath)("matches Fate-Bench Ziwei structure except its documented upstream-source variance", async () => {
+  it.skipIf(!casesPath)("matches Fate-Bench Ziwei structure under explicit day boundaries except its documented source variance", async () => {
     const entries = JSON.parse(await readFile(casesPath!, "utf8"));
     const unexpected: string[] = [];
     const sourceVariances: string[] = [];
+    const ziStartMatches: string[] = [];
     let eligible = 0;
 
     for (const entry of entries) {
@@ -55,16 +56,6 @@ describe("Fate-Bench four-pillar audit (opt-in external corpus)", () => {
       if (birth?.calendar_type !== "solar" || !resolvedTime || !expected) continue;
       eligible += 1;
       const datetime = `${birth.year}-${String(birth.month).padStart(2, "0")}-${String(birth.day).padStart(2, "0")}T${String(resolvedTime.hour).padStart(2, "0")}:${String(resolvedTime.minute ?? 0).padStart(2, "0")}`;
-      const chart = buildZiweiChartFromProfile({
-        original: { calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender: birth.gender === "女" ? "female" : "male", timeBasis: "civil" },
-        normalized: { calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", timeBasis: "civil" },
-      });
-      const actualStructure = {
-        soul: chart.raw.soul,
-        body: chart.raw.body,
-        fiveElementsClass: chart.raw.fiveElementsClass,
-        palaces: chart.raw.palaces.map((palace) => ({ name: palace.name, branch: palace.earthlyBranch, majorStars: palace.majorStars.map((star) => star.name) })),
-      };
       const expectedStructure = {
         soul: expected.soul,
         body: expected.body,
@@ -75,12 +66,30 @@ describe("Fate-Bench four-pillar audit (opt-in external corpus)", () => {
           majorStars: palace.major_stars.map((star) => star.name),
         })),
       };
-      if (JSON.stringify(actualStructure) === JSON.stringify(expectedStructure)) continue;
+      const matches = (dayBoundary: "midnight" | "zi-start") => {
+        const chart = buildZiweiChartFromProfile({
+          original: { calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender: birth.gender === "女" ? "female" : "male", timeBasis: "civil", baziSettings: { yearBoundary: "li-chun", dayBoundary } },
+          normalized: { calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", timeBasis: "civil" },
+        });
+        const actualStructure = {
+          soul: chart.raw.soul,
+          body: chart.raw.body,
+          fiveElementsClass: chart.raw.fiveElementsClass,
+          palaces: chart.raw.palaces.map((palace) => ({ name: palace.name, branch: palace.earthlyBranch, majorStars: palace.majorStars.map((star) => star.name) })),
+        };
+        return JSON.stringify(actualStructure) === JSON.stringify(expectedStructure);
+      };
+      if (matches("midnight")) continue;
+      if (matches("zi-start")) {
+        ziStartMatches.push(entry.case_id);
+        continue;
+      }
       if (entry.case_id === "mlb_case_31") sourceVariances.push(entry.case_id);
       else unexpected.push(entry.case_id);
     }
 
     expect(eligible).toBeGreaterThan(0);
+    expect(ziStartMatches.sort()).toEqual(["mlb_case_28", "mlb_case_9"]);
     expect(sourceVariances).toEqual(["mlb_case_31"]);
     expect(unexpected).toEqual([]);
   });

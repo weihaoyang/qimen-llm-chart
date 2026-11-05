@@ -88,7 +88,7 @@ SOFTWARE.
 - 位置：`src/lib/vedic/data.ts`、`src/lib/vedic/varga.ts`、`src/lib/vedic/ayanamsa.ts`、`src/lib/vedic/chart.ts`
 - 采用部分：
   - 16 分盘定义（Shodashavarga）与各分盘的 `vargaSign` 换算规则（含 D30 Trimsamsa 阳/阴宫分段表、D2 Hora 的日月时划分、各盘的起点规则）。
-  - Lahiri（Chitrapaksha）岁差：J2000 基准值 23.853064° 与 J2000 起的岁差多项式；ΔT（Espenak–Meeus 分段式）；平交点（mean node）公式；**真交点**改用 celestine `getTrueNodeLongitude`（MIT，`dist/index.js:2245-2260`，Meeus 级数含 17 项摄动），界面可切平/真。
+  - Lahiri（Chitrapaksha）岁差：J2000 平岁差基准值 23.8570923254552°（Swiss Ephemeris 的 IAE Lahiri 口径） 与 J2000 起的岁差多项式；ΔT（Espenak–Meeus 分段式）；平交点（mean node）公式；**真交点**改用 celestine `getTrueNodeLongitude`（MIT，本仓修订为以月球瞬时轨道面求升交点），界面可切平/真。
   - 12 宫（rashi）与 27 宿（nakshatra）名称、宿的宿主循环序列。
 - 未采用部分：该库自带的简易行星 / 月亮 / 太阳星历；本仓改用已有的 Celestine 星历（回归黄经）再减岁差得到恒星黄经。
 - 自撰部分：中文名对照（宫名、九曜、分盘主管领域）与界面文案；分盘「主管领域」为古典文献所述意义。

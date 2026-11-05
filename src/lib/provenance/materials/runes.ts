@@ -32,5 +32,13 @@ export const MATERIALS: ProvenanceMaterialSet = {
       ],
       note: "上游自述：符文名、读音与三 aett 划分为传统；关键词/牌义/建议为其自撰（「original, concise wording written for this app」），非古籍原文。",
     },
+    {
+      title: "Fehu（ᚠ）在两部符文诗中的释义",
+      lines: [
+        "古英语符文诗 Feoh：财富能带来慰藉，也需要慷慨分配。",
+        "挪威符文诗 Fé：财富可能引起亲族争端。",
+      ],
+      note: "据 Bruce Dickins 编译的 Runic and Heroic Poems (1915) 两首诗的首节概述。站内正逆位是现代抽取约定。",
+    },
   ],
 };

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { longitudeToActivation } from "hd-chart-engine";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
-import { buildHumanDesignChart, HD_CHANNELS, HD_GATE_CENTERS } from "./chart";
+import { buildHumanDesignChart, deriveHumanDesignDesign, HD_CHANNELS, HD_GATE_CENTERS, HD_STRATEGY_BY_TYPE } from "./chart";
 import { serializeHumanDesignToStructuredText } from "./serializer";
 
 const VALID_PROFILES = ["1/3", "1/4", "2/4", "2/5", "3/5", "3/6", "4/6", "4/1", "5/1", "5/2", "6/2", "6/3"];
@@ -17,6 +18,62 @@ const chartFor = (iso: string, withLocation = true) => {
 };
 
 describe("human design chart", () => {
+  it("covers each of the 384 gate-line pairs exactly once on the wheel", () => {
+    const pairs = new Set<string>();
+    for (let index = 0; index < 384; index += 1) {
+      const longitude = 9.5 + (index + 0.5) * 360 / 384;
+      const { g, l } = longitudeToActivation(longitude % 360);
+      expect(l).toBe(index % 6 + 1);
+      const boundary = (9.5 + index * 360 / 384) % 360;
+      expect(longitudeToActivation(boundary)).toMatchObject({ g, l });
+      expect(longitudeToActivation((boundary + 360 - 1e-7) % 360).l).toBe((index + 5) % 6 + 1);
+      pairs.add(`${g}.${l}`);
+    }
+    expect(pairs.size).toBe(384);
+  });
+
+  it("partitions each line into six colors, six tones per color and five bases per tone", () => {
+    const intervals = 384 * 6 * 6 * 5;
+    for (let index = 0; index < intervals; index += 1) {
+      const longitude = (9.5 + (index + 0.5) * 360 / intervals) % 360;
+      const { c, t, b } = longitudeToActivation(longitude);
+      if (c !== Math.floor(index / 30) % 6 + 1 || t !== Math.floor(index / 5) % 6 + 1 || b !== index % 5 + 1) {
+        throw new Error(`Unexpected subdivision at longitude ${longitude}: ${c}.${t}.${b}`);
+      }
+    }
+  });
+
+  it("reproduces the published Johannes Sun and Earth gates from their listed longitudes", () => {
+    const personalitySun = 90 + 29 + 34 / 60;
+    const designSun = 30 + 1 + 34 / 60;
+    expect(personalitySun - designSun).toBeCloseTo(88, 12);
+    expect(longitudeToActivation(personalitySun).g).toBe(56);
+    expect(longitudeToActivation(personalitySun + 180).g).toBe(60);
+    expect(longitudeToActivation(designSun).g).toBe(3);
+    expect(longitudeToActivation(designSun + 180).g).toBe(50);
+  });
+
+  it("matches the original Rave I Ching index around the Aries boundaries", () => {
+    // Ra Uru Hu, The Human Design System, printed page 34.
+    const cases = [
+      [358.2499, 36, 6], [358.25, 25, 1], [0, 25, 2],
+      [2, 25, 5], [3.875, 17, 1], [9.4999, 17, 6],
+      [9.5, 21, 1], [10, 21, 1], [10.4375, 21, 2], [15.125, 51, 1],
+    ];
+    for (const [longitude, g, l] of cases) {
+      expect(longitudeToActivation(longitude), String(longitude)).toMatchObject({ g, l });
+    }
+  });
+
+  it("uses the earlier UTC instant when the civil clock repeats at DST fall-back", () => {
+    const input = getDefaultProfileInput(new Date("2024-11-03T05:30:00Z"), "America/New_York");
+    const actual = buildHumanDesignChart(normalizeProfileInput(input));
+    const early = chartFor("2024-11-03T05:30:00Z");
+    const late = chartFor("2024-11-03T06:30:00Z");
+    expect(actual.activations).toEqual(early.activations);
+    expect(actual.activations.moon.personality).not.toEqual(late.activations.moon.personality);
+  });
+
   it("derives a stable, well-formed chart", () => {
     const chart = chartFor("2026-01-01T00:00:00Z");
     expect(chart.centers).toHaveLength(9);
@@ -81,4 +138,26 @@ describe("human design chart", () => {
     expect(text).toContain("四变量");
     expect(text).toContain("通道（");
   });
+});
+
+it("derives ego authority for both projection and manifestation", () => {
+  expect(deriveHumanDesignDesign(new Set([25, 51]))).toMatchObject({
+    type: "投射者",
+    authority: "意志力权威",
+  });
+  const manifestor = deriveHumanDesignDesign(new Set([21, 45]));
+  expect(manifestor).toMatchObject({ type: "显化者", authority: "意志力权威" });
+  expect(HD_STRATEGY_BY_TYPE[manifestor.type]).toBe("先告知，再行动");
+});
+
+it.each([
+  [[], "月亮权威"],
+  [[61, 24], "环境权威"],
+  [[1, 8], "自我投射权威"],
+  [[21, 45], "意志力权威"],
+  [[21, 45, 48, 16], "脾权威"],
+  [[21, 45, 48, 16, 5, 15], "骶骨权威"],
+  [[21, 45, 48, 16, 5, 15, 35, 36], "情绪权威"],
+] as const)("derives authority precedence from active gates %j", (gates, authority) => {
+  expect(deriveHumanDesignDesign(new Set<number>(gates)).authority).toBe(authority);
 });

@@ -48,7 +48,7 @@ export function ZiweiPanel({ value, chart }: ZiweiPanelProps) {
     setNow(new Date());
   }, []);
 
-  const parsed = parseDateTime(value.datetime);
+  const parsed = parseDateTime(chart?.interpretedDateTime ?? value.datetime);
   // A malformed datetime must not blank the workspace: this panel is one of
   // three on the same page, and an uncaught throw during render takes all of
   // them down with it.
@@ -68,7 +68,7 @@ export function ZiweiPanel({ value, chart }: ZiweiPanelProps) {
   const { birthday, hour } = parsed;
   const lunar = value.lunar;
   const lunarBirthday =
-    value.calendarMode === "lunar" && lunar
+    !chart && value.calendarMode === "lunar" && lunar
       ? `${lunar.year}-${lunar.month}-${lunar.day}`
       : birthday;
   const birthTimeIndex = toTimeIndex(hour);
@@ -127,14 +127,14 @@ export function ZiweiPanel({ value, chart }: ZiweiPanelProps) {
           key={dayDivide}
           options={{ dayDivide }}
           birthday={lunarBirthday}
-          birthdayType={value.calendarMode}
+          birthdayType={chart ? "solar" : value.calendarMode}
           birthTime={birthTimeIndex}
           centerPalaceAlign
           fixLeap
           gender={value.gender}
           horoscopeDate={now ?? undefined}
           horoscopeHour={currentTimeIndex}
-          isLeapMonth={lunar?.isLeapMonth}
+          isLeapMonth={!chart && lunar?.isLeapMonth}
           lang="zh-CN"
           width="100%"
         />

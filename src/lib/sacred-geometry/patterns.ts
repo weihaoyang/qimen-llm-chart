@@ -163,7 +163,7 @@ export const PATTERNS: SacredPattern[] = [
     id: "flower",
     name: "Flower of Life",
     tagline: "万形生长其上的格子",
-    blurb: "生命之种沿三角格子向外延展。两环即经典的十九圆花——阿比多斯奥西里昂所刻；继续外扩，玫瑰花形便会无限平铺。",
+    blurb: "生命之种沿三角格子向外延展。将圆心放在中心与周围两环，可得十九圆花。继续延展三角格点，可得到周期重复的圆纹。",
     steps: { label: "Rings", min: 1, max: 6, def: 2 },
     draw({ steps = 2 } = {}) {
       const rings = Math.max(1, steps);

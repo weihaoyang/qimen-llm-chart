@@ -3,6 +3,7 @@ import type { BaziPillarDetail } from "./types";
 type Stem = BaziPillarDetail["heavenlyStem"];
 type Branch = BaziPillarDetail["earthlyBranch"];
 
+// 《三命通会》所列牛羊口诀。以日干查两支，不区分昼夜。
 const TIAN_YI: Record<string, string[]> = {
   甲: ["丑", "未"],
   戊: ["丑", "未"],
@@ -16,19 +17,24 @@ const TIAN_YI: Record<string, string[]> = {
   辛: ["寅", "午"],
 };
 
-const WEN_CHANG: Record<string, Branch> = {
-  甲: "巳", 乙: "午", 丙: "申", 丁: "酉", 戊: "申",
-  己: "酉", 庚: "亥", 辛: "子", 壬: "寅", 癸: "卯",
-};
-
 const LU_SHEN: Record<string, Branch> = {
   甲: "寅", 乙: "卯", 丙: "巳", 丁: "午", 戊: "巳",
   己: "午", 庚: "申", 辛: "酉", 壬: "亥", 癸: "子",
 };
 
-const YANG_REN: Record<string, Branch> = {
-  甲: "卯", 乙: "寅", 丙: "午", 丁: "巳", 戊: "午",
-  己: "巳", 庚: "酉", 辛: "申", 壬: "子", 癸: "亥",
+const STEMS = Array.from("甲乙丙丁戊己庚辛壬癸");
+
+// 命理探原：以食神临官取文昌，戊己食神改取申酉。
+export const getWenChangBranch = (dayMaster: string): Branch | undefined => {
+  if (dayMaster === "丙") return "申";
+  if (dayMaster === "丁") return "酉";
+  const index = STEMS.indexOf(dayMaster);
+  return index < 0 ? undefined : LU_SHEN[STEMS[(index + 2) % STEMS.length]];
+};
+
+// 三命通会〈论羊刃〉所载子平法：只取五阳干。
+const YANG_REN: Partial<Record<Stem, Branch>> = {
+  甲: "卯", 丙: "午", 戊: "午", 庚: "酉", 壬: "子",
 };
 
 const TIAN_DE: Record<string, { stem?: Stem; branch?: Branch }> = {
@@ -39,7 +45,7 @@ const TIAN_DE: Record<string, { stem?: Stem; branch?: Branch }> = {
 
 const YUE_DE: Record<string, Stem> = {
   寅: "丙", 午: "丙", 戌: "丙", 申: "壬", 子: "壬", 辰: "壬",
-  亥: "甲", 卯: "甲", 未: "甲",
+  亥: "甲", 卯: "甲", 未: "甲", 巳: "庚", 酉: "庚", 丑: "庚",
 };
 
 const GROUP_TARGET: Record<string, Record<string, Branch>> = {
@@ -66,7 +72,7 @@ export const buildShenSha = (
     const { heavenlyStem, earthlyBranch } = pillar;
 
     if (TIAN_YI[dayMaster]?.includes(earthlyBranch)) add(result, "天乙贵人");
-    if (WEN_CHANG[dayMaster] === earthlyBranch) add(result, "文昌贵人");
+    if (getWenChangBranch(dayMaster) === earthlyBranch) add(result, "文昌贵人");
     if (LU_SHEN[dayMaster] === earthlyBranch) add(result, "禄神");
     if (YANG_REN[dayMaster] === earthlyBranch) add(result, "羊刃");
     const tianDe = monthBranch ? TIAN_DE[monthBranch] : undefined;
@@ -87,8 +93,7 @@ export const buildShenSha = (
  * star fall for this day master", including when the chart does not have it.
  */
 export const getLuShenBranch = (dayMaster: string): string | undefined => LU_SHEN[dayMaster];
-export const getYangRenBranch = (dayMaster: string): string | undefined => YANG_REN[dayMaster];
-export const getWenChangBranch = (dayMaster: string): string | undefined => WEN_CHANG[dayMaster];
+export const getYangRenBranch = (dayMaster: Stem): string | undefined => YANG_REN[dayMaster];
 export const getTianYiBranches = (dayMaster: string): string[] => TIAN_YI[dayMaster] ?? [];
 export const getGroupStarBranch = (star: keyof typeof GROUP_TARGET, baseBranch: string): string | undefined =>
   GROUP_TARGET[star]?.[baseBranch];

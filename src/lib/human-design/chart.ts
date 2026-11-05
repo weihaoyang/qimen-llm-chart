@@ -1,3 +1,5 @@
+import { getCivilDateTime } from "@/lib/profile/normalize";
+import { toZonedDate } from "@/lib/qimen/timezone";
 import { calculateChart } from "hd-chart-engine";
 import { normalizeProfileInput, type NormalizedProfileInput, type ProfileInput } from "@/lib/profile";
 import type { HumanDesignAuthority, HumanDesignChart, HumanDesignDefinition, HumanDesignType, HumanDesignVariable } from "./types";
@@ -98,7 +100,7 @@ const deriveAuthority = (type: HumanDesignType, defined: Set<string>, reachesThr
   if (defined.has("情绪")) return "情绪权威";
   if (defined.has("骶骨")) return "骶骨权威";
   if (defined.has("脾")) return "脾权威";
-  if (reachesThroat("意志力")) return "意志力权威";
+  if (defined.has("意志力")) return "意志力权威";
   if (reachesThroat("G中心")) return "自我投射权威";
   return "环境权威";
 };
@@ -117,7 +119,7 @@ export const HD_STRATEGY_BY_TYPE: Record<HumanDesignType, string> = {
   显示生产者: "等待回应，然后告知",
   投射者: "等待邀请",
   反映者: "等待月亮周期",
-  显化者: "先行动，再告知",
+  显化者: "先告知，再行动",
 };
 
 export type HumanDesignDesign = {
@@ -149,10 +151,15 @@ export const deriveHumanDesignDesign = (gates: Set<number>): HumanDesignDesign =
 export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDesignChart => {
   const latitude = profile.original.location?.latitude ?? null;
   const longitude = profile.original.location?.longitude ?? null;
-  const [date, time] = profile.normalized.datetime.split("T");
+  const datetime = getCivilDateTime(profile);
+  const utc = toZonedDate(datetime, profile.normalized.timeZone).toISOString();
+  const [date, utcTime] = utc.split("T");
+  const time = datetime.split("T")[1].length > 5 || utcTime.slice(6, 8) !== "00"
+    ? utcTime.slice(0, 8)
+    : utcTime.slice(0, 5);
   // Gate positions are geocentric, so the birth place does not change them. Use
   // the supplied coordinates when present and a neutral origin otherwise.
-  const chart = calculateChart({ date, time, lat: latitude ?? 0, lon: longitude ?? 0, tz: profile.normalized.timeZone });
+  const chart = calculateChart({ date, time, lat: latitude ?? 0, lon: longitude ?? 0, tz: "UTC" });
 
   const activations = Object.fromEntries(PLANETS.map((key) => [key, { personality: toActivation(chart.planets[key].p), design: toActivation(chart.planets[key].d) }]));
   const gates = new Set(Object.values(activations).flatMap((value) => [value.personality.gate, value.design.gate]));
@@ -181,7 +188,7 @@ export const buildHumanDesignChart = (profile: NormalizedProfileInput): HumanDes
   const warning = chart.warnings.length ? " 警告：" + chart.warnings.join("；") : "";
   return {
     format: "qmdj-human-design-v1",
-    input: { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone, latitude, longitude },
+    input: { datetime, timeZone: profile.normalized.timeZone, latitude, longitude },
     type,
     strategy: HD_STRATEGY_BY_TYPE[type],
     authority,

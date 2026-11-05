@@ -36,7 +36,10 @@ export const flankPalaces = (position: string) => {
 /** 阳遁/阴遁的重留方位（阳遁重留乾坤，阴遁重留艮巽）。 */
 const RESERVE: Record<"阳遁" | "阴遁", string[]> = { 阳遁: ["乾", "坤"], 阴遁: ["艮", "巽"] };
 
-const mod = (value: number, modulus: number) => ((value % modulus) + modulus) % modulus;
+const mod = (value: number, modulus: number) => {
+  const remainder = value % modulus;
+  return remainder < 0 ? remainder + modulus : remainder + 0;
+};
 const isMain = (position: string) => position in POSITION_TO_PALACE;
 
 export type TaiyiDun = "阳遁" | "阴遁";
@@ -79,10 +82,10 @@ export type TaiyiChart = {
 };
 
 /** 积年：以上元甲子为始，据《太乙金镜式经》「至唐开元十二年（724）有 1937281 积年」。 */
-export const accumulatedYears = (year: number) => 1937281 + (year - 724);
+export const accumulatedYears = (year: number) => year + (1937281 - 724);
 
 /** 入局数：积年累除元六纪周期，再累除七十二。 */
-export const ruJuNumber = (jiyear: number, cycle: number) => mod(jiyear, cycle) % 72;
+export const ruJuNumber = (jiyear: number, cycle: number) => mod(mod(jiyear, cycle) - 1, 72) + 1;
 
 /**
  * 太乙宫：三年一宫，二十四年一周，不入中宫。
@@ -247,7 +250,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   };
   pushPo("天目（文昌）", tianMuPosition);
   for (const general of generals) pushPo(general.label, positionOfPalace(general.palace));
-  // 囚：文昌与主客大小四将俱与太乙同宫
+  // 囚：采用局注的宽判，文昌或任一将与太乙同宫。
   const qiu = [tianMuPalace, ...generals.map((general) => general.palace)].some((palace) => palace !== null && palace === taiyiPalace);
   // 关：主客大小将同宫数齐
   const generalPalaces = generals.map((general) => general.palace);
@@ -302,6 +305,12 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
 export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const { year, cycle, ruJu: override } = settings;
   const jiyear = accumulatedYears(year);
+  if (!Number.isSafeInteger(year) || !Number.isSafeInteger(jiyear) || !Number.isSafeInteger(cycle) || cycle <= 0) {
+    throw new RangeError("年份、积年与周期必须为安全整数，周期须为正数。");
+  }
+  if (override !== null && (!Number.isInteger(override) || override < 1 || override > 72)) {
+    throw new RangeError("入局数必须为 1 至 72 的整数。");
+  }
   const eraRemainder = mod(jiyear, cycle);
   const ruJu = override ?? ruJuNumber(jiyear, cycle);
   const dunDefaulted = settings.dun === "auto";
@@ -349,11 +358,11 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
     disclaimer:
       "太乙神数研究盘：按公共领域古籍《太乙金镜式经》（唐·王希明，四库全书本）与《太乙秘書》一系规则实现（太乙三年一宫、二十四年一周不入中宫；阳遁顺行、阴遁逆行；天目以入局数十八累除、阳遁自武德起阴遁自吕申起并重留乾坤／艮巽；计神逆行十二支；始击以计神加和德顺行十六神；主客算自二目顺数正宫至太乙前一宫；大将取算之个位、参将取『三因大将满十去之』）。"
       + "**遁不由局数推出**：卷三与秘書皆阳局七十二局、阴局七十二局并列（秘書阳局第一局太乙一宫、阴局第一局太乙九宫），故本仓须人工选定遁；未选定时按阳遁排出并在界面提示（input.dunDefaulted）。"
-      + "格局按卷三「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
+      + "格局参考卷三及《太乙秘書》局注，囚、关采用局注的同宫宽判。「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
       + "「前一宫／后一宫」按八正宫环（乾一坎八艮三震四巽九离二坤七兑六）定序，「前一辰／后一辰」按十六神环紧邻之间神定序。"
       + "四郭固、四郭杜原文为「或」字并列之合象，本仓取可核验之合象读法并在条目内注明；提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭），《太乙秘書》局注所见「主挟／客挟」（主客二目与大小将互相自挟）未实现；「推执提法」需八门直事，本仓未排八门，故未实现。"
       + "和数只列事实、不下判词：算值、奇偶、所立正宫／间神，并按卷二〈推阴阳和不和〉列「上和十四、十八、三十三；次和二十三、二十九、三十二；下和十二、十六、二十七、三十四、三十八」。卷二与《太乙秘書》《太乙統宗寶鑑》《淘金歌》一系的和数清单不同（后者次和另含三十六、下和另含二十一、上和无三十三），且两书局注互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），同篇不合判据又含太乙宫、二目所立、算奇偶等多维（卷二另有『八三四九为阳宫、二七六一为阴宫』，与乾坎艮震为阳之常义相异），故本仓不输出和／不和与长／短判词。"
       + "已用《太乙秘書》阳局 1–24、阴局 1–12（共 36 局）逐局回归，字段以秘書原文为准、与卷三立成互校，秘書讹误或缺漏之字段在用例中具名跳过并注明（详见 mishu-corpus.ts）。"
-      + "未采用开源实现（检索到者实为九星换皮，非太乙神数）。元六纪周期古籍作三百六十五，本仓默认 360 并可在界面切换；起元另有异说，故入局数可覆盖。仅供研究，不构成预测或现实裁决。",
+      + "《太乙金镜式经》卷一岁计周纪取 360 年，本站默认沿用。365 为对照参数；起元另有异说，故入局数可覆盖。仅供研究，不构成预测或现实裁决。",
   };
 };

@@ -17,7 +17,15 @@ export type DateParts = [year: number, month: number, day: number];
 const parse = (iso: string): DateParts => {
   const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) throw new Error("日期格式无效，应为 YYYY-MM-DD。");
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    throw new Error("日期不存在。");
+  }
+  return [year, month, day];
 };
 
 /** 格里高利历的儒略日数（整数，正午）。 */

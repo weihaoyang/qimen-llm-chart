@@ -1,3 +1,4 @@
+import { serializeTcmToCompactJson, serializeTcmToStructuredText } from "./serializer";
 // 「八字 + 中医运气」对照视图：用真实八字输入跑通，钉住"干支 → 脏腑/经络"的对应与边界声明。
 
 import { describe, expect, it } from "vitest";
@@ -69,6 +70,16 @@ describe("八字 + 中医运气对照视图", () => {
     expect(view.elementAttributes.map((item) => item.element)).toEqual(["木", "火", "土", "金", "水"]);
     expect(view.elementAttributes.find((item) => item.element === "木")?.orifice).toContain("目");
     expect(view.elementAttributes.find((item) => item.element === "水")?.flavor).toBe("咸");
+  });
+
+  it("exports the two forms of earth coincidence without replacing 岁会", () => {
+    const excess = buildTcmYunqiView(chart, 2024);
+    const deficiency = buildTcmYunqiView(chart, 2023);
+    expect(serializeTcmToStructuredText(excess)).toContain("同天符（太过中运与在泉同五行）");
+    expect(serializeTcmToStructuredText(excess)).toContain("岁会（中运临岁支正位）");
+    expect(serializeTcmToStructuredText(deficiency)).toContain("同岁会（不及中运与在泉同五行）");
+    expect(JSON.parse(serializeTcmToCompactJson(excess)).yun.slice(-2)).toEqual([true, false]);
+    expect(JSON.parse(serializeTcmToCompactJson(deficiency)).yun.slice(-2)).toEqual([false, true]);
   });
 
   it("大运覆盖所选流年时给出该步大运", () => {

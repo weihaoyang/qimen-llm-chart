@@ -14,7 +14,7 @@ const getFormatter = (timeZone: string) => {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   });
 
   formatterCache.set(timeZone, formatter);
@@ -63,12 +63,12 @@ const pad = (value: number) => value.toString().padStart(2, "0");
 
 export const formatLocalDateTime = (datetime: string) => {
   const parts = parseLocalDateTime(datetime);
-  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
+  return `${String(parts.year).padStart(4, "0")}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
 };
 
 export const formatDateTimeInZone = (date: Date, timeZone: string) => {
   const parts = getTimeZoneParts(date, timeZone);
-  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
+  return `${String(parts.year).padStart(4, "0")}-${pad(parts.month)}-${pad(parts.day)} ${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`;
 };
 
 /**
@@ -82,12 +82,19 @@ export const formatDateTimeInZone = (date: Date, timeZone: string) => {
  */
 export const formatDateTimeInputInZone = (date: Date, timeZone: string) => {
   const parts = getTimeZoneParts(date, timeZone);
-  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`;
+  return `${String(parts.year).padStart(4, "0")}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`;
+};
+
+const utcMillis = (year: number, month: number, day: number, hour: number, minute: number, second: number) => {
+  const date = new Date(0);
+  date.setUTCFullYear(year, month, day);
+  date.setUTCHours(hour, minute, second, 0);
+  return date.getTime();
 };
 
 export const toZonedDate = (datetime: string, timeZone: string) => {
   const target = parseLocalDateTime(datetime);
-  const utcGuess = Date.UTC(
+  const utcGuess = utcMillis(
     target.year,
     target.month - 1,
     target.day,
@@ -98,7 +105,7 @@ export const toZonedDate = (datetime: string, timeZone: string) => {
 
   const guessDate = new Date(utcGuess);
   const zoned = getTimeZoneParts(guessDate, timeZone);
-  const zonedUtc = Date.UTC(
+  const zonedUtc = utcMillis(
     zoned.year,
     zoned.month - 1,
     zoned.day,
@@ -107,10 +114,23 @@ export const toZonedDate = (datetime: string, timeZone: string) => {
     zoned.second,
   );
 
-  const correctedDate = new Date(
+  let correctedDate = new Date(
     utcGuess - (zonedUtc - utcGuess),
   );
-  const correctedParts = getTimeZoneParts(correctedDate, timeZone);
+  let correctedParts = getTimeZoneParts(correctedDate, timeZone);
+  // The first correction can cross a DST transition and change the offset.
+  const correctedWallTime = utcMillis(
+    correctedParts.year,
+    correctedParts.month - 1,
+    correctedParts.day,
+    correctedParts.hour,
+    correctedParts.minute,
+    correctedParts.second,
+  );
+  if (correctedWallTime !== utcGuess) {
+    correctedDate = new Date(correctedDate.getTime() + utcGuess - correctedWallTime);
+    correctedParts = getTimeZoneParts(correctedDate, timeZone);
+  }
 
   const isExact =
     correctedParts.year === target.year &&
@@ -124,5 +144,24 @@ export const toZonedDate = (datetime: string, timeZone: string) => {
     throw new Error(`无法在时区 ${timeZone} 中解析时间 ${datetime}`);
   }
 
+  // A repeated wall time resolves to the earlier occurrence. Compare the
+  // previous day's offset so this does not depend on the initial UTC guess.
+  const previous = correctedDate.getTime() - 86_400_000;
+  const previousParts = getTimeZoneParts(new Date(previous), timeZone);
+  const previousOffset = utcMillis(
+    previousParts.year, previousParts.month - 1, previousParts.day,
+    previousParts.hour, previousParts.minute, previousParts.second,
+  ) - previous;
+  const earlier = utcGuess - previousOffset;
+  if (earlier < correctedDate.getTime()) {
+    const parts = getTimeZoneParts(new Date(earlier), timeZone);
+    if (utcMillis(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) === utcGuess) {
+      return new Date(earlier);
+    }
+  }
   return correctedDate;
 };
+
+/** Chinese calendrical ephemerides use a fixed UTC+08:00 clock. */
+export const getChinaEphemerisParts = (instant: Date) =>
+  getTimeZoneParts(new Date(instant.getTime() + 8 * 3_600_000), "UTC");

@@ -127,7 +127,7 @@ export function MayaPanel({
           <div className="divination-section-heading"><span>十三月历 · 13 MOONS</span><small>13 × 28 + 1</small></div>
           <div className="maya-moons">
             <div className="maya-moons__row">
-              <span>第 {d.moon.moon} 月 · 第 {d.moon.day} 天</span>
+              <span>{d.moon.outOfTime ? "无时间日（Day Out of Time）" : `第 ${d.moon.moon} 月 · 第 ${d.moon.day} 天`}</span>
               <em>13 × 28 共 364 天，余 1 日为无时间日</em>
             </div>
             <div className="maya-moons__grid">
@@ -136,8 +136,8 @@ export function MayaPanel({
               ))}
             </div>
             <div className="maya-moons__row">
-              <span>第 {d.moon.week} 周 · 等离子 {d.moon.plasma}</span>
-              <em>{d.moon.outOfTime ? "无时间日（Day Out of Time）" : `年度起于 ${d.moon.yearStart}`}</em>
+              {!d.moon.outOfTime && <span>第 {d.moon.week} 周 · 等离子 {d.moon.plasma}</span>}
+              <em>年度起于 {d.moon.yearStart}</em>
             </div>
           </div>
         </div>

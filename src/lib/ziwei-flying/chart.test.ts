@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { buildZiweiFlyingChart } from "./chart";
+import { buildZiweiChartFromProfile } from "@/lib/ziwei/chart";
 import { HE_TU, LUO_SHU, MUTAGEN_NAMES, STEM_MUTAGENS, TECHNIQUES, TIAN_YI } from "./data";
 import { serializeZiweiFlyingToCompactJson, serializeZiweiFlyingToStructuredText } from "./serializer";
 
@@ -39,6 +40,17 @@ describe("ziwei flying tables", () => {
 
 describe("ziwei flying chart", () => {
   const chart = buildZiweiFlyingChart(profile());
+
+  it("applies the Jielan Ren-year transformation rather than the Quanshu variant", () => {
+    const input = normalizeProfileInput(getDefaultProfileInput(new Date("2022-06-01T04:00:00Z"), "Asia/Shanghai"));
+    const natal = buildZiweiChartFromProfile(input);
+    const flying = buildZiweiFlyingChart(input);
+    expect(flying.year.stem).toBe("壬");
+    expect(flying.natives.map(({ star }) => star)).toEqual(["天梁", "紫微", "左辅", "武曲"]);
+    const stars = natal.raw.palaces.flatMap(({ majorStars, minorStars }) => [...majorStars, ...minorStars]);
+    expect(stars.find(({ name }) => name === "左辅")?.mutagen).toBe("科");
+    expect(stars.find(({ name }) => name === "天府")?.mutagen).not.toBe("科");
+  });
 
   it("builds twelve flying rows and the native four transformations", () => {
     expect(chart.format).toBe("qmdj-ziwei-flying-v1");
@@ -79,16 +91,30 @@ describe("ziwei flying chart", () => {
     expect(chart.rows.filter((row) => row.isTianYi).length).toBe(chart.tianYi.palaces.filter((name) => name !== "—").length);
   });
 
+  it("matches the ten-stem Qintian candidates when 子 and 丑 are excluded", () => {
+    const expectedBranches = ["庚辰", "辛卯", "壬寅", "癸亥", "甲戌", "乙酉", "丙申", "丁未", "戊午", "己巳"];
+    for (const [offset, expected] of expectedBranches.entries()) {
+      const input = normalizeProfileInput(getDefaultProfileInput(new Date(Date.UTC(2020 + offset, 5, 1, 4)), "Asia/Shanghai"));
+      const chart = buildZiweiFlyingChart(input);
+      const candidates = chart.rows.filter((row) => row.isYearStemPalace);
+      expect(candidates.filter((row) => row.branch !== "子" && row.branch !== "丑")
+        .map((row) => row.stem + row.branch)).toEqual([expected]);
+      if (offset === 4) {
+        expect(chart.laiYin).toMatchObject({ palace: "兄弟", isInner: false });
+        expect(candidates[0]).toMatchObject({ branch: "戌", isLaiYin: false });
+      }
+    }
+  });
+
   it("flags self-transformation and incoming transformation", () => {
-    const selfRows = chart.rows.filter((row) => row.hits.some((hit) => hit.self));
-    // 自化并不必然存在，但若有则标记一致
-    for (const row of selfRows) {
-      const hit = row.hits.find((item) => item.self);
-      expect(hit?.toPalace).toBe(row.palace);
-    }
-    for (const row of chart.rows) {
-      for (const item of row.incoming) expect(item.star.length).toBeGreaterThan(0);
-    }
+    const children = chart.rows.find((row) => row.palace === "子女");
+    expect(children?.stem).toBe("乙");
+    expect(children?.hits.filter((hit) => hit.self)).toMatchObject([
+      { mutagen: "禄", star: "天机", toPalace: "子女" },
+    ]);
+    expect(children?.incoming).toEqual([
+      { fromPalace: "田宅", mutagen: "忌", star: "文曲" },
+    ]);
   });
 
   it("follows 禄转忌 / 忌转忌 by the landing palace's stem", () => {
@@ -102,6 +128,9 @@ describe("ziwei flying chart", () => {
   });
 
   it("anchors 自化转忌 on palaces whose own stem transforms a star onto itself", () => {
+    expect(chart.chains.selfLuZhuanJi).toContainEqual({
+      origin: "子女", star: "天机", via: "子女", to: "疾厄", star2: "太阴",
+    });
     for (const item of chart.chains.selfLuZhuanJi) {
       const row = chart.rows.find((entry) => entry.palace === item.origin);
       expect(row?.hits.some((hit) => hit.self && hit.mutagen === "禄")).toBe(true);

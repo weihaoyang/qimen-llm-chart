@@ -52,11 +52,10 @@ const TOMB_MAP: Record<string, string[]> = {
 const STAR_NATIVE: Record<string, number> = { 天蓬: 1, 天芮: 2, 天冲: 3, 天辅: 4, 天禽: 5, 天心: 6, 天柱: 7, 天任: 8, 天英: 9 };
 const GATE_NATIVE: Record<string, number> = { 休门: 1, 生门: 8, 伤门: 3, 杜门: 4, 景门: 9, 死门: 2, 惊门: 7, 开门: 6 };
 const OPPOSITE: Record<number, number> = { 1: 9, 9: 1, 2: 8, 8: 2, 3: 7, 7: 3, 4: 6, 6: 4, 5: 5 };
-const STEM_CLASH: Record<string, string> = { 甲: "庚", 庚: "甲", 乙: "辛", 辛: "乙", 丙: "壬", 壬: "丙", 丁: "癸", 癸: "丁" };
-
 const placedStars = (chart: NormalizedQimenChart) =>
   chart.raw.palaces
-    .map((palace) => ({ palace, native: STAR_NATIVE[palace.star as string] }))
+    .filter((palace) => palace.position !== 5)
+    .map((palace) => ({ palace, native: STAR_NATIVE[valuesOf(palace.star).find((star) => star !== "天禽") ?? ""] }))
     .filter((entry) => typeof entry.native === "number");
 const placedGates = (chart: NormalizedQimenChart) =>
   chart.raw.palaces
@@ -80,6 +79,17 @@ const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes
 const isZhiFu = (palace: Palace) => palace.deity === "值符" || Boolean(palace.isZhiFu);
 const palaceLabel = (position: Position) => `第 ${position} 宫`;
 const stemsOf = (value: unknown) => valuesOf(value).join("/") || "无";
+
+export const matchesSanQiDeShi = (palace: Palace) =>
+  (hasHeaven(palace, "乙") && hasEarth(palace, "己", "辛")) ||
+  (hasHeaven(palace, "丙") && hasEarth(palace, "戊", "庚")) ||
+  (hasHeaven(palace, "丁") && hasEarth(palace, "壬", "癸"));
+
+export const matchesFuGong = (palace: Palace, chiefStem: string) =>
+  hasHeaven(palace, "庚") && hasEarth(palace, chiefStem);
+
+export const matchesFeiGong = (palace: Palace, chiefPosition: number) =>
+  palace.position === chiefPosition && hasEarth(palace, "庚");
 
 const pairEvidence = (palace: Palace) =>
   `${palaceLabel(palace.position)}：天盘 ${stemsOf(palace.heavenlyStem)} · 地盘 ${stemsOf(palace.earthlyStem)}`;
@@ -221,18 +231,16 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     const want = map[p.position];
     return want && hasEarth(p, want) ? `${palaceLabel(p.position)}：地盘${want}归本宫` : null;
   }),
-  good("san_qi_de_shi", "三奇得使", "常用吉格", "天盘乙/丙/丁 落值使门宫", "三奇与值使同宫，事有贵助；结合值使门的旺衰判断力度。", (p, chart) =>
-    p.position === chart.raw.zhiShi.position && hasHeaven(p, ...SAN_QI)
-      ? `${palaceLabel(p.position)}：天盘 ${stemsOf(p.heavenlyStem)} 临值使门 ${p.gate}`
-      : null,
+  good("san_qi_de_shi", "三奇得使", "常用吉格", "天盘乙加地盘己/辛、丙加戊/庚、丁加壬/癸", "按《遁甲演义》配六甲所遁之仪。", (p) =>
+    matchesSanQiDeShi(p) ? pairEvidence(p) : null,
   ),
   good("yu_nu_shou_men", "玉女守门", "常用吉格", "地盘丁落值使门宫", "主贵人或内应；仍须看门星旺衰与实际条件。", (p, chart) =>
     p.position === chart.raw.zhiShi.position && hasEarth(p, "丁")
       ? `${palaceLabel(p.position)}：地盘丁临值使门 ${p.gate}`
       : null,
   ),
-  good("qing_long_fan_shou", "青龙返首", "常用吉格", "天盘戊 + 地盘丙", "主谋事有成、贵人在位；配合门旺更佳。", stemPair("戊", "丙")),
-  good("fei_niao_die_xue", "飞鸟跌穴", "常用吉格", "天盘丙 + 地盘戊", "主行动得势、机会落地；宜主动出击。", stemPair("丙", "戊")),
+  good("qing_long_fan_shou", "青龙返首", "常用吉格", "天盘戊 + 地盘丙（固定干配）", "主谋事有成、贵人在位；配合门旺更佳。", stemPair("戊", "丙")),
+  good("fei_niao_die_xue", "飞鸟跌穴", "常用吉格", "天盘丙 + 地盘戊（固定干配）", "主行动得势、机会落地；宜主动出击。", stemPair("丙", "戊")),
 
   // ---- 常用凶格 ----
   bad("qi_ge", "奇格", "常用凶格", "天盘庚 + 地盘乙/丙/丁", "主压制三奇、好事受阻；宜换宫或改时。", (p) =>
@@ -247,8 +255,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("da_ge", "大格", "常用凶格", "天盘庚 + 地盘癸", "主阻滞、进退两难；宜换路径或借他宫。", stemPair("庚", "癸")),
   bad("xiao_ge", "小格", "常用凶格", "天盘庚 + 地盘壬", "主小阻小漏；提前留余量即可化解。", stemPair("庚", "壬")),
   bad("xing_ge", "刑格", "常用凶格", "天盘庚 + 地盘己", "主刑伤、约束与规则反噬；手续要合规。", stemPair("庚", "己")),
-  bad("fu_gong_ge", "伏宫格", "常用凶格", "天盘庚 + 地盘戊", "主原地受困、进展停滞；先把卡点说清。", stemPair("庚", "戊")),
-  bad("fei_gong_ge", "飞宫格", "常用凶格", "天盘戊 + 地盘庚", "主动荡外移、被动应变；不宜扩张布局。", stemPair("戊", "庚")),
+  bad("fu_gong_ge", "伏宫格", "常用凶格", "天盘庚临地盘本旬值符原宫", "据《遁甲演义》庚加直符。", (p, chart) =>
+    matchesFuGong(p, chart.raw.zhiFu.heavenlyStem) ? pairEvidence(p) : null),
+  bad("fei_gong_ge", "飞宫格", "常用凶格", "天盘值符临地盘庚", "据《遁甲演义》直符加庚。", (p, chart) =>
+    matchesFeiGong(p, chart.raw.zhiFu.position) ? pairEvidence(p) : null),
   bad("tian_wang_si_zhang", "天网四张", "常用凶格", "天盘癸 + 地盘癸", "主受困受限、网罗缠身；宜守不宜攻。", stemPair("癸", "癸")),
   bad("sui_ge", "岁格", "常用凶格", "天盘庚 + 地盘年干", "主与年上大势相悖；年度层面易受制。", (p, chart) =>
     hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.year.stem) ? pairEvidence(p) : null,
@@ -293,7 +303,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
       ? `${palaceLabel(p.position)}：天盘${timeStem}临${branches.join("/")}（墓支）`
       : null;
   }),
-  bad("liu_yi_ji_xing", "六仪击刑", "常用凶格", "六仪落其刑宫", "主事与己刑、力不从心；该宫对应事项易出问题。", (p) =>
+  bad("liu_yi_ji_xing", "六仪击刑", "常用凶格", "任一天盘六仪落其刑宫（逐宫法）", "主事与己刑、力不从心；该宫对应事项易出问题。", (p) =>
     p.liuYiJiXing?.hasJiXing
       ? `${palaceLabel(p.position)}：${p.liuYiJiXing.type ?? "六仪击刑"}${p.liuYiJiXing.description ? `（${p.liuYiJiXing.description}）` : ""}`
       : null,
@@ -303,38 +313,30 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   ),
 
   // ---- 伏吟反吟 ----
-  bad("fu_yin_star", "星伏吟", "伏吟反吟", "九星各归本位", "主事情停滞、原地打转；宜静守整理，不宜强推。", (_p, chart) => {
+  bad("fu_yin_star", "星伏吟", "伏吟反吟", "外八宫主星各归本位", "主事情停滞、原地打转；宜静守整理，不宜强推。", (_p, chart) => {
     const items = placedStars(chart);
-    return items.length > 0 && items.every(({ palace, native }) => native === palace.position) ? "九星皆归本位" : null;
+    return items.length === 8 && items.every(({ palace, native }) => native === palace.position) ? "外八宫主星皆归本位" : null;
   }, "global"),
   bad("fu_yin_gate", "门伏吟", "伏吟反吟", "八门各归本位", "主进退不得、守成尚可；忌开新局，宜收尾。", (_p, chart) => {
     const items = placedGates(chart);
-    return items.length > 0 && items.every(({ palace, native }) => native === palace.position) ? "八门皆归本位" : null;
+    return items.length === 8 && items.every(({ palace, native }) => native === palace.position) ? "八门皆归本位" : null;
   }, "global"),
-  bad("fu_yin_zhi_fu", "值符伏吟", "伏吟反吟", "值符宫天地盘天干相同", "主格局内缩、力量叠加却难动；宜固守既有条件。", (_p, chart) => {
-    const target = chart.raw.palaces.find((palace) => palace.position === chart.raw.zhiFu?.position);
-    if (!target) return null;
-    const heaven = valuesOf(target.heavenlyStem);
-    const earth = valuesOf(target.earthlyStem);
-    return heaven.some((stem) => earth.includes(stem))
-      ? `值符宫${palaceLabel(target.position)}：天盘 ${stemsOf(target.heavenlyStem)} · 地盘 ${stemsOf(target.earthlyStem)}`
-      : null;
+  bad("fu_yin_zhi_fu", "值符伏吟", "伏吟反吟", "值符星回到本宫", "据《遁甲演义》取值符星原位。", (_p, chart) => {
+    const chief = chart.raw.zhiFu;
+    return chief && STAR_NATIVE[chief.star] === chief.position ? `值符 ${chief.star} 回到第 ${chief.position} 宫` : null;
   }, "global"),
-  bad("fan_yin_star", "星反吟", "伏吟反吟", "九星各临对冲之宫", "主局势动荡、来回翻覆；宜留后手、随时调整。", (_p, chart) => {
+  bad("fan_yin_star", "星反吟", "伏吟反吟", "外八宫主星各临对冲之宫", "主局势动荡、来回翻覆；宜留后手、随时调整。", (_p, chart) => {
     const items = placedStars(chart);
-    return items.length > 0 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "九星皆临对冲宫" : null;
+    return items.length === 8 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "外八宫主星皆临对冲宫" : null;
   }, "global"),
   bad("fan_yin_gate", "门反吟", "伏吟反吟", "八门各临对冲之宫", "主行动反复、计划易变；宜先定规则再动手。", (_p, chart) => {
     const items = placedGates(chart);
-    return items.length > 0 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "八门皆临对冲宫" : null;
+    return items.length === 8 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "八门皆临对冲宫" : null;
   }, "global"),
-  bad("fan_yin_zhi_fu", "值符反吟", "伏吟反吟", "值符宫天地盘天干相冲", "主内外冲突、方向反复；宜先解决对立面。", (_p, chart) => {
-    const target = chart.raw.palaces.find((palace) => palace.position === chart.raw.zhiFu?.position);
-    if (!target) return null;
-    const heaven = valuesOf(target.heavenlyStem);
-    const earth = valuesOf(target.earthlyStem);
-    return heaven.some((stem) => earth.includes(STEM_CLASH[stem] ?? ""))
-      ? `值符宫${palaceLabel(target.position)}：天盘 ${stemsOf(target.heavenlyStem)} · 地盘 ${stemsOf(target.earthlyStem)} 相冲`
+  bad("fan_yin_zhi_fu", "值符反吟", "伏吟反吟", "值符星临本宫的对冲宫", "据《遁甲演义》取值符星原位的对冲。", (_p, chart) => {
+    const chief = chart.raw.zhiFu;
+    return chief && chief.position !== 5 && STAR_NATIVE[chief.star] === OPPOSITE[chief.position]
+      ? `值符 ${chief.star} 临第 ${chief.position} 宫`
       : null;
   }, "global"),
 

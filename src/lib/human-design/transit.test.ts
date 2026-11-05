@@ -10,6 +10,15 @@ const natal = () => {
 };
 
 describe("human design transit", () => {
+  it("distinguishes Moon tone changes within the same UTC minute", () => {
+    const chart = natal();
+    const early = buildHumanDesignTransit(chart, new Date("2026-03-03T12:01:00Z"));
+    const late = buildHumanDesignTransit(chart, new Date("2026-03-03T12:01:59Z"));
+    expect(early?.activations.moon).toMatchObject({ gate: 64, line: 2, color: 6, tone: 1 });
+    expect(late?.activations.moon).toMatchObject({ gate: 64, line: 2, color: 6, tone: 2 });
+    expect(late?.at).toBe("2026-03-03 12:01:59 UTC");
+  });
+
   it("derives a deterministic transit for a fixed moment", () => {
     const chart = natal();
     const at = new Date("2026-03-03T12:00:00Z");

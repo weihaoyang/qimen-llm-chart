@@ -52,14 +52,13 @@ export const METHOD_LABELS: Record<GematriaMethod, string> = {
   meshulash: "立方值（各字立方）",
   kidmi: "累进值（Kidmi）",
   boneeh: "累积值（Bone'eh）",
-  haakhor: "倒序加权（Ha'akhor）",
-  milui: "拼读值（Milui）",
+  haakhor: "按词递增加权（mispar Ha'akhor）",
+  milui: "拼读值（Milui，固定字母拼写）",
   atbash: "替换值（Atbash）",
   albam: "替换值（Albam）",
 };
 
-const MARKS_RE = /[\u0591-\u05C7]/g;
-const MAQAF = "\u05BE";
+const MARKS_RE = /\p{M}/gu;
 const IGNORED_PUNCT_RE = /[׳״'"]/g;
 const HEBREW_LETTER_RE = /^[א-ת]$/;
 
@@ -70,12 +69,12 @@ export const isHebrewLetter = (ch: string) => HEBREW_LETTER_RE.test(ch) || ch in
 
 /** 过滤出希伯来字母，保留分词。 */
 export const tokenize = (text: string): string[][] => {
-  const cleaned = text.replace(MARKS_RE, "").replace(IGNORED_PUNCT_RE, "").split(MAQAF).join(" ");
+  const cleaned = text.normalize("NFKD").replace(MARKS_RE, "").replace(IGNORED_PUNCT_RE, "");
   const words: string[][] = [];
   let current: string[] = [];
   for (const ch of cleaned) {
     if (isHebrewLetter(ch)) current.push(ch);
-    else if (/\s/.test(ch)) {
+    else {
       if (current.length) words.push(current);
       current = [];
     }

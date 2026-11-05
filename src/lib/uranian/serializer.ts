@@ -11,7 +11,7 @@ export const serializeUranianToStructuredText = (chart: UranianChart) => [
   "天体（地心黄经 → 盘面位置）：",
   ...chart.bodies.map((body) => `- ${body.name}${body.glyph} 黄经 ${fmt(body.longitude, 3)}° → ${formatDial(((body.longitude % chart.settings.modulus) + chart.settings.modulus) % chart.settings.modulus)}`),
   "",
-  `八虚星（Cupido…Poseidon，Neely/Matrix 要素 + Astrolog 口径 aber 更正，共 ${chart.tnps.length} 颗）：`,
+  `八虚星（Cupido…Poseidon，Matrix 要素 + Astrolog 口径 aber 更正，共 ${chart.tnps.length} 颗）：`,
   ...chart.tnps.map((row) => `- ${row.nameZh}${row.name} ${row.code}：黄经 ${fmt(row.longitude, 3)}°（${row.zodiac.label}）→ ${row.dialLabel}；日心 ${fmt(row.heliocentric, 3)}°；aber 更正 ${fmt(row.aberration, 4)}°（几何 ${fmt(row.geometricLongitude, 3)}°）；原则 ${row.principles.join("、")}`),
   "",
   `被占据的中点（A/B = C，命中 ${chart.totals.midpoints} 条，仅列前 ${chart.limits.structures} 条，按容许度排序）：`,

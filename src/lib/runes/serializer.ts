@@ -4,6 +4,7 @@ import { NINE_WORLDS, YGGDRASIL_LEVELS } from "./nine-worlds";
 
 export const serializeRunesToStructuredText = (reading: RuneReading) => [
   "卢恩符文（Elder Futhark）",
+  `复现种子：${reading.seed}`,
   `牌阵：${reading.spread.name}（${reading.spread.short}）—— ${reading.spread.tagline}`,
   ...reading.draws.map((draw, index) => {
     const position = reading.spread.positions[index];
@@ -13,13 +14,14 @@ export const serializeRunesToStructuredText = (reading: RuneReading) => [
   "",
   "北欧宇宙九界（Yggdrasil 三层）：",
   ...NINE_WORLDS.map((world) => `${world.level} · ${world.nameZh}（${world.name}）：${world.residents} —— ${world.note}`),
-  `世界树分层：上 = ${YGGDRASIL_LEVELS.上}；中 = ${YGGDRASIL_LEVELS.中}；下 = ${YGGDRASIL_LEVELS.下}`,
+  `世界树现代示意分层：上 = ${YGGDRASIL_LEVELS.上}；中 = ${YGGDRASIL_LEVELS.中}；下 = ${YGGDRASIL_LEVELS.下}`,
   "边界：符文与九界属神话与象征体系，词义为该体系的文化解释；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。",
 ].join("\n");
 
 export const serializeRunesToCompactJson = (reading: RuneReading) =>
   JSON.stringify({
     format: "qmdj-runes-v1",
+    seed: reading.seed,
     spread: { id: reading.spreadId, name: reading.spread.name, short: reading.spread.short },
     draws: reading.draws.map((draw, index) => ({
       position: reading.spread.positions[index],

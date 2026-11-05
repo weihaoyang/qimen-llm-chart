@@ -139,6 +139,6 @@ export const calculateHuangjiChronology = (input: HistoricalYear): HuangjiChrono
     yun: { number: yunZeroBased + 1, numberWithinHui: yunZeroBasedInHui + 1, stem: itemAt(HEAVENLY_STEMS, yunZeroBased), year: yearZeroBasedInYun + 1 },
     shi: { number: shiZeroBased + 1, numberWithinHui: shiZeroBasedInHui + 1, numberWithinYun: shiZeroBasedInYun + 1, branch: itemAt(EARTHLY_BRANCHES, shiZeroBased), year: yearZeroBasedInShi + 1 },
     sexagenaryYear: { index: sexagenaryIndex + 1, stem: sexagenaryStem, branch: sexagenaryBranch, name: `${sexagenaryStem}${sexagenaryBranch}` },
-    disclaimer: "研究性纪年换算：一元 = 12 会 = 360 运 = 4320 世 = 129600 年，纪元取公元前 67017 年为甲子（由传世本历史锚点反推），无公元 0 年。只做层级坐标与干支标签换算，不推演治乱、朝代或现实事件。",
+    disclaimer: "研究性纪年换算：一元 = 12 会 = 360 运 = 4320 世 = 129600 年，纪元取公元前 67017 年为甲子（由传世本历史锚点反推），无公元 0 年。纪元之前的非正元序为算术前推坐标。只做层级坐标与干支标签换算，不推演治乱、朝代或现实事件。",
   };
 };

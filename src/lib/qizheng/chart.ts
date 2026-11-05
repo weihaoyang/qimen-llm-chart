@@ -6,7 +6,7 @@
  * 七政黄经改用本仓既有的真实星历（celestine，公转/月球位置远比该脚本的线性近似精确）；
  * 四余按经典定义计算：罗睺/计都取黄白交点（默认「果老旧法」罗睺=降交点），
  * 月孛取月远地点（Meeus 平根；与《图书编》卷二十一「六十二日行七度、六十二年而七周天」相符）。
- * 紫气无可靠历元，仍保留上游脚本约定值并明确降级（见 `fourRemainders` 注释）。
+ * 紫气缺少可靠历元，仅在说明中列出。
  *
  * 二十八宿按清代黄道宿度表锚定（见 `MANSION_TABLE_QING`），不再等分 360/28。
  *
@@ -20,9 +20,10 @@
  * permission notice shall be included in all copies or substantial portions of the
  * Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
  */
-import { buildAstroChart, offsetMinutes } from "@/lib/astro/chart";
+import { toZonedDate } from "@/lib/qimen/timezone";
+import { buildAstroChart } from "@/lib/astro/chart";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { ayanamsa } from "@/lib/vedic/ayanamsa";
+import { ayanamsa, jdToJDE, julianCenturies } from "@/lib/vedic/ayanamsa";
 
 export const TWELVE_PALACES = ["命宫", "财帛", "兄弟", "田宅", "男女", "奴仆", "夫妻", "疾厄", "迁移", "官禄", "福德", "相貌"] as const;
 export const EARTHLY_BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"] as const;
@@ -44,7 +45,6 @@ export const SEVEN_LUMINARIES: Array<{ name: string; planet: string }> = [
   { name: "土星", planet: "土星" },
 ];
 
-export const FOUR_REMAINDERS = ["罗睺", "计都", "月孛", "紫气"] as const;
 
 /** 星曜庙旺陷（来自 MIT 脚本表格）。 */
 const DIGNITY: Record<string, { temple?: string; prosperous?: string; fallen?: string }> = {
@@ -57,8 +57,8 @@ const DIGNITY: Record<string, { temple?: string; prosperous?: string; fallen?: s
   水星: { temple: "巳", prosperous: "申", fallen: "午" },
 };
 
-const ELEMENT: Record<string, string> = { 太阳: "火", 太阴: "水", 木星: "木", 火星: "火", 土星: "土", 金星: "金", 水星: "水", 罗睺: "火", 计都: "土", 月孛: "水", 紫气: "木" };
-const FORTUNE: Record<string, string> = { 太阳: "大吉", 太阴: "吉", 木星: "吉", 火星: "凶", 土星: "凶", 金星: "吉", 水星: "中", 罗睺: "凶", 计都: "凶", 月孛: "凶", 紫气: "吉" };
+const ELEMENT: Record<string, string> = { 太阳: "火", 太阴: "水", 木星: "木", 火星: "火", 土星: "土", 金星: "金", 水星: "水", 罗睺: "火", 计都: "土", 月孛: "水" };
+const FORTUNE: Record<string, string> = { 太阳: "大吉", 太阴: "吉", 木星: "吉", 火星: "凶", 土星: "凶", 金星: "吉", 水星: "中", 罗睺: "凶", 计都: "凶", 月孛: "凶" };
 
 export type QizhengStar = {
   name: string;
@@ -76,7 +76,7 @@ export type QizhengStar = {
 
 export type QizhengChart = {
   format: "qmdj-qizheng-chart-v1";
-  input: { datetime: string; timeZone: string };
+  input: { datetime: string; civilDateTime: string; timeZone: string };
   mingPalace: { index: number; branch: string };
   palaces: Array<{ name: string; index: number; branch: string }>;
   stars: QizhengStar[];
@@ -115,7 +115,7 @@ export const longitudeToPalace = (longitude: number) => ((10 - Math.floor(wrap(l
  * 校验（见 chart.test.ts）：
  *  1. 28 宿距度（相邻距星之差）合计恰为 360°（原表自洽）；本表宿度为
  *     斗23°47′ 牛7°46′ 女11°38′ 虚9°59′ 危20°07′ 室15°41′ 壁13°06′ 奎11°39′ 娄13°00′
- *     胃12°15′ 昴9°15′ 毕13°58′ 参1°21′ 觜11°33′ 井30°25′ 鬼4°36′ 柳17°00′ 星8°23′
+ *     胃12°15′ 昴9°15′ 毕13°58′ 参1°21′ 觜11°33′ 井30°25′ 鬼4°32′ 柳17°04′ 星8°23′
  *     张18°04′ 翼17°00′ 轸13°03′ 角10°37′ 亢10°38′ 氐17°50′ 房4°50′ 心7°33′ 尾15°56′ 箕9°00′。
  *  2. 由本表推算「十二次初度」再与《清史稿》同卷「康熙甲子年黄道十二次初度值宿」逐条对照，
  *     十二条中十条完全吻合（差 0.000°）、两条差 0.07°／0.17°：
@@ -142,7 +142,7 @@ const MANSION_TABLE_QING: Array<[string, number, number, number]> = [
   ["斗", 0, 5, 50], ["牛", 0, 29, 37], ["女", 1, 7, 23], ["虚", 1, 19, 1], ["危", 1, 29, 0],
   ["室", 2, 19, 7], ["壁", 3, 4, 48], ["奎", 3, 17, 54], ["娄", 3, 29, 33], ["胃", 4, 12, 33],
   ["昴", 4, 24, 48], ["毕", 5, 4, 3], ["参", 5, 18, 1], ["觜", 5, 19, 22], ["井", 6, 0, 55],
-  ["鬼", 7, 1, 20], ["柳", 7, 5, 56], ["星", 7, 22, 56], ["张", 8, 1, 19], ["翼", 8, 19, 23],
+  ["鬼", 7, 1, 20], ["柳", 7, 5, 52], ["星", 7, 22, 56], ["张", 8, 1, 19], ["翼", 8, 19, 23],
   ["轸", 9, 6, 23], ["角", 9, 19, 26], ["亢", 10, 0, 3], ["氐", 10, 10, 41], ["房", 10, 28, 31],
   ["心", 11, 3, 21], ["尾", 11, 10, 54], ["箕", 11, 26, 50],
 ];
@@ -208,12 +208,12 @@ export const mingPalaceIndex = (sunPalace: number, hourBranch: number) => ((sunP
 export const hourToBranchIndex = (hour: number) => Math.floor(((hour + 1) % 24) / 2);
 
 /** 以出生时刻推算四余黄经：罗计＝黄白平交点（果老旧法 罗睺=降交点），月孛＝平月远地点。 */
-const fourRemainders = (utcMillis: number, moonLongitude: number) => {
+const fourRemainders = (utcMillis: number) => {
   const jd = utcMillis / 86_400_000 + 2_440_587.5;
-  const t = (jd - 2_451_545) / 36_525;
+  const t = julianCenturies(jdToJDE(jd));
   // Meeus 47.7 月球平根：平黄白升交点 Ω、平近地点（月球近地点平黄经）
-  const ascendingNode = 125.0445479 - 1934.1362891 * t + 0.0020754 * t * t + (t * t * t) / 467_441;
-  const perigee = 83.3532465 + 4069.0137287 * t - 0.01032 * t * t - (t * t * t) / 80_053;
+  const ascendingNode = 125.0445479 - 1934.1362891 * t + 0.0020754 * t ** 2 + t ** 3 / 467_441 - t ** 4 / 60_616_000;
+  const perigee = 83.3532465 + 4069.0137287 * t - 0.01032 * t ** 2 - t ** 3 / 80_053 + t ** 4 / 18_999_000;
   return [
     { name: "罗睺", longitude: wrap(ascendingNode + 180), note: "果老旧法：罗睺=降交点（汤若望新法以罗睺为升交点，本仓未取）" },
     { name: "计都", longitude: wrap(ascendingNode), note: "果老旧法：计都=升交点" },
@@ -221,20 +221,14 @@ const fourRemainders = (utcMillis: number, moonLongitude: number) => {
     // 《清史稿·时宪志一》「月孛乃月行极高之点」。均指月球远地点，与 Meeus 平近地点 +180° 同义。
     // 校验：4069.0137287°／世纪 ≈ 40.7°／年 ≈ 7°／62.8 日，与「六十二日行七度」相符（周期 3232.6 日 ≈ 8.85 年）。
     { name: "月孛", longitude: wrap(perigee + 180), note: "月远地点（Meeus 47.7 平根；即果老「月行最迟之处」）" },
-    // 紫气：古典仅载「二十八年十闰而气行一周天」「其行均平无迟疾，气、孛以顺行」，
-    // 但《果老星宗》另一传本作「二十九日一度、二十九年周天」，且诸本皆不载历元位置，
-    // 故无法唯一确定经度。清《时宪志》亦判「至紫气一余，无数可定」并删之。
-    // 本仓不自造历元，保留上游 MIT 脚本约定值并明确降级为非古典虚星（UI／载荷／免责声明一致标注）。
-    { name: "紫气", longitude: wrap(moonLongitude - 90), note: "上游脚本约定虚星（月黄经−90°），非古典紫气：古籍只载约廿八年一周天、顺行而无历元，故未实装" },
+
   ];
 };
 
 export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart => {
   const astro = buildAstroChart(profile);
-  const [date, time] = profile.normalized.datetime.split("T");
-  const [year, month, day] = date.split("-").map(Number);
-  const [hour, minute] = time.split(":").map(Number);
-  const utcMillis = Date.UTC(year, month - 1, day, hour, minute) - offsetMinutes(profile.normalized.datetime, profile.normalized.timeZone) * 60_000;
+  const hour = Number(profile.normalized.datetime.slice(11, 13));
+  const utcMillis = toZonedDate(astro.input.datetime, astro.input.timeZone).getTime();
 
   const longitudeOf = (planet: string) => astro.points.find((point) => point.name === planet && point.longitude !== null)?.longitude ?? null;
   const stars: QizhengStar[] = [];
@@ -264,8 +258,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     });
   }
 
-  const moonLongitude = longitudeOf("月亮") ?? 0;
-  for (const remnant of fourRemainders(utcMillis, moonLongitude)) {
+  for (const remnant of fourRemainders(utcMillis)) {
     const palace = longitudeToPalace(remnant.longitude);
     const branch = EARTHLY_BRANCHES[palace];
     stars.push({
@@ -290,12 +283,12 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
 
   return {
     format: "qmdj-qizheng-chart-v1",
-    input: { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone },
+    input: { datetime: profile.normalized.datetime, civilDateTime: astro.input.datetime, timeZone: astro.input.timeZone },
     mingPalace: { index: mingIndex, branch: EARTHLY_BRANCHES[mingIndex] as string },
     palaces,
     stars,
     complete: stars.length > 0,
     disclaimer:
-      "研究性七政四余：七政黄经用本仓真星历（celestine）。十二宫按古典十二次配宫（白羊=戌、金牛=酉、双子=申…，已修正上游脚本白羊=寅的错位）。命宫用果老式「以生时加太阳所躔之宫，顺数至卯」（非紫微斗数的生月/生时口径）。罗睺/计都取黄白平交点（果老旧法，罗睺=降交点），月孛取月远地点（Meeus 47.7 平根，即果老「月行最迟之处」，与《图书编》「六十二年而七周天」相符）。二十八宿用清代黄道宿度（《二十八宿黄道经纬度钤》，历元康熙二十三年甲子=1684，初宫起冬至，宿界即距星），按本仓 Lahiri 岁差折回该历元后定位，非等分；宿名在参/觜一带沿用该旧测的「参前觜后」口径（与乾隆十九年后「觜前参后」相差约 1.35°）。紫气为上游脚本约定的虚星（月黄经−90°），**并非古典长周期虚星**：古籍仅载约廿八年一周天、顺行而无历元，清《时宪志》且判其「无数可定」，故未实装，仅供对照。不作现实预测或吉凶裁决。",
+      "研究性七政四余：七政黄经用本仓真星历（celestine）。十二宫按古典十二次配宫（白羊=戌、金牛=酉、双子=申…，已修正上游脚本白羊=寅的错位）。命宫用果老式「以生时加太阳所躔之宫，顺数至卯」（非紫微斗数的生月/生时口径）。罗睺/计都取黄白平交点（果老旧法，罗睺=降交点），月孛取月远地点（Meeus 47.7 平根，即果老「月行最迟之处」，与《图书编》「六十二年而七周天」相符）。二十八宿用清代黄道宿度（《二十八宿黄道经纬度钤》，历元康熙二十三年甲子=1684，初宫起冬至，宿界即距星），按本仓 Lahiri 岁差折回该历元后定位，非等分；宿名在参/觜一带沿用该旧测的「参前觜后」口径（与乾隆十九年后「觜前参后」相差约 1.35°）。紫气缺少可核验的历元，清《时宪志》亦记其「无数可定」，因此本盘列出可算的三余。不作现实预测或吉凶裁决。",
   };
 };

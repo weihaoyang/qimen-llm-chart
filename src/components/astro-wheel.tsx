@@ -16,7 +16,7 @@ export function AstroWheel({ chart }: { chart: AstroChart }) {
   const points = new Map(chart.points.map((item) => [item.name, item]));
   const selectedPoint = selected ? points.get(selected) : undefined;
   const selectedAspects = useMemo(() => chart.aspects.filter((item) => !selected || item.body1 === selected || item.body2 === selected), [chart.aspects, selected]);
-  if (!chart.complete) return <div className="astro-wheel-empty">补充出生地经纬度后显示交互式星盘。</div>;
+  if (!chart.complete) return <div className="astro-wheel-empty">{Math.abs(chart.input.latitude ?? 0) === 90 ? "地理极点无法确定常规升降轴。" : "补充出生地经纬度后显示交互式星盘。"}</div>;
   return <>
   <div className="astro-visual">
     <div className="astro-wheel-stage">

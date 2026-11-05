@@ -130,7 +130,10 @@ export const zolkinPortal = (kin: number): ZolkinPortal => {
   return { row, column, value, isGalacticPortal: value === 1, isMysticColumn: value === 2 };
 };
 
-export type MoonDate = { moon: number; day: number; week: number; dayOfWeek: number; plasma: string; dayOfYear: number; yearStart: string; outOfTime: boolean };
+export type MoonDate = { dayOfYear: number; yearStart: string } & (
+  | { outOfTime: true; moon: null; day: null; week: null; dayOfWeek: null; plasma: null }
+  | { outOfTime: false; moon: number; day: number; week: number; dayOfWeek: number; plasma: string }
+);
 
 /** 十三月历：13 × 28 天 + 无时间日（7 月 25 日）；闰年 2 月 29 日不占月序。 */
 export const moonDate = (iso: string): MoonDate => {
@@ -140,6 +143,10 @@ export const moonDate = (iso: string): MoonDate => {
   const start: DateParts = compare(asDate, julyStart) < 0 ? [year - 1, 7, 26] : julyStart;
   let dayOfYear = julianDayNumber(asDate) - julianDayNumber(start);
   if (isLeapYear(year) && dayOfYear >= 218) dayOfYear -= 1;
+  const yearStart = start.join("-");
+  if (dayOfYear === 364) {
+    return { outOfTime: true, moon: null, day: null, week: null, dayOfWeek: null, plasma: null, dayOfYear, yearStart };
+  }
   const moon = Math.floor(dayOfYear / 28) + 1;
   const dayOfMoon = (dayOfYear % 28) + 1;
   const dayOfWeek = dayOfMoon % 7 === 0 ? 7 : dayOfMoon % 7;
@@ -150,8 +157,8 @@ export const moonDate = (iso: string): MoonDate => {
     dayOfWeek,
     plasma: PLASMAS[dayOfWeek - 1],
     dayOfYear,
-    yearStart: start.join("-"),
-    outOfTime: dayOfYear === 364,
+    yearStart,
+    outOfTime: false,
   };
 };
 

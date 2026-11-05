@@ -1,4 +1,5 @@
-import { offsetMinutes } from "@/lib/astro/chart";
+import { toZonedDate } from "@/lib/qimen/timezone";
+import { getCivilDateTime } from "@/lib/profile/normalize";
 import type { AstroChart } from "@/lib/astro/types";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import {
@@ -24,10 +25,7 @@ const PLANET_SHORT: Record<string, string> = { 太阳: "☉", 月亮: "☽", 水
 const TNP_SHORT: Record<string, string> = { cupido: "CU", hades: "HA", zeus: "ZE", kronos: "KR", apollon: "AP", admetos: "AD", vulkanus: "VU", poseidon: "PO" };
 
 export const julianDayFromProfile = (datetime: string, timeZone: string) => {
-  const [date, time] = datetime.split("T");
-  const [year, month, day] = date.split("-").map(Number);
-  const [hour, minute] = time.split(":").map(Number);
-  const utcMillis = Date.UTC(year, month - 1, day, hour, minute) - offsetMinutes(datetime, timeZone) * 60000;
+  const utcMillis = toZonedDate(datetime, timeZone).getTime();
   return 2440587.5 + utcMillis / 86400000;
 };
 
@@ -37,9 +35,11 @@ export const toZodiac = (longitude: number): ZodiacPosition => {
   const value = ((longitude % 360) + 360) % 360;
   const signIndex = Math.floor(value / 30);
   const degree = value - signIndex * 30;
-  const whole = Math.floor(degree);
-  const minute = Math.round((degree - whole) * 60);
-  return { sign: SIGNS[signIndex], degree: Number(degree.toFixed(2)), label: `${SIGNS[signIndex]} ${whole}°${String(minute).padStart(2, "0")}′` };
+  const roundedMinutes = Math.round(value * 60) % (360 * 60);
+  const labelSign = SIGNS[Math.floor(roundedMinutes / (30 * 60))];
+  const whole = Math.floor(roundedMinutes / 60) % 30;
+  const minute = roundedMinutes % 60;
+  return { sign: SIGNS[signIndex], degree: Number(degree.toFixed(2)), label: `${labelSign} ${whole}°${String(minute).padStart(2, "0")}′` };
 };
 
 export type TnpRow = {
@@ -99,7 +99,7 @@ const angleBodies = (astro: AstroChart): DialBody[] => {
 };
 
 export const buildUranianChart = (profile: NormalizedProfileInput, astro: AstroChart, settings: DialSettings = DEFAULT_DIAL): UranianChart => {
-  const datetime = profile.normalized.datetime;
+  const datetime = getCivilDateTime(profile);
   const timeZone = profile.normalized.timeZone;
   const julianDay = julianDayFromProfile(datetime, timeZone);
 
@@ -152,7 +152,7 @@ export const buildUranianChart = (profile: NormalizedProfileInput, astro: AstroC
     differences: allDifferences.slice(0, STRUCTURE_DISPLAY_LIMIT),
     equations: allEquations.slice(0, EQUATION_DISPLAY_LIMIT),
     disclaimer: astro.complete
-      ? "汉堡学派研究盘：真实行星与四轴由 Celestine 生成；八虚星（Cupido…Poseidon）按 Neely/Matrix 要素与开普勒解算得到地心黄经（移植自 GPL 的 Astrolog），并按 Astrolog matrix.cpp:640 的同口径 aber 项（光行时 × 地心黄经日变化，本盘约 0.006° 量级）更正。盘面与中点、行星图景的容许度为研究设定，不构成预测或现实裁决。"
-      : "汉堡学派研究盘：真实行星由 Celestine 生成；八虚星按 Neely/Matrix 要素解算，并按 Astrolog 同口径的 aber 项更正。当前无出生地，未含上升与中天。盘面与中点、行星图景的容许度为研究设定，不构成预测或现实裁决。",
+      ? "汉堡学派研究盘：真实行星与四轴由 Celestine 生成；八虚星（Cupido…Poseidon）按 Matrix 要素与开普勒解算得到地心黄经（移植自 GPL 的 Astrolog），并按 Astrolog matrix.cpp:640 的同口径 aber 项（光行时 × 地心黄经日变化，本盘约 0.006° 量级）更正。盘面与中点、行星图景的容许度为研究设定，不构成预测或现实裁决。"
+      : "汉堡学派研究盘：真实行星由 Celestine 生成；八虚星按 Matrix 要素解算，并按 Astrolog 同口径的 aber 项更正。本盘未含上升与中天。盘面与中点、行星图景的容许度为研究设定，不构成预测或现实裁决。",
   };
 };

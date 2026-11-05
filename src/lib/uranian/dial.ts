@@ -20,7 +20,7 @@ export const DEFAULT_DIAL: DialSettings = { modulus: 90, orb: 1.5 };
 
 export const dialPosition = (longitude: number, modulus = DEFAULT_DIAL.modulus) => {
   const value = ((longitude % modulus) + modulus) % modulus;
-  return Number(value.toFixed(6));
+  return Number(value.toFixed(6)) % modulus;
 };
 
 export const dialDistance = (a: number, b: number, modulus = DEFAULT_DIAL.modulus) => {

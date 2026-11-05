@@ -20,6 +20,6 @@ export const resolveQimenDatetime = (input: ProfileInput): string =>
  */
 export const toQimenProfileInput = (input: ProfileInput): ProfileInput => {
   const qimenDatetime = resolveQimenDatetime(input);
-  if (qimenDatetime === input.datetime) return input;
+  if (!input.splitChartTimes || !input.questionDatetime) return input;
   return { ...input, calendarMode: "solar", datetime: qimenDatetime, lunar: undefined };
 };

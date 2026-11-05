@@ -4,6 +4,16 @@
 import { describe, expect, it } from "vitest";
 import { analyzeYunQi, ganzhiOfYear, LIU_QI_ORDER } from "./yunqi";
 
+it("reproduces the six guest steps for Zi–Wu and Mao–You years", () => {
+  // 《素问经注节解》卷四及《类经图翼》卷二。
+  expect(analyzeYunQi(2026).keQiSteps).toEqual([
+    "太阳寒水", "厥阴风木", "少阴君火", "太阴湿土", "少阳相火", "阳明燥金",
+  ]);
+  expect(analyzeYunQi(2029).keQiSteps).toEqual([
+    "太阴湿土", "少阳相火", "阳明燥金", "太阳寒水", "厥阴风木", "少阴君火",
+  ]);
+});
+
 describe("五运六气内核", () => {
   it("干支纪年以 1984 甲子为基准", () => {
     expect(ganzhiOfYear(1984).ganzhi).toBe("甲子");
@@ -91,4 +101,63 @@ describe("五运六气内核", () => {
       expect(step.verdict === "不相得（主胜逆）" || step.verdict === "不相得（客胜从）").toBe(true);
     }
   });
+});
+
+it("distinguishes year-branch agreement from heaven agreement", () => {
+  expect(analyzeYunQi(2024).yun).toMatchObject({ suiHui: true, tianFu: false, taiYiTianFu: false });
+  expect(analyzeYunQi(2025).yun).toMatchObject({ suiHui: false, tianFu: false, taiYiTianFu: false });
+  expect(analyzeYunQi(2027).yun.suiHui).toBe(false);
+});
+
+it("matches all twenty-four heaven and earth coincidences in 六元正纪大论", () => {
+  const heaven = new Set(["戊子", "戊午", "戊寅", "戊申", "丙辰", "丙戌", "丁巳", "丁亥", "乙卯", "乙酉", "己丑", "己未"]);
+  const earthExcess = new Set(["甲辰", "甲戌", "壬寅", "壬申", "庚子", "庚午"]);
+  const earthDeficiency = new Set(["癸巳", "癸亥", "辛丑", "辛未", "癸卯", "癸酉"]);
+  for (let year = 1984; year < 2044; year += 1) {
+    const { ganzhi, yun } = analyzeYunQi(year);
+    expect(yun.tianFu, ganzhi).toBe(heaven.has(ganzhi));
+    expect(yun.tongTianFu, ganzhi).toBe(earthExcess.has(ganzhi));
+    expect(yun.tongSuiHui, ganzhi).toBe(earthDeficiency.has(ganzhi));
+  }
+});
+
+it("assigns six consecutive Jin Jian intervals to the HKO 2026 solar-term dates", () => {
+  const steps = analyzeYunQi(2026).steps;
+  expect(steps.map(({ startTerm }) => startTerm)).toEqual(["大寒", "春分", "小满", "大暑", "秋分", "小雪"]);
+  expect(steps.map(({ startDate }) => startDate)).toEqual([
+    "2026-01-20", "2026-03-20", "2026-05-21", "2026-07-23", "2026-09-23", "2026-11-22",
+  ]);
+  expect(steps.slice(0, -1).map(({ endDateExclusive }) => endDateExclusive)).toEqual(steps.slice(1).map(({ startDate }) => startDate));
+  expect(steps.at(-1)?.endDateExclusive).toBe("2027-01-20");
+});
+
+it("rejects fractional years and retains the sexagenary cycle for safe integers", () => {
+  expect(() => analyzeYunQi(2026.5)).toThrow(RangeError);
+  expect(analyzeYunQi(-Number.MAX_SAFE_INTEGER).ganzhi).toBe(analyzeYunQi(-Number.MAX_SAFE_INTEGER % 60).ganzhi);
+});
+
+it("exports pre-reform solar-term dates in the proleptic Gregorian calendar", () => {
+  // Julian 1500-01-11 and Gregorian 1500-01-20 denote the same day.
+  expect(analyzeYunQi(1500).steps[0].startDate).toBe("1500-01-20");
+});
+
+it("keeps the Jin Jian five movement periods separate from the six qi steps", () => {
+  const { movementPeriods } = analyzeYunQi(2026);
+  expect(movementPeriods.map(period => period.startDate)).toEqual([
+    "2026-01-20", "2026-04-02", "2026-06-15", "2026-08-30", "2026-11-11",
+  ]);
+  expect(movementPeriods.map(period => period.endDateExclusive)).toEqual([
+    "2026-04-02", "2026-06-15", "2026-08-30", "2026-11-11", "2027-01-20",
+  ]);
+  expect(movementPeriods.map(period => period.host)).toEqual(["木", "火", "土", "金", "水"]);
+  expect(movementPeriods.map(period => period.guest)).toEqual(["水", "木", "火", "土", "金"]);
+});
+
+it("reproduces the four traditional handover groups and six half-ke steps", () => {
+  expect([2024, 2025, 2026, 2027].map(year => analyzeYunQi(year).handoverKe)).toEqual([
+    [1, 88.5, 76, 63.5, 51, 38.5],
+    [26, 13.5, 1, 88.5, 76, 63.5],
+    [51, 38.5, 26, 13.5, 1, 88.5],
+    [76, 63.5, 51, 38.5, 26, 13.5],
+  ]);
 });

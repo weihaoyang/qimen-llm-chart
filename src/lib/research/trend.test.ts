@@ -7,6 +7,21 @@ const profile = {
 } as const;
 
 describe("buildLifeTrendData", () => {
+  it("reports luck pillar direction independently of calendar order", () => {
+    const forward = buildLifeTrendData(profile);
+    const backward = buildLifeTrendData({
+      ...profile,
+      original: { ...profile.original, gender: "female" },
+    });
+    // 庚午年壬午月，阳男顺、阳女逆（《三命通会》卷二〈论大运〉）。
+    expect(forward.direction).toBe("forward");
+    expect(forward.points[0].dayunGanZhi).toBe("癸未");
+    expect(backward.direction).toBe("backward");
+    expect(backward.points[0].dayunGanZhi).toBe("辛巳");
+    expect(backward.points[10].dayunGanZhi).toBe("庚辰");
+    expect(backward.points[10].year).toBeGreaterThan(backward.points[0].year);
+  });
+
   it("returns transparent OHLC points and a disclaimer", () => {
     const result = buildLifeTrendData(profile);
     expect(result.points.length).toBeGreaterThan(20);

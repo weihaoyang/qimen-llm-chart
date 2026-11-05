@@ -5,6 +5,7 @@ export type DrawnRune = { rune: Rune; orientation: RuneOrientation };
 
 export type RuneReading = {
   format: "qmdj-runes-v1";
+  seed: string;
   spreadId: SpreadId;
   spread: Spread;
   draws: DrawnRune[];
@@ -28,11 +29,12 @@ const mulberry32 = (seed: number) => () => {
 
 /**
  * 由种子确定性地抽取符文（同一 seed + 牌阵恒得同一结果）。
- * 上下同形的九个符文只会正位；其余以 50% 概率取逆位。
+ * 牌库中没有逆位释义的九个符文只会正位；其余以 50% 概率取逆位。
  */
 export const buildRuneReading = (seed: string, spreadId: SpreadId): RuneReading => {
   const spread = SPREADS[spreadId];
-  const random = mulberry32(hash(seed || "runes"));
+  const effectiveSeed = seed || "runes";
+  const random = mulberry32(hash(effectiveSeed));
   const pool = [...RUNES];
   for (let i = pool.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
@@ -42,5 +44,5 @@ export const buildRuneReading = (seed: string, spreadId: SpreadId): RuneReading 
     rune,
     orientation: rune.reversed && random() < 0.5 ? "reversed" : "upright",
   }));
-  return { format: "qmdj-runes-v1", spreadId, spread, draws };
+  return { format: "qmdj-runes-v1", seed: effectiveSeed, spreadId, spread, draws };
 };

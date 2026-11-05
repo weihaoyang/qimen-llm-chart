@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { buildChartSequence, buildChartSequenceByCount, buildSequenceInputs } from "./sequence";
 
 describe("buildChartSequenceByCount", () => {
+  it("clamps month steps without adding 1900 to the historical year", () => {
+    const result = buildChartSequenceByCount("0096-01-31T10:00", "UTC", "month", 3);
+    expect(result.map(({ input }) => input.datetime)).toEqual([
+      "0096-01-31T10:00", "0096-02-29T10:00", "0096-03-31T10:00",
+    ]);
+  });
   it("creates 20 points for each relationship scale", () => {
     for (const step of ["double-hour", "day", "month", "year"] as const) {
       const result = buildChartSequenceByCount("2026-08-01T10:00", "Asia/Shanghai", step, 20);

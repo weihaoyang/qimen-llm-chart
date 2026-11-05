@@ -15,7 +15,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "ci": "npm run typecheck && eslint src && npm test && npm run build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prebuild": "node ops/patch-chart-dependencies.mjs",
+    "predev": "node ops/patch-chart-dependencies.mjs",
+    "pretest": "node ops/patch-chart-dependencies.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.47",

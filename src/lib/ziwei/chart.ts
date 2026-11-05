@@ -144,16 +144,7 @@ export const buildZiweiChartFromProfile = (
 
   const dayBoundary = profile.original.baziSettings?.dayBoundary ?? DEFAULT_BAZI_SETTINGS.dayBoundary;
   const astrolabe = withDayDivide(dayBoundary, () =>
-    profile.original.calendarMode === "lunar" && profile.original.lunar
-      ? astro.byLunar(
-          `${profile.original.lunar.year}-${profile.original.lunar.month}-${profile.original.lunar.day}`,
-          timeIndex,
-          gender,
-          profile.original.lunar.isLeapMonth,
-          true,
-          "zh-CN",
-        )
-      : astro.bySolar(solarDate, timeIndex, gender, true, "zh-CN"),
+    astro.bySolar(solarDate, timeIndex, gender, true, "zh-CN"),
   );
 
   const [lu, quan, ke, ji] = getMutagensByHeavenlyStem(

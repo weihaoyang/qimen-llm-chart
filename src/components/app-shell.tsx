@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BaziPanel } from "@/components/bazi-panel";
 import { BaziReversePanel } from "@/components/bazi-reverse-panel";
+import { BAZI_REVERSE_TIME_ZONE } from "@/lib/bazi/reverse";
 import {
   HYDRATION_SAFE_DATE,
   HYDRATION_SAFE_TIME_ZONE,
@@ -159,7 +160,7 @@ import { buildVedicChart } from "@/lib/vedic/chart";
 import { serializeVedicToCompactJson, serializeVedicToStructuredText } from "@/lib/vedic/serializer";
 import { buildQabalahReading } from "@/lib/qabalah/chart";
 import { serializeQabalahToCompactJson, serializeQabalahToStructuredText } from "@/lib/qabalah/serializer";
-import { buildTaiyiChart } from "@/lib/taiyi/chart";
+import { accumulatedYears, buildTaiyiChart } from "@/lib/taiyi/chart";
 import { serializeTaiyiToCompactJson, serializeTaiyiToStructuredText } from "@/lib/taiyi/serializer";
 import { buildAkashaChart } from "@/lib/akasha/chart";
 import { serializeAkashaToCompactJson, serializeAkashaToStructuredText } from "@/lib/akasha/serializer";
@@ -925,9 +926,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const [taiyiDun, setTaiyiDun] = useState<"auto" | "阳遁" | "阴遁">("auto");
   const [taiyiRuJu, setTaiyiRuJu] = useState("");
   const taiyiChart = useMemo(() => {
-    const year = Number(taiyiYear) || new Date().getFullYear();
+    const enteredYear = Number(taiyiYear);
+    const year = enteredYear && Number.isSafeInteger(enteredYear) && Number.isSafeInteger(accumulatedYears(enteredYear))
+      ? enteredYear : new Date().getFullYear();
     const override = Number(taiyiRuJu);
-    return buildTaiyiChart({ year, cycle: taiyiCycle, dun: taiyiDun, ruJu: Number.isFinite(override) && taiyiRuJu.trim() !== "" ? Math.min(72, Math.max(1, override)) : null });
+    return buildTaiyiChart({ year, cycle: taiyiCycle, dun: taiyiDun, ruJu: Number.isInteger(override) && taiyiRuJu.trim() !== "" ? Math.min(72, Math.max(1, override)) : null });
   }, [taiyiYear, taiyiCycle, taiyiDun, taiyiRuJu]);
   const taiyiStructuredText = useMemo(() => serializeTaiyiToStructuredText(taiyiChart), [taiyiChart]);
   const [akashaMass, setAkashaMass] = useState("5.9722e24");
@@ -944,7 +947,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const tcmDefaultYear = Number(initialState.normalizedProfile.normalized.datetime.slice(0, 4)) || new Date().getFullYear();
   const [tcmYear, setTcmYear] = useState(() => String(tcmDefaultYear));
   const tcmView = useMemo(
-    () => (baziChart ? buildTcmYunqiView(baziChart, Number(tcmYear) || tcmDefaultYear) : null),
+    () => {
+      if (!baziChart) return null;
+      const year = Number(tcmYear);
+      return buildTcmYunqiView(baziChart, Number.isSafeInteger(year) && year >= 1 && year <= 9998 ? year : tcmDefaultYear);
+    },
     [baziChart, tcmYear, tcmDefaultYear],
   );
   const tcmStructuredText = useMemo(
@@ -1860,7 +1867,10 @@ export function AppShell({ platformConfig }: AppShellProps) {
           <BaziReversePanel
             settings={formState.baziSettings ?? DEFAULT_BAZI_SETTINGS}
             chart={baziChart}
-            onApply={(datetime) => handleGenerate({ ...formState, datetime })}
+            onApply={(datetime) => handleGenerate({
+              ...formState, calendarMode: "solar", datetime, timeZone: BAZI_REVERSE_TIME_ZONE,
+              timeBasis: "civil", solar: undefined, lunar: undefined,
+            })}
           />
           <BaziCompatibilityPanel value={compatibility} chart={baziChart} partnerChart={partnerBaziChart} datetime={partnerFormState.datetime} gender={partnerFormState.gender} onDatetimeChange={(datetime) => setPartnerFormState((current) => ({ ...current, datetime }))} onGenderChange={(gender) => setPartnerFormState((current) => ({ ...current, gender }))} onPurchase={handleCompatibilityPurchase} loading={compatibilityLoading} open={baziPairOpen} onOpenChange={setBaziPairOpen} />
         </> : null}

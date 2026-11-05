@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 import { normalizeProfileInput } from "./normalize";
 
 describe("normalizeProfileInput", () => {
+  it("preserves four-digit years in historical lunar conversions", () => {
+    const result = normalizeProfileInput({
+      calendarMode: "lunar",
+      datetime: "2000-01-01T00:00",
+      timeZone: "UTC",
+      gender: "male",
+      timeBasis: "civil",
+      lunar: { year: 99, month: 6, day: 1, isLeapMonth: false },
+    });
+    expect(result.normalized.datetime).toBe("0099-07-07T00:00");
+  });
   it("normalizes a solar civil-time input into a stable interpreted datetime", () => {
     const result = normalizeProfileInput({
       calendarMode: "solar",
@@ -71,4 +82,14 @@ describe("normalizeProfileInput", () => {
     expect(result.normalized.datetime).toBe("2026-07-03T11:12");
     expect(result.normalized.timeBasis).toBe("true-solar");
   });
+});
+
+it("applies apparent solar correction on the wall clock without a second DST jump", () => {
+  const input = { calendarMode: "solar", datetime: "2024-03-10T03:05", timeZone: "America/New_York", gender: "male" } as const;
+  const result = normalizeProfileInput({
+    ...input,
+    timeBasis: "true-solar",
+    location: { longitude: -75, latitude: 40 },
+  });
+  expect(result.normalized.datetime).toBe("2024-03-10T01:54");
 });
