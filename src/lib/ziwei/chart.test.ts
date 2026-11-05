@@ -199,3 +199,24 @@ it("records the selected Kui Yue variants separately from the Wikisource wording
     if (yearStem !== "辛") expect(yue).not.toBe("戌");
   }
 });
+
+
+it("matches all thirty Water Two start days and the other four classical opening pairs", () => {
+  const water = "丑寅寅卯卯辰辰巳巳午午未未申申酉酉戌戌亥亥子子丑丑寅寅卯卯辰";
+  const cases = [
+    ["水二局", 6, water],
+    ["木三局", 8, "辰丑"],
+    ["金四局", 10, "亥辰"],
+    ["土五局", 0, "午亥"],
+    ["火六局", 2, "酉午"],
+  ] as const;
+  // 庚午年农历二月为大月，五个固定生时分别得到五局，排盘入口仍自行定局。
+  for (const [fiveElementsClass, hourIndex, positions] of cases) {
+    for (let index = 0; index < positions.length; index += 1) {
+      const date = Lunar.fromYmd(1990, 2, index + 1).getSolar().toYmd();
+      const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${date}T${String(hourIndex * 2).padStart(2, "0")}:00`));
+      expect(raw.fiveElementsClass).toBe(fiveElementsClass);
+      expect(raw.palaces.filter(p => p.majorStars.some(star => star.name === "紫微")).map(p => p.earthlyBranch), `${fiveElementsClass} day ${index + 1}`).toEqual([positions[index]]);
+    }
+  }
+});
