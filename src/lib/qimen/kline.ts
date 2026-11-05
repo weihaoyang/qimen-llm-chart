@@ -246,7 +246,7 @@ const relationshipScore = (chart: NormalizedQimenChart, scale: KlineScale) => {
     score += RELATIONSHIP_WEIGHTS.postHorse * profile.axis;
     evidence.push("乙或庚临驿马，关系条件变化加快，宜用现实行动验证。");
   }
-  if (chart.raw.specialPatterns?.wuBuYuShi) {
+  if (chart.raw.specialPatterns?.wuBuYuShi?.isWuBuYuShi) {
     score += RELATIONSHIP_WEIGHTS.wuBuYuShi * profile.context;
     evidence.push("见五不遇时，沟通与行动宜预留纠错空间。");
   }

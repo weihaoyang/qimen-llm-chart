@@ -141,3 +141,22 @@ describe("buildQimenKline", () => {
     });
   });
 });
+
+
+it("applies the Five Not Encountering penalty only when its boolean judgement is true", () => {
+  const seriesFor = (specialPatterns: unknown, scale: "double-hour" | "day" | "month" | "year") => {
+    const source = chart({ specialPatterns });
+    const sequence = [0, 1].map(index => ({ index, input: { datetime: `2026-08-0${index + 1}T10:00`, timeZone: "Asia/Shanghai" }, chart: source })) as ChartSequenceItem[];
+    return buildQimenKline(sequence, "relationship", scale).points[0];
+  };
+  for (const scale of ["double-hour", "day", "month", "year"] as const) {
+    const absent = seriesFor({}, scale);
+    const rejected = seriesFor({ wuBuYuShi: { isWuBuYuShi: false, description: "五不遇时未成立" } }, scale);
+    const accepted = seriesFor({ wuBuYuShi: { isWuBuYuShi: true, description: "五不遇时成立" } }, scale);
+    expect(rejected.score).toBe(absent.score);
+    expect(rejected.evidence).toEqual(absent.evidence);
+    expect(rejected.evidence.join(" ")).not.toContain("见五不遇时");
+    expect(accepted.score).toBeLessThan(rejected.score);
+    expect(accepted.evidence.join(" ")).toContain("见五不遇时");
+  }
+});

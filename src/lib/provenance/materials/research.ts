@@ -20,7 +20,7 @@ export const MATERIALS: ProvenanceMaterialSet = {
         "voidness 宫位空亡: −4",
         "gatePressure 门迫: −3",
         "postHorse 驿马: 2",
-        "wuBuYuShi 五不遇时: −2",
+        "wuBuYuShi.isWuBuYuShi=true 时五不遇时: −2",
         "outletSamePalace 值使宫与乙庚宫同宫: 4",
         "outletRelationFactor 值使与乙庚宫的五行关系折算系数: 0.55",
         "outletStructureFactor 值使宫格局对出口可执行性的折算系数: 0.6",
