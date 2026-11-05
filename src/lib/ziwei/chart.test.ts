@@ -247,3 +247,13 @@ it("matches the readable wood, metal, earth and fire start-table cells while pre
   }
   expect(checked).toBe(117);
 });
+
+it("matches the three disputed cells in the independent modern teaching table", () => {
+  // 翁彩瑛《紫微斗数命盘步骤》，PDF第4页；此为现代对照，不代替古刻证据。
+  for (const [kind, hour, day, branch] of [["木三局", 8, 5, "寅"], ["木三局", 8, 9, "辰"], ["金四局", 10, 30, "亥"]] as const) {
+    const date = Lunar.fromYmd(1990, 2, day).getSolar().toYmd();
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${date}T${String(hour * 2).padStart(2, "0")}:00`));
+    expect(raw.fiveElementsClass).toBe(kind);
+    expect(raw.palaces.filter(p => p.majorStars.some(star => star.name === "紫微")).map(p => p.earthlyBranch)).toEqual([branch]);
+  }
+});
