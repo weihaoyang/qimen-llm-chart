@@ -66,13 +66,24 @@ export const buildZiweiInsights = ({
     patterns.push(pattern("ri-yue-tong-gong", "日月同宫", "good", "太阳与太阴同宫，需结合昼夜、亮度和所在宫位判断表现。", [`${riYue.name}=太阳、太阴`], "《紫微斗数全书·日月同宫》"));
   }
 
-  for (const [star, label] of [["火星", "火贪格"], ["铃星", "铃贪格"]] as const) {
+  for (const [star, label] of [["火星", "贪狼会火星"], ["铃星", "贪狼会铃星"]] as const) {
     const tanLangPalace = sanFang.find((palace) => palace.majorStars.some((item) => item.name === "贪狼"));
     const shaPalace = sanFang.find((palace) => has(palace, star));
     if (tanLangPalace && shaPalace) {
-      const id = star === "火星" ? "tan-huo" : "tan-ling";
-      patterns.push(pattern(id, label, "caution", `命宫三方四正会见贪狼与${star}，需结合实际宫位、亮度、其他煞曜和运限复核。`, [`贪狼=${tanLangPalace.name}`, `${star}=${shaPalace.name}`, `命宫三方四正=${sanFangNames.join("、")}`], "《紫微斗数骨髓赋》"));
+      const id = star === "火星" ? "tan-huo-meeting" : "tan-ling-meeting";
+      patterns.push(pattern(id, label, "caution", `命宫三方四正会见贪狼与${star}，需结合实际宫位、亮度、其他煞曜和运限复核。`, [`贪狼=${tanLangPalace.name}`, `${star}=${shaPalace.name}`, `命宫三方四正=${sanFangNames.join("、")}`], "命宫三方四正结构；不等同于古籍成格条件"));
     }
+  }
+
+  // 《全书·定贵局》：二星守命同居庙旺。会照事实不替代此条件。
+  const mingTanLang = ming?.majorStars.find(star => star.name === "贪狼");
+  const mingHuoXing = ming && ALL_STARS(ming).find(star => star.name === "火星");
+  const inTempleOrProsperity = (brightness: string | undefined) => brightness === "庙" || brightness === "旺";
+  if (ming && mingTanLang && mingHuoXing
+    && inTempleOrProsperity(mingTanLang.brightness) && inTempleOrProsperity(mingHuoXing.brightness)) {
+    patterns.push(pattern("tan-huo", "贪火相逢", "good", "按《定贵局》的二星守命、同居庙旺条件成立；与一般三方会照分列。",
+      [`命宫=${ming.name}（${ming.earthlyBranch}）`, `贪狼=${mingTanLang.brightness}`, `火星=${mingHuoXing.brightness}`],
+      "《紫微斗数全书》卷一·定贵局：贪火相逢"));
   }
 
   if (ming && ALL_STARS(ming).some((star) => star.name === "禄存" || star.mutagen === "禄")) {

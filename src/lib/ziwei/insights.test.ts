@@ -51,6 +51,53 @@ describe("buildZiweiInsights", () => {
     outsidePalace!.minorStars = [...outsidePalace!.minorStars, { name: "火星" }];
 
     const insights = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
-    expect(insights.patterns.some((item) => item.id === "tan-huo")).toBe(false);
+    expect(insights.patterns.some((item) => item.id === "tan-huo" || item.id === "tan-huo-meeting")).toBe(false);
   });
+});
+
+
+it("requires both stars in the life palace with temple or prosperous brightness for Tan Huo", () => {
+  const chart = buildZiweiChartFromProfile(profile);
+  const mingBranch = chart.raw.palaces.find(p => p.earthlyBranch === chart.raw.earthlyBranchOfSoulPalace)!.branchIndex;
+  const cases = [
+    [0, 0, "庙", "旺", true],
+    [0, 0, "旺", "庙", true],
+    [0, 4, "庙", "旺", false],
+    [4, 4, "庙", "旺", false],
+    [0, 0, "陷", "庙", false],
+    [0, 0, "庙", "利", false],
+    [0, 0, "庙", undefined, false],
+  ] as const;
+  for (const [tanOffset, huoOffset, tanBrightness, huoBrightness, expected] of cases) {
+    const palaces = structuredClone(chart.raw.palaces);
+    for (const palace of palaces) {
+      palace.majorStars = palace.majorStars.filter(s => s.name !== "贪狼");
+      palace.minorStars = palace.minorStars.filter(s => s.name !== "火星");
+    }
+    palaces.find(p => p.branchIndex === (mingBranch + tanOffset) % 12)!.majorStars.push({ name: "贪狼", brightness: tanBrightness });
+    palaces.find(p => p.branchIndex === (mingBranch + huoOffset) % 12)!.minorStars.push({ name: "火星", brightness: huoBrightness });
+    const result = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
+    expect(result.patterns.some(p => p.id === "tan-huo")).toBe(expected);
+    expect(result.patterns.some(p => p.id === "tan-huo-meeting")).toBe(true);
+    expect(result.patterns.find(p => p.id === "tan-huo-meeting")?.name).toBe("贪狼会火星");
+  }
+});
+
+
+it("distinguishes real same-palace examples that do and do not meet the chosen brightness clause", () => {
+  for (const [datetime, branch, tanBrightness, expected] of [
+    ["1990-03-15T02:00", "寅", "平", false],
+    ["1990-07-15T18:00", "戌", "庙", true],
+  ] as const) {
+    const input = structuredClone(profile);
+    input.original.datetime = datetime;
+    input.normalized.datetime = datetime;
+    const { raw } = buildZiweiChartFromProfile(input);
+    const ming = raw.palaces.find(p => p.earthlyBranch === raw.earthlyBranchOfSoulPalace)!;
+    expect(ming.earthlyBranch).toBe(branch);
+    expect(ming.majorStars.find(s => s.name === "贪狼")?.brightness).toBe(tanBrightness);
+    expect(ming.minorStars.find(s => s.name === "火星")?.brightness).toBe("庙");
+    expect(raw.patterns.some(p => p.id === "tan-huo")).toBe(expected);
+    expect(raw.patterns.some(p => p.id === "tan-huo-meeting")).toBe(true);
+  }
 });
