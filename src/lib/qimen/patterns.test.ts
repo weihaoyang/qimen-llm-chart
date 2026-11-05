@@ -249,3 +249,24 @@ it("keeps the dragon, tiger and ghost alternatives as complete classical clauses
   expect(formed("jiu_dun_gui", 3, { heavenlyStem: "丁", gate: "开门", deity: "九地" })).toBe("成立");
   expect(formed("jiu_dun_gui", 3, { heavenlyStem: "丁", gate: "杜门", deity: "九地" })).toBe("未成立");
 });
+
+
+it("uses heaven stems for promotion and salary palaces, keeping their different positions", () => {
+  const cases = [
+    [3, "乙", "无", "开门", true, true],
+    [4, "丙", "无", "休门", true, false],
+    [9, "丁", "无", "生门", true, false],
+    [9, "丙", "无", "景门", false, true],
+    [7, "丁", "无", "杜门", false, true],
+    [3, "庚", "乙", "开门", false, false],
+    [4, "庚", "丙", "休门", false, false],
+    [7, "庚", "丁", "生门", false, false],
+    [3, ["戊", "乙"], "庚", "生门", true, true],
+    [3, "乙", "庚", "死门", false, true],
+  ] as const;
+  for (const [position, heavenlyStem, earthlyStem, gate, lu, dian] of cases) {
+    const report = evaluateQimenPatterns(chartWith([palace(position, { heavenlyStem, earthlyStem, gate })]));
+    expect(statusOf(report, "qi_you_lu_wei")).toBe(lu ? "成立" : "未成立");
+    expect(statusOf(report, "san_qi_sheng_dian")).toBe(dian ? "成立" : "未成立");
+  }
+});

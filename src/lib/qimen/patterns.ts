@@ -95,6 +95,16 @@ export const matchesGuiDun = (palace: Palace) =>
     || (hasHeaven(palace, "丁") && gateIn(palace, ["开门"]))
   );
 
+export const matchesQiYouLuWei = (palace: Palace) => {
+  const stem = ({ 3: "乙", 4: "丙", 9: "丁" } as Record<number, string>)[palace.position];
+  return Boolean(stem && hasHeaven(palace, stem) && gateIn(palace, SAN_MEN));
+};
+
+export const matchesSanQiShengDian = (palace: Palace) => {
+  const stem = ({ 3: "乙", 9: "丙", 7: "丁" } as Record<number, string>)[palace.position];
+  return Boolean(stem && hasHeaven(palace, stem));
+};
+
 export const matchesSanZha = (palace: Palace, deity: string) =>
   gateIn(palace, SAN_MEN) && hasHeaven(palace, ...SAN_QI) && palace.deity === deity;
 
@@ -217,11 +227,9 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("san_qi_zhi_ling", "三奇之灵", "常用吉格", "地盘乙/丙/丁 + 开/休/生门 + 太阴/六合/九地/九天", "三奇得吉门吉神，为办事顺利的基础吉格。", (p) =>
     hasEarth(p, ...SAN_QI) && gateIn(p, SAN_MEN) && deityIn(p, SI_SHEN) ? gateEvidence(p) : null,
   ),
-  good("qi_you_lu_wei", "奇游禄位", "常用吉格", "地盘乙+震 3 / 丙+巽 4 / 丁+离 9，且门为开/休/生", "三奇临禄位又得吉门，主顺遂；缺吉门则力减。", (p) => {
-    const map: Record<number, string> = { 3: "乙", 4: "丙", 9: "丁" };
-    const want = map[p.position];
-    return want && hasEarth(p, want) && gateIn(p, SAN_MEN) ? `${palaceLabel(p.position)}：地盘${want} + ${p.gate}` : null;
-  }),
+  good("qi_you_lu_wei", "奇游禄位", "常用吉格", "天盘乙+震 3 / 丙+巽 4 / 丁+离 9，且门为开/休/生", "三奇临禄位又得吉门，主顺遂；缺吉门则力减。", (p) =>
+    matchesQiYouLuWei(p) ? `${palaceLabel(p.position)}：天盘${stemsOf(p.heavenlyStem)} + ${p.gate}` : null,
+  ),
   good("huan_yi", "欢怡", "常用吉格", "地盘乙/丙/丁 + 值符", "三奇临值符，主受重用、得上级认可；宜述职、争取授权。", (p) =>
     hasEarth(p, ...SAN_QI) && isZhiFu(p) ? pairEvidence(p) : null,
   ),
@@ -241,11 +249,9 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     if (GENERATE[palaceElement] === gateElement) return `义：${palaceLabel(p.position)}生${p.gate}`;
     return null;
   }),
-  good("san_qi_sheng_dian", "三奇贵人升殿", "常用吉格", "地盘乙在震 3 宫 / 丙在离 9 宫 / 丁在兑 7 宫", "三奇各归本宫，气势纯粹；适合正式、公开之事。", (p) => {
-    const map: Record<number, string> = { 3: "乙", 9: "丙", 7: "丁" };
-    const want = map[p.position];
-    return want && hasEarth(p, want) ? `${palaceLabel(p.position)}：地盘${want}归本宫` : null;
-  }),
+  good("san_qi_sheng_dian", "三奇贵人升殿", "常用吉格", "天盘乙在震 3 宫 / 丙在离 9 宫 / 丁在兑 7 宫", "三奇各归本宫；取用另看门迫、奇墓与旺衰。", (p) =>
+    matchesSanQiShengDian(p) ? `${palaceLabel(p.position)}：天盘${stemsOf(p.heavenlyStem)}归本宫` : null,
+  ),
   good("san_qi_de_shi", "三奇得使", "常用吉格", "天盘乙加地盘己/辛、丙加戊/庚、丁加壬/癸", "按《遁甲演义》配六甲所遁之仪。", (p) =>
     matchesSanQiDeShi(p) ? pairEvidence(p) : null,
   ),

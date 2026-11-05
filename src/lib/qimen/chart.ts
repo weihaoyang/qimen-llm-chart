@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun } from "./patterns";
+import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -67,12 +67,14 @@ export const buildChart = (
     { id: "patterns.san_za_wu_jia.xiu_zha", name: "休诈", deity: "六合" },
     { id: "patterns.san_za_wu_jia.chong_zha", name: "重诈", deity: "九地" },
   ];
-  const correctedDun = [
+  const correctedGoodRules = [
     { id: "patterns.jiu_dun.long_dun", name: "龙遁", match: matchesLongDun },
     { id: "patterns.jiu_dun.hu_dun", name: "虎遁", match: matchesHuDun },
     { id: "patterns.jiu_dun.gui_dun", name: "鬼遁", match: matchesGuiDun },
+    { id: "patterns.common.qi_you_lu_wei", name: "奇游禄位", match: matchesQiYouLuWei },
+    { id: "patterns.common.san_qi_sheng_dian", name: "三奇贵人升殿", match: matchesSanQiShengDian },
   ];
-  const isCorrectedGoodPattern = (id: string | undefined) => id === sanQiId || sanZha.some(rule => rule.id === id) || correctedDun.some(rule => rule.id === id);
+  const isCorrectedGoodPattern = (id: string | undefined) => id === sanQiId || sanZha.some(rule => rule.id === id) || correctedGoodRules.some(rule => rule.id === id);
   const fuGongId = "patterns.bad.fu_gong_ge";
   const feiGongId = "patterns.bad.fei_gong_ge";
   const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId;
@@ -83,11 +85,13 @@ export const buildChart = (
     if (matchesSanQiDeShi(palace)) {
       auspiciousPatterns.push({ id: sanQiId, name: "三奇得使", type: "三奇得使", position, description: "天盘三奇配地盘六甲所遁之仪" });
     }
-    for (const rule of correctedDun) {
+    for (const rule of correctedGoodRules) {
       if (rule.match(palace)) {
         auspiciousPatterns.push({
           id: rule.id, name: rule.name, type: rule.name, position,
-          description: "依《奇门遁甲秘笈大全》奇门吉格所列条件",
+          description: rule.id.startsWith("patterns.jiu_dun.")
+            ? "依《奇门遁甲秘笈大全》奇门吉格所列条件"
+            : "天盘三奇临本宫，依《奇门法窍》升殿、奇游禄位条",
         });
       }
     }

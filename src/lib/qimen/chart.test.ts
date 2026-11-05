@@ -347,3 +347,30 @@ it("keeps corrected dragon, tiger and ghost labels consistent across chart surfa
     }
   }
 });
+
+
+it("synchronizes promotion and salary palace labels with independent heaven-stem conditions", () => {
+  for (let day = 1; day <= 8; day += 1) {
+    for (let hour = 0; hour < 24; hour += 2) {
+      const chart = buildChart({
+        datetime: `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:30`,
+        timeZone: "Asia/Shanghai",
+      });
+      const report = evaluateQimenPatterns(chart);
+      for (const [name, map, needsGate] of [
+        ["qi_you_lu_wei", { 3: "乙", 4: "丙", 9: "丁" }, true],
+        ["san_qi_sheng_dian", { 3: "乙", 9: "丙", 7: "丁" }, false],
+      ] as const) {
+        const expected = chart.raw.palaces.filter(p => {
+          const stem = (map as Record<number, string>)[p.position];
+          const stems = Array.isArray(p.heavenlyStem) ? p.heavenlyStem : [p.heavenlyStem];
+          return stem && stems.some(value => value === stem) && (!needsGate || ["开门", "休门", "生门"].includes(p.gate));
+        }).map(p => p.position);
+        const id = "patterns.common." + name;
+        expect(report.checks.find(item => item.id === name)?.positions).toEqual(expected);
+        expect(chart.raw.palaces.filter(p => (p.auspiciousPatterns ?? []).some(item => item.id === id)).map(p => p.position)).toEqual(expected);
+        expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(item => item.id === id).map(item => item.position)).toEqual(expected);
+      }
+    }
+  }
+});
