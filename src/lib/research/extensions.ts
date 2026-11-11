@@ -18,6 +18,21 @@ const STEMS = "甲乙丙丁戊己庚辛壬癸";
 // 《大六壬探原》日贵、夜贵歌，依十干甲至癸排列；仅作位置比较，不重排主盘天将。
 const TAN_YUAN_DAY_NOBLES = "未申酉亥丑子丑寅卯巳";
 const TAN_YUAN_NIGHT_NOBLES = "丑子亥酉未申未午巳卯";
+const HEAVENLY_GENERALS = ["贵人", "腾蛇", "朱雀", "六合", "勾陈", "青龙", "天空", "白虎", "太常", "玄武", "太阴", "天后"] as const;
+type LiuRenPalace = ReturnType<typeof calculateDaliuren>["gongInfos"][number];
+
+/** 以异说贵人所在天盘及所临地盘重新布将；原盘保持不变。 */
+export const alternateLiuRenGenerals = (palaces: LiuRenPalace[], noble: string) => {
+  if (palaces.length !== 12) return [];
+  const start = palaces.findIndex((palace) => palace.tianZhi === noble);
+  if (start < 0) return [];
+  const earth = palaces[start].diZhi;
+  if (!earth || !BRANCHES.includes(earth)) return [];
+  const direction = "亥子丑寅卯辰".includes(earth) ? 1 : -1;
+  const labels = Array<string>(12);
+  HEAVENLY_GENERALS.forEach((general, offset) => { labels[(start + 12 + direction * offset) % 12] = general; });
+  return palaces.map((palace, index) => ({ 地盘: palace.diZhi, 天盘: palace.tianZhi, 天将: labels[index] }));
+};
 export const classifyLiuRenPlate = (general: string, hourBranch: string | undefined) => {
   const generalIndex = general.length === 1 ? BRANCHES.indexOf(general) : -1;
   const hourIndex = hourBranch && hourBranch.length === 1 ? BRANCHES.indexOf(hourBranch) : -1;
@@ -50,13 +65,14 @@ export const buildDaliurenResearch = (profile: NormalizedProfileInput) => {
   const hourBranch = result.dateInfo.ganZhi.hour[1] ?? "";
   const isDay = hourBranch.length === 1 && "卯辰巳午未申".includes(hourBranch);
   const isNight = hourBranch.length === 1 && "酉戌亥子丑寅".includes(hourBranch);
-  const alternateNoble = stemIndex >= 0 && (isDay || isNight)
-    ? `《大六壬探原》${isDay ? "昼" : "夜"}贵在${(isDay ? TAN_YUAN_DAY_NOBLES : TAN_YUAN_NIGHT_NOBLES)[stemIndex]}；仅对照贵人位置，未重排天将`
-    : undefined;
-  const annotations = [plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : "", `- 贵人口径: ${nobleConvention}`, alternateNoble ? `- 贵人异说: ${alternateNoble}` : ""].filter(Boolean);
+  const alternateBranch = stemIndex >= 0 && (isDay || isNight) ? (isDay ? TAN_YUAN_DAY_NOBLES : TAN_YUAN_NIGHT_NOBLES)[stemIndex] : undefined;
+  const alternateGenerals = alternateBranch ? alternateLiuRenGenerals(result.gongInfos, alternateBranch) : [];
+  const alternateNoble = alternateBranch ? `《大六壬探原》${isDay ? "昼" : "夜"}贵在${alternateBranch}；另列天将对照，主盘不变` : undefined;
+  const alternateLine = alternateGenerals.length === 12 ? `- 探原天将（天盘:天将）: ${alternateGenerals.map((palace) => `${palace.天盘}:${palace.天将}`).join("、")}` : "";
+  const annotations = [plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : "", `- 贵人口径: ${nobleConvention}`, alternateNoble ? `- 贵人异说: ${alternateNoble}` : "", alternateLine].filter(Boolean);
   return {
     text: annotations.length ? text.replace("\n- 月将:", `\n${annotations.join("\n")}\n- 月将:`) : text,
-    json: { ...json, 基本信息: { ...json.基本信息, ...(plate ? { 天地盘: plate } : {}), ...(subtype ? { 课体细分: subtype } : {}), 贵人口径: nobleConvention, ...(alternateNoble ? { 贵人异说: alternateNoble } : {}) } },
+    json: { ...json, 基本信息: { ...json.基本信息, ...(plate ? { 天地盘: plate } : {}), ...(subtype ? { 课体细分: subtype } : {}), 贵人口径: nobleConvention, ...(alternateNoble ? { 贵人异说: alternateNoble } : {}) }, ...(alternateGenerals.length === 12 ? { 探原天将对照: alternateGenerals } : {}) },
     referenceEngine: TAIBU_CORE_REFERENCE,
   };
 };

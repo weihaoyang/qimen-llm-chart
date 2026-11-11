@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateDaliuren } from "taibu-core/daliuren";
-import { buildDaliurenResearch, classifyLiuRenPlate } from "./extensions";
+import { alternateLiuRenGenerals, buildDaliurenResearch, classifyLiuRenPlate } from "./extensions";
 
 const profile = {
   original: { calendarMode: "solar", datetime: "2026-08-07T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" },
@@ -353,9 +353,29 @@ it("compares all twenty noble positions with the explicit 探原 day and night v
       const { text, json } = buildDaliurenResearch({
         original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime },
       });
-      const description = `《大六壬探原》${label}贵在${expected}；仅对照贵人位置，未重排天将`;
+      const description = `《大六壬探原》${label}贵在${expected}；另列天将对照，主盘不变`;
       expect(text, datetime).toContain(description);
       expect(json.基本信息.贵人异说, datetime).toBe(description);
+      expect(json.探原天将对照?.find((palace) => palace.天将 === "贵人")?.天盘, datetime).toBe(expected);
+    }
+  }
+});
+
+it("reconstructs 探原 甲辰 亥将卯时 and 庚午 申将辰时 general examples", () => {
+  const cases = [
+    { date: "2024-02-10", hour: 6, general: "亥", day: "甲辰", noble: "未", earth: "亥", positions: { 未: "贵人", 申: "腾蛇", 戌: "六合", 子: "青龙", 辰: "玄武" } },
+    { date: "2024-01-07", hour: 8, general: "申", day: "庚午", noble: "丑", earth: "酉", positions: { 丑: "贵人", 子: "腾蛇", 戌: "六合", 申: "青龙", 辰: "玄武" } },
+  ];
+  for (const entry of cases) {
+    // taibu-core's runtime accepts monthGeneral; its published declaration omits it.
+    const input = { date: entry.date, hour: entry.hour, timezone: "Asia/Shanghai", monthGeneral: entry.general };
+    const chart = calculateDaliuren(input);
+    expect(chart.dateInfo.ganZhi.day).toBe(entry.day);
+    expect(chart.dateInfo.yueJiang).toBe(entry.general);
+    const alternate = alternateLiuRenGenerals(chart.gongInfos, entry.noble);
+    expect(alternate.find((palace) => palace.天将 === "贵人")?.地盘).toBe(entry.earth);
+    for (const [branch, general] of Object.entries(entry.positions)) {
+      expect(alternate.find((palace) => palace.天盘 === branch)?.天将, `${entry.day} ${branch}`).toBe(general);
     }
   }
 });
