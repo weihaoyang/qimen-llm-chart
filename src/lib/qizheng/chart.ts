@@ -250,15 +250,18 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
   const longitudeOf = (planet: string) => astro.points.find((point) => point.name === planet && point.longitude !== null)?.longitude ?? null;
   const stars: QizhengStar[] = [];
   // 果老式命宫：由「太阳所躔之宫」起生时顺数至卯。太阳黄经由真星历给出，必存在；
-  // 万一缺失（理论上不会），退回白羊 0°（戌宫）以免整体偏移。
+  // 太阳缺失时不能用假定宫位推导命宫及十二宫。
   const sunLongitude = longitudeOf("太阳");
-  const sunPalace = sunLongitude === null ? 10 : longitudeToPalace(sunLongitude);
+  if (sunLongitude === null || !Number.isFinite(sunLongitude)) {
+    throw new Error("星历缺少有效的太阳位置，无法生成七政命宫。");
+  }
+  const sunPalace = longitudeToPalace(sunLongitude);
   const mingIndex = mingPalaceIndex(sunPalace, hourToBranchIndex(hour));
   const palaceNameOf = (palace: number) => TWELVE_PALACES[((palace - mingIndex) % 12 + 12) % 12] as string;
 
   for (const { name, planet } of SEVEN_LUMINARIES) {
     const longitude = longitudeOf(planet);
-    if (longitude === null) continue;
+    if (longitude === null || !Number.isFinite(longitude)) continue;
     const palace = longitudeToPalace(longitude);
     const branch = EARTHLY_BRANCHES[palace];
     stars.push({

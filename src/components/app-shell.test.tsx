@@ -8,6 +8,8 @@ import { loadAllMaterials, mergeMaterials } from "@/lib/provenance/materials/man
 import type { ProvenanceMaterialSet } from "@/lib/provenance/types";
 import { provenanceSearchText } from "./provenance-block";
 import { AppShell } from "./app-shell";
+import * as vedicEngine from "@/lib/vedic/chart";
+import * as qizhengEngine from "@/lib/qizheng/chart";
 
 // Keep the workbench wiring test focused on mode switching and data injection;
 // the vendor chart renderer has its own contract and is covered by the Ziwei
@@ -32,6 +34,29 @@ describe("AppShell", () => {
   // 默认把「已自动走过分步指引」标上，避免自动弹层干扰其余用例；
   // 专门验证自动引导的用例会自行清掉这个标记。
   beforeEach(() => { localStorage.setItem("qmdj-guided-tour-seen", "1"); });
+
+  it("keeps other modes usable and shows a clear error if Vedic ephemeris fails", async () => {
+    const spy = vi.spyOn(vedicEngine, "buildVedicChart").mockImplementation(() => { throw new Error("星历缺少有效的火星位置"); });
+    try {
+      render(<AppShell platformConfig={{ baseUrl: "https://platform.singseq.com", productCode: "qimen" }} />);
+      expect(await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "下一页体系标签" }));
+      fireEvent.click(screen.getByRole("button", { name: "下一页体系标签" }));
+      fireEvent.click(screen.getByRole("tab", { name: "吠陀分盘" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("星历缺少有效的火星位置");
+    } finally { spy.mockRestore(); }
+  }, 60000);
+
+  it("shows a clear error if Qizheng solar data is unavailable", async () => {
+    const spy = vi.spyOn(qizhengEngine, "buildQizhengChart").mockImplementation(() => { throw new Error("星历缺少有效的太阳位置"); });
+    try {
+      render(<AppShell platformConfig={{ baseUrl: "https://platform.singseq.com", productCode: "qimen" }} />);
+      expect(await screen.findByRole("heading", { name: "知几" }, { timeout: 30000 })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "下一页体系标签" }));
+      fireEvent.click(screen.getByRole("tab", { name: "七政四余" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("星历缺少有效的太阳位置");
+    } finally { spy.mockRestore(); }
+  }, 60000);
 
   it("keeps single-chart and sequence analysis in the chart product", async () => {
     render(<AppShell platformConfig={{

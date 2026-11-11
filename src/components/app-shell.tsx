@@ -1,5 +1,7 @@
 "use client";
 
+import { captureCalculation } from "@/lib/calculation-result";
+
 import dynamic from "next/dynamic";
 import { ProductAccountCenter } from "./product-account-center";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -903,8 +905,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   }, [normalizedProfile]);
   const huangjiValue = huangjiChronology ?? huangjiFallback;
   const huangjiStructuredText = useMemo(() => serializeHuangjiToStructuredText(huangjiValue), [huangjiValue]);
-  const qizhengChart = useMemo(() => buildQizhengChart(normalizedProfile), [normalizedProfile]);
-  const qizhengStructuredText = useMemo(() => serializeQizhengToStructuredText(qizhengChart), [qizhengChart]);
+  const qizhengResult = useMemo(() => captureCalculation(() => buildQizhengChart(normalizedProfile)), [normalizedProfile]);
+  const qizhengChart = qizhengResult.value;
+  const qizhengStructuredText = useMemo(() => qizhengChart ? serializeQizhengToStructuredText(qizhengChart) : `七政四余计算失败：${qizhengResult.error}`, [qizhengChart, qizhengResult.error]);
   const [sacredPatternId, setSacredPatternId] = useState("flower");
   const [sacredSteps, setSacredSteps] = useState(2);
   const sacredStructuredText = useMemo(() => serializeSacredGeometryToStructuredText(sacredPatternId, sacredSteps), [sacredPatternId, sacredSteps]);
@@ -916,8 +919,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
   const mayaChart = useMemo(() => buildMayaChart(mayaDate), [mayaDate]);
   const mayaStructuredText = useMemo(() => serializeMayaToStructuredText(mayaChart), [mayaChart]);
   const [vedicVarga, setVedicVarga] = useState("D9");
-  const vedicChart = useMemo(() => buildVedicChart(normalizedProfile), [normalizedProfile]);
-  const vedicStructuredText = useMemo(() => serializeVedicToStructuredText(vedicChart), [vedicChart]);
+  const vedicResult = useMemo(() => captureCalculation(() => buildVedicChart(normalizedProfile)), [normalizedProfile]);
+  const vedicChart = vedicResult.value;
+  const vedicStructuredText = useMemo(() => vedicChart ? serializeVedicToStructuredText(vedicChart) : `吠陀分盘计算失败：${vedicResult.error}`, [vedicChart, vedicResult.error]);
   const [qabalahInput, setQabalahInput] = useState("יהוה");
   const qabalahReading = useMemo(() => buildQabalahReading(qabalahInput), [qabalahInput]);
   const qabalahStructuredText = useMemo(() => serializeQabalahToStructuredText(qabalahReading), [qabalahReading]);
@@ -1200,7 +1204,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       case "huangji":
         return serializeHuangjiToCompactJson(huangjiValue);
       case "qizheng":
-        return serializeQizhengToCompactJson(qizhengChart);
+        return qizhengChart ? serializeQizhengToCompactJson(qizhengChart) : JSON.stringify({ error: qizhengResult.error });
       case "sacred-geometry":
         return serializeSacredGeometryToCompactJson(sacredPatternId, sacredSteps);
       case "runes":
@@ -1210,7 +1214,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       case "maya":
         return serializeMayaToCompactJson(mayaChart);
       case "vedic":
-        return serializeVedicToCompactJson(vedicChart);
+        return vedicChart ? serializeVedicToCompactJson(vedicChart) : JSON.stringify({ error: vedicResult.error });
       case "qabalah":
         return serializeQabalahToCompactJson(qabalahReading);
       case "taiyi-shenshu":
@@ -1222,7 +1226,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
       case "bazi-tcm":
         return tcmView ? serializeTcmToCompactJson(tcmView) : "";
     }
-  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, qabalahReading, taiyiChart, akashaChart, ziweiFlyingChart, tcmView]);
+  }, [mode, sequence, activeQimenChart, normalizedProfile, qimenChart, baziChart, ziweiChart, researchContext.json, astroChart, humanDesignChart, tarotReading, harmonicChart, huangjiValue, qizhengChart, sacredPatternId, sacredSteps, runeReading, uranianChart, mayaChart, vedicChart, qizhengResult.error, vedicResult.error, qabalahReading, taiyiChart, akashaChart, ziweiFlyingChart, tcmView]);
 
   const agentLiteratureContext = useMemo(() => {
     if ((mode !== "bazi" && mode !== "combined") || !structuredText || !jsonPayload) {
@@ -1883,12 +1887,12 @@ export function AppShell({ platformConfig }: AppShellProps) {
         {mode === "fourth-way" ? <FourthWayPanel content={FOURTH_WAY_CONTENT} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "harmonic" ? <HarmonicPanel value={harmonicChart} onHarmonicChange={(next) => { setHarmonic(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "huangji" ? <HuangjiPanel value={huangjiValue} yearInput={huangjiYear} yearError={!huangjiChronology} onYearChange={(next) => { setHuangjiYear(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
-        {mode === "qizheng" ? <QizhengPanel value={qizhengChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
+        {mode === "qizheng" ? qizhengChart ? <QizhengPanel value={qizhengChart} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : <p role="alert">七政四余计算失败：{qizhengResult.error}</p> : null}
         {mode === "sacred-geometry" ? <SacredGeometryPanel patternId={sacredPatternId} steps={sacredSteps} onPatternChange={(id) => { setSacredPatternId(id); setSacredSteps(2); setCopyState("idle"); }} onStepsChange={(next) => { setSacredSteps(next); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "runes" ? <RunesPanel reading={runeReading} onSpreadChange={(id) => { setRuneSpreadId(id); setCopyState("idle"); }} onRedraw={() => { setRuneSeed(crypto.randomUUID()); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "uranian" ? <UranianPanel chart={uranianChart} onModulusChange={(modulus) => { setUranianSettings((current) => ({ ...current, modulus })); setCopyState("idle"); }} onOrbChange={(orb) => { setUranianSettings((current) => ({ ...current, orb })); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "maya" ? <MayaPanel chart={mayaChart} dateInput={mayaDate} onDateChange={(value) => { setMayaDate(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
-        {mode === "vedic" ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} onRequestLocation={openParameters} /> : null}
+        {mode === "vedic" ? vedicChart ? <VedicPanel chart={vedicChart} vargaCode={vedicVarga} onVargaChange={(code) => { setVedicVarga(code); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} onRequestLocation={openParameters} /> : <p role="alert">吠陀分盘计算失败：{vedicResult.error}</p> : null}
         {mode === "qabalah" ? <QabalahPanel reading={qabalahReading} input={qabalahInput} onInputChange={(value) => { setQabalahInput(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "taiyi-shenshu" ? <TaiyiPanel chart={taiyiChart} yearInput={taiyiYear} cycle={taiyiCycle} dun={taiyiDun} ruJuInput={taiyiRuJu} onYearChange={(value) => { setTaiyiYear(value); setCopyState("idle"); }} onCycleChange={(value) => { setTaiyiCycle(value); setCopyState("idle"); }} onDunChange={(value) => { setTaiyiDun(value); setCopyState("idle"); }} onRuJuChange={(value) => { setTaiyiRuJu(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}
         {mode === "akasha" ? <AkashaPanel chart={akashaChart} massInput={akashaMass} onMassChange={(value) => { setAkashaMass(value); setCopyState("idle"); }} sourceCount={akashaSources} onSourceCountChange={(value) => { setAkashaSources(value); setCopyState("idle"); }} fragment={akashaFragment} onFragmentChange={(value) => { setAkashaFragment(value); setCopyState("idle"); }} onCopyJson={handleCopyJson} jsonCopied={copyState === "json"} /> : null}

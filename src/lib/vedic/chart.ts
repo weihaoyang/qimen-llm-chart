@@ -118,8 +118,12 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
   const nodes = Object.fromEntries(
     (["mean", "true"] as const).map((mode) => {
       const trueNode = mode === "true" ? ephemeris.getTrueNode(jde) : null;
-      const north = trueNode?.northNode ?? nodeLongitude(jde);
-      const retrograde = trueNode?.isRetrograde ?? true;
+      if (mode === "true" && (!trueNode || !Number.isFinite(trueNode.northNode) || typeof trueNode.isRetrograde !== "boolean")) {
+        throw new Error("星历缺少有效的真交点位置或逆行状态，无法生成吠陀分盘。");
+      }
+      const north = mode === "true" ? trueNode!.northNode : nodeLongitude(jde);
+      if (!Number.isFinite(north)) throw new Error("星历缺少有效的平交点位置，无法生成吠陀分盘。");
+      const retrograde = mode === "true" ? trueNode!.isRetrograde : true;
       return [
         mode,
         {
@@ -136,7 +140,10 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
     if (graha.id === "Rahu") return nodes[nodeMode].rahu;
     if (graha.id === "Ketu") return nodes[nodeMode].ketu;
     const planet = tropical.get(graha.id);
-    return toGraha(graha, planet?.longitude ?? 0, planet?.isRetrograde ?? false);
+    if (!planet || !Number.isFinite(planet.longitude) || typeof planet.isRetrograde !== "boolean") {
+      throw new Error(`星历缺少有效的${graha.zh}位置或逆行状态，无法生成吠陀分盘。`);
+    }
+    return toGraha(graha, planet.longitude, planet.isRetrograde);
   });
 
   const lagna: VedicLagna | null = hasPlace
