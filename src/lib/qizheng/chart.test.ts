@@ -290,7 +290,10 @@ describe("qizheng siyu chart", () => {
 
   it("computes Qing Zi Qi and identifies its approximation", () => {
     const chart = buildQizhengChart(profile());
-    expect(chart.stars.find((star) => star.name === "紫气")?.note).toContain("其他年代为外推");
+    const ziQi = chart.stars.find((star) => star.name === "紫气");
+    expect(ziQi?.note).toContain("其他年代为外推");
+    expect(ziQi?.element).toBe("未列");
+    expect(ziQi?.fortune).toBe("未列");
     expect(chart.disclaimer).toContain("紫气使用清代平行研究模型");
     const input = getDefaultProfileInput(new Date("1911-04-18T16:00:00Z"), "Asia/Shanghai");
     const historical = buildQizhengChart(normalizeProfileInput(input));

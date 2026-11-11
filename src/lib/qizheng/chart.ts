@@ -278,8 +278,8 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
             ...(name === "火星" && branch === "戌" ? { alternatives: [{ label: "好", passage: "火星论" }] } : {}),
           }
         : undefined,
-      element: ELEMENT[name] ?? "无",
-      fortune: FORTUNE[name] ?? "无",
+      element: ELEMENT[name] ?? "未列",
+      fortune: FORTUNE[name] ?? "未列",
     });
   }
 
@@ -295,8 +295,8 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       palaceName: palaceNameOf(palace),
       mansion: longitudeToMansion(remnant.longitude, utcMillis),
       dignity: "—",
-      element: ELEMENT[remnant.name] ?? "无",
-      fortune: FORTUNE[remnant.name] ?? "无",
+      element: ELEMENT[remnant.name] ?? "未列",
+      fortune: FORTUNE[remnant.name] ?? "未列",
       note: remnant.note,
     });
   }
