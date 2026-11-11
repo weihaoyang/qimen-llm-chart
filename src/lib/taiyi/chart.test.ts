@@ -74,8 +74,13 @@ describe("accumulation and palaces", () => {
     expect(chart.fixedPlanEye.position).toBe("戌");
     expect(chart.taiyi.position).toBe("巽");
     expect(chart.fixedPlan).toMatchObject({ count: 17, generalPalace: 7, deputyPalace: 1 });
-    expect(serializeTaiyiToStructuredText(chart)).toContain("与《太乙秘书》例有差异");
+    expect(serializeTaiyiToStructuredText(chart)).toContain("与《太乙秘书》部分书例不同");
+    expect(serializeTaiyiToStructuredText(chart)).toContain("万历戊子阴遁例列25");
+    expect(chart.fixedPlanSourceComparison).toEqual({ source: "《太乙秘书》万历戊子阴遁例", count: 25, generalPalace: 5, deputyPalace: 5 });
     expect(JSON.parse(serializeTaiyiToCompactJson(chart)).fixedPlan.count).toBe(17);
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).fixedPlanSourceComparison.count).toBe(25);
+    expect(buildTaiyiChart({ year: 1588, cycle: 360, dun: "阴遁", ruJu: 48 }).fixedPlanSourceComparison).toBeNull();
+    expect(buildTaiyiChart({ year: 1588, cycle: 360, dun: "阳遁", ruJu: 49 }).fixedPlanSourceComparison).toBeNull();
     let samePalace = 0;
     let centre = 0;
     for (let year = 2020; year < 2032; year++) for (const dun of ["阳遁", "阴遁"] as const) for (let ruJu = 1; ruJu <= 72; ruJu++) {

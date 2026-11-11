@@ -64,6 +64,7 @@ export type TaiyiChart = {
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
   fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
   fixedPlan: { count: number; generalPalace: number; deputyPalace: number; gatePalaces: Array<{ palace: number; gate: string }> | null } | null;
+  fixedPlanSourceComparison: { source: string; count: number; generalPalace: number; deputyPalace: number } | null;
   taiyi: { palace: number; trigram: string; position: string; element: string; block: number };
   tianMu: { position: string; deity: TaiyiDeity; palace: number | null; standing: "正宫" | "间神" };
   jiShen: { position: string; deity: TaiyiDeity };
@@ -428,6 +429,9 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       deputyPalace: generalSuPalace(fixedGeneral),
       gatePalaces: fixedGeneral === 5 ? null : taiyiEightGatePalaces(fixedGeneral, "开门"),
     },
+    fixedPlanSourceComparison: year === 1588 && dun === "阴遁" && ruJu === 49 && fixedEye.position === "戌" && taiyiPosition === "巽"
+      ? { source: "《太乙秘书》万历戊子阴遁例", count: 25, generalPalace: 5, deputyPalace: 5 }
+      : null,
     taiyi: { palace, trigram: PALACES.find((item) => item.palace === palace)?.trigram ?? "", position: taiyiPosition, element: PALACES.find((item) => item.palace === palace)?.element ?? "", block },
     tianMu: { position: tianMuPos, deity: deityOf(tianMuPos), palace: tianMuPalace, standing: tianMuPalace === null ? "间神" : "正宫" },
     jiShen: { position: jiShenPos, deity: deityOf(jiShenPos) },
