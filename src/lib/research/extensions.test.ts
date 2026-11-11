@@ -436,8 +436,8 @@ it("flags the internal discrepancy in the 乙卯 干上亥 source table", () => 
   const { text, json } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
   expect(text).toContain("乙卯日");
   expect(text).toContain("干上亥");
-  expect(text).toContain("文本存在矛盾，待核原本");
-  expect(json.基本信息.涉害异说).toContain("文本存在矛盾，待核原本");
+  expect(text).toContain("馆藏影印本解释段又写取亥为初传，与三传表矛盾");
+  expect(json.基本信息.涉害异说).toContain("馆藏影印本解释段又写取亥为初传，与三传表矛盾");
 });
 
 
