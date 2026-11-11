@@ -62,7 +62,7 @@ const CLASSICAL_PALACE_REFERENCES: Record<string, { volume: number; positions: R
   太阳: { volume: 18, positions: { 戌: "庙", 巳: "乐", 辰: "好", 寅: "喜", 午: "旺", 酉: "怒" } },
   太阴: { volume: 19, positions: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒" } },
   木星: { volume: 14, positions: { 亥: "庙", 未: "旺", 寅: "乐", 申: "好", 子: "怒", 丑: "怒" } },
-  火星: { volume: 15, positions: { 卯: "庙", 戌: "乐", 丑: "旺" } },
+  火星: { volume: 15, positions: { 卯: "庙", 戌: "乐", 丑: "旺", 未: "乐", 申: "喜", 寅: "好", 酉: "怒", 辰: "怒" } },
   土星: { volume: 16, positions: { 丑: "庙", 辰: "旺", 子: "乐", 戌: "好", 午: "喜" } },
   金星: { volume: 16, positions: { 辰: "庙旺", 酉: "乐", 亥: "旺", 巳: "好", 午: "喜", 寅: "怒" } },
   水星: { volume: 17, positions: { 申: "本宫", 巳: "旺", 午: "庙", 辰: "喜", 亥: "好", 子: "好", 戌: "怒" } },
@@ -274,7 +274,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
         ? {
             label: CLASSICAL_PALACE_REFERENCES[name].positions[branch],
             volume: CLASSICAL_PALACE_REFERENCES[name].volume,
-            ...(name === "火星" ? { passage: "火星庙旺乐顺留伏逆" } : {}),
+            ...(name === "火星" ? { passage: "卯戌丑".includes(branch) ? "火星庙旺乐顺留伏逆" : "火星论" } : {}),
             ...(name === "火星" && branch === "戌" ? { alternatives: [{ label: "好", passage: "火星论" }] } : {}),
             ...(name === "木星" && branch === "未" ? { passage: "木星庙乐旺顺留伏逆", alternatives: [{ label: "喜", passage: "木星论" }] } : {}),
             ...(name === "金星" && branch === "辰" ? { passage: "金星庙旺乐顺伏留逆", alternatives: [{ label: "庙", passage: "金星论" }] } : {}),

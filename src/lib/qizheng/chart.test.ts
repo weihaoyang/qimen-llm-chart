@@ -246,6 +246,7 @@ describe("qizheng siyu chart", () => {
     const expected: Record<string, Record<string, string>> = {
       木星: { 寅: "乐", 申: "好", 子: "怒", 丑: "怒", 未: "旺" },
       土星: { 子: "乐", 戌: "好", 午: "喜" },
+      火星: { 未: "乐", 申: "喜", 寅: "好", 酉: "怒", 辰: "怒" },
       金星: { 亥: "旺", 巳: "好", 午: "喜", 寅: "怒", 辰: "庙旺" },
       水星: { 午: "庙", 辰: "喜", 亥: "好", 子: "好", 戌: "怒" },
     };
@@ -257,6 +258,7 @@ describe("qizheng siyu chart", () => {
         const label = expected[star.name]?.[star.branch];
         if (!label) continue;
         expect(star.classicalDignity?.label, `${star.name}${star.branch}`).toBe(label);
+        if (star.name === "火星") expect(star.classicalDignity?.passage).toBe("火星论");
         if (star.name === "木星" && star.branch === "未") {
           expect(star.classicalDignity?.alternatives).toEqual([{ label: "喜", passage: "木星论" }]);
           expect(serializeQizhengToStructuredText(chart)).toContain("〈木星庙乐旺顺留伏逆〉：旺；〈木星论〉：喜");
