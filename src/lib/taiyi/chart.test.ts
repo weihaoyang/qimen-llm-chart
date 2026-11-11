@@ -556,4 +556,8 @@ it("compares readable Yin charts 13–72 with 秘書 without silently correcting
   // 秘書电子本缺阴60，独立比较金镜立成可明确读取的六字段，不把它们作为秘書数据。
   const sixty = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 60 });
   expect([sixty.taiyi.palace, sixty.tianMu.position, sixty.counts.host, sixty.shiJi.position, sixty.counts.guest, sixty.jiShen.position]).toEqual([6, "巳", 10, "戌", 35, "酉"]);
+  // 《古今图书集成》艺术典692阴60：主大1、主参2；产品按三因取主参3。
+  expect([sixty.counts.hostGeneralPalace, sixty.counts.hostSuPalace]).toEqual([1, 3]);
+  expect(sixty.counts.hostSuPalace).not.toBe(2);
+  expect([sixty.counts.guestGeneralPalace, sixty.counts.guestSuPalace]).toEqual([5, 5]);
 });
