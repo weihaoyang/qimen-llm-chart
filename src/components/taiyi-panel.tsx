@@ -113,7 +113,7 @@ export function TaiyiPanel({
         <div><span>天目（文昌）</span><b>{chart.tianMu.deity.name}</b><em>{chart.tianMu.position} · {chart.tianMu.standing}{chart.tianMu.palace ? `（第 ${chart.tianMu.palace} 宫）` : ""}</em></div>
         <div><span>始击（客目）</span><b>{chart.shiJi.deity.name}</b><em>{chart.shiJi.position} · {chart.shiJi.standing}{chart.shiJi.palace ? `（第 ${chart.shiJi.palace} 宫）` : ""}</em></div>
         <div><span>计神</span><b>{chart.jiShen.deity.name}</b><em>{chart.jiShen.position} · 岁星之使</em></div>
-        <div><span>和数（事实）</span><b>主算 {chart.counts.hostHarmonyLevel} · 客算 {chart.counts.guestHarmonyLevel}</b><em>另一系清单（出处待考）：主算 {chart.counts.hostHarmonyLevelVariant} · 客算 {chart.counts.guestHarmonyLevelVariant}；本仓不下和/不和与长/短判词</em></div>
+        <div><span>和数（事实）</span><b>主算 {chart.counts.hostHarmonyLevel} · 客算 {chart.counts.guestHarmonyLevel}</b><em>《太乙秘書》电子本清单（影印待核）：主算 {chart.counts.hostHarmonyLevelVariant} · 客算 {chart.counts.guestHarmonyLevelVariant}；本仓不下和/不和与长/短判词</em></div>
       </div>
 
       <div className="taiyi-layout">
@@ -185,7 +185,7 @@ export function TaiyiPanel({
         ))}
       </div>
 
-      <p className="taiyi-note">{HARMONY_SOURCE}同篇又作「八三四九为阳宫，二七六一为阴宫」。另有一系和数清单作「上和十四、十八；次和二十三、二十九、三十二、三十六；下和十二、十六、二十一、二十七、三十四、三十八」，**本仓未能核到其一手出处**（独立核查在维基文库《太乙秘書》与《金鏡式經》卷二/卷三中均未见），故只作「另一系说法」并列、不归属于任何书名。两书局注亦互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），本仓只列算值与奇偶，不据此下和/不和结论。</p>
+      <p className="taiyi-note">{HARMONY_SOURCE}同篇又作「八三四九为阳宫，二七六一为阴宫」。《太乙秘書》〈主客算〉电子文本另列「上和十四、十八；次和二十三、二十九、三十二、三十六；下和十二、十六、二十一、二十七、三十四、三十八」，与卷二不同；该电子转录的对应影印页尚待核对。两书局注亦互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），本仓只列算值与奇偶，不据此下和/不和结论。</p>
 
       <p className="divination-panel__note"><span>BOUNDARY</span>{chart.disclaimer}</p>
 

@@ -165,11 +165,11 @@ export const HARMONY_SUMS_JUAN2: Array<{ level: string; sums: number[] }> = [
   { level: "下和", sums: [12, 16, 27, 34, 38] },
 ];
 
-/** 和数异文（另一系清单，**出处待考**）。
- *  「十四、十八为上和；二十三、二十九、三十二、三十六为次和；十二、十六、二十一、二十七、三十四、三十八为下和。」
- *  与卷二不同（上和少三十三；次和多三十六；下和多二十一）。
- *  ⚠ 独立核查**未**在维基文库《太乙秘書》全文与《金鏡式經》卷二/卷三中找到该清单，
- *  故本仓不归属于任何书名，只作「另一系说法」并列。 */
+/** 和数异文：《太乙秘書》〈主客算〉电子转录所列清单。
+ *  上和十四、十八；次和二十三、二十九、三十二、三十六；
+ *  下和十二、十六、二十一、二十七、三十四、三十八。
+ *  该电子文本尚未与对应影印页核对，不能据此判定原刻用字。
+ */
 export const HARMONY_SUMS_VARIANT: Array<{ level: string; sums: number[] }> = [
   { level: "上和", sums: [14, 18] },
   { level: "次和", sums: [23, 29, 32, 36] },
@@ -188,7 +188,7 @@ export const HARMONY_SOURCE =
 /** 单算之和数等第（卷二主表；未入表者作「未列」）。 */
 export const harmonyLevel = (count: number) => HARMONY_SUMS_JUAN2.find((entry) => entry.sums.includes(count))?.level ?? "未列";
 
-/** 单算之和数等第（另一系异文，出处待考）。 */
+/** 单算之和数等第（《太乙秘書》电子转录；未入表者作未列）。 */
 export const harmonyLevelVariant = (count: number) => HARMONY_SUMS_VARIANT.find((entry) => entry.sums.includes(count))?.level ?? "未列";
 
 /** 算值奇偶（事实）。 */

@@ -159,7 +159,7 @@ describe("host and guest counts", () => {
     expect(harmonyLevel(38)).toBe("下和");
     expect(harmonyLevel(36)).toBe("未列"); // 卷二不作次和
     expect(harmonyLevel(7)).toBe("未列");
-    // 另一系和数清单（出处待考，本仓不归属书名）
+    // 《太乙秘書》〈主客算〉电子转录，影印尚待核对
     expect(harmonyLevelVariant(36)).toBe("次和");
     expect(harmonyLevelVariant(21)).toBe("下和");
     expect(harmonyLevelVariant(33)).toBe("未列");
@@ -324,6 +324,8 @@ describe("taiyi chart", () => {
     const text = serializeTaiyiToStructuredText(chart);
     expect(text).toContain("十六神");
     expect(text).toContain("主算");
+    expect(text).toContain("《太乙秘書》电子本清单，影印待核");
+    expect(text).not.toContain("出处待考");
     const payload = JSON.parse(serializeTaiyiToCompactJson(chart)) as { format: string; deities: unknown[]; palaces: unknown[]; generals: unknown[] };
     expect(payload.format).toBe("qmdj-taiyi-v1");
     expect(payload.deities).toHaveLength(16);

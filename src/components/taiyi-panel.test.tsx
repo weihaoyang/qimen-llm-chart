@@ -22,6 +22,8 @@ describe("TaiyiPanel", () => {
     expect(container.querySelectorAll(".taiyi-general")).toHaveLength(8);
     expect(container.querySelector(".taiyi-table__row.is-active")).toBeTruthy();
     expect(screen.getByText("十六神盘")).toBeInTheDocument();
+    expect(screen.getByText(/《太乙秘書》电子本清单（影印待核）/)).toBeInTheDocument();
+    expect(screen.queryByText(/本仓未能核到其一手出处/)).not.toBeInTheDocument();
   });
 
   it("shows the specific generals and target for the 秘書 flanking example", () => {

@@ -12,7 +12,7 @@ export const serializeTaiyiToStructuredText = (chart: TaiyiChart) => [
   "",
   `主算 ${chart.counts.host}（${chart.counts.hostParity}）→ 主大将第 ${chart.counts.hostGeneralPalace} 宫 · 主参将第 ${chart.counts.hostSuPalace} 宫`,
   `客算 ${chart.counts.guest}（${chart.counts.guestParity}）→ 客大将第 ${chart.counts.guestGeneralPalace} 宫 · 客参将第 ${chart.counts.guestSuPalace} 宫`,
-  `和数：主算${chart.counts.hostHarmonyLevel} · 客算${chart.counts.guestHarmonyLevel}（另一系清单，**出处待考**：主算${chart.counts.hostHarmonyLevelVariant} · 客算${chart.counts.guestHarmonyLevelVariant}）`,
+  `和数：主算${chart.counts.hostHarmonyLevel} · 客算${chart.counts.guestHarmonyLevel}（《太乙秘書》电子本清单，影印待核：主算${chart.counts.hostHarmonyLevelVariant} · 客算${chart.counts.guestHarmonyLevelVariant}）`,
   `和否：本仓不输出和／不和与长／短判词（卷二判据含太乙宫、二目所立、算奇偶等多维，且两书局注矛盾）`,
   `格局：${chart.patterns.length ? chart.patterns.join("；") : "未见所列格局"}`,
   "",
