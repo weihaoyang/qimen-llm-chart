@@ -180,6 +180,19 @@ describe("evaluateQimenPatterns", () => {
     expect(statusOf(report, "shi_ge")).toBe("未成立");
   });
 
+  it("uses the day's own hidden instrument for all six 甲日 in 伏干 and 飞干", () => {
+    for (const [branch, instrument] of [["子", "戊"], ["戌", "己"], ["申", "庚"], ["午", "辛"], ["辰", "壬"], ["寅", "癸"]]) {
+      const pillars = { ...fourPillars, day: { stem: "甲", branch }, hour: { stem: "甲", branch: "子" } };
+      const make = (heavenlyStem: string, earthlyStem: string) => evaluateQimenPatterns(chartWith([palace(3, { heavenlyStem, earthlyStem })], { fourPillars: pillars }));
+      const fu = make("庚", instrument);
+      const fei = make(instrument, "庚");
+      expect(statusOf(fu, "ri_ge"), branch).toBe("成立");
+      expect(statusOf(fei, "fei_gan_ge"), branch).toBe("成立");
+      expect(fu.checks.find(({ id }) => id === "ri_ge")?.evidence[0]).toContain(`甲${branch}日遁${instrument}`);
+      if (instrument !== "戊") expect(statusOf(make("庚", "戊"), "ri_ge"), branch).toBe("未成立");
+    }
+  });
+
   it("marks 天显时格 from the day/time pillar combination", () => {
     const hit = evaluateQimenPatterns(
       chartWith([palace(1)], {

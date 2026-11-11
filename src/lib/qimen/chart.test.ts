@@ -12,6 +12,16 @@ describe("buildChart", () => {
     expect(report.formed.filter(({ id }) => id === "ri_ge")).toMatchObject([{ name: "日格（伏干格）", positions: [3] }]);
     expect(report.checks.some(({ id }) => id === "fu_gan_ge")).toBe(false);
   });
+
+  it("finds both day-stem patterns on a 甲午 day using 辛 rather than the hour's hidden instrument", () => {
+    const chart = buildChart({ datetime: "2026-01-20T22:00", timeZone: "Asia/Shanghai" });
+    expect(chart.raw.fourPillars.day).toMatchObject({ stem: "甲", branch: "午" });
+    expect(chart.raw.fourPillars.hour).toMatchObject({ stem: "乙", branch: "亥" });
+    const checks = evaluateQimenPatterns(chart).checks;
+    expect(checks.find(({ id }) => id === "ri_ge")?.positions).toEqual([6]);
+    expect(checks.find(({ id }) => id === "fei_gan_ge")?.positions).toEqual([8]);
+    expect(checks.find(({ id }) => id === "ri_ge")?.evidence[0]).toContain("甲午日遁辛");
+  });
   it("distinguishes Taiyin and earth-Bing versions of Ren Dun on actual charts", () => {
     // 艺术典705卷取丁休太阴，707卷另列上丁中休下丙；不把两者合并。
     for (const item of [

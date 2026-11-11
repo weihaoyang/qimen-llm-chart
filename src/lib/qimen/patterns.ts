@@ -46,6 +46,17 @@ const TOMB_MAP: Record<string, string[]> = {
   壬: ["辰"],
 };
 
+// 甲日依该日六甲所在旬的遁仪定位，不使用时柱旬首替代日柱。
+const JIA_DAY_HIDDEN_STEM: Record<string, string> = { 子: "戊", 戌: "己", 申: "庚", 午: "辛", 辰: "壬", 寅: "癸" };
+const dayStemOnBoard = (chart: NormalizedQimenChart): string | undefined => {
+  const day = chart.raw.fourPillars.day;
+  return day.stem === "甲" ? JIA_DAY_HIDDEN_STEM[day.branch] : day.stem;
+};
+const dayStemEvidence = (chart: NormalizedQimenChart, palace: Palace) => {
+  const day = chart.raw.fourPillars.day;
+  return `${pairEvidence(palace)}${day.stem === "甲" ? `（${day.stem}${day.branch}日遁${dayStemOnBoard(chart)}）` : ""}`;
+};
+
 // 伏吟 / 反吟：`3meta` 只在类型里声明了 `FuYinFanYinDetail`，运行时从不填充，
 // 所以这里按「星/门归本位」与「星/门临对冲宫」自行判定（与盘面结构等价）。
 const STAR_NATIVE: Record<string, number> = { 天蓬: 1, 天芮: 2, 天冲: 3, 天辅: 4, 天禽: 5, 天心: 6, 天柱: 7, 天任: 8, 天英: 9 };
@@ -300,15 +311,17 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("yue_ge", "月格", "常用凶格", "天盘庚 + 地盘月干", "主当月计划受阻；宜调整节奏。", (p, chart) =>
     hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.month.stem) ? pairEvidence(p) : null,
   ),
-  bad("ri_ge", "日格（伏干格）", "常用凶格", "天盘庚 + 地盘日干；日格和伏干格按本盘口径为同一项", "主当下就被压制；宜暂缓或借力。", (p, chart) =>
-    hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.day.stem) ? pairEvidence(p) : null,
-  ),
+  bad("ri_ge", "日格（伏干格）", "常用凶格", "天盘庚 + 地盘日干；甲日用该日所遁六仪；日格与伏干格为同一项", "主当下就被压制；宜暂缓或借力。", (p, chart) => {
+    const stem = dayStemOnBoard(chart);
+    return stem && hasHeaven(p, "庚") && hasEarth(p, stem) ? dayStemEvidence(chart, p) : null;
+  }),
   bad("shi_ge", "时格", "常用凶格", "天盘庚 + 地盘时干", "主此时此刻被卡；重大动作宜改时辰。", (p, chart) =>
     hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.hour.stem) ? pairEvidence(p) : null,
   ),
-  bad("fei_gan_ge", "飞干格", "常用凶格", "天盘日干 + 地盘庚", "主自己撞上阻力、行事易碰壁；缓一步再动。", (p, chart) =>
-    hasHeaven(p, chart.raw.fourPillars.day.stem) && hasEarth(p, "庚") ? pairEvidence(p) : null,
-  ),
+  bad("fei_gan_ge", "飞干格", "常用凶格", "天盘日干 + 地盘庚；甲日用该日所遁六仪", "主自己撞上阻力、行事易碰壁；缓一步再动。", (p, chart) => {
+    const stem = dayStemOnBoard(chart);
+    return stem && hasHeaven(p, stem) && hasEarth(p, "庚") ? dayStemEvidence(chart, p) : null;
+  }),
   bad("san_qi_ru_mu", "三奇入墓", "常用凶格", "本盘口径：天盘乙入 6/2 宫；丙入 6 宫；丁入 8 宫；古籍另有丙丁均入六宫之说", "主才能被埋、有力使不出；宜换时换方。", (p) =>
     (hasHeaven(p, "乙") && (p.position === 6 || p.position === 2)) ||
     (hasHeaven(p, "丙") && p.position === 6) ||
