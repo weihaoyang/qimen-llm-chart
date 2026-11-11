@@ -150,8 +150,30 @@ it("requires both stars in the life palace with temple or prosperous brightness 
       expect(result.patterns.find(p => p.id === "tan-huo")?.source).toContain("iztro");
     }
     expect(result.patterns.some(p => p.id === "tan-huo-meeting")).toBe(true);
-    expect(result.patterns.find(p => p.id === "tan-huo-meeting")?.name).toBe("贪狼会火星");
+    expect(result.patterns.find(p => p.id === "tan-huo-meeting")?.name).toBe("命宫三方四正见贪狼与火星");
   }
+});
+
+it.each(["火星", "铃星"])("does not describe two stars merely in the life palace's four positions as mutually aspecting: %s", (star) => {
+  const chart = buildZiweiChartFromProfile(profile);
+  const mingBranch = chart.raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;
+  const palaces = structuredClone(chart.raw.palaces);
+  for (const palace of palaces) {
+    palace.majorStars = palace.majorStars.filter(item => item.name !== "贪狼");
+    palace.minorStars = palace.minorStars.filter(item => item.name !== star);
+    palace.adjectiveStars = palace.adjectiveStars.filter(item => item.name !== star);
+  }
+  const tan = palaces.find(p => p.branchIndex === (mingBranch + 4) % 12)!;
+  const sha = palaces.find(p => p.branchIndex === (mingBranch + 6) % 12)!;
+  tan.majorStars.push({ name: "贪狼" });
+  sha.minorStars.push({ name: star });
+  const item = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch }).patterns
+    .find(p => p.id === (star === "火星" ? "tan-huo-meeting" : "tan-ling-meeting"));
+  expect(item?.name).toBe(`命宫三方四正见贪狼与${star}`);
+  expect(item?.summary).toContain("不表示两星同宫或互相会照");
+  expect(item?.level).toBe("neutral");
+  expect(item?.evidence).toContain(`贪狼=${tan.name}（${tan.earthlyBranch}）`);
+  expect(item?.evidence).toContain(`${star}=${sha.name}（${sha.earthlyBranch}）`);
 });
 
 

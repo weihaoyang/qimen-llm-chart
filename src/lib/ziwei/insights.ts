@@ -73,12 +73,12 @@ export const buildZiweiInsights = ({
       "《紫微斗数全书》卷三·太阳太阴拱照：守命吉多主吉、凶多主凶，同宫看生时"));
   }
 
-  for (const [star, label] of [["火星", "贪狼会火星"], ["铃星", "贪狼会铃星"]] as const) {
+  for (const star of ["火星", "铃星"] as const) {
     const tanLangPalace = sanFang.find((palace) => palace.majorStars.some((item) => item.name === "贪狼"));
     const shaPalace = sanFang.find((palace) => has(palace, star));
     if (tanLangPalace && shaPalace) {
       const id = star === "火星" ? "tan-huo-meeting" : "tan-ling-meeting";
-      patterns.push(pattern(id, label, "caution", `命宫三方四正会见贪狼与${star}，需结合实际宫位、亮度、其他煞曜和运限复核。`, [`贪狼=${tanLangPalace.name}`, `${star}=${shaPalace.name}`, `命宫三方四正=${sanFangNames.join("、")}`], "命宫三方四正结构；不等同于古籍成格条件"));
+      patterns.push(pattern(id, `命宫三方四正见贪狼与${star}`, "neutral", `贪狼与${star}均在命宫三方四正内；这本身不表示两星同宫或互相会照。`, [`贪狼=${tanLangPalace.name}（${tanLangPalace.earthlyBranch}）`, `${star}=${shaPalace.name}（${shaPalace.earthlyBranch}）`, `命宫三方四正=${sanFangNames.join("、")}`], "命宫三方四正结构；不等同于古籍成格条件"));
     }
   }
 
