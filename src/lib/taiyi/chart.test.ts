@@ -232,6 +232,19 @@ describe("taiyi chart", () => {
     expect(noHit.some(entry => /^(囚|关|格)：/.test(entry))).toBe(false);
   });
 
+  it("retains simultaneous concealment and identifies which side is blocked in the centre", () => {
+    const all = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "乾", hostGeneralPalace: 1, hostSuPalace: 5, guestGeneralPalace: 5, guestSuPalace: 3 });
+    expect(all).toContain("掩：始击将临太乙宫、始击掩主大将");
+    expect(all).toContain("杜塞：主参将、客大将落入中宫");
+    for (const [ruJu, expected] of [[4, "杜塞：主大将、主参将落入中宫"], [7, "杜塞：客大将、客参将落入中宫"]] as const) {
+      const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu });
+      expect(chart.patterns).toContain(expected);
+    }
+    const noCentre = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "乾", hostGeneralPalace: 3, hostSuPalace: 4, guestGeneralPalace: 6, guestSuPalace: 7 });
+    expect(noCentre).toContain("掩：始击将临太乙宫");
+    expect(noCentre.some(p => p.startsWith("杜塞："))).toBe(false);
+  });
+
   it("retains every simultaneous Taiyi and general flank witness", () => {
     const patterns = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "亥", hostGeneralPalace: 8, guestGeneralPalace: 8, hostSuPalace: 5, guestSuPalace: 5 });
     const flank = patterns.find(entry => entry.startsWith("提挟："))!;

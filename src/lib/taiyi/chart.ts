@@ -231,7 +231,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
 
   // 掩：始击将临太乙宫；《推掩法》另云「掩主大将」，故始击临主大将宫亦作掩。
   const yanTaiyi = shiJiPosition === taiyiPosition;
-  const yanHostGeneral = !yanTaiyi && shiJiPalace !== null && shiJiPalace === input.hostGeneralPalace;
+  const yanHostGeneral = shiJiPalace !== null && shiJiPalace === input.hostGeneralPalace;
   // 击：始击在太乙前一辰/后一辰（辰击）、前一宫/后一宫（宫击）
   let ji = "";
   if (shiJiPosition === chens.front) ji = "击（外辰击）：始击在太乙前一辰";
@@ -317,7 +317,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     && (yanTaiyi || Boolean(ji) || outer.length > 0 || inner.length > 0 || guan || ge || ties.length > 0);
 
   return [
-    yanTaiyi ? "掩：始击将临太乙宫" : yanHostGeneral ? "掩：始击掩主大将" : "",
+    yanTaiyi || yanHostGeneral ? `掩：${[yanTaiyi ? "始击将临太乙宫" : "", yanHostGeneral ? "始击掩主大将" : ""].filter(Boolean).join("、")}` : "",
     ji,
     outer.length ? `迫（外迫）：${outer.join("、")}` : "",
     inner.length ? `迫（内迫）：${inner.join("、")}` : "",
@@ -329,7 +329,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将，兼之掩迫关格提挟" : "",
     ties.length ? `提挟：${ties.join("、")}` : "",
     pairedFlanks.length ? `大小将挟：《太乙秘書》局注口径，${pairedFlanks.join("、")}` : "",
-    generalPalaces.includes(5) ? "杜塞：主客大小将落入中宫" : "",
+    generalPalaces.includes(5) ? `杜塞：${generals.filter(general => general.palace === 5).map(general => general.label).join("、")}落入中宫` : "",
   ].filter(Boolean);
 };
 
