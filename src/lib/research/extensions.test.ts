@@ -214,6 +214,42 @@ it.each([
   expect(text).toContain(`| 末传 (归计) | ${repeated} |`);
 });
 
+it("checks 八专 selection and transmissions through 60 days and 12 relative plate positions", () => {
+  const branches = "子丑寅卯辰巳午未申酉戌亥";
+  const lodging: Record<string, string> = { 甲寅: "寅", 庚申: "申", 丁未: "未", 己未: "未", 癸丑: "丑" };
+  const elements: Record<string, string> = { 子: "水", 丑: "土", 寅: "木", 卯: "木", 辰: "土", 巳: "火", 午: "火", 未: "土", 申: "金", 酉: "金", 戌: "土", 亥: "水", 甲: "木", 丁: "火", 己: "土", 庚: "金", 癸: "水" };
+  const conquers: Record<string, string> = { 木: "土", 土: "水", 水: "火", 火: "金", 金: "木" };
+  const clashes = (a: string, b: string) => conquers[elements[a]] === elements[b] || conquers[elements[b]] === elements[a];
+  let selected = 0;
+  let guiChou = 0;
+  for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + dayOffset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const result = calculateDaliuren(input);
+      const day = result.dateInfo.ganZhi.day;
+      if (day === "癸丑") guiChou++;
+      const hourBranch = result.dateInfo.ganZhi.hour[1];
+      const rotation = (12 - branches.indexOf(hourBranch)) % 12;
+      const ganShang = lodging[day] ? branches[(branches.indexOf(lodging[day]) + rotation) % 12] : "";
+      const nextGod = ganShang ? branches[(branches.indexOf(ganShang) + rotation) % 12] : "";
+      // 独立按两课的五行关系判断；伏吟与返吟另按天地盘位移优先处理。
+      const isBazan = Boolean(ganShang && rotation !== 0 && rotation !== 6 && !clashes(day[0], ganShang) && !clashes(day[1], ganShang) && !clashes(ganShang, nextGod));
+      expect(result.keTi.method === "八专", `${day}/${hourBranch}时`).toBe(isBazan);
+      if (!isBazan) continue;
+      selected++;
+      // 阳日从干上顺数三位；阴日从第四课上神逆数三位（均含起位）。
+      const isYang = day === "甲寅" || day === "庚申";
+      const origin = isYang ? ganShang : nextGod;
+      const first = branches[(branches.indexOf(origin) + (isYang ? 2 : 10)) % 12];
+      expect([result.sanChuan.chu[0], result.sanChuan.zhong[0], result.sanChuan.mo[0]], `${day}/${hourBranch}时`)
+        .toEqual([first, ganShang, ganShang]);
+    }
+  }
+  expect(selected).toBe(16);
+  expect(guiChou).toBe(12);
+});
+
 it.each([
   ["2024-05-28T10:00", "蒿矢", "戌", "丑", "辰"],
   ["2024-03-09T16:00", "弹射", "巳", "申", "亥"],
