@@ -167,6 +167,29 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("transcribes the selected solar and lunar palace passages without filling unlisted positions", () => {
+    // 卷十八太陽論、卷十九太隂論；逐日覆盖十二宫，同时检查未列的宫不被补值。
+    const expected: Record<string, Record<string, string>> = {
+      太阳: { 戌: "庙", 巳: "乐", 辰: "好", 寅: "喜", 午: "旺", 酉: "怒" },
+      太阴: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒" },
+    };
+    const seen: Record<string, Set<string>> = { 太阳: new Set(), 太阴: new Set() };
+    for (let day = 0; day < 366; day++) {
+      const date = new Date(Date.UTC(2026, 0, 1 + day, 4));
+      const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(date, "Asia/Shanghai")));
+      for (const name of ["太阳", "太阴"]) {
+        const star = chart.stars.find((item) => item.name === name)!;
+        seen[name].add(star.branch);
+        const label = expected[name][star.branch];
+        expect(star.classicalDignity, `${name} ${star.branch}`).toEqual(
+          label ? { label, volume: name === "太阳" ? 18 : 19 } : undefined,
+        );
+      }
+    }
+    expect(seen.太阳.size).toBe(12);
+    expect(seen.太阴.size).toBe(12);
+  });
+
   it("compares Jupiter and Mars palace labels with the Xingxue Dacheng passages", () => {
     // 卷十四：木庙亥、旺未；卷十五：火乐戌、旺丑。现用表另行保存。
     const cases = [

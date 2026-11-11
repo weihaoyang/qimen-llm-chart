@@ -59,8 +59,8 @@ const DIGNITY: Record<string, { temple?: string; prosperous?: string; fallen?: s
 
 // 《星学大成》卷14–19选定段落的宫位说；不把未校宿度推广到整宫。
 const CLASSICAL_PALACE_REFERENCES: Record<string, { volume: number; positions: Record<string, string> }> = {
-  太阳: { volume: 18, positions: { 戌: "庙", 午: "旺" } },
-  太阴: { volume: 19, positions: { 戌: "庙", 酉: "旺" } },
+  太阳: { volume: 18, positions: { 戌: "庙", 巳: "乐", 辰: "好", 寅: "喜", 午: "旺", 酉: "怒" } },
+  太阴: { volume: 19, positions: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒" } },
   木星: { volume: 14, positions: { 亥: "庙", 未: "旺" } },
   火星: { volume: 15, positions: { 卯: "庙", 戌: "乐", 丑: "旺" } },
   土星: { volume: 16, positions: { 丑: "庙", 辰: "旺" } },
