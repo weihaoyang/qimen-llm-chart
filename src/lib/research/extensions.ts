@@ -82,8 +82,9 @@ export const buildDaliurenResearch = (profile: NormalizedProfileInput) => {
   const alternateLine = alternateGenerals.length === 12 ? `- 探原天将（天盘:天将）: ${alternateGenerals.map((palace) => `${palace.天盘}:${palace.天将}`).join("、")}` : "";
   const alternateTransmission = tanYuanShehai(result.dateInfo.ganZhi.day, result.siKe.yiKe[0]?.[0] ?? "");
   const mainTransmission = [result.sanChuan.chu[0], result.sanChuan.zhong[0], result.sanChuan.mo[0]].join("");
-  const transmissionNote = alternateTransmission && alternateTransmission !== mainTransmission
-    ? `《大六壬探原》六十日表的改正涉害三传为${[...alternateTransmission].join("、")}；主盘三传保持不变` : undefined;
+  const ambiguousSource = result.dateInfo.ganZhi.day === "乙卯" && result.siKe.yiKe[0]?.[0] === "亥";
+  const transmissionNote = alternateTransmission && (alternateTransmission !== mainTransmission || ambiguousSource)
+    ? `《大六壬探原》六十日表的改正涉害三传为${[...alternateTransmission].join("、")}；主盘三传保持不变${ambiguousSource ? "；该书解释段又写取亥为初传，文本存在矛盾，待核原本" : ""}` : undefined;
   const annotations = [transmissionNote ? `- 涉害异说: ${transmissionNote}` : "", plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : "", `- 贵人口径: ${nobleConvention}`, alternateNoble ? `- 贵人异说: ${alternateNoble}` : "", alternateLine].filter(Boolean);
   return {
     text: annotations.length ? text.replace("\n- 月将:", `\n${annotations.join("\n")}\n- 月将:`) : text,

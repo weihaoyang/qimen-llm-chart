@@ -396,6 +396,7 @@ it("compares the 24 探原 amended 涉害 entries against the actual plates", ()
     "己酉卯卯亥未", "乙卯寅亥酉未", "乙卯申亥卯未", "乙卯亥午丑申",
   ];
   const pending = new Set(entries.map((entry) => entry.slice(0, 3)));
+  const matching: string[] = [];
   for (let offset = 0; offset < 60; offset++) {
     const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
     for (let hour = 0; hour < 24; hour += 2) {
@@ -407,6 +408,7 @@ it("compares the 24 探原 amended 涉害 entries against the actual plates", ()
       const entry = entries.find((item) => item.startsWith(key));
       expect(tanYuanShehai(day, upper)).toBe(entry?.slice(3));
       if (!entry) continue;
+      if ([chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join("") === entry.slice(3)) matching.push(key);
       const [first, second, third] = [...entry.slice(3)];
       expect(chart.gongInfos.find((palace) => palace.diZhi === first)?.tianZhi, key).toBe(second);
       expect(chart.gongInfos.find((palace) => palace.diZhi === second)?.tianZhi, key).toBe(third);
@@ -414,6 +416,7 @@ it("compares the 24 探原 amended 涉害 entries against the actual plates", ()
     }
   }
   expect([...pending]).toEqual([]);
+  expect(matching.sort()).toEqual(["丁卯巳", "乙卯亥", "己亥亥", "辛卯申"].sort());
 });
 
 
@@ -424,4 +427,14 @@ it("discloses the 探原 transmission discrepancy in both exports without changi
   expect(text).toContain("涉害异说: 《大六壬探原》六十日表的改正涉害三传为子、申、辰");
   expect(json.基本信息.涉害异说).toContain("子、申、辰");
   expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map((match) => match[1])).toEqual(["戌", "午", "寅"]);
+});
+
+
+it("flags the internal discrepancy in the 乙卯 干上亥 source table", () => {
+  const datetime = "2024-02-21T08:00";
+  const { text, json } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
+  expect(text).toContain("乙卯日");
+  expect(text).toContain("干上亥");
+  expect(text).toContain("文本存在矛盾，待核原本");
+  expect(json.基本信息.涉害异说).toContain("文本存在矛盾，待核原本");
 });
