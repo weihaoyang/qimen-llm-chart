@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculateDaliuren } from "taibu-core/daliuren";
 import tanYuanTable from "./fixtures/tanyuan-60-days.json";
+import tanYuanFacsimile from "./fixtures/tanyuan-facsimile-missing-rows.json";
 import { alternateLiuRenGenerals, buildDaliurenResearch, classifyLiuRenPlate, tanYuanShehai } from "./extensions";
 
 const profile = {
@@ -495,6 +496,27 @@ it("checks eight missing 探原 electronic rows against independent historical c
     }
   }
   expect([...found].sort()).toEqual(Object.keys(expected).sort());
+});
+
+it("compares the eight electronic omissions with the actual 探原 facsimile", () => {
+  // PDF pages 48, 53, 54 and 59; do not silently attribute these to the electronic transcription.
+  const scanned: Record<string, { transmission: string; pdfPage: number }> = tanYuanFacsimile.rows;
+  const electronic: Record<string, string[]> = tanYuanTable;
+  const found = new Set<string>();
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const chart = calculateDaliuren({ date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" });
+      const key = chart.dateInfo.ganZhi.day + chart.siKe.yiKe[0][0];
+      const reference = scanned[key];
+      if (!reference) continue;
+      expect(electronic[key], key).toBeUndefined();
+      expect([chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join(""), key).toBe(reference.transmission);
+      found.add(key);
+    }
+  }
+  expect([...found].sort()).toEqual(Object.keys(scanned).sort());
+  expect(Object.keys(scanned)).toHaveLength(8);
 });
 
 it("compares legible 甲申 transmissions with 太白兵备统宗宝鉴 twelve-case table", () => {

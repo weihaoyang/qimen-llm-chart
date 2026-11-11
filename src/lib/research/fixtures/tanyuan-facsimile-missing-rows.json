@@ -1,0 +1,14 @@
+{
+  "source": "https://upload.wikimedia.org/wikipedia/commons/6/63/NLC416-12jh003129-43598_%E5%A4%A7%E5%85%AD%E5%A3%AC%E6%8E%A2%E5%8E%9F.pdf",
+  "description": "馆藏扫描中电子转录缺失的八条，仅转录日、干上神和三传；pdfPage 为从 1 开始的 PDF 页码。",
+  "rows": {
+    "丁卯午": { "transmission": "丑子亥", "pdfPage": 48 },
+    "丁卯未": { "transmission": "卯子午", "pdfPage": 48 },
+    "甲申申": { "transmission": "寅申寅", "pdfPage": 53 },
+    "甲申酉": { "transmission": "戌巳子", "pdfPage": 53 },
+    "丁亥寅": { "transmission": "午丑申", "pdfPage": 54 },
+    "丁亥卯": { "transmission": "未卯亥", "pdfPage": 54 },
+    "戊申寅": { "transmission": "寅亥申", "pdfPage": 59 },
+    "戊申卯": { "transmission": "丑亥酉", "pdfPage": 59 }
+  }
+}
