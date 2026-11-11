@@ -297,6 +297,22 @@ describe("qizheng siyu chart", () => {
     expect(historical.stars.find((star) => star.name === "紫气")?.longitude).toBeCloseTo(128.99, 2);
   });
 
+  it("compares the product output with nine 1911 calendar entries across the 鬼柳 boundary", () => {
+    // Declared independently from the facsimile degrees plus Qianlong mansion starts,
+    // advanced by 51 arcseconds/year; expected values retain minute-level uncertainty.
+    const cases: Array<[string, number]> = [
+      ["1911-03-30", 128.281451], ["1911-04-09", 128.631838], ["1911-04-19", 128.982226],
+      ["1911-04-29", 129.337892], ["1911-05-09", 129.688280], ["1911-05-19", 130.038668],
+      ["1911-10-22", 135.528052], ["1911-11-01", 135.878440], ["1911-11-11", 136.245494],
+    ];
+    for (const [day, expected] of cases) {
+      const input = getDefaultProfileInput(new Date(`${day}T00:00:00+08:00`), "Asia/Shanghai");
+      const star = buildQizhengChart(normalizeProfileInput(input)).stars.find((item) => item.name === "紫气");
+      expect(star, day).toBeDefined();
+      expect(Math.abs((star?.longitude ?? 0) - expected), day).toBeLessThan(0.025);
+    }
+  });
+
   it("reproduces the 《清史稿》 康熙甲子年黄道十二次初度值宿 (epoch 1684, 初宫起冬至)", () => {
     // 《清史稿·卷二十八·天文三》「康熙甲子年黄道十二次初度值宿」逐条给出十二次初度落在何宿何度；
     // 十二次初度应落在回归黄经 270° + 30k（初宫=星纪初=冬至=270°）。以下为该表原值。
