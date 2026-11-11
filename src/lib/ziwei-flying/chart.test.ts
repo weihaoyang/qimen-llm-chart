@@ -42,6 +42,7 @@ describe("ziwei flying chart", () => {
   const chart = buildZiweiFlyingChart(profile());
 
   it("applies the Jielan Ren-year transformation rather than the Quanshu variant", () => {
+    // 日本国立公文书馆明刊本上册影像76「壬梁紫府武」亦作天府化科。
     const input = normalizeProfileInput(getDefaultProfileInput(new Date("2022-06-01T04:00:00Z"), "Asia/Shanghai"));
     const natal = buildZiweiChartFromProfile(input);
     const flying = buildZiweiFlyingChart(input);

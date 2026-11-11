@@ -185,9 +185,10 @@ it("matches the two classical major-star sequences at all twelve birth hours", (
 });
 
 
-it("records the selected Kui Yue variants separately from the Wikisource wording", () => {
+it("compares natal Kui Yue with the Ming-edition wording and the Wikisource variant", () => {
   const cases = [
-    // 丙丁猪鸡 vs 卷二电子本猪狗; 辛午寅 vs its 虎马 ordering.
+    // 日本国立公文书馆明刊本上册影像75：丙丁猪鸡、六辛马虎；
+    // 维基文库电子本作丙丁猪狗、辛虎马。以先魁后钺比较，次序是解释约定。
     ["1996-07-01T00:00", "丙", "亥", "酉"],
     ["1997-07-01T00:00", "丁", "亥", "酉"],
     ["1991-07-01T00:00", "辛", "午", "寅"],
