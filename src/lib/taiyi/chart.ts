@@ -251,14 +251,27 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   pushPo("天目（文昌）", tianMuPosition);
   for (const general of generals) pushPo(general.label, positionOfPalace(general.palace));
   // 囚：采用局注的宽判，文昌或任一将与太乙同宫。
-  const qiu = [tianMuPalace, ...generals.map((general) => general.palace)].some((palace) => palace !== null && palace === taiyiPalace);
+  const qiuActors = [
+    ...(tianMuPalace === taiyiPalace ? ["天目（文昌）"] : []),
+    ...generals.filter(general => general.palace === taiyiPalace).map(general => general.label),
+  ];
   // 关：大小将同宫，或目与将同宫（《图书集成》阳局43文昌关主大）。
   const generalPalaces = generals.map((general) => general.palace);
   const generalsGuan = new Set(generalPalaces).size < generalPalaces.length;
-  const guan = generalsGuan
-    || [tianMuPalace, shiJiPalace].some(eye => eye !== null && generalPalaces.includes(eye));
+  const guanActors = Array.from(new Set(generalPalaces)).flatMap(palace => {
+    const atPalace = generals.filter(general => general.palace === palace).map(general => general.label);
+    if (tianMuPalace === palace) atPalace.push("天目（文昌）");
+    if (shiJiPalace === palace) atPalace.push("始击（客目）");
+    return atPalace.length >= 2 ? [`${atPalace.join("、")}同在${palace}宫`] : [];
+  });
+  const guan = guanActors.length > 0;
   // 格：客目及客大小将与太乙对宫
-  const ge = opposite(shiJiPalace, taiyiPalace) || opposite(input.guestGeneralPalace, taiyiPalace) || opposite(input.guestSuPalace, taiyiPalace);
+  const geActors = [
+    { label: "始击（客目）", palace: shiJiPalace },
+    { label: "客大将", palace: input.guestGeneralPalace },
+    { label: "客参将", palace: input.guestSuPalace },
+  ].filter(actor => opposite(actor.palace, taiyiPalace)).map(actor => actor.label);
+  const ge = geActors.length > 0;
   // 对：下目文昌将与太乙冲而相当
   const dui = opposite(tianMuPalace, taiyiPalace);
   // 提挟：太乙与主/客大将共挟某目或将（正宫取邻宫、间神取邻辰，即挟闭）
@@ -308,9 +321,9 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     ji,
     outer.length ? `迫（外迫）：${outer.join("、")}` : "",
     inner.length ? `迫（内迫）：${inner.join("、")}` : "",
-    qiu ? "囚：文昌或四将与太乙同宫" : "",
-    guan ? "关：大小将或目与将同宫" : "",
-    ge ? "格：客目或客大小将与太乙对宫" : "",
+    qiuActors.length ? `囚：${qiuActors.join("、")}与太乙同在${taiyiPalace}宫` : "",
+    guan ? `关：${guanActors.join("；")}` : "",
+    ge ? `格：${geActors.join("、")}与太乙对宫` : "",
     dui ? "对：文昌与太乙对冲" : "",
     siGuoGu ? "四郭固：二目掩囚太乙宫，又值四将相关" : "",
     siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将，兼之掩迫关格提挟" : "",

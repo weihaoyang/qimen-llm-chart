@@ -221,6 +221,17 @@ describe("taiyi chart", () => {
     expect(du.some((entry) => entry.startsWith("四郭杜"))).toBe(true);
   });
 
+  it("names all actual actors behind imprisonment, blockage and opposition", () => {
+    const patterns = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "乾", shiJiPosition: "巽", hostGeneralPalace: 1, hostSuPalace: 3, guestGeneralPalace: 9, guestSuPalace: 9 });
+    expect(patterns).toContain("囚：天目（文昌）、主大将与太乙同在1宫");
+    const guan = patterns.find(entry => entry.startsWith("关："))!;
+    expect(guan).toContain("主大将、天目（文昌）同在1宫");
+    expect(guan).toContain("客大将、客参将、始击（客目）同在9宫");
+    expect(patterns).toContain("格：始击（客目）、客大将、客参将与太乙对宫");
+    const noHit = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "丑", hostGeneralPalace: 2, hostSuPalace: 3, guestGeneralPalace: 4, guestSuPalace: 6 });
+    expect(noHit.some(entry => /^(囚|关|格)：/.test(entry))).toBe(false);
+  });
+
   it("retains every simultaneous Taiyi and general flank witness", () => {
     const patterns = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "亥", hostGeneralPalace: 8, guestGeneralPalace: 8, hostSuPalace: 5, guestSuPalace: 5 });
     const flank = patterns.find(entry => entry.startsWith("提挟："))!;
@@ -423,7 +434,9 @@ it("preserves the 442 historical discrepancy without silently substituting the p
     chart.counts.guestGeneralPalace, chart.counts.guestSuPalace,
   ]).size).toBe(4);
   expect(chart.patterns.some(pattern => pattern.startsWith("关："))).toBe(true);
+  expect(chart.patterns).toContain("关：客大将、始击（客目）同在3宫");
   const previous = buildTaiyiChart({ year: 441, cycle: 360, dun: "阳遁", ruJu: null });
   expect(previous.input.ruJu).toBe(54);
   expect(previous.patterns.some(pattern => pattern.startsWith("关："))).toBe(true);
+  expect(previous.patterns).toContain("关：主大将、始击（客目）同在8宫；主参将、客大将同在4宫");
 });
