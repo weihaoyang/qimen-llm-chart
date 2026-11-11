@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { calculateDaliuren } from "taibu-core/daliuren";
 import tanYuanTable from "./fixtures/tanyuan-60-days.json";
 import tanYuanFacsimile from "./fixtures/tanyuan-facsimile-missing-rows.json";
+import tanYuanShehaiFacsimile from "./fixtures/tanyuan-shehai-facsimile.json";
 import { alternateLiuRenGenerals, buildDaliurenResearch, classifyLiuRenPlate, tanYuanShehai } from "./extensions";
 
 const profile = {
@@ -517,6 +518,35 @@ it("compares the eight electronic omissions with the actual 探原 facsimile", (
   }
   expect([...found].sort()).toEqual(Object.keys(scanned).sort());
   expect(Object.keys(scanned)).toHaveLength(8);
+});
+
+it("checks all 24 stated 涉害 variants against their facsimile entries", () => {
+  const rows: Record<string, (string | number)[]> = tanYuanShehaiFacsimile.rows;
+  const electronic: Record<string, string[]> = tanYuanTable;
+  const found = new Set<string>();
+  const matching: string[] = [];
+  const differing: string[] = [];
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const chart = calculateDaliuren({ date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" });
+      const day = chart.dateInfo.ganZhi.day;
+      const upper = chart.siKe.yiKe[0][0];
+      const key = day + upper;
+      const row = rows[key];
+      if (!row) continue;
+      const transmission = row[0];
+      expect(tanYuanShehai(day, upper), key).toBe(transmission);
+      expect(electronic[key]?.[0], key).toBe(transmission);
+      const actual = [chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join("");
+      (actual === transmission ? matching : differing).push(key);
+      found.add(key);
+    }
+  }
+  expect(Object.keys(rows)).toHaveLength(24);
+  expect([...found].sort()).toEqual(Object.keys(rows).sort());
+  expect(matching.sort()).toEqual(["丁卯巳", "己亥亥", "辛卯申", "乙卯亥"].sort());
+  expect(differing).toHaveLength(20);
 });
 
 it("compares legible 甲申 transmissions with 太白兵备统宗宝鉴 twelve-case table", () => {
