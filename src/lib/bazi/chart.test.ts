@@ -4,6 +4,55 @@ import { Solar } from "lunar-typescript";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "./chart";
 
+describe("classical hidden stems and ten gods", () => {
+  it("checks all twelve hidden-stem sets and all ten day masters through the product chart", () => {
+    // 《渊海子平·又地支藏遁歌》记的是藏干集合，歌诀顺序不代表本气顺序。
+    const hidden: Record<string, string> = {
+      子: "癸", 丑: "癸辛己", 寅: "甲丙戊", 卯: "乙", 辰: "乙戊癸", 巳: "庚丙戊",
+      午: "丁己", 未: "乙己丁", 申: "庚壬戊", 酉: "辛", 戌: "辛丁戊", 亥: "壬甲",
+    };
+    const stems = "甲乙丙丁戊己庚辛壬癸";
+    const elements = "木火土金水";
+    const god = (self: string, other: string) => {
+      const i = stems.indexOf(self), j = stems.indexOf(other);
+      const selfElement = Math.floor(i / 2), otherElement = Math.floor(j / 2);
+      const samePolarity = i % 2 === j % 2;
+      const distance = (otherElement - selfElement + elements.length) % elements.length;
+      return [
+        samePolarity ? "比肩" : "劫财", samePolarity ? "食神" : "伤官",
+        samePolarity ? "偏财" : "正财", samePolarity ? "七杀" : "正官",
+        samePolarity ? "偏印" : "正印",
+      ][distance];
+    };
+    const seen = new Set<string>();
+    for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
+      const date = new Date(Date.UTC(2024, 8, 27 + dayOffset)).toISOString().slice(0, 10);
+      for (let hour = 0; hour < 24; hour += 2) {
+        const datetime = `${date}T${String(hour).padStart(2, "0")}:00`;
+        const raw = buildBaziChartFromProfile(normalizeProfileInput({
+          calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+        })).raw;
+        for (const pillar of raw.pillars) {
+          expect([...pillar.hiddenStems].sort(), `${datetime}/${pillar.key}`).toEqual([...hidden[pillar.earthlyBranch]].sort());
+          expect(pillar.shiShenZhi, `${datetime}/${pillar.key}`).toEqual(pillar.hiddenStems.map(stem => god(raw.dayMaster, stem)));
+          if (pillar.key !== "day") expect(pillar.shiShenGan).toBe(god(raw.dayMaster, pillar.heavenlyStem));
+          seen.add(`${raw.dayMaster}${pillar.earthlyBranch}`);
+        }
+      }
+    }
+    expect(seen.size).toBe(120);
+  });
+
+  it("changes the year-branch hidden stems along with the chosen lunar new year boundary", () => {
+    const yearPillar = (yearBoundary: "li-chun" | "lunar-new-year") => buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "2024-02-05T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+      baziSettings: { yearBoundary, dayBoundary: "midnight" },
+    })).raw.pillars.find(pillar => pillar.key === "year")!;
+    expect(yearPillar("li-chun")).toMatchObject({ pillar: "甲辰", hiddenStems: ["戊", "乙", "癸"] });
+    expect(yearPillar("lunar-new-year")).toMatchObject({ pillar: "癸卯", hiddenStems: ["乙"] });
+  });
+});
+
 describe("classical day-pillar Xun Kong", () => {
   it("matches all sixty pillars against the six ten-day void pairs", () => {
     const stems = Array.from("甲乙丙丁戊己庚辛壬癸");
