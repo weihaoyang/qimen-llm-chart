@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { longitudeToActivation } from "hd-chart-engine";
+import { createAstronomyEngine, longitudeToActivation } from "hd-chart-engine";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
-import { buildHumanDesignChart, deriveHumanDesignDesign, HD_CHANNELS, HD_GATE_CENTERS, HD_STRATEGY_BY_TYPE } from "./chart";
+import { buildHumanDesignChart, buildHumanDesignChartFromDatetime, deriveHumanDesignDesign, HD_CHANNELS, HD_GATE_CENTERS, HD_STRATEGY_BY_TYPE } from "./chart";
 import { serializeHumanDesignToStructuredText } from "./serializer";
 
 const VALID_PROFILES = ["1/3", "1/4", "2/4", "2/5", "3/5", "3/6", "4/6", "4/1", "5/1", "5/2", "6/2", "6/3"];
@@ -84,7 +84,7 @@ describe("human design chart", () => {
     expect(VALID_DEFINITIONS).toContain(chart.definition);
     expect(VALID_CROSS).toContain(chart.incarnationCrossType);
     expect(chart.complete).toBe(true);
-    expect(chart.precision?.gate).toBe("reliable");
+    expect(chart.precision?.gate).toBe("estimate");
     expect(chartFor("2026-01-01T00:00:00Z")).toEqual(chart);
   });
 
@@ -191,4 +191,24 @@ it("documents the printed 45-gate endpoint conflict using its sixth line and the
   expect(longitudeToActivation(60 + 22.5)).toMatchObject({ g: 45, l: 6 });
   expect(longitudeToActivation(60 + 22 + 37.5 / 60 - 1e-7)).toMatchObject({ g: 45, l: 6 });
   expect(longitudeToActivation(60 + 22 + 37.5 / 60)).toMatchObject({ g: 12, l: 1 });
+});
+
+
+it("does not promise gate or line reliability when independent ephemerides cross boundaries", () => {
+  // Swiss Ephemeris 2.10.03, calc_ut(jd, MOON, FLG_MOSEPH), apparent geocentric longitude.
+  const cases = [
+    { time: "2100-01-01T00:20:00", jd: 2488069.513888889, reference: 157.61044964915226, expected: [40, 2], actual: [40, 3] },
+    { time: "2100-01-01T06:45:10", jd: 2488069.7813657406, reference: 161.36032304432806, expected: [40, 6], actual: [64, 1] },
+  ];
+  const engine = createAstronomyEngine();
+  for (const item of cases) {
+    const independent = longitudeToActivation(item.reference);
+    expect([independent.g, independent.l]).toEqual(item.expected);
+    const model = longitudeToActivation(engine.bodyLongitudes(item.jd).moon);
+    expect([model.g, model.l]).toEqual(item.actual);
+    const chart = buildHumanDesignChartFromDatetime(item.time, "UTC");
+    expect([chart.activations.moon.personality.gate, chart.activations.moon.personality.line]).toEqual(item.actual);
+    expect(Object.values(chart.precision!)).toEqual(["estimate", "estimate", "estimate", "estimate", "estimate"]);
+    expect(chart.disclaimer).toContain("接近分界");
+  }
 });
