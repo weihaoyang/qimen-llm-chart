@@ -74,6 +74,15 @@ it("does not mistake repeated 辰 and 子 for a full 申子辰 in a real chart",
   expect(relations.some(item => item.kind === "地支三合" || item.kind === "地支三会")).toBe(false);
 });
 
+it("retains both actual pillar combinations when a complete trine has a repeated branch", () => {
+  const raw = buildBaziChartFromProfile(normalizeProfileInput({
+    calendarMode: "solar", datetime: "2016-08-10T08:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+  })).raw;
+  expect(raw.baZi).toEqual(["丙申", "丙申", "甲子", "戊辰"]);
+  const trines = analyzePillarRelations(raw.pillars, { dayMaster: raw.dayMaster }).relations.filter(item => item.kind === "地支三合");
+  expect(trines.map(item => item.pillars)).toEqual([["year", "day", "time"], ["month", "day", "time"]]);
+});
+
 describe("classical day-pillar Xun Kong", () => {
   it("matches all sixty pillars against the six ten-day void pairs", () => {
     const stems = Array.from("甲乙丙丁戊己庚辛壬癸");

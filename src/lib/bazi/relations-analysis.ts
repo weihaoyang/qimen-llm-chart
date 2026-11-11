@@ -370,7 +370,7 @@ export const analyzePillarRelations = (
         const trioBranches = trio.map((pillar) => pillar.earthlyBranch);
         const symbols = trioBranches.join("");
         const trioCombine = BRANCH_TRIO_COMBINE.find((item) => isTrio(trioBranches, item.branches));
-        if (trioCombine && !relations.some((item) => item.kind === "地支三合" && item.symbols === symbols)) {
+        if (trioCombine) {
           relations.push({
             kind: "地支三合",
             tone: "positive",
@@ -381,7 +381,7 @@ export const analyzePillarRelations = (
           });
         }
         const trioMeeting = BRANCH_TRIO_MEETING.find((item) => isTrio(trioBranches, item.branches));
-        if (trioMeeting && !relations.some((item) => item.kind === "地支三会" && item.symbols === symbols)) {
+        if (trioMeeting) {
           relations.push({
             kind: "地支三会",
             tone: "positive",
@@ -429,14 +429,13 @@ export const analyzePillarRelations = (
   if (options.dayMasterStrength) {
     notes.push(`日主${options.dayMaster}，旺衰判为${STRENGTH_LABELS[options.dayMasterStrength] ?? options.dayMasterStrength}`);
   }
-  const negativeCount = relations.filter((relation) => relation.tone === "negative").length;
-  const positiveCount = relations.filter((relation) => relation.tone === "positive").length;
-  notes.push(`四柱共识别 ${relations.length} 组干支关系：合会 ${positiveCount} 组、冲刑害破 ${negativeCount} 组`);
+  const groupCount = (group: BaziRelationGroup) => relations.filter(relation => getBaziRelationGroup(relation.kind) === group).length;
+  notes.push(`四柱共识别 ${relations.length} 条干支关系记录：合会 ${groupCount("合会")} 条、冲 ${groupCount("冲")} 条、刑害破 ${groupCount("刑害破")} 条、其他 ${groupCount("其他")} 条；复合关系可与组成关系同时计数。`);
   if (missingElements.length) {
     notes.push(`五行未见：${missingElements.join("、")}（以透干、地支本气与藏干统计）`);
   }
-  const clashCount = relations.filter((relation) => relation.kind === "地支六冲" || relation.kind === "天克地冲").length;
-  if (clashCount > 0) notes.push(`存在 ${clashCount} 组冲，冲处多主变动、迁移或关系调整`);
+  const clashCount = relations.filter((relation) => relation.kind === "地支六冲").length;
+  if (clashCount > 0) notes.push(`地支六冲涉及 ${clashCount} 对柱位；天克地冲是可同时出现的复合标记。`);
 
   const xunKong = options.dayXunKong?.trim();
   if (xunKong) {

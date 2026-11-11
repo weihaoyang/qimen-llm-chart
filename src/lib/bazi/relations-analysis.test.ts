@@ -62,6 +62,31 @@ describe("analyzePillarRelations", () => {
     expect(meeting.relations.some((item) => item.kind === "地支三会" && item.symbols === "寅卯辰")).toBe(true);
   });
 
+  it("retains distinct pillar combinations even when their three branch symbols repeat", () => {
+    const result = analyzePillarRelations(
+      [pillar("year", "甲申"), pillar("month", "丙申"), pillar("day", "戊子"), pillar("time", "壬辰")],
+      { dayMaster: "戊" },
+    );
+    const trios = result.relations.filter(item => item.kind === "地支三合");
+    expect(trios).toHaveLength(2);
+    expect(trios.map(item => item.pillars)).toEqual([["year", "day", "time"], ["month", "day", "time"]]);
+    expect(result.counts.find(item => item.kind === "地支三合")?.count).toBe(2);
+  });
+
+  it("counts relationship categories by kind and does not double-count a six-clash pair as two branch clashes", () => {
+    const result = analyzePillarRelations(
+      [pillar("year", "甲子"), pillar("month", "己丑"), pillar("day", "庚午"), pillar("time", "丁卯")],
+      { dayMaster: "庚" },
+    );
+    const count = (group: string) => result.relations.filter(item => getBaziRelationGroup(item.kind) === group).length;
+    const note = result.notes.find(item => item.includes("干支关系记录"))!;
+    expect(note).toContain(`合会 ${count("合会")} 条`);
+    expect(note).toContain(`冲 ${count("冲")} 条`);
+    expect(note).toContain(`刑害破 ${count("刑害破")} 条`);
+    expect(note).toContain(`其他 ${count("其他")} 条`);
+    expect(result.notes).toContain("地支六冲涉及 1 对柱位；天克地冲是可同时出现的复合标记。");
+  });
+
   it.each([
     ["申子辰", "地支三合"], ["亥卯未", "地支三合"], ["寅午戌", "地支三合"], ["巳酉丑", "地支三合"],
     ["寅卯辰", "地支三会"], ["巳午未", "地支三会"], ["申酉戌", "地支三会"], ["亥子丑", "地支三会"],
@@ -104,7 +129,7 @@ describe("analyzePillarRelations", () => {
     expect(result.missingElements).toEqual([]);
     expect(result.counts.length).toBeGreaterThan(0);
     expect(result.notes.some((note) => note.includes("日主戊"))).toBe(true);
-    expect(result.notes.some((note) => note.includes("组干支关系"))).toBe(true);
+    expect(result.notes.some((note) => note.includes("干支关系记录"))).toBe(true);
   });
 
   it("flags 日柱空亡 that lands on another pillar", () => {
