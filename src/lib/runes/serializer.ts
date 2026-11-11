@@ -15,6 +15,7 @@ export const serializeRunesToStructuredText = (reading: RuneReading) => [
   "北欧宇宙九界（Yggdrasil 现代三层示意；九符阵位置不逐一对应九界）：",
   ...NINE_WORLDS.map((world) => `${world.level} · ${world.nameZh}（${world.name}）：${world.residents} —— ${world.note}`),
   `世界树现代示意分层：上 = ${YGGDRASIL_LEVELS.上}；中 = ${YGGDRASIL_LEVELS.中}；下 = ${YGGDRASIL_LEVELS.下}`,
+  "来源：符文名称依后世语言材料重建；组名及占义为现代沿用；诺恩对应过去、现在、未来是此牌阵的现代解释。",
   "边界：符文与九界属神话与象征体系，词义为该体系的文化解释；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。",
 ].join("\n");
 
@@ -30,6 +31,7 @@ export const serializeRunesToCompactJson = (reading: RuneReading) =>
       meaning: draw.orientation === "reversed" ? draw.rune.reversed : draw.rune.upright,
       advice: draw.rune.advice,
     })),
+    sourceNote: "符文名称依后世语言材料重建；组名及占义为现代沿用；诺恩对应过去、现在、未来是牌阵的现代解释。",
     nineWorldsNote: "九界名称与三层分布为现代整理；九符阵的位置不逐一对应九界。",
     nineWorlds: NINE_WORLDS,
   });

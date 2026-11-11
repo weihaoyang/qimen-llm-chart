@@ -43,7 +43,7 @@ export const MATERIALS: ProvenanceMaterialSet = {
         "{ name: \"Heimdall's aett\", theme: \"Forces of fate, change and the natural world\" },",
         "{ name: \"Tyr's aett\", theme: \"Society, spirit and the wider cycle\" },",
       ],
-      note: "上游自述：符文名、读音与三 aett 划分为传统；关键词/牌义/建议为其自撰（「original, concise wording written for this app」），非古籍原文。",
+      note: "上游将名称、读音和三组划分称为传统；实际原始日耳曼语名称需根据后世证据重建，神名组名与主题为后世沿用。关键词、牌义及建议为上游自撰，非古籍原文。",
     },
     {
       title: "Fehu（ᚠ）在两部符文诗中的释义",

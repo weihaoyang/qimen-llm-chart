@@ -64,7 +64,7 @@ export function RunesPanel({ reading, onSpreadChange, onRedraw, onCopyJson, json
         ))}
       </div>
 
-      <p className="divination-panel__note"><span>BOUNDARY</span>符文与九界属神话与象征体系（符文数据移植自 MIT 项目 evoluteur/rune-reading）；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。</p>
+      <p className="divination-panel__note"><span>BOUNDARY</span>符文名称依据后世语言材料重建；组名、牌义及诺恩与过去现在未来的对应为现代解释（数据移植自 MIT 项目 evoluteur/rune-reading）；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。</p>
       <ProvenanceBlock system="runes" />
     </section>
   );
