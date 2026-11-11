@@ -5,6 +5,31 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("reports 丙开临巽 风遁 consistently in the registry and both chart outputs", () => {
+    const chart = buildChart({ datetime: "2026-01-04T06:00", timeZone: "Asia/Shanghai" });
+    const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_feng")!;
+    expect(check.positions).toEqual([4]);
+    expect(check.evidence[0]).toContain("丙开临巽（另式）");
+    expect(check.evidence[0]).not.toContain("乙合三吉门临巽");
+    const id = "patterns.jiu_dun.feng_dun";
+    expect(chart.raw.palaces.find(p => p.position === 4)?.auspiciousPatterns?.filter(p => p.id === id)).toHaveLength(1);
+    expect(chart.raw.specialPatterns.auspiciousPatterns?.filter(p => p.id === id).map(p => p.position)).toEqual([4]);
+  });
+  it("checks 风遁 readings across 96 real charts and both raw outputs", () => {
+    const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const expected = chart.raw.palaces.filter(p => p.position === 4 && (
+        (values(p.heavenlyStem).includes("乙") && ["开门", "休门", "生门"].includes(p.gate as string))
+        || (values(p.heavenlyStem).includes("丙") && p.gate === "开门")
+      )).map(p => p.position);
+      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_feng")?.positions, datetime).toEqual(expected);
+      const id = "patterns.jiu_dun.feng_dun";
+      expect(chart.raw.palaces.filter(p => p.auspiciousPatterns?.some(q => q.id === id)).map(p => p.position), datetime).toEqual(expected);
+      expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
+    }
+  });
   it("recognizes 乙开坤 云遁 variant on a real chart without falsely adding 地辛", () => {
     const chart = buildChart({ datetime: "2026-01-06T18:00", timeZone: "Asia/Shanghai" });
     const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_yun")!;

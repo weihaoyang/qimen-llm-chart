@@ -42,6 +42,20 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("distinguishes the 风遁 乙 and 丙 variant conditions", () => {
+    const one = evaluateQimenPatterns(chartWith([palace(4, { heavenlyStem: "乙", gate: "休门" })]));
+    expect(one.checks.find(p => p.id === "jiu_dun_feng")?.evidence[0]).toContain("乙合三吉门临巽");
+    const other = evaluateQimenPatterns(chartWith([palace(4, { heavenlyStem: "丙", gate: "开门" })]));
+    expect(other.checks.find(p => p.id === "jiu_dun_feng")?.evidence[0]).toContain("丙开临巽（另式）");
+    const both = evaluateQimenPatterns(chartWith([palace(4, { heavenlyStem: ["乙", "丙"], gate: "开门" })]));
+    const check = both.checks.find(p => p.id === "jiu_dun_feng")!;
+    expect(check.positions).toEqual([4]);
+    expect(check.evidence[0]).toContain("乙合三吉门临巽");
+    expect(check.evidence[0]).toContain("丙开临巽（另式）");
+    for (const input of [{ position: 4, heavenlyStem: "丙", gate: "休门" }, { position: 2, heavenlyStem: "丙", gate: "开门" }]) {
+      expect(statusOf(evaluateQimenPatterns(chartWith([palace(input.position, input)])), "jiu_dun_feng")).toBe("未成立");
+    }
+  });
   it("records 云遁 primary and 乙开坤 variant independently without double counting", () => {
     const report = evaluateQimenPatterns(chartWith([
       palace(2, { heavenlyStem: "乙", earthlyStem: "辛", gate: "开门" }),
