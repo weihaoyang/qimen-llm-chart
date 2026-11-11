@@ -309,7 +309,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("fei_gan_ge", "飞干格", "常用凶格", "天盘日干 + 地盘庚", "主自己撞上阻力、行事易碰壁；缓一步再动。", (p, chart) =>
     hasHeaven(p, chart.raw.fourPillars.day.stem) && hasEarth(p, "庚") ? pairEvidence(p) : null,
   ),
-  bad("san_qi_ru_mu", "三奇入墓", "常用凶格", "天盘乙入 6/2 宫；丙入 6 宫；丁入 8 宫", "主才能被埋、有力使不出；宜换时换方。", (p) =>
+  bad("san_qi_ru_mu", "三奇入墓", "常用凶格", "本盘口径：天盘乙入 6/2 宫；丙入 6 宫；丁入 8 宫；古籍另有丙丁均入六宫之说", "主才能被埋、有力使不出；宜换时换方。", (p) =>
     (hasHeaven(p, "乙") && (p.position === 6 || p.position === 2)) ||
     (hasHeaven(p, "丙") && p.position === 6) ||
     (hasHeaven(p, "丁") && p.position === 8)

@@ -42,6 +42,19 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("keeps the selected 三奇入墓 rule distinct from the 王璋 palace interpretation", () => {
+    // 《遁甲符应经》整理本王璋条按乙二、丙六、丁六比较；不把其他宫视为原文逐项排除。
+    const ancient = new Set(["乙2", "丙6", "丁6"]);
+    const differences: string[] = [];
+    for (const stem of ["乙", "丙", "丁"]) for (const position of [2, 6, 8]) {
+      const key = `${stem}${position}`;
+      const actual = statusOf(evaluateQimenPatterns(chartWith([palace(position, { heavenlyStem: stem })])), "san_qi_ru_mu") === "成立";
+      if (actual !== ancient.has(key)) differences.push(`${key}:${actual ? "本盘口径命中" : "王璋口径命中"}`);
+    }
+    expect(differences).toEqual(["乙6:本盘口径命中", "丁6:王璋口径命中", "丁8:本盘口径命中"]);
+    expect(QIMEN_PATTERN_CATALOG.find(p => p.id === "san_qi_ru_mu")?.requirement).toContain("古籍另有");
+  });
+
   it("partitions the whole catalog into formed and failed", () => {
     const report = evaluateQimenPatterns(chartWith([palace(1)]));
     expect(report.registered).toBe(QIMEN_PATTERN_CATALOG.length);
