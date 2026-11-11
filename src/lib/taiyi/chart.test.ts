@@ -454,8 +454,8 @@ it("preserves the 442 historical discrepancy without silently substituting the p
   expect(previous.patterns).toContain("关：主大将、始击（客目）同在8宫；主参将、客大将同在4宫");
 });
 
-it("compares eight additional Yin charts with 秘書 without silently correcting its text", () => {
-  // 依维基文库《太乙秘書》阴局13–20逐条转录；十四局「大感」不能直接映射神名，记 null。
+it("compares Yin charts 13–24 with 秘書 without silently correcting its text", () => {
+  // 依维基文库《太乙秘書》阴局13–24逐条转录；未明示或未能直接映射的字段记 null。
   // 顺序：太乙、天目、主算、主大、主参、始击、客算、客大、客参、计神。
   const cases: Array<[number, Array<string | number | null>]> = [
     [13, [4, "乾", 12, 6, 6, "辰", 37, 7, 1, "申"]],
@@ -466,6 +466,10 @@ it("compares eight additional Yin charts with 秘書 without silently correcting
     [18, [3, "艮", 3, 3, 9, "子", 8, 8, 4, "卯"]],
     [19, [2, "寅", 14, 4, 2, "艮", 16, 6, 8, "寅"]],
     [20, [2, "卯", 13, 3, 9, "辰", 10, 1, 3, "丑"]],
+    [21, [2, "辰", 10, 1, 3, "巳", 1, 1, null, "子"]],
+    [22, [1, "巽", 24, 4, 2, "未", 14, 4, 2, "亥"]],
+    [23, [1, "巽", 20, 4, 2, "申", 7, 7, 1, "戌"]],
+    [24, [1, "巳", 16, 6, 3, null, null, null, null, "酉"]],
   ];
   const names = ["太乙", "天目", "主算", "主大将", "主参将", "始击", "客算", "客大将", "客参将", "计神"];
   const differences: string[] = [];
@@ -479,12 +483,14 @@ it("compares eight additional Yin charts with 秘書 without silently correcting
       if (value !== actual[index]) differences.push(`阴${ruJu}局${names[index]}：秘書${value}／产品${actual[index]}`);
     });
   }
-  expect(compared).toBe(79);
-  expect(differences).toEqual(["阴13局主大将：秘書6／产品2"]);
+  expect(compared).toBe(114);
+  expect(differences).toEqual(["阴13局主大将：秘書6／产品2", "阴23局主算：秘書20／产品24", "阴24局主参将：秘書3／产品8"]);
   // 金镜式经卷三阴局立成：十三局主算12；十四局客目大威；十五局客算29。
   // 秘書十五局作25，不能把两部表的差异隐去。
   const fourteen = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 14 });
   expect(fourteen.shiJi.position).toBe("午"); // 大威；秘書原文作未直接映射的「大感」
   const fifteen = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 15 });
   expect(fifteen.counts.guest).toBe(25); // 金镜表另作29
+  const twentyThree = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 23 });
+  expect(twentyThree.counts.host).toBe(24); // 金镜表亦作24，秘書作20
 });
