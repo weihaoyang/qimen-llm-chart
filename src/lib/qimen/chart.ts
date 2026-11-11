@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { matchesPillarGengGe, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
+import { matchesPillarGengGe, matchesPillarFeiGan, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -85,8 +85,10 @@ export const buildChart = (
     { id: "patterns.bad.sui_ge", name: "岁格", pillar: rawChart.fourPillars.year },
     { id: "patterns.bad.yue_ge", name: "月格", pillar: rawChart.fourPillars.month },
     { id: "patterns.bad.shi_ge", name: "时格", pillar: rawChart.fourPillars.hour },
+    { id: "patterns.bad.ri_ge", name: "日格（伏干格）", pillar: rawChart.fourPillars.day },
   ];
-  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || pillarGengRules.some(rule => rule.id === id);
+  const feiGanId = "patterns.bad.fei_gan_ge";
+  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || id === feiGanId || id === "patterns.bad.fu_gan_ge" || pillarGengRules.some(rule => rule.id === id);
   const palaces = sortPalaces(rawChart).map((palace) => {
     const auspiciousPatterns = (palace.auspiciousPatterns ?? []).filter(({ id }) => !isCorrectedGoodPattern(id));
     const inauspiciousPatterns = (palace.inauspiciousPatterns ?? []).filter(({ id }) => !isCorrectedBadPattern(id));
@@ -118,6 +120,9 @@ export const buildChart = (
       if (matchesPillarGengGe(palace, rule.pillar)) {
         inauspiciousPatterns.push({ id: rule.id, name: rule.name, type: rule.name, position, description: "天盘庚加该柱地盘干；甲按本柱六甲遁仪" });
       }
+    }
+    if (matchesPillarFeiGan(palace, rawChart.fourPillars.day)) {
+      inauspiciousPatterns.push({ id: feiGanId, name: "飞干格", type: "飞干格", position, description: "天盘日干加地盘庚；甲按日柱遁仪" });
     }
     if (matchesFuGong(palace, rawChart.zhiFu.heavenlyStem)) {
       inauspiciousPatterns.push({ id: fuGongId, name: "伏宫格", type: "伏宫格", position, description: "天盘庚临地盘本旬值符原宫" });

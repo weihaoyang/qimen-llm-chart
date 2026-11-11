@@ -90,6 +90,10 @@ export const matchesPillarGengGe = (palace: Palace, pillar: { stem: string; bran
   const stem = pillarStemOnBoard(pillar);
   return Boolean(stem && hasHeaven(palace, "庚") && hasEarth(palace, stem));
 };
+export const matchesPillarFeiGan = (palace: Palace, pillar: { stem: string; branch: string }) => {
+  const stem = pillarStemOnBoard(pillar);
+  return Boolean(stem && hasHeaven(palace, stem) && hasEarth(palace, "庚"));
+};
 const gateIn = (palace: Palace, gates: readonly string[]) => gates.includes(palace.gate as string);
 const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes(palace.deity as string);
 const isZhiFu = (palace: Palace) => palace.deity === "值符" || Boolean(palace.isZhiFu);
@@ -331,8 +335,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   },
   ),
   bad("ri_ge", "日格（伏干格）", "常用凶格", "天盘庚 + 地盘日干；甲日用该日所遁六仪；日格与伏干格为同一项", "主当下就被压制；宜暂缓或借力。", (p, chart) => {
-    const stem = dayStemOnBoard(chart);
-    return stem && hasHeaven(p, "庚") && hasEarth(p, stem) ? dayStemEvidence(chart, p) : null;
+    return matchesPillarGengGe(p, chart.raw.fourPillars.day) ? dayStemEvidence(chart, p) : null;
   }),
   bad("shi_ge", "时格", "常用凶格", "天盘庚 + 地盘时干；甲时按时柱六甲遁仪", "主此时此刻被卡；重大动作宜改时辰。", (p, chart) => {
     const pillar = chart.raw.fourPillars.hour;
@@ -340,8 +343,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   },
   ),
   bad("fei_gan_ge", "飞干格", "常用凶格", "天盘日干 + 地盘庚；甲日用该日所遁六仪", "主自己撞上阻力、行事易碰壁；缓一步再动。", (p, chart) => {
-    const stem = dayStemOnBoard(chart);
-    return stem && hasHeaven(p, stem) && hasEarth(p, "庚") ? dayStemEvidence(chart, p) : null;
+    return matchesPillarFeiGan(p, chart.raw.fourPillars.day) ? dayStemEvidence(chart, p) : null;
   }),
   bad("san_qi_ru_mu", "三奇入墓", "常用凶格", "本盘口径：天盘乙入 6/2 宫；丙入 6 宫；丁入 8 宫；古籍另有丙丁均入六宫之说", "主才能被埋、有力使不出；宜换时换方。", (p) =>
     (hasHeaven(p, "乙") && (p.position === 6 || p.position === 2)) ||

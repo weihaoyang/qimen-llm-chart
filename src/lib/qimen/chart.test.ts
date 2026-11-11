@@ -546,3 +546,18 @@ it("keeps 甲柱 庚格 entries aligned between catalog and raw palace/overview 
   }
   expect([...observed].sort()).toEqual(["hour", "month", "year"]);
 });
+
+it("keeps day patterns consistent across the catalog, palace and overview", () => {
+  for (const datetime of ["2026-01-01T02:00", "2026-01-20T22:00"]) {
+    const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+    const report = evaluateQimenPatterns(chart);
+    for (const id of ["ri_ge", "fei_gan_ge"]) {
+      const expected = report.checks.find((check) => check.id === id)!.positions;
+      const palaceHits = chart.raw.palaces.filter((palace) => palace.inauspiciousPatterns?.some((pattern) => pattern.id === `patterns.bad.${id}`)).map((palace) => palace.position);
+      const overviewHits = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter((pattern) => pattern.id === `patterns.bad.${id}`).map((pattern) => pattern.position);
+      expect(palaceHits.sort(), `${datetime} ${id}`).toEqual([...expected].sort());
+      expect(overviewHits.sort(), `${datetime} ${id}`).toEqual([...expected].sort());
+    }
+    expect((chart.raw.specialPatterns.inauspiciousPatterns ?? []).some((pattern) => pattern.id === "patterns.bad.fu_gan_ge")).toBe(false);
+  }
+});

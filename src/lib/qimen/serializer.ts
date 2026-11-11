@@ -269,7 +269,7 @@ const buildCompactSchema = () => {
 const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
   ...chart.raw.specialPatterns,
   inauspiciousPatterns: (chart.raw.specialPatterns.inauspiciousPatterns ?? []).map((pattern) => {
-    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge"].includes(pattern.id)) return pattern;
+    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge"].includes(pattern.id)) return pattern;
     return { id: pattern.id, name: pattern.name, type: pattern.type, position: pattern.position };
   }),
 });
