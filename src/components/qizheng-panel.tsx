@@ -10,7 +10,7 @@ const StarTable = ({ title, stars }: { title: string; stars: QizhengStar[] }) =>
       {stars.map((star, index) => (
         <div className="qizheng-row" key={star.name} style={{ "--item-index": index } as React.CSSProperties}>
           <b>{star.name}</b>
-          <span>{star.longitude}°</span>
+          <span title="宫位与宿位按未显示的精度计算">约 {star.longitude.toFixed(2)}°</span>
           <span>{star.palaceName}({star.branch})</span>
           <span>宿{star.mansion}</span>
           <span className={`qizheng-row__dignity is-${star.dignity === "庙" || star.dignity === "旺" ? "good" : star.dignity === "陷" ? "bad" : "flat"}`}>现表：{star.dignity}{star.classicalDignity ? <small>星学大成卷{star.classicalDignity.volume}{star.classicalDignity.passage ? `〈${star.classicalDignity.passage}〉` : ""}：{star.classicalDignity.label}{star.classicalDignity.alternatives?.map((item) => `；〈${item.passage}〉：${item.label}`)}</small> : null}</span>

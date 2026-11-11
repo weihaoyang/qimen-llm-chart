@@ -264,7 +264,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     stars.push({
       name,
       kind: "七政",
-      longitude: Number(longitude.toFixed(2)),
+      longitude,
       palace,
       branch,
       palaceName: palaceNameOf(palace),
@@ -291,7 +291,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     stars.push({
       name: remnant.name,
       kind: "四余",
-      longitude: Number(remnant.longitude.toFixed(2)),
+      longitude: remnant.longitude,
       palace,
       branch,
       palaceName: palaceNameOf(palace),

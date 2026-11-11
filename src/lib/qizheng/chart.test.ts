@@ -273,6 +273,20 @@ describe("qizheng siyu chart", () => {
     expect(seen.size).toBe(Object.values(expected).reduce((count, branches) => count + Object.keys(branches).length, 0));
   });
 
+  it("keeps exported longitude consistent with palace and mansion near boundaries", () => {
+    let oldRoundedMismatch = false;
+    for (let minute = 0; minute < 24 * 60; minute++) {
+      const date = new Date(Date.UTC(2026, 2, 20, 0, minute));
+      const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(date, "UTC")));
+      for (const star of chart.stars) {
+        expect(longitudeToPalace(star.longitude), `${date.toISOString()} ${star.name}`).toBe(star.palace);
+        expect(longitudeToMansion(star.longitude, date.getTime()), `${date.toISOString()} ${star.name}`).toBe(star.mansion);
+        if (longitudeToPalace(Number(star.longitude.toFixed(2))) !== star.palace) oldRoundedMismatch = true;
+      }
+    }
+    expect(oldRoundedMismatch).toBe(true);
+  });
+
   it("places seven luminaries and four remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
