@@ -1,6 +1,7 @@
 """Conditional comparison of two historical Zi Qi entries; not a production ephemeris."""
 
 from decimal import Decimal
+from datetime import date
 
 
 def midnight_jd(year: int, month: int, day: int, *, gregorian: bool) -> float:
@@ -62,6 +63,17 @@ def ming_1911_comparison() -> tuple[Decimal, Decimal]:
     return elapsed, (phase - liu_start) / 28
 
 
+def qing_rate_comparison() -> tuple[Decimal, Decimal, Decimal]:
+    """Qing decimal arcseconds/day; longitude is conditional on the epoch and palace convention."""
+    rate = Decimal("126.720777")
+    period = Decimal(360 * 3600) / rate
+    days = Decimal((date(1911, 4, 19) - date(1743, 12, 23)).days)
+    # Conditional only: seven completed 30-degree palaces, Gregorian epoch.
+    anchor = Decimal(7 * 30 + 17) + Decimal(50) / 60 + Decimal(14) / 3600 + Decimal(53) / 216000
+    longitude = (anchor + days * rate / 3600) % 360
+    return days, period, longitude
+
+
 def jiajing_1531_intervals() -> tuple[list[int], int]:
     # Each month: (month length, day entering a new whole degree).
     # Leap sixth month is kept as a separate month; the eleventh has two entries.
@@ -77,6 +89,10 @@ def jiajing_1531_intervals() -> tuple[list[int], int]:
 
 
 if __name__ == "__main__":
+    qing_days, qing_period, qing_longitude = qing_rate_comparison()
+    assert qing_days == 61112
+    assert abs(qing_period - Decimal("10227.21001781736")) < Decimal("0.000001")
+    print(f"Qing daily rate implies {qing_period:.5f} days/revolution; conditional longitude {qing_longitude:.5f} degrees")
     assert midnight_jd(1531, 2, 4, gregorian=False) == 2280289.5
     assert midnight_jd(1667, 2, 1, gregorian=True) == 2329950.5
     assert midnight_jd(930, 10, 3, gregorian=False) == 2061015.5
