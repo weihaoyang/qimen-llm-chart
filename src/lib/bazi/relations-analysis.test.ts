@@ -135,6 +135,20 @@ describe("analyzePillarRelations", () => {
     expect(analyze(incomplete).some(item => item.kind === "地支三合" || item.kind === "地支三会")).toBe(false);
   });
 
+  it.each([
+    ["申", "辰", "子"], ["亥", "未", "卯"], ["寅", "戌", "午"], ["巳", "丑", "酉"],
+  ] as const)("records %s%s as an arch only while %s is absent", (left, right, middle) => {
+    const extra = [..."子丑寅卯辰巳午未申酉戌亥"].find(branch => branch !== left && branch !== right && branch !== middle)!;
+    const calc = (fourth: string) => analyzePillarRelations([
+      pillar("year", "甲" + left), pillar("month", "丙" + right),
+      pillar("day", "戊" + extra), pillar("time", "庚" + fourth),
+    ], { dayMaster: "戊" }).relations;
+    const match = calc(extra).find(item => item.kind === "地支拱合" && item.pillars.join(",") === "year,month");
+    expect(match?.detail).toContain(`虚拱${middle}`);
+    expect(match?.detail).toContain("不等于成局或化气");
+    expect(calc(middle).some(item => item.kind === "地支拱合" && item.pillars.join(",") === "year,month")).toBe(false);
+  });
+
   it("reports 半合, 六害, 六破, self-punishment and 伏吟", () => {
     const half = analyzePillarRelations(
       [pillar("year", "甲申"), pillar("month", "丙子"), pillar("day", "戊寅"), pillar("time", "庚午")],

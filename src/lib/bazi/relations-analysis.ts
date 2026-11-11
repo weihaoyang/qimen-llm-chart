@@ -18,6 +18,7 @@ export type BaziRelationKind =
   | "地支六合"
   | "地支三合"
   | "地支半合"
+  | "地支拱合"
   | "地支三会"
   | "地支六冲"
   | "地支相刑"
@@ -58,6 +59,7 @@ const RELATION_GROUP: Record<BaziRelationKind, BaziRelationGroup> = {
   地支六合: "合会",
   地支三合: "合会",
   地支半合: "合会",
+  地支拱合: "合会",
   地支三会: "合会",
   天干相冲: "冲",
   地支六冲: "冲",
@@ -185,6 +187,12 @@ const BRANCH_HALF_COMBINE: Record<string, FiveElement> = {
   午戌: "火",
   巳酉: "金",
   酉丑: "金",
+};
+
+// 两端支与未出现的中神；只记录虚拱结构，非断定化局。
+const BRANCH_ARCH: Record<string, { middle: string; element: FiveElement }> = {
+  申辰: { middle: "子", element: "水" }, 亥未: { middle: "卯", element: "木" },
+  寅戌: { middle: "午", element: "火" }, 巳丑: { middle: "酉", element: "金" },
 };
 
 const BRANCH_TRIO_COMBINE: Array<{ branches: string; element: FiveElement }> = [
@@ -356,6 +364,10 @@ export const analyzePillarRelations = (
       branchRelations(a.earthlyBranch, b.earthlyBranch).forEach((relation) => {
         push(relation.kind, relation.tone, a.key, b.key, branchKey, relation.detail);
       });
+      const arch = at(BRANCH_ARCH, a.earthlyBranch, b.earthlyBranch);
+      if (arch && !ordered.some(pillar => pillar.earthlyBranch === arch.middle)) {
+        push("地支拱合", "neutral", a.key, b.key, branchKey, `${branchKey} 虚拱${arch.middle}（${arch.element}）；中支未见，不等于成局或化气`);
+      }
 
       if (stemsControlEachOther(a.heavenlyStem, b.heavenlyStem) && at(BRANCH_CLASH, a.earthlyBranch, b.earthlyBranch)) {
         push(

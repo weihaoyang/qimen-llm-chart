@@ -22,6 +22,7 @@ export type BaziRelationMatch = {
   symbols?: string;
   positions: string[];
   pattern: string;
+  detail?: string;
 };
 
 export type BaziRelationSummary = {
@@ -32,6 +33,7 @@ export type BaziRelationSummary = {
     liuHe: BaziRelationMatch[];
     liuChong: BaziRelationMatch[];
     banHe: BaziRelationMatch[];
+    gongHe: BaziRelationMatch[];
     sanHe: BaziRelationMatch[];
     sanHui: BaziRelationMatch[];
     xing: BaziRelationMatch[];
@@ -96,14 +98,6 @@ const BRANCH_PAIR_RELATIONS = {
     ["卯", "辰"],
     ["申", "亥"],
     ["酉", "戌"],
-  ],
-  po: [
-    ["子", "酉"],
-    ["丑", "辰"],
-    ["寅", "亥"],
-    ["卯", "午"],
-    ["巳", "申"],
-    ["未", "戌"],
   ],
 } as const;
 
@@ -301,6 +295,7 @@ export const buildBaziRelationSummary = (
     symbols: relation.symbols,
     positions: relation.pillars.map((key) => PILLAR_LABELS[key]),
     pattern: relation.kind,
+    detail: relation.detail,
   });
   const matchesOf = (kind: BaziRelation["kind"]) =>
     engine.relations.filter((relation) => relation.kind === kind).map(toMatch);
@@ -315,11 +310,12 @@ export const buildBaziRelationSummary = (
       liuHe: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.liuHe, "六合"),
       liuChong: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.liuChong, "六冲"),
       banHe: matchesOf("地支半合"),
+      gongHe: matchesOf("地支拱合"),
       sanHe: buildGroupMatches(branchTokens, SAN_HE_GROUPS),
       sanHui: buildGroupMatches(branchTokens, SAN_HUI_GROUPS),
       xing: buildXingMatches(chart.raw.pillars),
       hai: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.hai, "六害"),
-      po: buildPairMatches(branchTokens, BRANCH_PAIR_RELATIONS.po, "六破"),
+      po: matchesOf("地支六破"),
     },
     tianKeDiChong: matchesOf("天克地冲"),
     fuYin: matchesOf("伏吟"),
@@ -340,12 +336,12 @@ export const buildBaziRelationSummary = (
   };
 };
 
-const formatRelationMatches = (matches: BaziRelationMatch[]) =>
+const formatRelationMatches = (matches: BaziRelationMatch[], withDetail = false) =>
   matches.length > 0
     ? matches
         .map((match) => {
           const value = match.branches ?? match.stems ?? "未知";
-          return `${value}（${match.positions.join("、")}）`;
+          return `${value}（${match.positions.join("、")}）${withDetail && match.detail ? `：${match.detail}` : ""}`;
         })
         .join("；")
     : "无";
@@ -472,13 +468,14 @@ export const serializeBaziToStructuredText = (
     `天干相克: ${formatRelationMatches(relations.heavenlyStemControls)}`,
     `地支六合: ${formatRelationMatches(earthlyBranchRelations.liuHe)}`,
     `地支半合: ${formatRelationMatches(earthlyBranchRelations.banHe)}`,
+    `地支拱合（虚位）: ${formatRelationMatches(earthlyBranchRelations.gongHe, true)}`,
     `地支六冲: ${formatRelationMatches(earthlyBranchRelations.liuChong)}`,
     `地支三合: ${formatRelationMatches(earthlyBranchRelations.sanHe)}`,
     `地支三会: ${formatRelationMatches(earthlyBranchRelations.sanHui)}`,
     `地支刑: ${formatRelationMatches(earthlyBranchRelations.xing)}`,
     `地支六害: ${formatRelationMatches(earthlyBranchRelations.hai)}`,
-    `地支六破: ${formatRelationMatches(earthlyBranchRelations.po)}`,
-    `天克地冲: ${formatRelationMatches(relations.tianKeDiChong)}`,
+    `地支六破: ${formatRelationMatches(earthlyBranchRelations.po, true)}`,
+    `天克地冲: ${formatRelationMatches(relations.tianKeDiChong, true)}`,
     `伏吟: ${formatRelationMatches(relations.fuYin)}`,
     `日柱空亡落宫: ${formatRelationMatches(relations.dayXunKongVoid)}`,
     `五行未见: ${relations.missingElements.join("、") || "无"}`,

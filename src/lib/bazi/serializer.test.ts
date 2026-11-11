@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { buildBaziChartFromProfile } from "./chart";
+import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "./serializer";
 
 describe("serializeBaziToCompactJson", () => {
+  it("exports an empty-middle arch and preserves the six-break textual disagreement", () => {
+    const chartAt = (datetime: string) => buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+    }));
+    const missingZi = chartAt("2024-09-29T12:00");
+    const fullTrine = chartAt("2024-09-29T00:00");
+    const getArches = (chart: typeof missingZi) => JSON.parse(serializeBaziToCompactJson(chart)).relations.earthlyBranchRelations.gongHe as Array<{ symbols: string; detail: string }>;
+    expect(getArches(missingZi)).toEqual(expect.arrayContaining([expect.objectContaining({ symbols: "辰申", detail: expect.stringContaining("虚拱子") })]));
+    expect(getArches(fullTrine).some(item => item.symbols === "辰申")).toBe(false);
+    expect(serializeBaziToStructuredText(missingZi)).toContain("虚拱子");
+    const yinHai = chartAt("2022-07-01T21:00");
+    const details = JSON.parse(serializeBaziToCompactJson(yinHai)).relations.earthlyBranchRelations.po as Array<{ detail: string }>;
+    expect(details.some(item => item.detail.includes("《三命通会》破煞条对四生支不取"))).toBe(true);
+    expect(serializeBaziToStructuredText(yinHai)).toContain("《三命通会》破煞条对四生支不取");
+  });
   it("serializes a compact bazi payload without programmatic conclusions", () => {
     const chart = buildBaziChartFromProfile({
       original: {
