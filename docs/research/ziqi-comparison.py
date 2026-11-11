@@ -49,11 +49,11 @@ def ming_930_comparison() -> tuple[Decimal, Decimal]:
 
 
 def ming_1911_comparison() -> tuple[Decimal, Decimal]:
-    """Candidate only: the 1911 OCR column mapping has not been checked on the image."""
+    """Compare a 1911 facsimile date with the Ming table, without mixing their mansion boundaries."""
     cycle = Decimal("10227.1792")
     anchor = Decimal("268.52") + 11 * 28
     elapsed = Decimal(str(
-        midnight_jd(1911, 4, 18, gregorian=True)
+        midnight_jd(1911, 4, 19, gregorian=True)
         - midnight_jd(1531, 2, 4, gregorian=False)
     ))
     phase = (anchor + elapsed) % cycle
@@ -85,9 +85,14 @@ if __name__ == "__main__":
     assert delay_to_xing_one == Decimal("273.5568")
     print(f"930 Ming-table reconstruction: Liu {liu_degree:.3f} ancient degrees; {delay_to_xing_one} days before Xing 1")
     elapsed_1911, degree_1911 = ming_1911_comparison()
-    assert elapsed_1911 == Decimal("138855")
-    assert abs(degree_1911 - Decimal("10.57754285714285714285714286")) < Decimal("0.00000001")
-    print(f"1911 candidate: {elapsed_1911} days from anchor; Ming-table Liu {degree_1911:.3f} ancient degrees")
+    assert elapsed_1911 == Decimal("138856")
+    assert abs(degree_1911 - Decimal("10.61325714285714285714285714")) < Decimal("0.00000001")
+    print(f"1911 facsimile date: {elapsed_1911} days from anchor; Ming-table Liu {degree_1911:.3f} ancient degrees")
+    # 三月初一、十一、二十一：鬼3°45′、4°06′、4°27′；角分按60进位。
+    observed_arcminutes = [3 * 60 + 45, 4 * 60 + 6, 4 * 60 + 27]
+    assert [b - a for a, b in zip(observed_arcminutes, observed_arcminutes[1:])] == [21, 21]
+    assert abs(Decimal(observed_arcminutes[-1] - observed_arcminutes[0]) - Decimal(20 * 60) / 28) < 1
+    print("1911 facsimile: 21 + 21 arcminutes over 20 days; 28-day-per-degree model differs by < 1 arcminute")
     intervals, boundary = jiajing_1531_intervals()
     assert intervals == [28] * 12
     assert boundary == 13
