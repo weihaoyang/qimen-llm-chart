@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, parityLabel, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -31,6 +31,21 @@ describe("taiyi tables", () => {
 });
 
 describe("accumulation and palaces", () => {
+  it("exposes the unresolved 定计 count discrepancy in the 万历戊子 example", () => {
+    // 探索假说：合神丑加太岁子，文昌所在天盘回推地盘；数至太乙后一正宫。
+    // 只锁定假说与书例之间的差异，不将假说用于生产排盘。
+    const result = (["阳遁", "阴遁"] as const).map((dun) => {
+      const chart = buildTaiyiChart({ year: 1588, cycle: 360, dun, ruJu: null });
+      const shift = (RING.indexOf("丑") - RING.indexOf("子") + RING.length) % RING.length;
+      const eye = RING[(RING.indexOf(chart.tianMu.position) - shift + RING.length) % RING.length];
+      const next = PALACE_RING[(PALACE_RING.indexOf(chart.taiyi.palace) + 1) % PALACE_RING.length];
+      const hypothesis = countSum(eye, chart.taiyi.position) + chart.taiyi.palace + next;
+      return { eye, hypothesis };
+    });
+    expect(result).toEqual([{ eye: "辰", hypothesis: 34 }, { eye: "戌", hypothesis: 28 }]);
+    // 原书记阳三十四、阴二十五；阴例未吻合，禁止将此假说当作完整规则。
+    expect(result[1].hypothesis).not.toBe(25);
+  });
   it("reproduces annual duty gate examples and every thirty-year boundary", () => {
     expect(annualDutyGate(accumulatedYears(724))).toEqual({ name: "开门", yearInGate: 1, yearInCycle: 1 });
     expect(annualDutyGate(accumulatedYears(753)).name).toBe("开门");
