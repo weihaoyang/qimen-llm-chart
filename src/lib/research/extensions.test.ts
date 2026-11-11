@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateDaliuren } from "taibu-core/daliuren";
+import tanYuanTable from "./fixtures/tanyuan-60-days.json";
 import { alternateLiuRenGenerals, buildDaliurenResearch, classifyLiuRenPlate, tanYuanShehai } from "./extensions";
 
 const profile = {
@@ -437,4 +438,36 @@ it("flags the internal discrepancy in the 乙卯 干上亥 source table", () => 
   expect(text).toContain("干上亥");
   expect(text).toContain("文本存在矛盾，待核原本");
   expect(json.基本信息.涉害异说).toContain("文本存在矛盾，待核原本");
+});
+
+
+it("compares all available 探原 sixty-day transmission rows without filling omissions", () => {
+  // 《探原》电子文本的重复行去重；八处缺行保持缺失，不由本站回填。
+  const book: Record<string, string[]> = tanYuanTable;
+  const missing: string[] = [];
+  const mismatches: string[] = [];
+  let matched = 0;
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const chart = calculateDaliuren(input);
+      const key = chart.dateInfo.ganZhi.day + chart.siKe.yiKe[0][0];
+      const reference = book[key];
+      if (!reference) { missing.push(key); continue; }
+      const actual = [chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join("");
+      if (actual !== reference[0]) mismatches.push(`${key}:${actual}/${reference[0]}`);
+      else matched++;
+    }
+  }
+  expect(matched).toBe(692);
+  expect(missing.sort()).toEqual(["戊申寅", "戊申卯", "丁卯午", "丁卯未", "丁亥寅", "丁亥卯", "甲申申", "甲申酉"].sort());
+  expect(mismatches.sort()).toEqual([
+    "己卯巳:丑亥酉/亥酉未", "己卯亥:未亥卯/亥卯未", "己丑卯:巳丑酉/卯亥未", "己酉卯:巳丑酉/卯亥未",
+    "丁卯亥:未亥卯/亥卯未", "庚午辰:戌午寅/子申辰", "庚午午:午辰寅/寅子戌", "庚辰午:午辰寅/寅子戌",
+    "庚寅辰:戌午寅/子申辰", "辛卯寅:未亥卯/亥卯未", "甲申戌:戌午寅/子申辰", "甲午子:戌申午/寅子戌",
+    "甲辰子:戌申午/寅子戌", "甲辰未:寅未子/子巳戌", "甲辰戌:戌午寅/子申辰", "乙卯寅:丑亥酉/亥酉未",
+    "乙卯申:未亥卯/亥卯未", "癸酉申:卯戌巳/亥午丑", "癸未酉:巳丑酉/卯亥未", "癸卯亥:丑亥酉/亥酉未",
+  ].sort());
+  for (const discrepancy of mismatches) expect(book[discrepancy.slice(0, 3)][1]).toBe("改正涉害");
 });
