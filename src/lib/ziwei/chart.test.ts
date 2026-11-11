@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { astro } from "iztro";
 import { Lunar } from "lunar-typescript";
 import startTables from "../../../docs/research/sources/ziwei-quanshu-start-tables.json";
+import mingTables from "../../../docs/research/sources/ziwei-ming-edition-start-tables.json";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
@@ -257,4 +258,20 @@ it("matches the three disputed cells in the Japanese National Archives Ming-edit
     expect(raw.fiveElementsClass).toBe(kind);
     expect(raw.palaces.filter(p => p.majorStars.some(star => star.name === "紫微")).map(p => p.earthlyBranch)).toEqual([branch]);
   }
+});
+
+it("matches all 120 wood, metal, earth and fire positions transcribed from the Ming facsimile", () => {
+  let checked = 0;
+  for (const table of mingTables.tables) {
+    const dates = Object.entries(table.palaces).flatMap(([branch, days]) => days.map((day) => ({ day, branch })));
+    expect(dates.map(({ day }) => day).sort((a, b) => a - b)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
+    for (const { day, branch } of dates) {
+      const date = Lunar.fromYmd(1990, 2, day).getSolar().toYmd();
+      const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${date}T${String(table.hourIndex * 2).padStart(2, "0")}:00`));
+      expect(raw.fiveElementsClass).toBe(table.name);
+      expect(raw.palaces.filter((palace) => palace.majorStars.some((star) => star.name === "紫微")).map((palace) => palace.earthlyBranch), `${table.name} day ${day}`).toEqual([branch]);
+      checked++;
+    }
+  }
+  expect(checked).toBe(120);
 });
