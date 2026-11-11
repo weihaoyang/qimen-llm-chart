@@ -54,4 +54,13 @@ describe("VedicPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "去补出生地" }));
     expect(onRequestLocation).toHaveBeenCalledTimes(1);
   });
+  it("explains a geographic pole without saying the location is missing", () => {
+    const input = getDefaultProfileInput(new Date("2000-01-01T12:00:00Z"), "UTC");
+    input.location = { city: "Pole", timeZone: "UTC", latitude: 90, longitude: 45 };
+    const chart = buildVedicChart(normalizeProfileInput(input));
+    render(<VedicPanel chart={chart} vargaCode="D1" />);
+    expect(screen.getAllByText(/地理极点无法确定常规上升/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/还差出生地/)).not.toBeInTheDocument();
+  });
+
 });

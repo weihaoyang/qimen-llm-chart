@@ -12,7 +12,7 @@ const dms = (degree: number) => {
 export const serializeVedicToStructuredText = (chart: VedicChart) => {
   const lagnaLine = chart.lagna
     ? `上升（Lagna）：${chart.lagna.rashi.zh}${chart.lagna.rashi.iast} ${dms(chart.lagna.degreeInRashi)} · 宿 ${chart.lagna.nakshatra.name} 第 ${chart.lagna.nakshatra.pada} 足（宿主 ${chart.lagna.nakshatra.lordZh}）`
-    : "上升（Lagna）：未计算（缺少出生地）";
+    : chart.input.locationIssue === "pole" ? "上升（Lagna）：未计算（地理极点）" : "上升（Lagna）：未计算（缺少出生地）";
   return [
     "吠陀占星 · 分盘（Vedic / Shodashavarga）",
     `时刻：${chart.input.datetime}（${chart.input.timeZone}）· 儒略日 ${chart.input.julianDay} · Lahiri 岁差 ${fmt(chart.ayanamsa, 4)}°`,

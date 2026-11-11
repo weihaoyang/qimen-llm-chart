@@ -215,6 +215,20 @@ describe("vedic chart", () => {
     expect(chart.grahas).toHaveLength(9);
   });
 
+  it.each([90, -90])("omits undefined ascendant at geographic pole %s while preserving grahas", (latitude) => {
+    const input = getDefaultProfileInput(new Date("2000-01-01T12:00:00Z"), "UTC");
+    input.location = { city: "Pole", timeZone: "UTC", latitude, longitude: 45 };
+    const chart = buildVedicChart(normalizeProfileInput(input));
+    expect(chart.input.locationIssue).toBe("pole");
+    expect(chart.lagna).toBeNull();
+    expect(chart.vargas.every((varga) => varga.lagnaRashi === null)).toBe(true);
+    expect(chart.grahas).toHaveLength(9);
+    expect(serializeVedicToStructuredText(chart)).toContain("未计算（地理极点）");
+    expect(JSON.parse(serializeVedicToCompactJson(chart)).input.locationIssue).toBe("pole");
+    const ordinary = getDefaultProfileInput(new Date("2000-01-01T12:00:00Z"), "UTC");
+    expect(chart.grahas).toEqual(buildVedicChart(normalizeProfileInput(ordinary)).grahas);
+  });
+
   it("serializes the positions and the varga matrix", () => {
     const chart = buildVedicChart(profile());
     const text = serializeVedicToStructuredText(chart);

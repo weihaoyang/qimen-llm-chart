@@ -79,7 +79,7 @@ export function VedicPanel({
           <h2>吠陀分盘 · {definition.code} {definition.iast}</h2>
           <p className="divination-panel__subhead">
             {definition.iast}（{definition.zh}）· 每宫 1/{definition.divisions}
-            {chart.lagna ? ` · 上升 ${chart.lagna.rashi.zh}${chart.lagna.rashi.iast} ${dms(chart.lagna.degreeInRashi)}` : " · 未计算上升（缺出生地）"}
+            {chart.lagna ? ` · 上升 ${chart.lagna.rashi.zh}${chart.lagna.rashi.iast} ${dms(chart.lagna.degreeInRashi)}` : chart.input.locationIssue === "pole" ? " · 未计算上升（地理极点）" : " · 未计算上升（缺出生地）"}
           </p>
         </div>
         <div className="divination-panel__header-actions">
@@ -94,9 +94,9 @@ export function VedicPanel({
 
       {!chart.lagna ? (
         <InputNotice
-          title="还差出生地：上升（Lagna）与分盘命宫未计算。"
-          detail="行星的恒星黄经、宫位与各分盘不受出生地影响；补上城市或经纬度后，上升与以命宫起的落宫会立即出现。"
-          onAction={onRequestLocation}
+          title={chart.input.locationIssue === "pole" ? "地理极点无法确定常规上升，上升（Lagna）与分盘命宫未计算。" : "还差出生地：上升（Lagna）与分盘命宫未计算。"}
+          detail={chart.input.locationIssue === "pole" ? "行星与分盘星位仍可查看；请检查是否需要改用实际出生地坐标。" : "行星的恒星黄经、宫位与各分盘不受出生地影响；补上城市或经纬度后，上升与以命宫起的落宫会立即出现。"}
+          onAction={chart.input.locationIssue === "pole" ? undefined : onRequestLocation}
         />
       ) : null}
 

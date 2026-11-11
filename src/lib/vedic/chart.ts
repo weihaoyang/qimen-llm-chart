@@ -64,7 +64,7 @@ export type VedicNodeVariant = { mode: NodeMode; label: string; rahu: VedicGraha
 
 export type VedicChart = {
   format: "qmdj-vedic-v1";
-  input: { datetime: string; timeZone: string; julianDay: number; hasPlace: boolean };
+  input: { datetime: string; timeZone: string; julianDay: number; hasPlace: boolean; locationIssue?: "missing" | "pole" };
   ayanamsa: number;
   /** 本盘 grahas 中罗睺 / 计都实际采用的口径（默认平交点）。 */
   nodeMode: NodeMode;
@@ -85,7 +85,8 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
   const timeZone = profile.normalized.timeZone;
   const latitude = profile.original.location?.latitude ?? null;
   const longitude = profile.original.location?.longitude ?? null;
-  const hasPlace = latitude !== null && longitude !== null;
+  const atPole = latitude !== null && Math.abs(latitude) === 90;
+  const hasPlace = latitude !== null && longitude !== null && !atPole;
   const nodeMode: NodeMode = options.nodeMode === "true" ? "true" : "mean";
 
   const jd = julianDayForProfile(datetime, timeZone);
@@ -100,8 +101,8 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
     minute: Number(datetime.slice(14, 16)),
     second: Number(datetime.slice(17, 19)),
     timezone: offsetMinutes(datetime, timeZone) / 60,
-    latitude: latitude ?? 0,
-    longitude: longitude ?? 0,
+    latitude: hasPlace ? latitude : 0,
+    longitude: hasPlace ? longitude : 0,
   });
 
   const toGraha = (meta: (typeof GRAHAS)[number], tropicalLongitude: number, retrograde: boolean): VedicGraha => {
@@ -158,7 +159,7 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
   const nodeNote = `罗睺/计都取${NODE_MODE_LABELS[nodeMode]}（可切换，平交点为默认）`;
   return {
     format: "qmdj-vedic-v1",
-    input: { datetime, timeZone, julianDay: Number(jd.toFixed(6)), hasPlace },
+    input: { datetime, timeZone, julianDay: Number(jd.toFixed(6)), hasPlace, ...(!hasPlace ? { locationIssue: atPole ? "pole" as const : "missing" as const } : {}) },
     ayanamsa: Number(ayan.toFixed(6)),
     nodeMode,
     nodes,
@@ -168,6 +169,6 @@ export const buildVedicChart = (profile: NormalizedProfileInput, options: { node
     vargottama: grahas.filter((graha) => graha.vargas.D1 === graha.vargas.D9).map((graha) => graha.id),
     disclaimer: hasPlace
       ? `吠陀占星研究盘：采用 Lahiri（Chitrapaksha）岁差，行星为 Celestine 回归黄经减去岁差所得恒星黄经；${nodeNote}（真交点公式直接复用 celestine 的 getTrueNodeLongitude）。分盘规则按 Parashara 体系的十六分盘（Shodashavarga）。结果仅供研究，不构成预测或现实裁决。`
-      : `吠陀占星研究盘：采用 Lahiri 岁差，行星为恒星黄经、${nodeNote}（真交点公式直接复用 celestine 的 getTrueNodeLongitude）。当前无出生地，未计算上升（Lagna），故分盘只列行星、不含命宫。结果仅供研究，不构成预测或现实裁决。`,
+      : `吠陀占星研究盘：采用 Lahiri 岁差，行星为恒星黄经、${nodeNote}（真交点公式直接复用 celestine 的 getTrueNodeLongitude）。${atPole ? "地理极点无法确定常规上升点" : "当前无出生地"}，未计算上升（Lagna），故分盘只列行星、不含命宫。结果仅供研究，不构成预测或现实裁决。`,
   };
 };
