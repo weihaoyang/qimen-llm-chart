@@ -5,6 +5,33 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("recognizes 乙开坤 云遁 variant on a real chart without falsely adding 地辛", () => {
+    const chart = buildChart({ datetime: "2026-01-06T18:00", timeZone: "Asia/Shanghai" });
+    const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_yun")!;
+    expect(check.positions).toEqual([2]);
+    expect(check.evidence[0]).toContain("天乙 地戊 开门");
+    expect(check.evidence[0]).toContain("乙开临坤（一云）");
+    expect(check.evidence[0]).not.toContain("乙合三吉门临地辛");
+    const id = "patterns.jiu_dun.yun_dun";
+    expect(chart.raw.palaces.find(p => p.position === 2)?.auspiciousPatterns?.filter(p => p.id === id)).toHaveLength(1);
+    expect(chart.raw.specialPatterns.auspiciousPatterns?.filter(p => p.id === id).map(p => p.position)).toEqual([2]);
+  });
+  it("checks both 云遁 readings across 96 real charts and all outputs", () => {
+    const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const expected = chart.raw.palaces.filter(p => values(p.heavenlyStem).includes("乙") && (
+        (["开门", "休门", "生门"].includes(p.gate as string) && values(p.earthlyStem).includes("辛"))
+        || (p.position === 2 && p.gate === "开门")
+      )).map(p => p.position);
+      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_yun")!;
+      expect(check.positions, datetime).toEqual(expected);
+      const id = "patterns.jiu_dun.yun_dun";
+      expect(chart.raw.palaces.filter(p => p.auspiciousPatterns?.some(q => q.id === id)).map(p => p.position), datetime).toEqual(expected);
+      expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
+    }
+  });
   it("distinguishes the real 欢怡 and 相佐 palace examples", () => {
     const xiang = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" }));
     expect(xiang.checks.find(check => check.id === "xiang_zuo")?.positions).toEqual([2]);

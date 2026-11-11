@@ -138,6 +138,15 @@ export const matchesLongDun = (palace: Palace) =>
   hasHeaven(palace, "乙") && gateIn(palace, ["休门"])
     && (palace.position === 1 || hasEarth(palace, "癸"));
 
+/** 《奇门吉格》云遁主式与“一云”分开保留；《旨归》坤宫辛为主式的较窄版本。 */
+export const yunDunReasons = (palace: Palace): string[] => {
+  if (!hasHeaven(palace, "乙")) return [];
+  return [
+    ...(gateIn(palace, SAN_MEN) && hasEarth(palace, "辛") ? ["乙合三吉门临地辛"] : []),
+    ...(gateIn(palace, ["开门"]) && palace.position === 2 ? ["乙开临坤（一云）"] : []),
+  ];
+};
+
 export const matchesHuDun = (palace: Palace) =>
   (palace.position === 8 && hasHeaven(palace, "乙") && hasEarth(palace, "辛") && gateIn(palace, ["休门"]))
   || (palace.position === 8 && hasHeaven(palace, "辛") && gateIn(palace, ["生门"]))
@@ -255,9 +264,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("jiu_dun_feng", "风遁", "九遁", "天盘乙 + 开/休/生门 + 巽 4 宫", "主传播、流动与远行；宜推广、搬迁、走动之事。", (p) =>
     hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && p.position === 4 ? combinationEvidence(p) : null,
   ),
-  good("jiu_dun_yun", "云遁", "九遁", "天盘乙 + 开/休/生门 + 地盘辛", "主遮掩、过渡与缓和；宜暗中准备、避开正面冲突。", (p) =>
-    hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && hasEarth(p, "辛") ? combinationEvidence(p) : null,
-  ),
+  good("jiu_dun_yun", "云遁", "九遁", "天盘乙合三吉门临地辛；一云乙开临坤", "按命中条件分别标注；《奇门旨归》另要求乙辛三吉门临坤。", (p) => {
+    const reasons = yunDunReasons(p);
+    return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
+  }),
   good("jiu_dun_long", "龙遁", "九遁", "天盘乙 + 休门 + 坎 1 宫或地盘癸", "主潜藏蓄势、后发制人；宜谋定而后动。", (p) =>
     matchesLongDun(p) ? combinationEvidence(p) : null,
   ),
