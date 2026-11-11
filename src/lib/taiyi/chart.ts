@@ -267,19 +267,18 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     { label: "始击（客目）", palace: shiJiPalace, position: shiJiPosition },
     ...generals.map((general) => ({ label: general.label, palace: general.palace, position: positionOfPalace(general.palace) })),
   ];
-  let ties = "";
+  const ties: string[] = [];
   for (const target of targets) {
+    if (!target.position) continue;
     if (target.palace !== null && target.palace === taiyiPalace) continue;
     const pair = flankPalaces(target.position);
     for (const flanker of [generals[0], generals[2]]) {
       if (flanker.palace === taiyiPalace) continue;
       if (target.label === flanker.label || target.palace === flanker.palace) continue;
       if (pair.includes(taiyiPalace) && pair.includes(flanker.palace)) {
-        ties = `太乙与${flanker.label}共挟${target.label}于${target.palace === null ? "间神" : "正宫"}`;
-        break;
+        ties.push(`太乙与${flanker.label}共挟${target.label}于${target.palace === null ? "间神" : "正宫"}`);
       }
     }
-    if (ties) break;
   }
   // 《太乙秘書》另列主、客大小将共挟：与李淳风「太乙与一将共挟」分开记录。
   // 只枚举对方目、对方大小将和太乙；中宫无八宫邻位，不参与。
@@ -302,7 +301,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   // 四郭杜：客参将与文昌将并、主大将与客大将并，兼之掩迫关格提挟
   const siGuoDu = tianMuPalace !== null && input.guestSuPalace === tianMuPalace
     && input.hostGeneralPalace === input.guestGeneralPalace
-    && (yanTaiyi || Boolean(ji) || outer.length > 0 || inner.length > 0 || guan || ge || Boolean(ties));
+    && (yanTaiyi || Boolean(ji) || outer.length > 0 || inner.length > 0 || guan || ge || ties.length > 0);
 
   return [
     yanTaiyi ? "掩：始击将临太乙宫" : yanHostGeneral ? "掩：始击掩主大将" : "",
@@ -315,7 +314,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     dui ? "对：文昌与太乙对冲" : "",
     siGuoGu ? "四郭固：二目掩囚太乙宫，又值四将相关" : "",
     siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将，兼之掩迫关格提挟" : "",
-    ties ? `提挟：${ties}` : "",
+    ties.length ? `提挟：${ties.join("、")}` : "",
     pairedFlanks.length ? `大小将挟：《太乙秘書》局注口径，${pairedFlanks.join("、")}` : "",
     generalPalaces.includes(5) ? "杜塞：主客大小将落入中宫" : "",
   ].filter(Boolean);

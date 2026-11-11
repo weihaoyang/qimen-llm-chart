@@ -221,6 +221,31 @@ describe("taiyi chart", () => {
     expect(du.some((entry) => entry.startsWith("四郭杜"))).toBe(true);
   });
 
+  it("retains every simultaneous Taiyi and general flank witness", () => {
+    const patterns = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "亥", hostGeneralPalace: 8, guestGeneralPalace: 8, hostSuPalace: 5, guestSuPalace: 5 });
+    const flank = patterns.find(entry => entry.startsWith("提挟："))!;
+    for (const general of ["主大将", "客大将"]) for (const target of ["天目（文昌）", "始击（客目）"]) {
+      expect(flank).toContain(`太乙与${general}共挟${target}于间神`);
+    }
+    expect(flank.match(/共挟/g)).toHaveLength(4);
+    const withoutFlanks = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "亥", hostGeneralPalace: 3, guestGeneralPalace: 3, hostSuPalace: 5, guestSuPalace: 5 });
+    expect(withoutFlanks.some(entry => entry.startsWith("提挟："))).toBe(false);
+  });
+
+  it("retains simultaneous flank witnesses in actual Yang 28, 44 and 70 charts", () => {
+    const cases = [
+      [28, "太乙与主大将共挟始击（客目）于正宫", "太乙与主大将共挟客大将于正宫"],
+      [44, "太乙与主大将共挟天目（文昌）于间神", "太乙与客大将共挟主大将于正宫"],
+      [70, "太乙与主大将共挟始击（客目）于正宫", "太乙与主大将共挟客大将于正宫"],
+    ] as const;
+    for (const [ruJu, first, second] of cases) {
+      const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu });
+      const flank = chart.patterns.find(entry => entry.startsWith("提挟："))!;
+      expect(flank, `阳遁${ruJu}局`).toContain(first);
+      expect(flank, `阳遁${ruJu}局`).toContain(second);
+    }
+  });
+
   it("defaults 遁 to 阳遁 and flags it when 遁 is not chosen", () => {
     // auto 只表示「未选定」，不再由局数推遁
     const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "auto", ruJu: null });
