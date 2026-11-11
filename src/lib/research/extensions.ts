@@ -20,6 +20,17 @@ const TAN_YUAN_DAY_NOBLES = "未申酉亥丑子丑寅卯巳";
 const TAN_YUAN_NIGHT_NOBLES = "丑子亥酉未申未午巳卯";
 const HEAVENLY_GENERALS = ["贵人", "腾蛇", "朱雀", "六合", "勾陈", "青龙", "天空", "白虎", "太常", "玄武", "太阴", "天后"] as const;
 type LiuRenPalace = ReturnType<typeof calculateDaliuren>["gongInfos"][number];
+// 《探原》六十日表中标“改正涉害”的 24 课；仅列原表，不补推其他课。
+const TANYUAN_SHEHAI: Record<string, string> = {
+  "丁卯巳": "亥酉未", "丁卯亥": "亥卯未", "庚午辰": "子申辰", "庚午午": "寅子戌",
+  "癸酉申": "亥午丑", "己卯巳": "亥酉未", "己卯亥": "亥卯未", "庚辰午": "寅子戌",
+  "癸未酉": "卯亥未", "甲申戌": "子申辰", "己丑卯": "卯亥未", "庚寅辰": "子申辰",
+  "辛卯寅": "亥卯未", "辛卯申": "亥酉未", "甲午子": "寅子戌", "己亥亥": "亥卯未",
+  "癸卯亥": "亥酉未", "甲辰子": "寅子戌", "甲辰未": "子巳戌", "甲辰戌": "子申辰",
+  "己酉卯": "卯亥未", "乙卯寅": "亥酉未", "乙卯申": "亥卯未", "乙卯亥": "午丑申",
+};
+export const tanYuanShehai = (day: string, upper: string): string | undefined => TANYUAN_SHEHAI[day + upper];
+
 
 /** 以异说贵人所在天盘及所临地盘重新布将；原盘保持不变。 */
 export const alternateLiuRenGenerals = (palaces: LiuRenPalace[], noble: string) => {
@@ -69,10 +80,14 @@ export const buildDaliurenResearch = (profile: NormalizedProfileInput) => {
   const alternateGenerals = alternateBranch ? alternateLiuRenGenerals(result.gongInfos, alternateBranch) : [];
   const alternateNoble = alternateBranch ? `《大六壬探原》${isDay ? "昼" : "夜"}贵在${alternateBranch}；另列天将对照，主盘不变` : undefined;
   const alternateLine = alternateGenerals.length === 12 ? `- 探原天将（天盘:天将）: ${alternateGenerals.map((palace) => `${palace.天盘}:${palace.天将}`).join("、")}` : "";
-  const annotations = [plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : "", `- 贵人口径: ${nobleConvention}`, alternateNoble ? `- 贵人异说: ${alternateNoble}` : "", alternateLine].filter(Boolean);
+  const alternateTransmission = tanYuanShehai(result.dateInfo.ganZhi.day, result.siKe.yiKe[0]?.[0] ?? "");
+  const mainTransmission = [result.sanChuan.chu[0], result.sanChuan.zhong[0], result.sanChuan.mo[0]].join("");
+  const transmissionNote = alternateTransmission && alternateTransmission !== mainTransmission
+    ? `《大六壬探原》六十日表的改正涉害三传为${[...alternateTransmission].join("、")}；主盘三传保持不变` : undefined;
+  const annotations = [transmissionNote ? `- 涉害异说: ${transmissionNote}` : "", plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : "", `- 贵人口径: ${nobleConvention}`, alternateNoble ? `- 贵人异说: ${alternateNoble}` : "", alternateLine].filter(Boolean);
   return {
     text: annotations.length ? text.replace("\n- 月将:", `\n${annotations.join("\n")}\n- 月将:`) : text,
-    json: { ...json, 基本信息: { ...json.基本信息, ...(plate ? { 天地盘: plate } : {}), ...(subtype ? { 课体细分: subtype } : {}), 贵人口径: nobleConvention, ...(alternateNoble ? { 贵人异说: alternateNoble } : {}) }, ...(alternateGenerals.length === 12 ? { 探原天将对照: alternateGenerals } : {}) },
+    json: { ...json, 基本信息: { ...json.基本信息, ...(plate ? { 天地盘: plate } : {}), ...(subtype ? { 课体细分: subtype } : {}), ...(transmissionNote ? { 涉害异说: transmissionNote } : {}), 贵人口径: nobleConvention, ...(alternateNoble ? { 贵人异说: alternateNoble } : {}) }, ...(alternateGenerals.length === 12 ? { 探原天将对照: alternateGenerals } : {}) },
     referenceEngine: TAIBU_CORE_REFERENCE,
   };
 };

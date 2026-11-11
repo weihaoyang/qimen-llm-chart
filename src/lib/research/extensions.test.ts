@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateDaliuren } from "taibu-core/daliuren";
-import { alternateLiuRenGenerals, buildDaliurenResearch, classifyLiuRenPlate } from "./extensions";
+import { alternateLiuRenGenerals, buildDaliurenResearch, classifyLiuRenPlate, tanYuanShehai } from "./extensions";
 
 const profile = {
   original: { calendarMode: "solar", datetime: "2026-08-07T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" },
@@ -382,4 +382,46 @@ it("reconstructs four 探原 day and night general examples", () => {
       expect(alternate.find((palace) => palace.天盘 === branch)?.天将, `${entry.day} ${branch}`).toBe(general);
     }
   }
+});
+
+
+it("compares the 24 探原 amended 涉害 entries against the actual plates", () => {
+  // 原书六十日表逐项转录；不将此表视为完整的涉害算法。
+  const entries = [
+    "丁卯巳亥酉未", "丁卯亥亥卯未", "庚午辰子申辰", "庚午午寅子戌",
+    "癸酉申亥午丑", "己卯巳亥酉未", "己卯亥亥卯未", "庚辰午寅子戌",
+    "癸未酉卯亥未", "甲申戌子申辰", "己丑卯卯亥未", "庚寅辰子申辰",
+    "辛卯寅亥卯未", "辛卯申亥酉未", "甲午子寅子戌", "己亥亥亥卯未",
+    "癸卯亥亥酉未", "甲辰子寅子戌", "甲辰未子巳戌", "甲辰戌子申辰",
+    "己酉卯卯亥未", "乙卯寅亥酉未", "乙卯申亥卯未", "乙卯亥午丑申",
+  ];
+  const pending = new Set(entries.map((entry) => entry.slice(0, 3)));
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const chart = calculateDaliuren(input);
+      const day = chart.dateInfo.ganZhi.day;
+      const upper = chart.siKe.yiKe[0][0];
+      const key = day + upper;
+      const entry = entries.find((item) => item.startsWith(key));
+      expect(tanYuanShehai(day, upper)).toBe(entry?.slice(3));
+      if (!entry) continue;
+      const [first, second, third] = [...entry.slice(3)];
+      expect(chart.gongInfos.find((palace) => palace.diZhi === first)?.tianZhi, key).toBe(second);
+      expect(chart.gongInfos.find((palace) => palace.diZhi === second)?.tianZhi, key).toBe(third);
+      pending.delete(key);
+    }
+  }
+  expect([...pending]).toEqual([]);
+});
+
+
+it("discloses the 探原 transmission discrepancy in both exports without changing the main plate", () => {
+  const datetime = "2029-03-15T06:00";
+  const { text, json } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
+  expect(text).toContain("甲辰日");
+  expect(text).toContain("涉害异说: 《大六壬探原》六十日表的改正涉害三传为子、申、辰");
+  expect(json.基本信息.涉害异说).toContain("子、申、辰");
+  expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map((match) => match[1])).toEqual(["戌", "午", "寅"]);
 });
