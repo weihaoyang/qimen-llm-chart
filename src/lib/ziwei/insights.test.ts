@@ -19,6 +19,30 @@ const profile = {
 };
 
 describe("buildZiweiInsights", () => {
+  it("identifies Lu Cun and the actual natal transformation stars separately", () => {
+    const { raw } = buildZiweiChartFromProfile(profile);
+    const mingBranch = raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;
+    for (const scenario of ["lu-cun", "transformed", "both", "none"] as const) {
+      const palaces = structuredClone(raw.palaces);
+      const ming = palaces.find(p => p.branchIndex === mingBranch)!;
+      for (const key of ["majorStars", "minorStars", "adjectiveStars"] as const) {
+        ming[key] = ming[key].filter(s => s.name !== "禄存").map(s => ({ ...s, mutagen: undefined }));
+      }
+      if (scenario === "lu-cun" || scenario === "both") ming.minorStars.push({ name: "禄存" });
+      if (scenario === "transformed" || scenario === "both") {
+        ming.majorStars.push({ name: "天同", mutagen: "禄" });
+        ming.minorStars.push({ name: "文曲", mutagen: "忌" });
+      }
+      const result = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
+      const lu = result.patterns.find(p => p.id === "lu-ru-ming");
+      const ji = result.patterns.find(p => p.id === "ji-ru-ming");
+      expect(Boolean(lu)).toBe(scenario !== "none");
+      expect(lu?.evidence.includes("禄存=同宫") ?? false).toBe(scenario === "lu-cun" || scenario === "both");
+      expect(lu?.evidence.includes("天同=生年化禄") ?? false).toBe(scenario === "transformed" || scenario === "both");
+      expect(ji?.evidence.includes("文曲=生年化忌") ?? false).toBe(scenario === "transformed" || scenario === "both");
+    }
+  });
+
   it("reports Zi Fu co-location as a fact without assigning an unconditional highest rating", () => {
     const { raw } = buildZiweiChartFromProfile(profile);
     const mingBranch = raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;

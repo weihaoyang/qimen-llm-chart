@@ -92,12 +92,16 @@ export const buildZiweiInsights = ({
       "《紫微斗数全书》卷一·定贵局：贪火相逢；亮度取当前 iztro 表"));
   }
 
-  if (ming && ALL_STARS(ming).some((star) => star.name === "禄存" || star.mutagen === "禄")) {
-    patterns.push(pattern("lu-ru-ming", "禄入命宫", "good", "命宫直接出现禄存或化禄证据，财禄主题较集中。", [`命宫=${ming.name}`, "命宫证据=禄存或化禄"], "传统四化与禄存歌诀"));
+  const mingStars = ming ? ALL_STARS(ming) : [];
+  const luCun = mingStars.some(star => star.name === "禄存");
+  const luStars = [...new Set(mingStars.filter(star => star.mutagen === "禄").map(star => star.name))];
+  if (ming && (luCun || luStars.length)) {
+    patterns.push(pattern("lu-ru-ming", "禄入命宫", "good", "命宫出现禄存或生年化禄，解读时须区分具体星曜及其他组合。", [`命宫=${ming.name}（${ming.earthlyBranch}）`, ...(luCun ? ["禄存=同宫"] : []), ...luStars.map(name => `${name}=生年化禄`)], "《紫微斗数全书》卷一·禄存星、化禄星"));
   }
 
-  if (ming && ALL_STARS(ming).some((star) => star.mutagen === "忌")) {
-    patterns.push(pattern("ji-ru-ming", "忌入命宫", "caution", "命宫出现生年化忌，需要连同具体星曜、三方四正和运限解释。", [`命宫=${ming.name}`, "命宫主星带=化忌"], "传统四化表"));
+  const jiStars = [...new Set(mingStars.filter(star => star.mutagen === "忌").map(star => star.name))];
+  if (ming && jiStars.length) {
+    patterns.push(pattern("ji-ru-ming", "忌入命宫", "caution", "命宫出现生年化忌，需要连同具体星曜、三方四正和运限解释。", [`命宫=${ming.name}（${ming.earthlyBranch}）`, ...jiStars.map(name => `${name}=生年化忌`)], "《紫微斗数全书》卷一·化忌星"));
   }
 
   if (shen && ming && shen.name !== ming.name) {
