@@ -42,6 +42,19 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("distinguishes 欢怡 from 相佐 by heavenly and earthly plate", () => {
+    for (const qi of ["乙", "丙", "丁"]) {
+      const report = evaluateQimenPatterns(chartWith([
+        palace(3, { heavenlyStem: qi, earthlyStem: "戊" }),
+        palace(6, { heavenlyStem: "戊", earthlyStem: qi, deity: "值符", isZhiFu: true }),
+      ], { zhiFu: 6 }));
+      expect(report.checks.find(({ id }) => id === "huan_yi")?.positions).toEqual([3]);
+      expect(report.checks.find(({ id }) => id === "xiang_zuo")?.positions).toEqual([6]);
+    }
+    const wrong = evaluateQimenPatterns(chartWith([palace(3, { heavenlyStem: "戊", earthlyStem: "乙" })], { zhiFu: 6 }));
+    expect(statusOf(wrong, "huan_yi")).toBe("未成立");
+    expect(statusOf(wrong, "xiang_zuo")).toBe("未成立");
+  });
   it("distinguishes the cited six hour pillars from the heaven-stem palace rule", () => {
     const selected = new Set(["戊戌", "壬辰", "丙戌", "癸未", "丁丑", "己丑"]);
     const stems = "甲乙丙丁戊己庚辛壬癸";

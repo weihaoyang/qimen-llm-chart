@@ -131,7 +131,6 @@ export const tianWangReasons = (palace: Palace, zhiFuPosition: number): string[]
 ];
 const gateIn = (palace: Palace, gates: readonly string[]) => gates.includes(palace.gate as string);
 const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes(palace.deity as string);
-const isZhiFu = (palace: Palace) => palace.deity === "值符" || Boolean(palace.isZhiFu);
 const palaceLabel = (position: Position) => `第 ${position} 宫`;
 const stemsOf = (value: unknown) => valuesOf(value).join("/") || "无";
 
@@ -178,6 +177,12 @@ export const matchesSanQiDeShi = (palace: Palace) =>
   (hasHeaven(palace, "乙") && hasEarth(palace, "己", "辛")) ||
   (hasHeaven(palace, "丙") && hasEarth(palace, "戊", "庚")) ||
   (hasHeaven(palace, "丁") && hasEarth(palace, "壬", "癸"));
+
+/** 《奇门旨归》：天盘三奇临地盘值符遁仪为欢怡；天盘值符临地盘三奇为相佐。 */
+export const matchesHuanYi = (palace: Palace, chiefStem: string) =>
+  hasHeaven(palace, ...SAN_QI) && hasEarth(palace, chiefStem);
+export const matchesXiangZuo = (palace: Palace, chiefPosition: number) =>
+  palace.position === chiefPosition && hasEarth(palace, ...SAN_QI);
 
 export const matchesFuGong = (palace: Palace, chiefStem: string) =>
   hasHeaven(palace, "庚") && hasEarth(palace, chiefStem);
@@ -299,8 +304,11 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("qi_you_lu_wei", "奇游禄位", "常用吉格", "天盘乙+震 3 / 丙+巽 4 / 丁+离 9，且门为开/休/生", "三奇临禄位又得吉门，主顺遂；缺吉门则力减。", (p) =>
     matchesQiYouLuWei(p) ? `${palaceLabel(p.position)}：天盘${stemsOf(p.heavenlyStem)} + ${p.gate}` : null,
   ),
-  good("huan_yi", "欢怡", "常用吉格", "地盘乙/丙/丁 + 值符", "三奇临值符，主受重用、得上级认可；宜述职、争取授权。", (p) =>
-    hasEarth(p, ...SAN_QI) && isZhiFu(p) ? pairEvidence(p) : null,
+  good("huan_yi", "欢怡", "常用吉格", "天盘乙/丙/丁 + 地盘值符所遁之仪", "三奇临六甲值符原宫；与值符加三奇的相佐分列。", (p, chart) =>
+    matchesHuanYi(p, chart.raw.zhiFu.heavenlyStem) ? pairEvidence(p) : null,
+  ),
+  good("xiang_zuo", "相佐", "常用吉格", "天盘值符 + 地盘乙/丙/丁", "值符加地盘三奇；与三奇临值符原宫的欢怡分列。", (p, chart) =>
+    matchesXiangZuo(p, chart.raw.zhiFu.position) ? pairEvidence(p) : null,
   ),
   good("qi_yi_xiang_he", "奇仪相和", "常用吉格", "奇和：天盘乙庚、丙辛、丁壬；仪和：天盘戊加地癸，或六甲值符加地己；均须开/休/生门", "甲己合按六甲值符加地己的口径判定。", (p, chart) => {
     if (!gateIn(p, SAN_MEN)) return null;

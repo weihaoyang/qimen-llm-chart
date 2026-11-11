@@ -268,6 +268,10 @@ const buildCompactSchema = () => {
 // 庚格的盘面、柱干及详细证据已在同一载荷中，省去原始汇总的重复描述。
 const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
   ...chart.raw.specialPatterns,
+  auspiciousPatterns: (chart.raw.specialPatterns.auspiciousPatterns ?? []).map((pattern) => {
+    if (!["patterns.common.huan_yi", "patterns.common.xiang_zuo", "patterns.common.san_qi_de_shi", "patterns.common.qi_you_lu_wei"].includes(pattern.id)) return pattern;
+    return { id: pattern.id, name: pattern.name, position: pattern.position };
+  }),
   inauspiciousPatterns: (chart.raw.specialPatterns.inauspiciousPatterns ?? []).map((pattern) => {
     if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing", "patterns.bad.bei_ge", "patterns.bad.tian_wang_si_zhang"].includes(pattern.id)) return pattern;
     return { id: pattern.id, name: pattern.name, position: pattern.position };

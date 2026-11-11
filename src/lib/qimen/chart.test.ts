@@ -5,6 +5,38 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("distinguishes the real 欢怡 and 相佐 palace examples", () => {
+    const xiang = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" }));
+    expect(xiang.checks.find(check => check.id === "xiang_zuo")?.positions).toEqual([2]);
+    expect(xiang.checks.find(check => check.id === "huan_yi")?.positions).not.toContain(2);
+    const huan = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T10:00", timeZone: "Asia/Shanghai" }));
+    expect(huan.checks.find(check => check.id === "huan_yi")?.positions).toEqual([8]);
+    expect(huan.checks.find(check => check.id === "xiang_zuo")?.positions).not.toContain(8);
+  });
+  it("keeps 欢怡 and 相佐 consistent across registry, palace marks and summary on real charts", () => {
+    let huanYiHits = 0;
+    let xiangZuoHits = 0;
+    const values = (item: unknown): string[] => Array.isArray(item) ? item : typeof item === "string" ? [item] : [];
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const report = evaluateQimenPatterns(chart);
+      const cases = [
+        { key: "huan_yi", expected: chart.raw.palaces.filter(p => values(p.heavenlyStem).some(s => "乙丙丁".includes(s)) && values(p.earthlyStem).includes(chart.raw.zhiFu.heavenlyStem)).map(p => p.position) },
+        { key: "xiang_zuo", expected: chart.raw.palaces.filter(p => p.position === chart.raw.zhiFu.position && values(p.earthlyStem).some(s => "乙丙丁".includes(s))).map(p => p.position) },
+      ];
+      huanYiHits += cases[0].expected.length;
+      xiangZuoHits += cases[1].expected.length;
+      for (const { key, expected } of cases) {
+        const id = `patterns.common.${key}`;
+        expect(report.checks.find(check => check.id === key)?.positions, datetime).toEqual(expected);
+        expect(chart.raw.palaces.filter(p => p.auspiciousPatterns?.some(pattern => pattern.id === id)).map(p => p.position), datetime).toEqual(expected);
+        expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
+      }
+    }
+    expect(huanYiHits).toBeGreaterThan(0);
+    expect(xiangZuoHits).toBeGreaterThan(0);
+  });
   it("names the actual 三奇受刑 cause on adjacent real charts", () => {
     for (const [datetime, expected] of [["2026-01-01T00:00", "1宫：丁临坎"], ["2026-01-01T02:00", "1宫：丙临坎"]] as const) {
       const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
