@@ -8,7 +8,7 @@ export const serializeQizhengToStructuredText = (chart: QizhengChart) =>
     `命宫：${chart.mingPalace.branch}宫`,
     `完整性：${chart.complete ? "完整" : "部分排盘"}`,
     `十二宫：${chart.palaces.map((palace) => `${palace.name}(${palace.branch})`).join("、")}`,
-    ...chart.stars.map((star) => `${star.kind}·${star.name}：${star.longitude}° · ${star.palaceName}(${star.branch}宫) · 宿${star.mansion} · ${star.dignity} · ${star.element} · ${star.fortune}${star.note ? ` · ${star.note}` : ""}`),
+    ...chart.stars.map((star) => `${star.kind}·${star.name}：${star.longitude}° · ${star.palaceName}(${star.branch}宫) · 宿${star.mansion} · ${star.dignity}${star.classicalDignity ? ` · 星学大成卷${star.classicalDignity.volume}：${star.classicalDignity.label}` : ""} · ${star.element} · ${star.fortune}${star.note ? ` · ${star.note}` : ""}`),
     `边界：${chart.disclaimer}`,
   ].join("\n");
 

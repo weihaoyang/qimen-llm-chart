@@ -162,6 +162,8 @@ describe("qizheng siyu chart", () => {
       expect(moon?.branch).toBe(branch);
       expect(moon?.dignity).toBe(imported);
       expect(moon?.dignity).not.toBe(classical);
+      if (branch === "未") expect(moon?.classicalDignity).toBeUndefined();
+      else expect(moon?.classicalDignity).toEqual({ label: classical, volume: 19 });
     }
   });
 
@@ -179,6 +181,7 @@ describe("qizheng siyu chart", () => {
       expect(star?.branch, date).toBe(branch);
       expect(star?.dignity, date).toBe(imported);
       expect(star?.dignity, date).not.toBe(classical);
+      expect(star?.classicalDignity?.label, date).toBe(classical);
     }
   });
 
@@ -197,6 +200,7 @@ describe("qizheng siyu chart", () => {
       expect(star?.branch, date).toBe(branch);
       expect(star?.dignity, date).toBe(imported);
       expect(star?.dignity, date).not.toBe(classical);
+      expect(star?.classicalDignity?.label, date).toBe(classical);
     }
   });
 
@@ -291,6 +295,7 @@ describe("qizheng siyu chart", () => {
     expect(text).toContain("二十八宿黄道经纬度钤");
     expect(text).toContain("完整性：部分排盘");
     expect(text).toContain("未列出的宫位不推定为平");
+    expect(text).toContain("星学大成卷");
     expect(text).toContain("紫气历史历元与坐标转换尚未完成核验");
     expect(text).not.toContain("四余·紫气：");
     expect(JSON.parse(serializeQizhengToCompactJson(buildQizhengChart(profile()))).complete).toBe(false);

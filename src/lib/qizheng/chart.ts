@@ -57,6 +57,17 @@ const DIGNITY: Record<string, { temple?: string; prosperous?: string; fallen?: s
   水星: { temple: "巳", prosperous: "申", fallen: "午" },
 };
 
+// 《星学大成》卷14–19选定段落的宫位说；不把未校宿度推广到整宫。
+const CLASSICAL_PALACE_REFERENCES: Record<string, { volume: number; positions: Record<string, string> }> = {
+  太阳: { volume: 18, positions: { 戌: "庙", 午: "旺" } },
+  太阴: { volume: 19, positions: { 戌: "庙", 酉: "旺" } },
+  木星: { volume: 14, positions: { 亥: "庙", 未: "旺" } },
+  火星: { volume: 15, positions: { 卯: "庙", 戌: "乐", 丑: "旺" } },
+  土星: { volume: 16, positions: { 丑: "庙", 辰: "旺" } },
+  金星: { volume: 16, positions: { 辰: "庙旺", 酉: "乐" } },
+  水星: { volume: 17, positions: { 申: "本宫", 巳: "旺" } },
+};
+
 const ELEMENT: Record<string, string> = { 太阳: "火", 太阴: "水", 木星: "木", 火星: "火", 土星: "土", 金星: "金", 水星: "水", 罗睺: "火", 计都: "土", 月孛: "水" };
 const FORTUNE: Record<string, string> = { 太阳: "大吉", 太阴: "吉", 木星: "吉", 火星: "凶", 土星: "凶", 金星: "吉", 水星: "中", 罗睺: "凶", 计都: "凶", 月孛: "凶" };
 
@@ -69,6 +80,7 @@ export type QizhengStar = {
   palaceName: string;
   mansion: string;
   dignity: string;
+  classicalDignity?: { label: string; volume: number };
   element: string;
   fortune: string;
   note?: string;
@@ -253,6 +265,9 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       palaceName: palaceNameOf(palace),
       mansion: longitudeToMansion(longitude, utcMillis),
       dignity: dignityOf(name, branch),
+      classicalDignity: CLASSICAL_PALACE_REFERENCES[name]?.positions[branch]
+        ? { label: CLASSICAL_PALACE_REFERENCES[name].positions[branch], volume: CLASSICAL_PALACE_REFERENCES[name].volume }
+        : undefined,
       element: ELEMENT[name] ?? "无",
       fortune: FORTUNE[name] ?? "无",
     });
@@ -290,6 +305,6 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     complete: [...SEVEN_LUMINARIES.map(({ name }) => name), "罗睺", "计都", "月孛", "紫气"]
       .every((name) => stars.some((star) => star.name === name && Number.isFinite(star.longitude))),
     disclaimer:
-      "研究性七政四余：七政黄经用本仓真星历（celestine）。十二宫按古典十二次配宫（白羊=戌、金牛=酉、双子=申…，已修正上游脚本白羊=寅的错位）。命宫用果老式「以生时加太阳所躔之宫，顺数至卯」（非紫微斗数的生月/生时口径）。罗睺/计都取黄白平交点（果老旧法，罗睺=降交点），月孛取月远地点（Meeus 47.7 平根，即果老「月行最迟之处」，与《图书编》「六十二年而七周天」相符）。二十八宿用清代黄道宿度（《二十八宿黄道经纬度钤》，历元康熙二十三年甲子=1684，初宫起冬至，宿界即距星），按本仓 Lahiri 岁差折回该历元后定位，非等分；宿名在参/觜一带沿用该旧测的「参前觜后」口径（与乾隆十九年后「觜前参后」相差约 1.35°）。庙旺陷采用上游脚本的有限表项，与《星学大成》等文献有差异；未列出的宫位不推定为平。紫气历史历元与坐标转换尚未完成核验，因此本盘列出可算的三余。不作现实预测或吉凶裁决。",
+      "研究性七政四余：七政黄经用本仓真星历（celestine）。十二宫按古典十二次配宫（白羊=戌、金牛=酉、双子=申…，已修正上游脚本白羊=寅的错位）。命宫用果老式「以生时加太阳所躔之宫，顺数至卯」（非紫微斗数的生月/生时口径）。罗睺/计都取黄白平交点（果老旧法，罗睺=降交点），月孛取月远地点（Meeus 47.7 平根，即果老「月行最迟之处」，与《图书编》「六十二年而七周天」相符）。二十八宿用清代黄道宿度（《二十八宿黄道经纬度钤》，历元康熙二十三年甲子=1684，初宫起冬至，宿界即距星），按本仓 Lahiri 岁差折回该历元后定位，非等分；宿名在参/觜一带沿用该旧测的「参前觜后」口径（与乾隆十九年后「觜前参后」相差约 1.35°）。庙旺陷采用上游脚本的有限表项，与《星学大成》等文献有差异；未列出的宫位不推定为平。另列《星学大成》选定篇章中已核宫位，同书其他章节和宿度可能有异；未列不代表古籍没有记载。紫气历史历元与坐标转换尚未完成核验，因此本盘列出可算的三余。不作现实预测或吉凶裁决。",
   };
 };

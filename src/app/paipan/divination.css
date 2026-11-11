@@ -78,6 +78,7 @@
 .qizheng-row { display: grid; grid-template-columns: minmax(46px, auto) auto auto auto auto minmax(0, 1fr); align-items: baseline; gap: 8px; padding: 7px 10px; border: 1.5px solid var(--panel-ink); background: var(--paipan-paper); font-size: 12.5px; }
 .qizheng-row b { font-weight: 900; }
 .qizheng-row > span { color: var(--panel-muted); font: 700 11px var(--paipan-font-mono); }
+.qizheng-row__dignity small { display: block; font-size: 10px; color: var(--panel-muted); }
 .qizheng-row__dignity.is-good { color: var(--paipan-ink); font-weight: 900; }
 .qizheng-row__dignity.is-bad { color: var(--paipan-red); font-weight: 900; }
 .sacred-selector { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
