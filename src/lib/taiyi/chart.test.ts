@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -31,6 +31,23 @@ describe("taiyi tables", () => {
 });
 
 describe("accumulation and palaces", () => {
+  it("matches the two 万历 examples and all twelve 合神 pairs for 定计目", () => {
+    for (const [year, yang, yin] of [[1587, "丑", "未"], [1588, "辰", "戌"]] as const) {
+      const chartYang = buildTaiyiChart({ year, cycle: 360, dun: "阳遁", ruJu: null });
+      const chartYin = buildTaiyiChart({ year, cycle: 360, dun: "阴遁", ruJu: null });
+      expect(chartYang.fixedPlanEye.position).toBe(yang);
+      expect(chartYin.fixedPlanEye.position).toBe(yin);
+      expect(serializeTaiyiToStructuredText(chartYang)).toContain(`定目${yang}`);
+      expect(JSON.parse(serializeTaiyiToCompactJson(chartYin)).fixedPlanEye.position).toBe(yin);
+    }
+    const branches = "子丑寅卯辰巳午未申酉戌亥";
+    const partners = "丑子亥戌酉申未午巳辰卯寅";
+    for (let i = 0; i < 12; i++) {
+      // 文昌放在合神上时，其下应恰为太岁；完整验证六合和旋转方向。
+      expect(fixedPlanEyePosition(2020 + i, partners[i])).toEqual({ yearBranch: branches[i], combiningBranch: partners[i], position: branches[i] });
+    }
+    expect(() => fixedPlanEyePosition(2024, "中")).toThrow(RangeError);
+  });
   it("exposes the unresolved 定计 count discrepancy in the 万历戊子 example", () => {
     // 探索假说：合神丑加太岁子，文昌所在天盘回推地盘；数至太乙后一正宫。
     // 只锁定假说与书例之间的差异，不将假说用于生产排盘。

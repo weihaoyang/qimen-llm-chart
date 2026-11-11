@@ -62,6 +62,7 @@ export type TaiyiChart = {
   annualGatePalaces: Array<{ palace: number; gate: string }>;
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
+  fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
   taiyi: { palace: number; trigram: string; position: string; element: string; block: number };
   tianMu: { position: string; deity: TaiyiDeity; palace: number | null; standing: "正宫" | "间神" };
   jiShen: { position: string; deity: TaiyiDeity };
@@ -150,6 +151,17 @@ export const jiShenPosition = (ruJu: number, dun: TaiyiDun) => {
 export const shiJiPosition = (tianMu: string, jiShen: string) => {
   const offset = mod(RING_INDEX[tianMu] - RING_INDEX[jiShen], 16);
   return RING[mod(RING_INDEX["艮"] + offset, 16)];
+};
+
+/** 《太乙秘书》定计目：以太岁六合之支加太岁，视文昌下所临地盘。 */
+export const fixedPlanEyePosition = (year: number, tianMu: string) => {
+  if (!Number.isSafeInteger(year) || !Object.hasOwn(RING_INDEX, tianMu)) throw new RangeError("年份须为安全整数，文昌须在十六神环中。");
+  const branches = "子丑寅卯辰巳午未申酉戌亥";
+  const combine: Record<string, string> = { 子: "丑", 丑: "子", 寅: "亥", 亥: "寅", 卯: "戌", 戌: "卯", 辰: "酉", 酉: "辰", 巳: "申", 申: "巳", 午: "未", 未: "午" };
+  const yearBranch = branches[mod(mod(year, 12) - 4, 12)];
+  const combiningBranch = combine[yearBranch];
+  const shift = mod(RING_INDEX[combiningBranch] - RING_INDEX[yearBranch], 16);
+  return { yearBranch, combiningBranch, position: RING[mod(RING_INDEX[tianMu] - shift, 16)] };
 };
 
 /** 主客算：自目所在（八正宫起其宫数，间神起一），顺行数正宫之数，至太乙前一宫止。 */
@@ -392,6 +404,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const shiJiPalace = isMain(shiJiPos) ? POSITION_TO_PALACE[shiJiPos] : null;
   const deityOf = (position: string) => DEITIES.find((deity) => deity.position === position) ?? DEITIES[0];
   const annualGate = annualDutyGate(jiyear);
+  const fixedEye = fixedPlanEyePosition(year, tianMuPos);
 
   return {
     format: "qmdj-taiyi-v1",
@@ -404,6 +417,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       host: hostGeneral === 5 ? null : taiyiEightGatePalaces(hostGeneral, "开门"),
       guest: guestGeneral === 5 ? null : taiyiEightGatePalaces(guestGeneral, "开门"),
     },
+    fixedPlanEye: { ...fixedEye, deity: deityOf(fixedEye.position) },
     taiyi: { palace, trigram: PALACES.find((item) => item.palace === palace)?.trigram ?? "", position: taiyiPosition, element: PALACES.find((item) => item.palace === palace)?.element ?? "", block },
     tianMu: { position: tianMuPos, deity: deityOf(tianMuPos), palace: tianMuPalace, standing: tianMuPalace === null ? "间神" : "正宫" },
     jiShen: { position: jiShenPos, deity: deityOf(jiShenPos) },
