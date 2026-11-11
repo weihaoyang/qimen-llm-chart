@@ -185,7 +185,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("jiu_dun_di", "地遁", "九遁", "天盘乙 + 地盘己 + 开门", "主稳固、落地与根基；宜置产、开张、长线布局。", (p) =>
     hasHeaven(p, "乙") && hasEarth(p, "己") && gateIn(p, ["开门"]) ? pairEvidence(p) : null,
   ),
-  good("jiu_dun_ren", "人遁", "九遁", "天盘丁 + 休门 + 太阴", "主人和、内应与暗中助力；宜谈判、协调、私下沟通。", (p) =>
+  good("jiu_dun_ren", "人遁", "九遁", "本盘口径：天盘丁 + 休门 + 太阴；古籍另有天盘丁 + 休门 + 地盘丙", "主人和、内应与暗中助力；宜谈判、协调、私下沟通。", (p) =>
     hasHeaven(p, "丁") && gateIn(p, ["休门"]) && deityIn(p, ["太阴"]) ? gateEvidence(p) : null,
   ),
   good("jiu_dun_feng", "风遁", "九遁", "天盘乙 + 开/休/生门 + 巽 4 宫", "主传播、流动与远行；宜推广、搬迁、走动之事。", (p) =>

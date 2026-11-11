@@ -5,6 +5,23 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("distinguishes Taiyin and earth-Bing versions of Ren Dun on actual charts", () => {
+    // 艺术典705卷取丁休太阴，707卷另列上丁中休下丙；不把两者合并。
+    for (const item of [
+      { datetime: "2026-01-02T12:00", position: 1, earth: "丁", deity: "太阴", selected: true },
+      { datetime: "2026-01-04T20:00", position: 2, earth: "丙", deity: "白虎", selected: false },
+    ] as const) {
+      const chart = buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai" });
+      const palace = chart.raw.palaces.find(p => p.position === item.position)!;
+      expect(palace.heavenlyStem).toBe("丁");
+      expect(palace.earthlyStem).toBe(item.earth);
+      expect(palace.gate).toBe("休门");
+      expect(palace.deity).toBe(item.deity);
+      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")?.positions.includes(item.position)).toBe(item.selected);
+      expect(item.earth === "丙").toBe(!item.selected);
+    }
+  });
+
   it("reproduces two classical tomb palace examples while keeping school-specific decisions distinct", () => {
     // 《古今图书集成》艺术典705：丙辛日阴四局庚寅时丙入六；阳一局辛卯时丁入六。
     const cases = [
