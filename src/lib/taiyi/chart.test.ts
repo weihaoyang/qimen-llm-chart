@@ -454,8 +454,8 @@ it("preserves the 442 historical discrepancy without silently substituting the p
   expect(previous.patterns).toContain("关：主大将、始击（客目）同在8宫；主参将、客大将同在4宫");
 });
 
-it("compares Yin charts 13–36 with 秘書 without silently correcting its text", () => {
-  // 依维基文库《太乙秘書》阴局13–36逐条转录；未明示或未能直接映射的字段记 null。
+it("compares Yin charts 13–42 with 秘書 without silently correcting its text", () => {
+  // 依维基文库《太乙秘書》阴局13–42逐条转录；未明示或未能直接映射的字段记 null。
   // 顺序：太乙、天目、主算、主大、主参、始击、客算、客大、客参、计神。
   const cases: Array<[number, Array<string | number | null>]> = [
     [13, [4, "乾", 12, 6, 6, "辰", 37, 7, 1, "申"]],
@@ -482,6 +482,12 @@ it("compares Yin charts 13–36 with 秘書 without silently correcting its text
     [34, [6, "丑", 26, 6, 8, "卯", 22, 2, 6, "亥"]],
     [35, [6, "艮", 25, 5, 5, "巳", 10, 1, 3, "戌"]],
     [36, [6, "艮", 25, 5, 5, "午", 9, 9, 7, "酉"]],
+    [37, [4, "寅", 1, 1, 3, "坤", 35, 5, 5, "申"]],
+    [38, [4, "卯", 4, 4, 2, "戌", 13, 3, 9, "未"]],
+    [39, [4, "辰", 37, 7, 1, null, 12, 1, 6, "午"]],
+    [40, [3, "巽", 23, 3, 9, "丑", 1, 1, 3, "巳"]],
+    [41, [3, "巽", 33, 3, 9, "寅", 38, 8, 4, "辰"]],
+    [42, [3, "巳", 25, 5, 5, "辰", 34, 4, 2, "卯"]],
   ];
   const names = ["太乙", "天目", "主算", "主大将", "主参将", "始击", "客算", "客大将", "客参将", "计神"];
   const differences: string[] = [];
@@ -495,8 +501,8 @@ it("compares Yin charts 13–36 with 秘書 without silently correcting its text
       if (value !== actual[index]) differences.push(`阴${ruJu}局${names[index]}：秘書${value}／产品${actual[index]}`);
     });
   }
-  expect(compared).toBe(233);
-  expect(differences).toEqual(["阴13局主大将：秘書6／产品2", "阴23局主算：秘書20／产品24", "阴24局主参将：秘書3／产品8", "阴33局客算：秘書38／产品18"]);
+  expect(compared).toBe(292);
+  expect(differences).toEqual(["阴13局主大将：秘書6／产品2", "阴23局主算：秘書20／产品24", "阴24局主参将：秘書3／产品8", "阴33局客算：秘書38／产品18", "阴37局客算：秘書35／产品25", "阴39局客大将：秘書1／产品2", "阴40局主算：秘書23／产品33"]);
   // 金镜式经卷三阴局立成：十三局主算12；十四局客目大威；十五局客算29。
   // 秘書十五局作25，不能把两部表的差异隐去。
   const fourteen = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 14 });
