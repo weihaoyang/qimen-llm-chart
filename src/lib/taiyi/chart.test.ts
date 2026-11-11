@@ -232,6 +232,15 @@ describe("taiyi chart", () => {
     expect(noHit.some(entry => /^(囚|关|格)：/.test(entry))).toBe(false);
   });
 
+  it("identifies which eye and which generals satisfy the selected 四郭固 conjunction", () => {
+    const base = { taiyiPalace: 1, taiyiPosition: "乾", hostGeneralPalace: 3, hostSuPalace: 3, guestGeneralPalace: 6, guestSuPalace: 9 };
+    const check = (tianMuPosition: string, shiJiPosition: string) => detectPatterns({ ...base, tianMuPosition, shiJiPosition }).find(item => item.startsWith("四郭固："));
+    expect(check("乾", "丑")).toBe("四郭固：天目（文昌）与太乙同在1宫；主大将、主参将同在3宫");
+    expect(check("丑", "乾")).toBe("四郭固：始击（客目）与太乙同在1宫；主大将、主参将同在3宫");
+    expect(check("乾", "乾")).toBe("四郭固：天目（文昌）、始击（客目）与太乙同在1宫；主大将、主参将同在3宫");
+    expect(check("丑", "寅")).toBeUndefined();
+  });
+
   it("retains simultaneous concealment and identifies which side is blocked in the centre", () => {
     const all = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "乾", hostGeneralPalace: 1, hostSuPalace: 5, guestGeneralPalace: 5, guestSuPalace: 3 });
     expect(all).toContain("掩：始击将临太乙宫、始击掩主大将");

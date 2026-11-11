@@ -257,7 +257,10 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   ];
   // 关：大小将同宫，或目与将同宫（《图书集成》阳局43文昌关主大）。
   const generalPalaces = generals.map((general) => general.palace);
-  const generalsGuan = new Set(generalPalaces).size < generalPalaces.length;
+  const generalsGuanGroups = Array.from(new Set(generalPalaces)).flatMap(palace => {
+    const atPalace = generals.filter(general => general.palace === palace).map(general => general.label);
+    return atPalace.length >= 2 ? [`${atPalace.join("、")}同在${palace}宫`] : [];
+  });
   const guanActors = Array.from(new Set(generalPalaces)).flatMap(palace => {
     const atPalace = generals.filter(general => general.palace === palace).map(general => general.label);
     if (tianMuPalace === palace) atPalace.push("天目（文昌）");
@@ -309,8 +312,12 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
       }
     }
   }
-  // 四郭固：二相掩囚（目与太乙同宫）又值四将相关（关）
-  const siGuoGu = (tianMuPalace !== null && tianMuPalace === taiyiPalace || shiJiPalace !== null && shiJiPalace === taiyiPalace) && generalsGuan;
+  // 所选合象：任一目与太乙同宫，且至少两个将同宫；记录实际参与者。
+  const siGuoGuEyes = [
+    ...(tianMuPalace === taiyiPalace ? ["天目（文昌）"] : []),
+    ...(shiJiPalace === taiyiPalace ? ["始击（客目）"] : []),
+  ];
+  const siGuoGu = siGuoGuEyes.length > 0 && generalsGuanGroups.length > 0;
   // 选定合象：两组并见。主客大将同宫本身即满足本仓「关」，不是额外独立命中。
   const siGuoDu = tianMuPalace !== null && input.guestSuPalace === tianMuPalace
     && input.hostGeneralPalace === input.guestGeneralPalace;
@@ -324,7 +331,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     guan ? `关：${guanActors.join("；")}` : "",
     ge ? `格：${geActors.join("、")}与太乙对宫` : "",
     dui ? "对：文昌与太乙对冲" : "",
-    siGuoGu ? "四郭固：二目掩囚太乙宫，又值四将相关" : "",
+    siGuoGu ? `四郭固：${siGuoGuEyes.join("、")}与太乙同在${taiyiPalace}宫；${generalsGuanGroups.join("；")}` : "",
     siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将（该将并本身亦为关）" : "",
     ties.length ? `提挟：${ties.join("、")}` : "",
     pairedFlanks.length ? `大小将挟：《太乙秘書》局注口径，${pairedFlanks.join("、")}` : "",
