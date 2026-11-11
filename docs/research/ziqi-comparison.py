@@ -92,13 +92,14 @@ def qing_1911_mansion_comparison() -> list[tuple[date, Decimal, Decimal]]:
 
 
 def qing_1911_liu_comparison() -> list[tuple[date, Decimal, Decimal]]:
-    """September lunar dates transcribed independently from the facsimile's next page."""
+    """April and September lunar dates independently transcribed from the facsimile."""
     epoch = date(1743, 12, 23)
     mansion_epoch = date(1684, 1, 1)
     anchor = Decimal(7 * 30 + 17) + Decimal(50) / 60 + Decimal(14) / 3600 + Decimal(53) / 216000
     liu_start = Decimal(125) + Decimal(52) / 60
     rows = []
-    for day, observed in [(date(1911, 10, 22), 385), (date(1911, 11, 1), 406), (date(1911, 11, 11), 428)]:
+    for day, observed in [(date(1911, 4, 29), 14), (date(1911, 5, 9), 35), (date(1911, 5, 19), 56),
+                          (date(1911, 10, 22), 385), (date(1911, 11, 1), 406), (date(1911, 11, 11), 428)]:
         longitude = (Decimal(270) + anchor + Decimal((day - epoch).days) * Decimal("126.720777") / 3600) % 360
         mansion = liu_start + Decimal((day - mansion_epoch).days) / Decimal("365.24233442") * Decimal(51) / 3600
         predicted = (longitude - mansion) * 60
