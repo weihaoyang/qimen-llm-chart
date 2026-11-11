@@ -449,6 +449,29 @@ it("matches the annual generals in the Ji Cheng charts for 430 and 441", () => {
   }
 });
 
+it("reconstructs four dated annual examples in 太乙统宗宝鉴卷四", () => {
+  // Independently transcribed from the dated examples, not the product's ju table.
+  const cases = [
+    { year: 5, ju: 50, taiyi: 1, tian: "巳", host: 16, hostGeneral: 6, hostSu: 8, shi: "午", guest: 15 },
+    { year: 214, ju: 43, taiyi: 8, tian: "子", host: 8, hostGeneral: 8 },
+    { year: 324, ju: 9, taiyi: 3, tian: "艮", host: 3, hostGeneral: 3 },
+    { year: 830, ju: 11, taiyi: 4, tian: "卯", host: 4, hostGeneral: 4, hostSu: 2, shi: "丑", guest: 4, guestGeneral: 4, guestSu: 2 },
+  ];
+  for (const entry of cases) {
+    const c = buildTaiyiChart({ year: entry.year, cycle: 360, dun: "阳遁", ruJu: null });
+    expect(c.input.ruJu, `${entry.year}局`).toBe(entry.ju);
+    expect(c.taiyi.palace, `${entry.year}太乙`).toBe(entry.taiyi);
+    expect(c.tianMu.position, `${entry.year}文昌`).toBe(entry.tian);
+    expect(c.counts.host, `${entry.year}主算`).toBe(entry.host);
+    expect(c.counts.hostGeneralPalace, `${entry.year}主大将`).toBe(entry.hostGeneral);
+    if (entry.hostSu !== undefined) expect(c.counts.hostSuPalace).toBe(entry.hostSu);
+    if (entry.shi !== undefined) expect(c.shiJi.position).toBe(entry.shi);
+    if (entry.guest !== undefined) expect(c.counts.guest).toBe(entry.guest);
+    if (entry.guestGeneral !== undefined) expect(c.counts.guestGeneralPalace).toBe(entry.guestGeneral);
+    if (entry.guestSu !== undefined) expect(c.counts.guestSuPalace).toBe(entry.guestSu);
+  }
+});
+
 it("preserves the 442 historical discrepancy without silently substituting the previous year", () => {
   // 南齐书「大小将皆见关」不能靠把442年改排为441年来制造吻合。
   const chart = buildTaiyiChart({ year: 442, cycle: 360, dun: "阳遁", ruJu: null });
