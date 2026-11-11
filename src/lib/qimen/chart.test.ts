@@ -5,6 +5,22 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("reproduces two classical tomb palace examples while keeping school-specific decisions distinct", () => {
+    // 《古今图书集成》艺术典705：丙辛日阴四局庚寅时丙入六；阳一局辛卯时丁入六。
+    const cases = [
+      { datetime: "2026-01-02T04:00", solarTerm: "夏至", dunType: "yin", juNumber: 4, hour: "庚寅", stem: "丙", selectedHit: true },
+      { datetime: "2026-01-02T06:00", solarTerm: "冬至", dunType: "yang", juNumber: 1, hour: "辛卯", stem: "丁", selectedHit: false },
+    ] as const;
+    for (const item of cases) {
+      const chart = buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: item.solarTerm, dunType: item.dunType, juNumber: item.juNumber } });
+      expect(chart.raw.fourPillars.day.stem).toBe("丙");
+      expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(item.hour);
+      expect(chart.raw.ju.number).toBe(item.juNumber);
+      expect(chart.raw.palaces.find(p => p.position === 6)?.heavenlyStem).toBe(item.stem);
+      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "san_qi_ru_mu")?.positions.includes(6)).toBe(item.selectedHit);
+    }
+  });
+
   it("reproduces the 72 term and yuan entries, using Zhi Gui for Chu Shu", () => {
     const juByTerm = [
       "174", "285", "396", "852", "963", "174", "396", "417", "528", "417", "528", "639",
