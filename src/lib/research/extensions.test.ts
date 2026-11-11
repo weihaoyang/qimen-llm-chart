@@ -43,6 +43,27 @@ it("reports a 返吟 plate independently of the 涉害 transmission method", () 
   expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map(match => match[1])).toEqual(["卯", "酉", "卯"]);
 });
 
+it.each([
+  ["2024-10-01T20:00", "戊戌"],
+  ["2024-10-31T18:00", "戊辰"],
+])("reports the two 探原 返吟复等 cases in both exports (%s)", (datetime, day) => {
+  const { text, json } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
+  expect(text).toContain(day + "日");
+  expect(text).toContain("干上亥");
+  expect(text).toContain("天地盘: 返吟");
+  expect(text).toContain("探原课名: 《大六壬探原》将此返吟课列为缀瑕，亦称复等；三传亥、巳、亥");
+  expect(json.基本信息.探原课名).toContain("缀瑕，亦称复等");
+  expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map(match => match[1])).toEqual(["亥", "巳", "亥"]);
+});
+
+it("does not label another 返吟 plate as the 探原 复等 case", () => {
+  const datetime = "2024-01-22T12:00";
+  const { text, json } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
+  expect(text).toContain("天地盘: 返吟");
+  expect(text).not.toContain("探原课名:");
+  expect(json.基本信息.探原课名).toBeUndefined();
+});
+
 it("classifies all month-general and hour-branch combinations without treating malformed inputs as 子", () => {
   const branches = "子丑寅卯辰巳午未申酉戌亥";
   for (let i = 0; i < branches.length; i++) for (let j = 0; j < branches.length; j++) {
@@ -507,7 +528,8 @@ it("compares the eight electronic omissions with the actual 探原 facsimile", (
   for (let offset = 0; offset < 60; offset++) {
     const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
     for (let hour = 0; hour < 24; hour += 2) {
-      const chart = calculateDaliuren({ date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" });
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const chart = calculateDaliuren(input);
       const key = chart.dateInfo.ganZhi.day + chart.siKe.yiKe[0][0];
       const reference = scanned[key];
       if (!reference) continue;
@@ -529,7 +551,8 @@ it("checks all 24 stated 涉害 variants against their facsimile entries", () =>
   for (let offset = 0; offset < 60; offset++) {
     const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
     for (let hour = 0; hour < 24; hour += 2) {
-      const chart = calculateDaliuren({ date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" });
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const chart = calculateDaliuren(input);
       const day = chart.dateInfo.ganZhi.day;
       const upper = chart.siKe.yiKe[0][0];
       const key = day + upper;
