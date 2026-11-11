@@ -114,6 +114,18 @@ describe("accumulation and palaces", () => {
     expect(JSON.parse(serializeTaiyiToCompactJson(base)).annualGate.name).toBe("休门");
   });
 
+  it("preserves the 开成五年 执提 evidence without inferring an unsupported rule", () => {
+    // 《统宗宝鉴》卷十六记开成五年二十一局有执提；其余排法并非原文明确列出。
+    const chart = buildTaiyiChart({ year: 840, cycle: 360, dun: "阳遁", ruJu: null });
+    expect(chart.input.ruJu).toBe(21);
+    expect(chart.annualGate).toEqual({ name: "伤门", yearInGate: 27, yearInCycle: 117 });
+    expect(chart.taiyi.palace).toBe(8);
+    expect(chart.annualGatePalaces.find((entry) => entry.palace === 8)?.gate).toBe("伤门");
+    expect(chart.fixedOpenGatePalaces.find((entry) => entry.palace === 8)?.gate).toBe("开门");
+    // 伤门直事但书称执提，因此不能简单以直门是否为开/生二门作为执提判据。
+    expect(["开门", "生门"]).not.toContain(chart.annualGate.name);
+  });
+
   it("places annual and fixed-open gate systems separately around all eight palaces", () => {
     // 《图书集成》太乙在乾一宫以开起，依次坎休、艮生、震伤、巽杜、离景、坤死、兑惊。
     const palaces = [1, 8, 3, 4, 9, 2, 7, 6];
