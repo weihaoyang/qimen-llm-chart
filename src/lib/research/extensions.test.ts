@@ -473,13 +473,14 @@ it("compares all available 探原 sixty-day transmission rows without filling om
 });
 
 
-it("checks six missing 探原 electronic rows against independent 六壬直指 cases", () => {
+it("checks eight missing 探原 electronic rows against independent historical cases", () => {
   // 六壬直指：丁卯伏吟课初卯中子末午、退茹丑子亥；
   // 丁亥干上寅初午中丑末申、干上卯为未卯亥；
-  // 戊申干上寅以寅发用并据天盘传亥、申，干上卯为丑亥酉。
+  // 戊申干上寅以寅发用并据天盘传亥、申，干上卯为丑亥酉；
+  // 古今图书集成甲申干上申寅申寅、干上酉初戌中巳末子。
   const expected: Record<string, string> = {
     丁卯未: "卯子午", 丁卯午: "丑子亥", 丁亥寅: "午丑申", 丁亥卯: "未卯亥",
-    戊申寅: "寅亥申", 戊申卯: "丑亥酉",
+    戊申寅: "寅亥申", 戊申卯: "丑亥酉", 甲申申: "寅申寅", 甲申酉: "戌巳子",
   };
   const found = new Set<string>();
   for (let offset = 0; offset < 60; offset++) {
