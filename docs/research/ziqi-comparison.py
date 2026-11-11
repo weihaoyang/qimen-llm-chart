@@ -74,6 +74,23 @@ def qing_rate_comparison() -> tuple[Decimal, Decimal, Decimal]:
     return days, period, longitude
 
 
+def qing_1911_mansion_comparison() -> list[tuple[date, Decimal, Decimal]]:
+    """Conditional Qing 1911 comparison: winter-solstice origin and 1684 mansion table."""
+    epoch = date(1743, 12, 23)  # Modern date inferred for the day after winter solstice.
+    mansion_epoch = date(1684, 1, 1)  # Explicit approximation used by the product table.
+    year_days = Decimal("365.24233442")
+    rate = Decimal("126.720777") / 3600
+    anchor = Decimal(7 * 30 + 17) + Decimal(50) / 60 + Decimal(14) / 3600 + Decimal(53) / 216000
+    ghost_start = Decimal(121) + Decimal(20) / 60  # 270° + 七宫一度二十分
+    rows = []
+    for day, observed_minutes in [(date(1911, 3, 30), 225), (date(1911, 4, 9), 246), (date(1911, 4, 19), 267)]:
+        longitude = (Decimal(270) + anchor + Decimal((day - epoch).days) * rate) % 360
+        ghost = ghost_start + Decimal((day - mansion_epoch).days) / year_days * Decimal(51) / 3600
+        predicted_minutes = (longitude - ghost) * 60
+        rows.append((day, predicted_minutes, predicted_minutes - observed_minutes))
+    return rows
+
+
 def jiajing_1531_intervals() -> tuple[list[int], int]:
     # Each month: (month length, day entering a new whole degree).
     # Leap sixth month is kept as a separate month; the eleventh has two entries.
@@ -93,6 +110,9 @@ if __name__ == "__main__":
     assert qing_days == 61112
     assert abs(qing_period - Decimal("10227.21001781736")) < Decimal("0.000001")
     print(f"Qing daily rate implies {qing_period:.5f} days/revolution; conditional longitude {qing_longitude:.5f} degrees")
+    for day, predicted, residual in qing_1911_mansion_comparison():
+        assert abs(residual) < 1
+        print(f"{day}: conditional Ghost {predicted:.3f} arcminutes; residual {residual:+.3f} arcminutes")
     assert midnight_jd(1531, 2, 4, gregorian=False) == 2280289.5
     assert midnight_jd(1667, 2, 1, gregorian=True) == 2329950.5
     assert midnight_jd(930, 10, 3, gregorian=False) == 2061015.5
