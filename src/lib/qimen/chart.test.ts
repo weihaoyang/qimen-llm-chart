@@ -33,8 +33,14 @@ describe("buildChart", () => {
       { datetime: "2026-01-04T04:00", position: 9, evidence: ["癸加癸", "值符加地癸"], absent: "不存在的条件" },
     ];
     for (const item of cases) {
-      const report = evaluateQimenPatterns(buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai" }));
+      const chart = buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai" });
+      const report = evaluateQimenPatterns(chart);
       const hits = report.formed.filter(({ id }) => id === "tian_wang_si_zhang");
+      const overview = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(({ id }) => id === "patterns.bad.tian_wang_si_zhang");
+      const palaceHits = chart.raw.palaces.flatMap((palace) => (palace.inauspiciousPatterns ?? []).filter(({ id }) => id === "patterns.bad.tian_wang_si_zhang"));
+      expect(overview.map(({ position }) => position)).toEqual(hits[0].positions);
+      expect(palaceHits.map(({ position }) => position)).toEqual(hits[0].positions);
+      for (const expected of item.evidence) expect(overview[0].description).toContain(expected);
       expect(hits).toHaveLength(1);
       expect(hits[0].positions).toContain(item.position);
       for (const expected of item.evidence) expect(hits[0].evidence.join(" ")).toContain(expected);
