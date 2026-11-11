@@ -4,14 +4,9 @@ import { useState } from "react";
 import type { VedicChart } from "@/lib/vedic/chart";
 import type { NodeMode } from "@/lib/vedic/ayanamsa";
 import { GRAHAS, RASHIS, VARGA_DEFINITIONS } from "@/lib/vedic/data";
+import { formatRashiDegree } from "@/lib/vedic/format";
 import { InputNotice } from "./input-notice";
 import { ProvenanceBlock } from "./provenance-block";
-
-const dms = (degree: number) => {
-  const total = Math.round(degree * 60);
-  const whole = Math.floor(total / 60);
-  return `${whole}°${String(total % 60).padStart(2, "0")}′`;
-};
 
 /** 南印度盘（固定宫位）：12 宫外环 + 中央留白。 */
 const SOUTH_INDIAN: Array<{ rashi: number; row: number; col: number }> = [
@@ -79,7 +74,7 @@ export function VedicPanel({
           <h2>吠陀分盘 · {definition.code} {definition.iast}</h2>
           <p className="divination-panel__subhead">
             {definition.iast}（{definition.zh}）· 每宫 1/{definition.divisions}
-            {chart.lagna ? ` · 上升 ${chart.lagna.rashi.zh}${chart.lagna.rashi.iast} ${dms(chart.lagna.degreeInRashi)}` : chart.input.locationIssue === "pole" ? " · 未计算上升（地理极点）" : " · 未计算上升（缺出生地）"}
+            {chart.lagna ? ` · 上升 ${chart.lagna.rashi.zh}${chart.lagna.rashi.iast} ${formatRashiDegree(chart.lagna.degreeInRashi)}` : chart.input.locationIssue === "pole" ? " · 未计算上升（地理极点）" : " · 未计算上升（缺出生地）"}
           </p>
         </div>
         <div className="divination-panel__header-actions">
@@ -147,7 +142,7 @@ export function VedicPanel({
               <div className="vedic-row" key={graha.id}>
                 <b>{graha.abbr}</b>
                 <span>{graha.zh}<small>{graha.iast}</small></span>
-                <strong>{graha.rashi.zh}{dms(graha.degreeInRashi)}</strong>
+                <strong>{graha.rashi.zh}{formatRashiDegree(graha.degreeInRashi)}</strong>
                 <em>{graha.nakshatra.index} {graha.nakshatra.name} · {graha.nakshatra.pada}足 · {graha.nakshatra.lordZh}</em>
                 {graha.retrograde ? <i className="vedic-row__retro">逆</i> : null}
               </div>

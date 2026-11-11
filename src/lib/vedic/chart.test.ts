@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { ayanamsa, deltaSeconds, jdToJDE, meanNodeLongitude, nodeLongitude, trueNodeLongitude } from "./ayanamsa";
+import { formatRashiDegree } from "./format";
 import { buildVedicChart, julianDayForProfile, nakshatraOf, rashiOf } from "./chart";
 import { NAKSHATRAS, NAKSHATRA_LORDS, RASHIS, VARGA_CODES, VARGA_DEFINITIONS } from "./data";
 import { serializeVedicToCompactJson, serializeVedicToStructuredText } from "./serializer";
@@ -307,4 +308,29 @@ it("preserves seconds in civil birth inputs", () => {
     return result.grahas.find((graha) => graha.id === "Moon")!.longitude!;
   };
   expect(moon("59") - moon("00")).toBeGreaterThan(0.005);
+});
+
+
+it("exports full precision and keeps displayed degrees inside their sign", () => {
+  expect(formatRashiDegree(29.99999)).toBe("29°59′");
+  expect(formatRashiDegree(12.999)).toBe("13°00′");
+  let example: ReturnType<typeof buildVedicChart> | undefined;
+  for (let hour = 0; hour < 366 * 24 && !example; hour++) {
+    const date = new Date(Date.UTC(2026, 0, 1, hour));
+    const chart = buildVedicChart(normalizeProfileInput(getDefaultProfileInput(date, "UTC")));
+    if (chart.grahas.some((graha) => graha.degreeInRashi >= 29 + 59.5 / 60)) example = chart;
+  }
+  expect(example).toBeDefined();
+  const chart = example!;
+  const crossing = chart.grahas.find((graha) => graha.degreeInRashi >= 29 + 59.5 / 60)!;
+  expect(formatRashiDegree(crossing.degreeInRashi)).toBe("29°59′");
+  const json = JSON.parse(serializeVedicToCompactJson(chart));
+  const row = json.grahas.find((item: [string, ...unknown[]]) => item[0] === crossing.id);
+  expect(row[1]).toBe(crossing.longitude);
+  expect(row[3]).toBe(crossing.degreeInRashi);
+  expect(rashiOf(row[1]).rasi).toBe(row[2]);
+  expect(nakshatraOf(row[1]).index).toBe(row[4]);
+  expect(nakshatraOf(row[1]).pada).toBe(row[5]);
+  expect(json.nodeLongitudes.mean).toBe(chart.nodes.mean.rahu.longitude);
+  expect(serializeVedicToStructuredText(chart)).toContain(`${crossing.rashi.zh}29°59′`);
 });
