@@ -46,12 +46,14 @@ const TOMB_MAP: Record<string, string[]> = {
   壬: ["辰"],
 };
 
-// 甲日依该日六甲所在旬的遁仪定位，不使用时柱旬首替代日柱。
-const JIA_DAY_HIDDEN_STEM: Record<string, string> = { 子: "戊", 戌: "己", 申: "庚", 午: "辛", 辰: "壬", 寅: "癸" };
-const dayStemOnBoard = (chart: NormalizedQimenChart): string | undefined => {
-  const day = chart.raw.fourPillars.day;
-  return day.stem === "甲" ? JIA_DAY_HIDDEN_STEM[day.branch] : day.stem;
-};
+// 甲柱依自身六甲的遁仪定位，日、月、年不可用时柱旬首代替。
+const JIA_HIDDEN_STEM: Record<string, string> = { 子: "戊", 戌: "己", 申: "庚", 午: "辛", 辰: "壬", 寅: "癸" };
+const pillarStemOnBoard = (pillar: { stem: string; branch: string }): string | undefined =>
+  pillar.stem === "甲" ? JIA_HIDDEN_STEM[pillar.branch] : pillar.stem;
+const dayStemOnBoard = (chart: NormalizedQimenChart): string | undefined =>
+  pillarStemOnBoard(chart.raw.fourPillars.day);
+const pillarEvidence = (palace: Palace, pillar: { stem: string; branch: string }, label: string) =>
+  `${pairEvidence(palace)}${pillar.stem === "甲" ? `（${pillar.stem}${pillar.branch}${label}遁${pillarStemOnBoard(pillar)}）` : ""}`;
 const dayStemEvidence = (chart: NormalizedQimenChart, palace: Palace) => {
   const day = chart.raw.fourPillars.day;
   return `${pairEvidence(palace)}${day.stem === "甲" ? `（${day.stem}${day.branch}日遁${dayStemOnBoard(chart)}）` : ""}`;
@@ -84,6 +86,10 @@ const hasHeaven = (palace: Palace, ...stems: string[]) =>
   valuesOf(palace.heavenlyStem).some((stem) => stems.includes(stem));
 const hasEarth = (palace: Palace, ...stems: string[]) =>
   valuesOf(palace.earthlyStem).some((stem) => stems.includes(stem));
+export const matchesPillarGengGe = (palace: Palace, pillar: { stem: string; branch: string }) => {
+  const stem = pillarStemOnBoard(pillar);
+  return Boolean(stem && hasHeaven(palace, "庚") && hasEarth(palace, stem));
+};
 const gateIn = (palace: Palace, gates: readonly string[]) => gates.includes(palace.gate as string);
 const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes(palace.deity as string);
 const isZhiFu = (palace: Palace) => palace.deity === "值符" || Boolean(palace.isZhiFu);
@@ -314,18 +320,24 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     ];
     return conditions.length ? `${pairEvidence(p)}：${conditions.join("、")}` : null;
   }),
-  bad("sui_ge", "岁格", "常用凶格", "天盘庚 + 地盘年干", "主与年上大势相悖；年度层面易受制。", (p, chart) =>
-    hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.year.stem) ? pairEvidence(p) : null,
+  bad("sui_ge", "岁格", "常用凶格", "天盘庚 + 地盘年干；甲年按年柱六甲遁仪", "主与年上大势相悖；年度层面易受制。", (p, chart) => {
+    const pillar = chart.raw.fourPillars.year;
+    return matchesPillarGengGe(p, pillar) ? pillarEvidence(p, pillar, "年") : null;
+  },
   ),
-  bad("yue_ge", "月格", "常用凶格", "天盘庚 + 地盘月干", "主当月计划受阻；宜调整节奏。", (p, chart) =>
-    hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.month.stem) ? pairEvidence(p) : null,
+  bad("yue_ge", "月格", "常用凶格", "天盘庚 + 地盘月干；甲月按月柱六甲遁仪", "主当月计划受阻；宜调整节奏。", (p, chart) => {
+    const pillar = chart.raw.fourPillars.month;
+    return matchesPillarGengGe(p, pillar) ? pillarEvidence(p, pillar, "月") : null;
+  },
   ),
   bad("ri_ge", "日格（伏干格）", "常用凶格", "天盘庚 + 地盘日干；甲日用该日所遁六仪；日格与伏干格为同一项", "主当下就被压制；宜暂缓或借力。", (p, chart) => {
     const stem = dayStemOnBoard(chart);
     return stem && hasHeaven(p, "庚") && hasEarth(p, stem) ? dayStemEvidence(chart, p) : null;
   }),
-  bad("shi_ge", "时格", "常用凶格", "天盘庚 + 地盘时干", "主此时此刻被卡；重大动作宜改时辰。", (p, chart) =>
-    hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.hour.stem) ? pairEvidence(p) : null,
+  bad("shi_ge", "时格", "常用凶格", "天盘庚 + 地盘时干；甲时按时柱六甲遁仪", "主此时此刻被卡；重大动作宜改时辰。", (p, chart) => {
+    const pillar = chart.raw.fourPillars.hour;
+    return matchesPillarGengGe(p, pillar) ? pillarEvidence(p, pillar, "时") : null;
+  },
   ),
   bad("fei_gan_ge", "飞干格", "常用凶格", "天盘日干 + 地盘庚；甲日用该日所遁六仪", "主自己撞上阻力、行事易碰壁；缓一步再动。", (p, chart) => {
     const stem = dayStemOnBoard(chart);

@@ -265,6 +265,15 @@ const buildCompactSchema = () => {
   };
 };
 
+// 庚格的盘面、柱干及详细证据已在同一载荷中，省去原始汇总的重复描述。
+const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
+  ...chart.raw.specialPatterns,
+  inauspiciousPatterns: (chart.raw.specialPatterns.inauspiciousPatterns ?? []).map((pattern) => {
+    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge"].includes(pattern.id)) return pattern;
+    return { id: pattern.id, name: pattern.name, type: pattern.type, position: pattern.position };
+  }),
+});
+
 const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod = false) => {
   const { chartFields, palaceFields } = buildCompactSchema();
   const patternSummary = summarizeRegisteredPatterns(chart, true);
@@ -289,7 +298,7 @@ const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod 
       normalizeValue(chart.raw.zhiShi),
       normalizeValue(chart.raw.postHorse),
       normalizeValue(chart.hiddenStemsByPalace),
-      normalizeValue(chart.raw.specialPatterns),
+      normalizeValue(compactSpecialPatterns(chart)),
       sharedStrengthMethod ? summaryWithoutMethod : patternSummary,
     ],
     palaces: chart.raw.palaces.map((palace) => [

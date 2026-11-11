@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
+import { matchesPillarGengGe, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -81,7 +81,12 @@ export const buildChart = (
   const isCorrectedGoodPattern = (id: string | undefined) => id === sanQiId || sanZha.some(rule => rule.id === id) || correctedGoodRules.some(rule => rule.id === id);
   const fuGongId = "patterns.bad.fu_gong_ge";
   const feiGongId = "patterns.bad.fei_gong_ge";
-  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId;
+  const pillarGengRules = [
+    { id: "patterns.bad.sui_ge", name: "岁格", pillar: rawChart.fourPillars.year },
+    { id: "patterns.bad.yue_ge", name: "月格", pillar: rawChart.fourPillars.month },
+    { id: "patterns.bad.shi_ge", name: "时格", pillar: rawChart.fourPillars.hour },
+  ];
+  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || pillarGengRules.some(rule => rule.id === id);
   const palaces = sortPalaces(rawChart).map((palace) => {
     const auspiciousPatterns = (palace.auspiciousPatterns ?? []).filter(({ id }) => !isCorrectedGoodPattern(id));
     const inauspiciousPatterns = (palace.inauspiciousPatterns ?? []).filter(({ id }) => !isCorrectedBadPattern(id));
@@ -107,6 +112,11 @@ export const buildChart = (
           id: rule.id, name: rule.name, type: rule.name, position,
           description: "天盘三奇合开休生三吉门，下临" + rule.deity,
         });
+      }
+    }
+    for (const rule of pillarGengRules) {
+      if (matchesPillarGengGe(palace, rule.pillar)) {
+        inauspiciousPatterns.push({ id: rule.id, name: rule.name, type: rule.name, position, description: "天盘庚加该柱地盘干；甲按本柱六甲遁仪" });
       }
     }
     if (matchesFuGong(palace, rawChart.zhiFu.heavenlyStem)) {

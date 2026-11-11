@@ -522,3 +522,27 @@ it("synchronizes the Jia palace, summary and catalog matches against heaven-stem
   }
   expect(formed).toBeGreaterThan(0);
 });
+
+it("keeps 甲柱 庚格 entries aligned between catalog and raw palace/overview on real charts", () => {
+  const ids = [["year", "sui_ge"], ["month", "yue_ge"], ["hour", "shi_ge"]] as const;
+  const observed = new Set<string>();
+  for (let month = 1; month <= 12; month++) {
+    for (const day of [1, 8, 15, 22]) {
+      for (let hour = 0; hour < 24; hour += 2) {
+        const datetime = `2024-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+        const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+        const report = evaluateQimenPatterns(chart);
+        for (const [key, id] of ids) {
+          if (chart.raw.fourPillars[key].stem !== "甲") continue;
+          const positions = report.checks.find((check) => check.id === id)!.positions;
+          const fromPalaces = chart.raw.palaces.filter((palace) => palace.inauspiciousPatterns?.some((pattern) => pattern.id === `patterns.bad.${id}`)).map((palace) => palace.position);
+          const fromOverview = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter((pattern) => pattern.id === `patterns.bad.${id}`).map((pattern) => pattern.position);
+          expect(fromPalaces.sort(), `${datetime} ${id}`).toEqual([...positions].sort());
+          expect(fromOverview.sort(), `${datetime} ${id}`).toEqual([...positions].sort());
+          if (positions.length) observed.add(key);
+        }
+      }
+    }
+  }
+  expect([...observed].sort()).toEqual(["hour", "month", "year"]);
+});

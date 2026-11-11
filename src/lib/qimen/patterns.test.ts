@@ -413,3 +413,16 @@ it("does not transfer restrictions from another palace or a pattern that has not
   expect(report.checks.find(item => item.id === "san_qi_sheng_dian")?.usageRestrictions).toEqual([]);
   expect(report.checks.find(item => item.id === "gui_jia")?.usageRestrictions).toEqual([]);
 });
+
+it("uses each 甲 pillar's own hidden instrument for 岁格、月格 and 时格", () => {
+  for (const [branch, instrument] of [["子", "戊"], ["戌", "己"], ["申", "庚"], ["午", "辛"], ["辰", "壬"], ["寅", "癸"]]) {
+    for (const [key, id, label] of [["year", "sui_ge", "年"], ["month", "yue_ge", "月"], ["hour", "shi_ge", "时"]] as const) {
+      const pillars = { ...fourPillars, [key]: { stem: "甲", branch } };
+      const evaluate = (earthlyStem: string) => evaluateQimenPatterns(chartWith([palace(3, { heavenlyStem: "庚", earthlyStem })], { fourPillars: pillars }));
+      const report = evaluate(instrument);
+      expect(statusOf(report, id), `${key} 甲${branch}`).toBe("成立");
+      expect(report.checks.find((check) => check.id === id)?.evidence[0]).toContain(`甲${branch}${label}遁${instrument}`);
+      if (instrument !== "戊") expect(statusOf(evaluate("戊"), id), `${key} 甲${branch}`).toBe("未成立");
+    }
+  }
+});
