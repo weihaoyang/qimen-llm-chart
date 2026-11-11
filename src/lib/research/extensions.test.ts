@@ -178,6 +178,27 @@ it("reproduces the 辛丑 申将 巳时 别责 plate described in 六壬心镜",
   expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map(match => match[1])).toEqual(["巳", "丑", "丑"]);
 });
 
+it("enumerates all nine classical 别责 lessons across 60 days and 12 plate rotations", () => {
+  // 《六壬大全》列七日九课；柔日取支前三合，刚日取干合寄宫上神。
+  // 子将下十二个时辰覆盖十二种天地盘相对位置；不宣称覆盖天将异法。
+  const lessons: string[] = [];
+  for (let dayOffset = 0; dayOffset < 60; dayOffset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + dayOffset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const result = calculateDaliuren(input);
+      if (result.keTi.method === "别责") {
+        lessons.push(`${result.dateInfo.ganZhi.day} ${result.siKe.yiKe[0][0]} ${result.sanChuan.chu[0]}${result.sanChuan.zhong[0]}${result.sanChuan.mo[0]}`);
+      }
+    }
+  }
+  expect(lessons.sort()).toEqual([
+    "丁酉 巳 丑巳巳", "辛丑 未 巳未未", "辛丑 丑 巳丑丑",
+    "丙辰 午 亥午午", "戊午 午 寅午午", "辛酉 酉 丑酉酉",
+    "戊辰 午 寅午午", "辛未 未 亥未未", "辛未 丑 亥丑丑",
+  ].sort());
+});
+
 it.each([
   ["2031-01-14T08:00", "甲寅", "丑", "亥"],
   ["2024-10-10T02:00", "丁未", "亥", "戌"],
