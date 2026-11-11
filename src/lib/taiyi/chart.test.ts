@@ -288,6 +288,23 @@ describe("《太乙秘書》阳局 1–24 · 阴局 1–12 逐局回归（36 局
     expect(eighteenth.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("主大小将挟客参将于正宫"))).toBe(false);
     const twentyFourth = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 24 });
     expect(twentyFourth.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("客大小将挟主大将于正宫"))).toBe(true);
+    // 先验证古书局表四将，再比较夹持对象，避免以程序结果自证程序。
+    const examples = [
+      { ju: 20, generals: [7, 1, 6, 8], expected: ["主大小将挟客大将"] },
+      { ju: 21, generals: [2, 6, 7, 1], expected: ["主大小将挟客大将"] },
+      { ju: 27, generals: [1, 3, 8, 4], expected: ["主大小将挟客大将", "客大小将挟主参将"] },
+      { ju: 42, generals: [7, 1, 2, 6], expected: ["客大小将挟主大将", "客大小将挟太乙"] },
+      { ju: 44, generals: [3, 9, 4, 2], expected: ["主大小将挟客大将", "客大小将挟主参将"] },
+    ];
+    for (const example of examples) {
+      const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: example.ju });
+      expect([chart.counts.hostGeneralPalace, chart.counts.hostSuPalace, chart.counts.guestGeneralPalace, chart.counts.guestSuPalace], `阳${example.ju}局四将`).toEqual(example.generals);
+      for (const target of example.expected) expect(chart.patterns.some((item) => item.startsWith("大小将挟：") && item.includes(target)), `阳${example.ju}局 ${target}`).toBe(true);
+    }
+    // 十九局秘書称客大小将挟文昌；客二、六宫与文昌申之间按本站环位不成立。
+    const nineteenth = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 19 });
+    expect(nineteenth.tianMu.position).toBe("申");
+    expect(nineteenth.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("客大小将挟天目"))).toBe(false);
     const middle = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "子", shiJiPosition: "酉", hostGeneralPalace: 5, hostSuPalace: 5, guestGeneralPalace: 5, guestSuPalace: 5 });
     expect(middle.some((item) => item.startsWith("大小将挟："))).toBe(false);
   });
