@@ -144,11 +144,13 @@ export function TaiyiPanel({
           <div className="divination-section-heading"><span>格局 · {PATTERNS.length} 格</span><small>{chart.patterns.length ? `${chart.patterns.length} 条命中` : "未见命中"}</small></div>
           <div className="taiyi-patterns">
             {PATTERNS.map((pattern) => {
-              const hit = chart.patterns.some((entry) => entry.startsWith(pattern.name));
+              const matched = chart.patterns.find((entry) => entry.startsWith(pattern.name));
+              const hit = Boolean(matched);
               return (
                 <div className={`taiyi-pattern${hit ? " is-hit" : ""}`} key={pattern.name}>
                   <b>{pattern.name}</b>
                   <span>{pattern.rule}</span>
+                  {matched ? <span>{matched}</span> : null}
                   <em>{pattern.meaning}</em>
                 </div>
               );

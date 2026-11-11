@@ -23,4 +23,10 @@ describe("TaiyiPanel", () => {
     expect(container.querySelector(".taiyi-table__row.is-active")).toBeTruthy();
     expect(screen.getByText("十六神盘")).toBeInTheDocument();
   });
+
+  it("shows the specific generals and target for the 秘書 flanking example", () => {
+    const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 2 });
+    render(<TaiyiPanel chart={chart} yearInput="724" cycle={360} dun="阳遁" ruJuInput="2" />);
+    expect(screen.getByText(/主大小将挟客大将于正宫/)).toBeInTheDocument();
+  });
 });

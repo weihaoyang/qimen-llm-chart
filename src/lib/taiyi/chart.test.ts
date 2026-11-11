@@ -24,7 +24,7 @@ describe("taiyi tables", () => {
     expect(DEITIES).toHaveLength(16);
     expect(PALACES).toHaveLength(9);
     expect(GENERALS).toHaveLength(8);
-    expect(PATTERNS.map((pattern) => pattern.name)).toEqual(["掩", "击", "迫", "囚", "关", "格", "对", "四郭固", "四郭杜", "提挟", "杜塞"]);
+    expect(PATTERNS.map((pattern) => pattern.name)).toEqual(["掩", "击", "迫", "囚", "关", "格", "对", "四郭固", "四郭杜", "提挟", "大小将挟", "杜塞"]);
     expect(PALACE_SEQUENCE).toEqual([1, 2, 3, 4, 6, 7, 8, 9]);
     expect(DEITIES.map((deity) => deity.position).join("")).toBe("子丑艮寅卯辰巽巳午未坤申酉戌乾亥");
   });
@@ -274,10 +274,23 @@ const tokensOf = (patterns: string[]) => patterns.map((entry) => {
   if (entry.startsWith("迫（外迫）")) return "迫外";
   if (entry.startsWith("迫（内迫）")) return "迫内";
   if (entry.startsWith("提挟")) return "挟";
+  if (entry.startsWith("大小将挟")) return "挟";
   return entry.split("：")[0];
 });
 
 describe("《太乙秘書》阳局 1–24 · 阴局 1–12 逐局回归（36 局）", () => {
+  it("separately reports 秘書 host and guest generals flanking cases", () => {
+    const second = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 2 });
+    expect(second.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("主大小将挟客大将于正宫"))).toBe(true);
+    const eighteenth = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 18 });
+    expect(eighteenth.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("主大小将挟客大将于正宫"))).toBe(true);
+    // 原书说挟客大小将，但八宫邻位只包夹客大将六宫，客参将八宫不在二者之间。
+    expect(eighteenth.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("主大小将挟客参将于正宫"))).toBe(false);
+    const twentyFourth = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 24 });
+    expect(twentyFourth.patterns.some((item) => item.startsWith("大小将挟：") && item.includes("客大小将挟主大将于正宫"))).toBe(true);
+    const middle = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "子", shiJiPosition: "酉", hostGeneralPalace: 5, hostSuPalace: 5, guestGeneralPalace: 5, guestSuPalace: 5 });
+    expect(middle.some((item) => item.startsWith("大小将挟："))).toBe(false);
+  });
   it("covers 36 局 and every asserted field matches 秘書", () => {
     expect(MISHU_CORPUS).toHaveLength(36);
     expect(MISHU_CORPUS.filter((entry) => entry.dun === "阳遁")).toHaveLength(24);
