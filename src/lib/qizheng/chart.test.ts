@@ -152,7 +152,7 @@ describe("qizheng siyu chart", () => {
   it("keeps the imported lunar dignity table distinct from Xingxue Dacheng volume 19", () => {
     // 卷十九太阴论：庙戌、旺酉；同卷又把巨蟹（未）称为本宫。
     const cases = [
-      ["2026-01-24T12:00:00+08:00", "戌", "平", "庙"],
+      ["2026-01-24T12:00:00+08:00", "戌", "未列", "庙"],
       ["2026-01-26T12:00:00+08:00", "酉", "陷", "旺"],
       ["2026-01-03T12:00:00+08:00", "未", "庙", "本宫"],
     ] as const;
@@ -215,7 +215,7 @@ describe("qizheng siyu chart", () => {
   it("omits Zi Qi when its historical epoch cannot be established", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.stars.some((star) => star.name === "紫气")).toBe(false);
-    expect(chart.disclaimer).toContain("紫气缺少可核验的历元");
+    expect(chart.disclaimer).toContain("紫气历史历元与坐标转换尚未完成核验");
   });
 
   it("reproduces the 《清史稿》 康熙甲子年黄道十二次初度值宿 (epoch 1684, 初宫起冬至)", () => {
@@ -255,7 +255,8 @@ describe("qizheng siyu chart", () => {
     expect(text).toContain("果老旧法");
     expect(text).toContain("二十八宿黄道经纬度钤");
     expect(text).toContain("完整性：部分排盘");
-    expect(text).toContain("紫气缺少可核验的历元");
+    expect(text).toContain("未列出的宫位不推定为平");
+    expect(text).toContain("紫气历史历元与坐标转换尚未完成核验");
     expect(text).not.toContain("四余·紫气：");
     expect(JSON.parse(serializeQizhengToCompactJson(buildQizhengChart(profile()))).complete).toBe(false);
   });
