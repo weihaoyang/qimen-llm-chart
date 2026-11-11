@@ -5,11 +5,20 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("recognizes chief over earth 己 without requiring a literal 甲 on the heaven plate", () => {
+    const chart = buildChart({ datetime: "2026-01-02T08:00", timeZone: "Asia/Shanghai" });
+    expect(chart.raw.timeInfo.xunShou).toBe("甲申");
+    expect(chart.raw.zhiFu.position).toBe(8);
+    const check = evaluateQimenPatterns(chart).checks.find(({ id }) => id === "qi_yi_xiang_he")!;
+    expect(check.positions).toContain(8);
+    expect(check.evidence.join(" ")).toContain("值符加己（甲己）");
+    expect(chart.raw.palaces.find(({ position }) => position === 8)?.gate).toBe("开门");
+  });
   it("exposes both 门宫和义 naming conventions on the same chart", () => {
     const report = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" }));
     const check = report.checks.find(({ id }) => id === "men_gong_he_yi")!;
-    expect(check.evidence).toContain("生门生第 6 宫（现和，旨归义）");
-    expect(check.evidence).toContain("第 1 宫生伤门（现义，旨归和）");
+    expect(check.evidence).toContain("生门生6宫（现和/旨归义）");
+    expect(check.evidence).toContain("1宫生伤门（现义/旨归和）");
   });
   it("keeps two sourced 天网 conditions distinct while counting one catalog entry", () => {
     const cases = [

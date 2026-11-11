@@ -158,13 +158,25 @@ describe("evaluateQimenPatterns", () => {
     expect(statusOf(report, "jiu_dun_gui")).toBe("未成立");
   });
 
+  it("recognizes 甲己 through the actual chief and retains simultaneous odd and instrument matches", () => {
+    const evaluate = (fields: Record<string, unknown>, zhiFu: number) => evaluateQimenPatterns(chartWith([palace(3, fields)], { zhiFu })).checks.find(({ id }) => id === "qi_yi_xiang_he")!;
+    const chief = evaluate({ heavenlyStem: "辛", earthlyStem: "己", gate: "开门" }, 3);
+    expect(chief.status).toBe("成立");
+    expect(chief.evidence[0]).toContain("值符加己（甲己）");
+    expect(evaluate({ heavenlyStem: "辛", earthlyStem: "己", gate: "开门" }, 1).status).toBe("未成立");
+    expect(evaluate({ heavenlyStem: "辛", earthlyStem: "己", gate: "死门" }, 3).status).toBe("未成立");
+    const simultaneous = evaluate({ heavenlyStem: ["乙", "戊"], earthlyStem: ["庚", "癸"], gate: "休门" }, 1);
+    expect(simultaneous.evidence[0]).toContain("乙庚");
+    expect(simultaneous.evidence[0]).toContain("戊癸");
+  });
+
   it("detects 门宫和义 from the gate/palace generation", () => {
     // 休门(水) 生 木(震 3 宫) → 和
     const report = evaluateQimenPatterns(chartWith([palace(3, { gate: "休门", fiveElements: "木" })]));
     expect(statusOf(report, "men_gong_he_yi")).toBe("成立");
-    expect(report.checks.find(({ id }) => id === "men_gong_he_yi")?.evidence).toEqual(["休门生第 3 宫（现和，旨归义）"]);
+    expect(report.checks.find(({ id }) => id === "men_gong_he_yi")?.evidence).toEqual(["休门生3宫（现和/旨归义）"]);
     const reverse = evaluateQimenPatterns(chartWith([palace(1, { gate: "伤门", fiveElements: "水" })]));
-    expect(reverse.checks.find(({ id }) => id === "men_gong_he_yi")?.evidence).toEqual(["第 1 宫生伤门（现义，旨归和）"]);
+    expect(reverse.checks.find(({ id }) => id === "men_gong_he_yi")?.evidence).toEqual(["1宫生伤门（现义/旨归和）"]);
     const same = evaluateQimenPatterns(chartWith([palace(3, { gate: "伤门", fiveElements: "木" })]));
     expect(statusOf(same, "men_gong_he_yi")).toBe("未成立");
   });

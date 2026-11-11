@@ -257,20 +257,23 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("huan_yi", "欢怡", "常用吉格", "地盘乙/丙/丁 + 值符", "三奇临值符，主受重用、得上级认可；宜述职、争取授权。", (p) =>
     hasEarth(p, ...SAN_QI) && isZhiFu(p) ? pairEvidence(p) : null,
   ),
-  good("qi_yi_xiang_he", "奇仪相和", "常用吉格", "(奇和) 天盘乙+地盘庚 / 丙+辛 / 丁+壬；(仪和) 天盘戊+地盘癸 / 甲+己；且门为开/休/生", "奇仪配合得力，主协同顺遂；是稳定成事之象。", (p) => {
+  good("qi_yi_xiang_he", "奇仪相和", "常用吉格", "奇和：天盘乙庚、丙辛、丁壬；仪和：天盘戊加地癸，或六甲值符加地己；均须开/休/生门", "甲己合按六甲值符加地己的口径判定。", (p, chart) => {
     if (!gateIn(p, SAN_MEN)) return null;
-    if ((hasHeaven(p, "乙") && hasEarth(p, "庚")) || (hasHeaven(p, "丙") && hasEarth(p, "辛")) || (hasHeaven(p, "丁") && hasEarth(p, "壬")))
-      return `奇和：${pairEvidence(p)}`;
-    if ((hasHeaven(p, "戊") && hasEarth(p, "癸")) || (hasHeaven(p, "甲") && hasEarth(p, "己")))
-      return `仪和：${pairEvidence(p)}`;
-    return null;
+    const matched = [
+      ...(hasHeaven(p, "乙") && hasEarth(p, "庚") ? ["乙庚"] : []),
+      ...(hasHeaven(p, "丙") && hasEarth(p, "辛") ? ["丙辛"] : []),
+      ...(hasHeaven(p, "丁") && hasEarth(p, "壬") ? ["丁壬"] : []),
+      ...(hasHeaven(p, "戊") && hasEarth(p, "癸") ? ["戊癸"] : []),
+      ...(p.position === chart.raw.zhiFu.position && hasEarth(p, "己") ? ["值符加己（甲己）"] : []),
+    ];
+    return matched.length ? `${pairEvidence(p)}：${matched.join("、")}` : null;
   }),
   good("men_gong_he_yi", "门宫和义", "常用吉格", "门宫相生；现用门生宫为和、宫生门为义，《奇门旨归》两名相反", "门与宫相生；和义名称因所引版本而异。", (p) => {
     const gateElement = GATE_FIVE_ELEMENTS[p.gate as string];
     const palaceElement = p.fiveElements as string;
     if (!gateElement || !palaceElement) return null;
-    if (GENERATE[gateElement] === palaceElement) return `${p.gate}生${palaceLabel(p.position)}（现和，旨归义）`;
-    if (GENERATE[palaceElement] === gateElement) return `${palaceLabel(p.position)}生${p.gate}（现义，旨归和）`;
+    if (GENERATE[gateElement] === palaceElement) return `${p.gate}生${p.position}宫（现和/旨归义）`;
+    if (GENERATE[palaceElement] === gateElement) return `${p.position}宫生${p.gate}（现义/旨归和）`;
     return null;
   }),
   good("san_qi_sheng_dian", "三奇贵人升殿", "常用吉格", "天盘乙在震 3 宫 / 丙在离 9 宫 / 丁在兑 7 宫", "三奇各归本宫；取用另看门迫、奇墓与旺衰。", (p) =>

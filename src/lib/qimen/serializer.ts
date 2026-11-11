@@ -100,7 +100,7 @@ const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = fals
       ...(!compact && check.strengthNote ? { strengthNote: check.strengthNote } : {}),
       ...(!compact || check.usageRestrictions.length ? { usageRestrictions: check.usageRestrictions } : {}),
       positions: check.positions,
-      evidence: check.evidence,
+      evidence: compact ? check.evidence.map((item) => item.replace("（现和/旨归义）", "（和/旨义）").replace("（现义/旨归和）", "（义/旨和）")) : check.evidence,
     })),
     failed: report.failed.map((check) => check.name),
   };
@@ -334,7 +334,7 @@ const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod 
 
 const buildCompactPayload = (chart: NormalizedQimenChart) => ({
   format: "qmdj-llm-compact-v1",
-  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
+  note: "legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。门宫证据的“旨”指《奇门旨归》。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
   ...buildCompactSections(chart),
 });
 
@@ -350,7 +350,7 @@ export const serializeSequenceToCompactJson = (
 
     return {
       format: "qmdj-llm-sequence-compact-v1",
-      note: "legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
+      note: "legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。门宫证据的“旨”指《奇门旨归》。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
       count: sequence.length,
       strengthMethod: QIMEN_STRENGTH_METHOD,
       legend: sharedLegend,

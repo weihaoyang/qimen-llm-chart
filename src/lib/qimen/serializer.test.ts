@@ -123,6 +123,14 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeChartToStructuredText(chart).length).toBeLessThan(60_000);
   });
 
+  it("explains the abbreviated classical convention in compact output", () => {
+    const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" });
+    const payload = serializeChartToCompactJson(chart);
+    expect(payload).toContain("门宫证据的“旨”指《奇门旨归》");
+    expect(payload).toContain("生门生6宫（和/旨义）");
+    expect(payload).toContain("1宫生伤门（义/旨和）");
+  });
+
   it("keeps a twelve-step sequence compact payload within the agent API limit", () => {
     const sequence = buildChartSequence({
       startDatetime: "2026-07-01T00:00",
