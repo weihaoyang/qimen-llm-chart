@@ -5,6 +5,12 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("exposes both 门宫和义 naming conventions on the same chart", () => {
+    const report = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" }));
+    const check = report.checks.find(({ id }) => id === "men_gong_he_yi")!;
+    expect(check.evidence).toContain("生门生第 6 宫（现和，旨归义）");
+    expect(check.evidence).toContain("第 1 宫生伤门（现义，旨归和）");
+  });
   it("keeps two sourced 天网 conditions distinct while counting one catalog entry", () => {
     const cases = [
       { datetime: "2026-01-01T00:00", position: 9, evidence: ["癸加癸"], absent: "值符加地癸" },

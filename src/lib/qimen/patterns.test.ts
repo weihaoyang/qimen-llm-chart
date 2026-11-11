@@ -162,6 +162,11 @@ describe("evaluateQimenPatterns", () => {
     // 休门(水) 生 木(震 3 宫) → 和
     const report = evaluateQimenPatterns(chartWith([palace(3, { gate: "休门", fiveElements: "木" })]));
     expect(statusOf(report, "men_gong_he_yi")).toBe("成立");
+    expect(report.checks.find(({ id }) => id === "men_gong_he_yi")?.evidence).toEqual(["休门生第 3 宫（现和，旨归义）"]);
+    const reverse = evaluateQimenPatterns(chartWith([palace(1, { gate: "伤门", fiveElements: "水" })]));
+    expect(reverse.checks.find(({ id }) => id === "men_gong_he_yi")?.evidence).toEqual(["第 1 宫生伤门（现义，旨归和）"]);
+    const same = evaluateQimenPatterns(chartWith([palace(3, { gate: "伤门", fiveElements: "木" })]));
+    expect(statusOf(same, "men_gong_he_yi")).toBe("未成立");
   });
 
   it("detects 奇格 when 庚 presses 三奇", () => {

@@ -265,12 +265,12 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
       return `仪和：${pairEvidence(p)}`;
     return null;
   }),
-  good("men_gong_he_yi", "门宫和义", "常用吉格", "门生宫（和）或宫生门（义）", "门与宫相生，主环境配合、阻力小；是选方用事的加分项。", (p) => {
+  good("men_gong_he_yi", "门宫和义", "常用吉格", "门宫相生；现用门生宫为和、宫生门为义，《奇门旨归》两名相反", "门与宫相生；和义名称因所引版本而异。", (p) => {
     const gateElement = GATE_FIVE_ELEMENTS[p.gate as string];
     const palaceElement = p.fiveElements as string;
     if (!gateElement || !palaceElement) return null;
-    if (GENERATE[gateElement] === palaceElement) return `和：${p.gate}生${palaceLabel(p.position)}`;
-    if (GENERATE[palaceElement] === gateElement) return `义：${palaceLabel(p.position)}生${p.gate}`;
+    if (GENERATE[gateElement] === palaceElement) return `${p.gate}生${palaceLabel(p.position)}（现和，旨归义）`;
+    if (GENERATE[palaceElement] === gateElement) return `${palaceLabel(p.position)}生${p.gate}（现义，旨归和）`;
     return null;
   }),
   good("san_qi_sheng_dian", "三奇贵人升殿", "常用吉格", "天盘乙在震 3 宫 / 丙在离 9 宫 / 丁在兑 7 宫", "三奇各归本宫；取用另看门迫、奇墓与旺衰。", (p) =>
