@@ -453,3 +453,38 @@ it("preserves the 442 historical discrepancy without silently substituting the p
   expect(previous.patterns.some(pattern => pattern.startsWith("关："))).toBe(true);
   expect(previous.patterns).toContain("关：主大将、始击（客目）同在8宫；主参将、客大将同在4宫");
 });
+
+it("compares eight additional Yin charts with 秘書 without silently correcting its text", () => {
+  // 依维基文库《太乙秘書》阴局13–20逐条转录；十四局「大感」不能直接映射神名，记 null。
+  // 顺序：太乙、天目、主算、主大、主参、始击、客算、客大、客参、计神。
+  const cases: Array<[number, Array<string | number | null>]> = [
+    [13, [4, "乾", 12, 6, 6, "辰", 37, 7, 1, "申"]],
+    [14, [4, "亥", 12, 2, 6, null, 27, 7, 1, "未"]],
+    [15, [4, "子", 11, 1, 3, "坤", 25, 5, 5, "午"]],
+    [16, [3, "丑", 1, 1, 3, "酉", 15, 5, 5, "巳"]],
+    [17, [3, "艮", 3, 3, 9, "亥", 9, 9, 7, "辰"]],
+    [18, [3, "艮", 3, 3, 9, "子", 8, 8, 4, "卯"]],
+    [19, [2, "寅", 14, 4, 2, "艮", 16, 6, 8, "寅"]],
+    [20, [2, "卯", 13, 3, 9, "辰", 10, 1, 3, "丑"]],
+  ];
+  const names = ["太乙", "天目", "主算", "主大将", "主参将", "始击", "客算", "客大将", "客参将", "计神"];
+  const differences: string[] = [];
+  let compared = 0;
+  for (const [ruJu, expected] of cases) {
+    const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu });
+    const actual = [chart.taiyi.palace, chart.tianMu.position, chart.counts.host, chart.counts.hostGeneralPalace, chart.counts.hostSuPalace, chart.shiJi.position, chart.counts.guest, chart.counts.guestGeneralPalace, chart.counts.guestSuPalace, chart.jiShen.position];
+    expected.forEach((value, index) => {
+      if (value === null) return;
+      compared++;
+      if (value !== actual[index]) differences.push(`阴${ruJu}局${names[index]}：秘書${value}／产品${actual[index]}`);
+    });
+  }
+  expect(compared).toBe(79);
+  expect(differences).toEqual(["阴13局主大将：秘書6／产品2"]);
+  // 金镜式经卷三阴局立成：十三局主算12；十四局客目大威；十五局客算29。
+  // 秘書十五局作25，不能把两部表的差异隐去。
+  const fourteen = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 14 });
+  expect(fourteen.shiJi.position).toBe("午"); // 大威；秘書原文作未直接映射的「大感」
+  const fifteen = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 15 });
+  expect(fifteen.counts.guest).toBe(25); // 金镜表另作29
+});
