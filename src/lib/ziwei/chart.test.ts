@@ -290,3 +290,21 @@ it("compares readable Water Two entries without filling the ambiguous twenty-fir
     expect(raw.palaces.filter((palace) => palace.majorStars.some((star) => star.name === "紫微")).map((palace) => palace.earthlyBranch), `水二局 day ${day}`).toEqual([branch]);
   }
 });
+
+it("compares Ziwei brightness in all twelve palaces with the Ming printed table", () => {
+  // 明刊七卷本上册影像88、89：图表的得地与引擎的「得」仅作标签比较。
+  // 同本影像90正文「寅申宫旺地」与其图表寅宫「庙」不同，不以表格单独判定古书唯一口径。
+  const printed: Record<string, string> = { 子: "平", 丑: "庙", 寅: "庙", 卯: "旺", 辰: "得", 巳: "旺", 午: "庙", 未: "庙", 申: "旺", 酉: "旺", 戌: "得", 亥: "旺" };
+  const differences: string[] = [];
+  const wood = mingTables.tables.find((table) => table.name === "木三局")!;
+  for (const [branch, days] of Object.entries(wood.palaces)) {
+    const date = Lunar.fromYmd(1990, 2, days[0]).getSolar().toYmd();
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${date}T16:00`));
+    expect(raw.fiveElementsClass).toBe("木三局");
+    const palace = raw.palaces.find((item) => item.earthlyBranch === branch)!;
+    const star = palace.majorStars.find((item) => item.name === "紫微")!;
+    expect(star, branch).toBeDefined();
+    if (star.brightness !== printed[branch]) differences.push(`${branch}：图${printed[branch]} / 产品${star.brightness}`);
+  }
+  expect(differences).toEqual(["寅：图庙 / 产品旺"]);
+});

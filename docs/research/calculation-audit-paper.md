@@ -584,6 +584,18 @@ Waite 在《The Pictorial Key to the Tarot》第二部分力量牌条下说明�
 
 ![日本国立公文书馆明刊上册第76张，禄权科忌诀](sources/ziwei-japan-archives-0076.jpg)
 
+### 紫微星十二宫亮度：明刊表与正文（2026-11-12）
+
+馆藏明刊上册影像88、89的庙旺表中，紫微星按子至亥依次列为：平、庙、庙、旺、得地、旺、庙、庙、旺、旺、得地、旺。为与引擎标签比较，测试中仅把表头“得地”记作“得”，不把其他等级合并。取庚午年二月的木三局，每个落宫选一日，从产品入口读取实际紫微落宫和亮度，十二宫中十一宫与表格一致；寅宫是唯一差异：图表为庙，产品为旺。
+
+同一刊本紧接着在影像90紫微条又把寅、申称为“旺地”，与影像88图表在寅宫的“庙”不同；产品寅宫“旺”与该正文相合。图表和正文在该位置各自分开保存，不能只凭其中一处将另一处或产品断为计算错误。以上只比较紫微星，不代表该表其他星曜已经验证；也不验证亮度或格局对现实事件的预测。十二宫案例在 `src/lib/ziwei/chart.test.ts`，馆藏扫描副本按馆方利用说明留存，影像88、89、90的 SHA-256 分别为 `5d0eb5fffee3681600f72148ef204a83f362c0bfe4efbfb22985389b53e20352`、`b3dff41579c2aee07d264ef480f5ca171096ba1b13a1a3bc029afc466a81a3d9`、`2c5e44b622c12c82e75805b5491691c60ddb9cd2a21c57b6e59bd07f1e3fae47`。[馆方影像88](https://www.digital.archives.go.jp/api/content/item/da12/C102812187100/iiif/M2019050811103249305_0088.jp2/full/max/0/native.jpg) [馆方影像89](https://www.digital.archives.go.jp/api/content/item/da12/C102812187200/iiif/M2019050811103249305_0089.jp2/full/max/0/native.jpg) [馆方影像90](https://www.digital.archives.go.jp/api/content/item/da12/C102812187300/iiif/M2019050811103249305_0090.jp2/full/max/0/native.jpg)
+
+![明刊上册影像88，子至巳六宫庙旺表](sources/ziwei-japan-archives-0088.jpg)
+
+![明刊上册影像89，午至亥六宫庙旺表](sources/ziwei-japan-archives-0089.jpg)
+
+![明刊上册影像90，紫微条中的寅申旺地](sources/ziwei-japan-archives-0090.jpg)
+
 
 天府定位另由《全书》安天府图核对：寅申紫府同宫，其余宫位斜作对，且明确举紫微丑、天府卯为例。在子0至亥11的编号下对应天府=(4−紫微) mod 12。上述120盘实测紫微十二宫均出现，天府逐盘符合此镜像。这里的天府定位因此可列为十二宫覆盖通过，紫微起点全生日表仍待独立核验。[《新锓希夷陈先生紫微斗数全书》安天府图](https://www.shidianguji.com/mid-page/7356346222862516234)
 
