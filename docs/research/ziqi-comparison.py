@@ -91,6 +91,21 @@ def qing_1911_mansion_comparison() -> list[tuple[date, Decimal, Decimal]]:
     return rows
 
 
+def qing_1911_liu_comparison() -> list[tuple[date, Decimal, Decimal]]:
+    """September lunar dates transcribed independently from the facsimile's next page."""
+    epoch = date(1743, 12, 23)
+    mansion_epoch = date(1684, 1, 1)
+    anchor = Decimal(7 * 30 + 17) + Decimal(50) / 60 + Decimal(14) / 3600 + Decimal(53) / 216000
+    liu_start = Decimal(125) + Decimal(52) / 60
+    rows = []
+    for day, observed in [(date(1911, 10, 22), 385), (date(1911, 11, 1), 406), (date(1911, 11, 11), 428)]:
+        longitude = (Decimal(270) + anchor + Decimal((day - epoch).days) * Decimal("126.720777") / 3600) % 360
+        mansion = liu_start + Decimal((day - mansion_epoch).days) / Decimal("365.24233442") * Decimal(51) / 3600
+        predicted = (longitude - mansion) * 60
+        rows.append((day, predicted, predicted - observed))
+    return rows
+
+
 def jiajing_1531_intervals() -> tuple[list[int], int]:
     # Each month: (month length, day entering a new whole degree).
     # Leap sixth month is kept as a separate month; the eleventh has two entries.
@@ -113,6 +128,9 @@ if __name__ == "__main__":
     for day, predicted, residual in qing_1911_mansion_comparison():
         assert abs(residual) < 1
         print(f"{day}: conditional Ghost {predicted:.3f} arcminutes; residual {residual:+.3f} arcminutes")
+    for day, predicted, residual in qing_1911_liu_comparison():
+        assert abs(residual) < 2
+        print(f"{day}: conditional Willow {predicted:.3f} arcminutes; residual {residual:+.3f} arcminutes")
     assert midnight_jd(1531, 2, 4, gregorian=False) == 2280289.5
     assert midnight_jd(1667, 2, 1, gregorian=True) == 2329950.5
     assert midnight_jd(930, 10, 3, gregorian=False) == 2061015.5
