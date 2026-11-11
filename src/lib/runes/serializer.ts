@@ -12,7 +12,7 @@ export const serializeRunesToStructuredText = (reading: RuneReading) => [
     return `${index + 1}. ${position.name}（${position.q}）：${draw.rune.name} ${draw.rune.char} · ${draw.orientation === "reversed" ? "逆位" : "正位"} · ${AETTIR[draw.rune.aett].name} · 读音 ${draw.rune.sound} · 词义来源 ${draw.rune.lore} · 关键词 ${draw.rune.keywords.join("、")} · ${meaning} 建议：${draw.rune.advice}`;
   }),
   "",
-  "北欧宇宙九界（Yggdrasil 三层）：",
+  "北欧宇宙九界（Yggdrasil 现代三层示意；九符阵位置不逐一对应九界）：",
   ...NINE_WORLDS.map((world) => `${world.level} · ${world.nameZh}（${world.name}）：${world.residents} —— ${world.note}`),
   `世界树现代示意分层：上 = ${YGGDRASIL_LEVELS.上}；中 = ${YGGDRASIL_LEVELS.中}；下 = ${YGGDRASIL_LEVELS.下}`,
   "边界：符文与九界属神话与象征体系，词义为该体系的文化解释；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。",
@@ -30,5 +30,6 @@ export const serializeRunesToCompactJson = (reading: RuneReading) =>
       meaning: draw.orientation === "reversed" ? draw.rune.reversed : draw.rune.upright,
       advice: draw.rune.advice,
     })),
+    nineWorldsNote: "九界名称与三层分布为现代整理；九符阵的位置不逐一对应九界。",
     nineWorlds: NINE_WORLDS,
   });

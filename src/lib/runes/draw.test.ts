@@ -37,6 +37,14 @@ describe("elder futhark runes", () => {
     }
   });
 
+  it("does not claim the nine spread positions map onto nine worlds", () => {
+    expect(SPREADS.nine.tagline).not.toContain("对应九界");
+    expect(SPREADS.nine.positions.map((position) => position.name)).toEqual([
+      "The root", "Fading influence", "Recent event", "The situation", "The challenge", "The hidden", "Near future", "Guidance", "Outcome",
+    ]);
+    expect(NINE_WORLDS.find((world) => world.id === "helheim")?.note).toContain("病死及老死者");
+  });
+
   it("draws deterministically from a seed without repeating a rune", () => {
     const first = buildRuneReading("qmdj-seed", "nine");
     const again = buildRuneReading("qmdj-seed", "nine");
