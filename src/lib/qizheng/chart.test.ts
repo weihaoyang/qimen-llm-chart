@@ -241,6 +241,36 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("covers additional classical planet palace positions and preserves same-volume alternatives", () => {
+    // 星学大成卷十四木星论、卷十六土星论与金星论、卷十七水星论。
+    const expected: Record<string, Record<string, string>> = {
+      木星: { 寅: "乐", 申: "好", 子: "怒", 丑: "怒", 未: "旺" },
+      土星: { 子: "乐", 戌: "好", 午: "喜" },
+      金星: { 亥: "旺", 巳: "好", 午: "喜", 寅: "怒", 辰: "庙旺" },
+      水星: { 午: "庙", 辰: "喜", 亥: "好", 子: "好", 戌: "怒" },
+    };
+    const seen = new Set<string>();
+    for (let month = 0; month < 31 * 12; month++) {
+      const date = new Date(Date.UTC(1990, month, 15, 4));
+      const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(date, "Asia/Shanghai")));
+      for (const star of chart.stars) {
+        const label = expected[star.name]?.[star.branch];
+        if (!label) continue;
+        expect(star.classicalDignity?.label, `${star.name}${star.branch}`).toBe(label);
+        if (star.name === "木星" && star.branch === "未") {
+          expect(star.classicalDignity?.alternatives).toEqual([{ label: "喜", passage: "木星论" }]);
+          expect(serializeQizhengToStructuredText(chart)).toContain("〈木星庙乐旺顺留伏逆〉：旺；〈木星论〉：喜");
+        }
+        if (star.name === "金星" && star.branch === "辰") {
+          expect(star.classicalDignity?.alternatives).toEqual([{ label: "庙", passage: "金星论" }]);
+          expect(serializeQizhengToStructuredText(chart)).toContain("〈金星庙旺乐顺伏留逆〉：庙旺；〈金星论〉：庙");
+        }
+        seen.add(star.name + star.branch);
+      }
+    }
+    expect(seen.size).toBe(Object.values(expected).reduce((count, branches) => count + Object.keys(branches).length, 0));
+  });
+
   it("places seven luminaries and four remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
