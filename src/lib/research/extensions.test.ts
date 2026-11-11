@@ -361,10 +361,12 @@ it("compares all twenty noble positions with the explicit 探原 day and night v
   }
 });
 
-it("reconstructs 探原 甲辰 亥将卯时 and 庚午 申将辰时 general examples", () => {
+it("reconstructs four 探原 day and night general examples", () => {
   const cases = [
-    { date: "2024-02-10", hour: 6, general: "亥", day: "甲辰", noble: "未", earth: "亥", positions: { 未: "贵人", 申: "腾蛇", 戌: "六合", 子: "青龙", 辰: "玄武" } },
-    { date: "2024-01-07", hour: 8, general: "申", day: "庚午", noble: "丑", earth: "酉", positions: { 丑: "贵人", 子: "腾蛇", 戌: "六合", 申: "青龙", 辰: "玄武" } },
+    { date: "2024-02-10", hour: 6, general: "亥", day: "甲辰", noble: "未", earth: "亥", transmissions: ["戌", "午", "寅"], positions: { 未: "贵人", 申: "腾蛇", 戌: "六合", 子: "青龙", 辰: "玄武" } },
+    { date: "2024-01-07", hour: 8, general: "申", day: "庚午", noble: "丑", earth: "酉", transmissions: ["辰", "申", "子"], positions: { 丑: "贵人", 子: "腾蛇", 戌: "六合", 申: "青龙", 辰: "玄武" } },
+    { date: "2024-01-13", hour: 22, general: "午", day: "丙子", noble: "亥", earth: "辰", transmissions: ["子", "未", "寅"], positions: { 亥: "贵人", 子: "腾蛇", 未: "太常", 寅: "六合" } },
+    { date: "2024-02-27", hour: 0, general: "亥", day: "辛酉", noble: "午", earth: "未", transmissions: ["丑", "酉", "酉"], positions: { 午: "贵人", 丑: "青龙", 酉: "玄武" } },
   ];
   for (const entry of cases) {
     // taibu-core's runtime accepts monthGeneral; its published declaration omits it.
@@ -372,6 +374,8 @@ it("reconstructs 探原 甲辰 亥将卯时 and 庚午 申将辰时 general exam
     const chart = calculateDaliuren(input);
     expect(chart.dateInfo.ganZhi.day).toBe(entry.day);
     expect(chart.dateInfo.yueJiang).toBe(entry.general);
+    // 甲辰课现有引擎结果与孟上取用相同，与《探原》历数涉害的子申辰不同。
+    expect([chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]]).toEqual(entry.transmissions);
     const alternate = alternateLiuRenGenerals(chart.gongInfos, entry.noble);
     expect(alternate.find((palace) => palace.天将 === "贵人")?.地盘).toBe(entry.earth);
     for (const [branch, general] of Object.entries(entry.positions)) {
