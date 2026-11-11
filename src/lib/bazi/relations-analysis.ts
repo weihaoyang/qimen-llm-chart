@@ -220,6 +220,13 @@ const pairLabel = (a: BaziPillarKey, b: BaziPillarKey) =>
 const sortPillars = (a: BaziPillarKey, b: BaziPillarKey): BaziPillarKey[] =>
   PILLAR_ORDER.indexOf(a) <= PILLAR_ORDER.indexOf(b) ? [a, b] : [b, a];
 
+/** Five-element control, including the four directional stem clashes. */
+export const stemsControlEachOther = (a: string, b: string): boolean => {
+  const first = getStemTrait(a);
+  const second = getStemTrait(b);
+  return Boolean(first && second && (ELEMENT_CONTROLS[first.element] === second.element || ELEMENT_CONTROLS[second.element] === first.element));
+};
+
 /** Stem-to-stem relations, independent of position. */
 export const stemRelations = (a: string, b: string): LightRelation[] => {
   const out: LightRelation[] = [];
@@ -350,14 +357,16 @@ export const analyzePillarRelations = (
         push(relation.kind, relation.tone, a.key, b.key, branchKey, relation.detail);
       });
 
-      if (at(STEM_CLASH, a.heavenlyStem, b.heavenlyStem) && at(BRANCH_CLASH, a.earthlyBranch, b.earthlyBranch)) {
+      if (stemsControlEachOther(a.heavenlyStem, b.heavenlyStem) && at(BRANCH_CLASH, a.earthlyBranch, b.earthlyBranch)) {
         push(
           "天克地冲",
           "negative",
           a.key,
           b.key,
           `${a.heavenlyStem}${a.earthlyBranch}/${b.heavenlyStem}${b.earthlyBranch}`,
-          "天干相冲同时地支相冲，两柱整体对冲",
+          at(STEM_CLASH, a.heavenlyStem, b.heavenlyStem)
+            ? "天干五行相克且属天干四冲，地支六冲；按宽义天克地冲列示"
+            : "天干五行相克、地支六冲；属宽义天克地冲，不属天干四冲",
         );
       }
       if (a.pillar === b.pillar) {

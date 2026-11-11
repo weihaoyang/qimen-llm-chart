@@ -64,6 +64,25 @@ describe("analyzePillarRelations", () => {
     expect(result.relations.some((item) => item.kind === "天克地冲")).toBe(true);
   });
 
+  it("checks broad stem control plus opposite branches for all 60×60 valid pillars", () => {
+    const stems = "甲乙丙丁戊己庚辛壬癸";
+    const branches = "子丑寅卯辰巳午未申酉戌亥";
+    const pillars = Array.from({ length: 60 }, (_, i) => stems[i % 10] + branches[i % 12]);
+    for (let i = 0; i < 60; i++) for (let j = 0; j < 60; j++) {
+      const first = pillars[i], second = pillars[j];
+      const elementGap = (Math.floor((j % 10) / 2) - Math.floor((i % 10) / 2) + 5) % 5;
+      const expected = (elementGap === 2 || elementGap === 3) && (j - i + 60) % 12 === 6;
+      const found = analyzePillarRelations([pillar("year", first), pillar("day", second)], { dayMaster: second[0] }).relations
+        .find(item => item.kind === "天克地冲");
+      expect(Boolean(found), `${first}/${second}`).toBe(expected);
+    }
+    const get = (a: string, b: string) => analyzePillarRelations([pillar("year", a), pillar("day", b)], { dayMaster: b[0] }).relations
+      .find(item => item.kind === "天克地冲");
+    expect(get("甲子", "戊午")?.detail).toContain("不属天干四冲");
+    expect(get("甲子", "庚午")?.detail).toContain("属天干四冲");
+    expect(get("甲子", "丙午")).toBeUndefined();
+  });
+
   it("detects full 三合 and 三会 across three pillars", () => {
     const trio = analyzePillarRelations(
       [pillar("year", "甲申"), pillar("month", "丙子"), pillar("day", "戊辰"), pillar("time", "庚午")],

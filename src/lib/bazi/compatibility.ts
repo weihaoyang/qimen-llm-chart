@@ -2,7 +2,9 @@ import type { NormalizedBaziChart } from "./types";
 import { getStemTrait } from "./relations";
 import {
   branchRelations,
+  getBaziRelationGroup,
   stemRelations,
+  stemsControlEachOther,
   type BaziRelationKind,
   type BaziRelationTone,
 } from "./relations-analysis";
@@ -23,8 +25,6 @@ const PILLAR_LABELS: Record<"year" | "month" | "day" | "time", string> = {
   time: "时柱",
 };
 
-const isStemClash = (a: string, b: string) =>
-  stemRelations(a, b).some((relation) => relation.kind === "天干相冲");
 const isBranchClash = (a: string, b: string) =>
   branchRelations(a, b).some((relation) => relation.kind === "地支六冲");
 
@@ -81,6 +81,10 @@ export const buildBaziCompatibility = (
     branchRelations(leftDay.earthlyBranch, rightDay.earthlyBranch).forEach((relation) => {
       addRelation(relation.kind, relation.tone, "夫妻宫", "夫妻宫", `${leftDay.earthlyBranch} × ${rightDay.earthlyBranch}，${relation.detail}`);
     });
+    if (stemsControlEachOther(leftDay.heavenlyStem, rightDay.heavenlyStem) && isBranchClash(leftDay.earthlyBranch, rightDay.earthlyBranch)) {
+      const strict = stemRelations(leftDay.heavenlyStem, rightDay.heavenlyStem).some(relation => relation.kind === "天干相冲");
+      addRelation("天克地冲", "negative", "日柱", "日柱", `${leftDay.pillar} × ${rightDay.pillar}，天干五行相克、地支六冲（${strict ? "也属天干四冲" : "不属天干四冲"}）`);
+    }
   }
 
   // Every other pillar pair, stem and branch.
@@ -96,7 +100,7 @@ export const buildBaziCompatibility = (
         addRelation(relation.kind, relation.tone, leftLabel, rightLabel, `${leftPillar.earthlyBranch} × ${rightPillar.earthlyBranch}，${relation.detail}`);
       });
       if (
-        isStemClash(leftPillar.heavenlyStem, rightPillar.heavenlyStem) &&
+        stemsControlEachOther(leftPillar.heavenlyStem, rightPillar.heavenlyStem) &&
         isBranchClash(leftPillar.earthlyBranch, rightPillar.earthlyBranch)
       ) {
         addRelation(
@@ -104,7 +108,7 @@ export const buildBaziCompatibility = (
           "negative",
           leftLabel,
           rightLabel,
-          `${leftPillar.pillar} × ${rightPillar.pillar}，天干相冲同时地支相冲`,
+          `${leftPillar.pillar} × ${rightPillar.pillar}，天干五行相克、地支六冲（${stemRelations(leftPillar.heavenlyStem, rightPillar.heavenlyStem).some(relation => relation.kind === "天干相冲") ? "也属天干四冲" : "不属天干四冲"}）`,
         );
       }
     }
@@ -116,9 +120,8 @@ export const buildBaziCompatibility = (
     evidence.push(`两盘共同出现五行：${shared.join("、")}`);
   }
 
-  const positiveCount = relations.filter((relation) => relation.tone === "positive").length;
-  const negativeCount = relations.filter((relation) => relation.tone === "negative").length;
-  evidence.unshift(`两盘共识别 ${relations.length} 组干支关系：合会 ${positiveCount} 组、冲刑害破 ${negativeCount} 组`);
+  const count = (group: "合会" | "冲" | "刑害破" | "其他") => relations.filter(relation => getBaziRelationGroup(relation.type) === group).length;
+  evidence.unshift(`两盘共识别 ${relations.length} 条干支关系记录：合会 ${count("合会")} 条、冲 ${count("冲")} 条、刑害破 ${count("刑害破")} 条、其他 ${count("其他")} 条；复合关系可与组成关系同时计数。`);
 
   const finalScore = Math.max(0, Math.min(100, score));
   return {
