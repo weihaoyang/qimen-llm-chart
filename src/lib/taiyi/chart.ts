@@ -188,7 +188,7 @@ export const HARMONY_SOURCE =
 /** 单算之和数等第（卷二主表；未入表者作「未列」）。 */
 export const harmonyLevel = (count: number) => HARMONY_SUMS_JUAN2.find((entry) => entry.sums.includes(count))?.level ?? "未列";
 
-/** 单算之和数等第（《太乙秘書》一系异文）。 */
+/** 单算之和数等第（另一系异文，出处待考）。 */
 export const harmonyLevelVariant = (count: number) => HARMONY_SUMS_VARIANT.find((entry) => entry.sums.includes(count))?.level ?? "未列";
 
 /** 算值奇偶（事实）。 */
