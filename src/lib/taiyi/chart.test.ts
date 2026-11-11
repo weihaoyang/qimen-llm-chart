@@ -454,6 +454,45 @@ it("preserves the 442 historical discrepancy without silently substituting the p
   expect(previous.patterns).toContain("关：主大将、始击（客目）同在8宫；主参将、客大将同在4宫");
 });
 
+it("compares 秘書 Yang charts 25–40 with the computed positions and counts", () => {
+  // 太乙、天目、主算、主大、主参、始击、客算、客大、客参、计神。
+  // 第28局两次写主参将，无法确定两项各对应哪一将，不改写成主大将。
+  const cases: Array<[number, Array<string | number | null>]> = [
+    [25, [1, "子", 39, 9, 7, "亥", 40, 4, 3, "寅"]],
+    [26, [1, "丑", 32, 1, 6, "艮", 31, 6, 3, "丑"]],
+    [27, [1, "艮", 31, 1, 3, "卯", 28, 8, 4, "子"]],
+    [28, [2, "寅", 14, null, null, "巽", 9, 9, 7, "亥"]],
+    [29, [2, "卯", 13, 3, 9, "未", 39, 9, 7, "戌"]],
+    [30, [2, "辰", 10, 1, 3, "申", 32, 2, 6, "酉"]],
+    [31, [3, "巽", 33, 3, 9, "戌", 10, 1, 3, "申"]],
+    [32, [3, "巳", 25, 5, 5, "子", 8, 8, 4, "未"]],
+    [33, [3, "午", 24, 4, 2, "艮", 3, 3, 9, "午"]],
+    [34, [4, "未", 26, 6, 8, "卯", 4, 4, 2, "巳"]],
+    [35, [4, "坤", 25, 5, 5, "巳", 28, 8, 4, "辰"]],
+    [36, [4, "坤", 25, 5, 5, "午", 27, 7, 1, "卯"]],
+    [37, [6, "申", 1, 1, 3, "坤", 7, 7, 1, "寅"]],
+    [38, [6, "酉", 6, 6, 8, "戌", 25, 5, 5, "丑"]],
+    [39, [6, "戌", 35, 5, 5, "亥", 34, 4, 2, "子"]],
+    [40, [7, "乾", 27, 7, 1, "乾", 19, 9, 7, "亥"]],
+  ];
+  const names = ["太乙", "天目", "主算", "主大将", "主参将", "始击", "客算", "客大将", "客参将", "计神"];
+  const differences: string[] = [];
+  for (const [ruJu, expected] of cases) {
+    const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu });
+    const actual = [chart.taiyi.palace, chart.tianMu.position, chart.counts.host, chart.counts.hostGeneralPalace, chart.counts.hostSuPalace, chart.shiJi.position, chart.counts.guest, chart.counts.guestGeneralPalace, chart.counts.guestSuPalace, chart.jiShen.position];
+    expected.forEach((value, index) => {
+      if (value !== null && value !== actual[index]) differences.push(`阳${ruJu}局${names[index]}：秘書${value}／产品${actual[index]}`);
+    });
+  }
+  expect(differences).toEqual([
+    "阳25局客参将：秘書3／产品2",
+    "阳26局主大将：秘書1／产品2",
+    "阳26局客大将：秘書6／产品1",
+    "阳38局客算：秘書25／产品35",
+    "阳40局始击：秘書乾／产品丑",
+  ]);
+});
+
 it("compares readable Yin charts 13–72 with 秘書 without silently correcting its text", () => {
   // 依维基文库《太乙秘書》阴局13–72逐条转录；缺第60局，未明示或未能直接映射的字段记 null。
   // 顺序：太乙、天目、主算、主大、主参、始击、客算、客大、客参、计神。
