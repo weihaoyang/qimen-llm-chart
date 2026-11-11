@@ -19,6 +19,23 @@ const profile = {
 };
 
 describe("buildZiweiInsights", () => {
+  it("reports Zi Fu co-location as a fact without assigning an unconditional highest rating", () => {
+    const { raw } = buildZiweiChartFromProfile(profile);
+    const mingBranch = raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;
+    const palaces = structuredClone(raw.palaces);
+    for (const palace of palaces) palace.majorStars = palace.majorStars.filter(s => s.name !== "紫微" && s.name !== "天府");
+    const ming = palaces.find(p => p.branchIndex === mingBranch)!;
+    ming.majorStars.push({ name: "紫微", mutagen: "忌" }, { name: "天府" });
+    ming.minorStars.push({ name: "擎羊" });
+    const result = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
+    const combination = result.patterns.find(p => p.id === "zi-fu-tong-gong")!;
+    expect(combination.level).toBe("neutral");
+    expect(combination.source).toContain("安天府图");
+    expect(combination.summary).toContain("结构事实");
+    ming.majorStars = ming.majorStars.filter(s => s.name !== "天府");
+    expect(buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch }).patterns.some(p => p.id === "zi-fu-tong-gong")).toBe(false);
+  });
+
   it("recognizes auxiliary stars from iztro minor-star data and preserves palace relationships", () => {
     const chart = buildZiweiChartFromProfile(profile);
     const palaces = chart.raw.palaces;

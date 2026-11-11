@@ -45,7 +45,7 @@ export const buildZiweiInsights = ({
   const patterns: ZiweiPattern[] = [];
 
   if (ming && has(ming, "紫微") && has(ming, "天府")) {
-    patterns.push(pattern("zi-fu-tong-gong", "紫府同宫", "excellent", "紫微与天府同守命宫，属于命宫主星组合格局。", [`命宫=${ming.name}`, "命宫主星=紫微、天府"], "《紫微斗数全书·紫府同宫格》"));
+    patterns.push(pattern("zi-fu-tong-gong", "紫府同宫", "neutral", "紫微与天府同守命宫的结构事实，须结合亮度及其他星曜综合判断。", [`命宫=${ming.name}（${ming.earthlyBranch}）`, "命宫主星=紫微、天府"], "《紫微斗数全书》卷二·安天府图：寅申紫府同宫"));
   }
 
   const samePalace = (left: string, right: string) => palaces.find((palace) =>
