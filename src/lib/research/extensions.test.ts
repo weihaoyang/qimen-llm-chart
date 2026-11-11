@@ -496,3 +496,55 @@ it("checks eight missing 探原 electronic rows against independent historical c
   }
   expect([...found].sort()).toEqual(Object.keys(expected).sort());
 });
+
+it("compares legible 甲申 transmissions with 太白兵备统宗宝鉴 twelve-case table", () => {
+  // https://www.shidianguji.com/book/SDZJ0646/chapter/1kg32r7axqwij
+  // 第三局的首字电子文本作“干”，不将它猜改为午。
+  const expected: Record<string, string> = {
+    寅: "寅巳卯", 丑: "子亥戌", 亥: "巳寅亥", 戌: "戌午寅",
+    酉: "戌巳子", 申: "寅申寅", 未: "子巳戌", 午: "辰申子",
+    巳: "申亥寅", 辰: "辰午申", 卯: "辰巳午",
+  };
+  const found = new Set<string>();
+  const differences: string[] = [];
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const chart = calculateDaliuren(input);
+      if (chart.dateInfo.ganZhi.day !== "甲申") continue;
+      const upper = chart.siKe.yiKe[0][0];
+      if (!(upper in expected)) continue;
+      const actual = [chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join("");
+      if (actual !== expected[upper]) differences.push(`${upper}:${actual}/${expected[upper]}`);
+      found.add(upper);
+    }
+  }
+  expect([...found].sort()).toEqual(Object.keys(expected).sort());
+  expect(differences).toEqual(["寅:寅巳申/寅巳卯"]);
+});
+
+it("checks all six 甲-day 伏吟 transmissions against 六壬大全 and the other 太白 entries", () => {
+  // 六壬大全卷七：甲日伏吟寅发用，刑巳、巳刑申。
+  // 太白卷四十二甲子、甲戌、甲午、甲辰日均写寅巳申；甲申条电子文本末字有异。
+  const days = new Set<string>();
+  let count = 0;
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (const monthGeneral of "子丑寅卯辰巳午未申酉戌亥") {
+      for (let hour = 0; hour < 24; hour += 2) {
+        // Runtime supports monthGeneral although the upstream declaration omits it.
+        const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral };
+        const chart = calculateDaliuren(input);
+        const day = chart.dateInfo.ganZhi.day;
+        if (!day.startsWith("甲") || chart.siKe.yiKe[0][0] !== "寅") continue;
+        const actual = [chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join("");
+        expect(actual, `${day} ${monthGeneral}将 ${hour}时`).toBe("寅巳申");
+        days.add(day);
+        count++;
+      }
+    }
+  }
+  expect([...days].sort()).toEqual(["甲子", "甲戌", "甲申", "甲午", "甲辰", "甲寅"].sort());
+  expect(count).toBe(72);
+});
