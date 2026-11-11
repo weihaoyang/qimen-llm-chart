@@ -182,6 +182,24 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("compares Venus, Saturn and Mercury palace labels with selected classical passages", () => {
+    // 《星学大成》卷16、17；"本宫"、"庙旺"按原文保留，不推断一一等义。
+    const cases = [
+      ["1990-10-15T12:00:00+08:00", "金星", "辰", "未列", "庙旺"],
+      ["1990-01-15T12:00:00+08:00", "土星", "丑", "未列", "庙"],
+      ["2009-11-15T12:00:00+08:00", "土星", "辰", "未列", "旺"],
+      ["1990-08-15T12:00:00+08:00", "水星", "巳", "庙", "旺"],
+      ["1990-06-15T12:00:00+08:00", "水星", "申", "旺", "本宫"],
+    ] as const;
+    for (const [date, name, branch, imported, classical] of cases) {
+      const input = getDefaultProfileInput(new Date(date), "Asia/Shanghai");
+      const star = buildQizhengChart(normalizeProfileInput(input)).stars.find((item) => item.name === name);
+      expect(star?.branch, date).toBe(branch);
+      expect(star?.dignity, date).toBe(imported);
+      expect(star?.dignity, date).not.toBe(classical);
+    }
+  });
+
   it("places seven luminaries and the three calculable remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
