@@ -169,4 +169,9 @@ it("anchors the traditional clock at yin-chu and handles midnight without ordina
   expect(analyzeYunQi(2024).handoverLocalTime).toEqual([
     "03:00:00", "00:00:00", "21:00:00", "18:00:00", "15:00:00", "12:00:00",
   ]);
+  // 《天元玉册》卷十二丁卯例：前七十五刻为终气，七十六刻即亥初一刻。
+  // 21:00 是等时钟面约定，不能据此称为原文给出的现代法定时刻。
+  const dingMao = analyzeYunQi(2027);
+  expect(dingMao.handoverKe[0]).toBe("76刻");
+  expect(dingMao.handoverLocalTime[0]).toBe("21:00:00");
 });
