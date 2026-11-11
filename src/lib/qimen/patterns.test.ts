@@ -42,6 +42,24 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("includes stems, gate and deity in composite-pattern evidence", () => {
+    const cases = [
+      { id: "jiu_dun_tian", position: 1, heavenlyStem: "丙", earthlyStem: "丁", gate: "生门", deity: "九天" },
+      { id: "jiu_dun_di", position: 2, heavenlyStem: "乙", earthlyStem: "己", gate: "开门", deity: "太阴" },
+      { id: "jiu_dun_ren", position: 3, heavenlyStem: "丁", earthlyStem: "戊", gate: "休门", deity: "太阴" },
+      { id: "zhen_zha", position: 4, heavenlyStem: "乙", earthlyStem: "辛", gate: "开门", deity: "太阴" },
+    ];
+    for (const item of cases) {
+      const report = evaluateQimenPatterns(chartWith([palace(item.position, item)]));
+      const check = report.checks.find(c => c.id === item.id)!;
+      expect(check.status).toBe("成立");
+      expect(check.evidence[0]).toContain(`天${item.heavenlyStem}`);
+      expect(check.evidence[0]).toContain(`地${item.earthlyStem}`);
+      expect(check.evidence[0]).toContain(item.gate);
+      expect(check.evidence[0]).toContain(item.deity);
+    }
+  });
+
   it("keeps the selected 三奇入墓 rule distinct from the 王璋 palace interpretation", () => {
     // 《遁甲符应经》整理本王璋条按乙二、丙六、丁六比较；不把其他宫视为原文逐项排除。
     const ancient = new Set(["乙2", "丙6", "丁6"]);

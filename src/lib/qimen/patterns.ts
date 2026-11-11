@@ -133,6 +133,9 @@ const pairEvidence = (palace: Palace) =>
   `${palaceLabel(palace.position)}：天盘 ${stemsOf(palace.heavenlyStem)} · 地盘 ${stemsOf(palace.earthlyStem)}`;
 const gateEvidence = (palace: Palace) =>
   `${palaceLabel(palace.position)}：${palace.gate}${deityIn(palace, ["太阴", "六合", "九地", "九天", "值符", "螣蛇", "白虎", "玄武"]) ? ` · ${palace.deity}` : ""}`;
+// 组合格局的依据须同时展示干、门、神，避免只显示部分命中条件。
+const combinationEvidence = (palace: Palace) =>
+  `${palaceLabel(palace.position)}：天${stemsOf(palace.heavenlyStem)} 地${stemsOf(palace.earthlyStem)} ${palace.gate} ${palace.deity}`;
 
 export type QimenPatternKind = "吉格" | "凶格";
 export type QimenPatternGroup = "九遁" | "三诈五假" | "常用吉格" | "常用凶格" | "伏吟反吟" | "全局";
@@ -180,62 +183,62 @@ const stemPair = (heaven: string, earth: string): CatalogEntry["match"] => (pala
 export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   // ---- 九遁 ----
   good("jiu_dun_tian", "天遁", "九遁", "天盘丙 + 地盘丁 + 生门", "主上达、机遇与贵人提携；宜公开、正式之事。", (p) =>
-    hasHeaven(p, "丙") && hasEarth(p, "丁") && gateIn(p, ["生门"]) ? pairEvidence(p) : null,
+    hasHeaven(p, "丙") && hasEarth(p, "丁") && gateIn(p, ["生门"]) ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_di", "地遁", "九遁", "天盘乙 + 地盘己 + 开门", "主稳固、落地与根基；宜置产、开张、长线布局。", (p) =>
-    hasHeaven(p, "乙") && hasEarth(p, "己") && gateIn(p, ["开门"]) ? pairEvidence(p) : null,
+    hasHeaven(p, "乙") && hasEarth(p, "己") && gateIn(p, ["开门"]) ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_ren", "人遁", "九遁", "本盘口径：天盘丁 + 休门 + 太阴；古籍另有天盘丁 + 休门 + 地盘丙", "主人和、内应与暗中助力；宜谈判、协调、私下沟通。", (p) =>
-    hasHeaven(p, "丁") && gateIn(p, ["休门"]) && deityIn(p, ["太阴"]) ? gateEvidence(p) : null,
+    hasHeaven(p, "丁") && gateIn(p, ["休门"]) && deityIn(p, ["太阴"]) ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_feng", "风遁", "九遁", "天盘乙 + 开/休/生门 + 巽 4 宫", "主传播、流动与远行；宜推广、搬迁、走动之事。", (p) =>
-    hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && p.position === 4 ? gateEvidence(p) : null,
+    hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && p.position === 4 ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_yun", "云遁", "九遁", "天盘乙 + 开/休/生门 + 地盘辛", "主遮掩、过渡与缓和；宜暗中准备、避开正面冲突。", (p) =>
-    hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && hasEarth(p, "辛") ? pairEvidence(p) : null,
+    hasHeaven(p, "乙") && gateIn(p, SAN_MEN) && hasEarth(p, "辛") ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_long", "龙遁", "九遁", "天盘乙 + 休门 + 坎 1 宫或地盘癸", "主潜藏蓄势、后发制人；宜谋定而后动。", (p) =>
-    matchesLongDun(p) ? gateEvidence(p) : null,
+    matchesLongDun(p) ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_hu", "虎遁", "九遁", "乙加辛休门在艮；或辛生门在艮；一云丙加辛生门", "主威势、攻取与决断；宜竞争、出手，但忌过刚。", (p) =>
-    matchesHuDun(p) ? pairEvidence(p) : null,
+    matchesHuDun(p) ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_shen", "神遁", "九遁", "天盘丙 + 生门 + 九天", "主声势、上位与号召；宜树立形象、争取支持。", (p) =>
-    hasHeaven(p, "丙") && gateIn(p, ["生门"]) && deityIn(p, ["九天"]) ? gateEvidence(p) : null,
+    hasHeaven(p, "丙") && gateIn(p, ["生门"]) && deityIn(p, ["九天"]) ? combinationEvidence(p) : null,
   ),
   good("jiu_dun_gui", "鬼遁", "九遁", "九地下丁生门临艮，或乙杜门；一云丁开门九地", "主隐蔽、暗查与回避；宜调查防守，不宜张扬。", (p) =>
-    matchesGuiDun(p) ? gateEvidence(p) : null,
+    matchesGuiDun(p) ? combinationEvidence(p) : null,
   ),
 
   // ---- 三诈五假 ----
   good("zhen_zha", "真诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 太阴", "主以巧取胜、借智成事；善用信息差与内应。", (p) =>
-    matchesSanZha(p, "太阴") ? gateEvidence(p) : null,
+    matchesSanZha(p, "太阴") ? combinationEvidence(p) : null,
   ),
   good("xiu_zha", "休诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 六合", "主合作与撮合；宜联姻、结盟、居间调停。", (p) =>
-    matchesSanZha(p, "六合") ? gateEvidence(p) : null,
+    matchesSanZha(p, "六合") ? combinationEvidence(p) : null,
   ),
   good("chong_zha", "重诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 九地", "主层层设局、以静制动；宜长线规划与埋伏。", (p) =>
-    matchesSanZha(p, "九地") ? gateEvidence(p) : null,
+    matchesSanZha(p, "九地") ? combinationEvidence(p) : null,
   ),
   good("tian_jia", "天假", "三诈五假", "天盘乙/丙/丁 + 景门 + 九天", "主名分、文书与声势扶助；宜申请、报批、公开发布。", (p) =>
-    hasHeaven(p, ...SAN_QI) && gateIn(p, ["景门"]) && deityIn(p, ["九天"]) ? gateEvidence(p) : null,
+    hasHeaven(p, ...SAN_QI) && gateIn(p, ["景门"]) && deityIn(p, ["九天"]) ? combinationEvidence(p) : null,
   ),
   good("di_jia", "地假", "三诈五假", "天盘丁/己/癸 + 杜门 + 九地/太阴/六合", "主地利与掩护；宜占地、守成、避开锋芒。", (p) =>
-    matchesDiJia(p) ? gateEvidence(p) : null,
+    matchesDiJia(p) ? combinationEvidence(p) : null,
   ),
   good("ren_jia", "人假", "三诈五假", "天盘壬 + 惊门 + 九天", "主借他人之名行事；宜代理、转达，慎防冒用。", (p) =>
-    matchesRenJia(p) ? gateEvidence(p) : null,
+    matchesRenJia(p) ? combinationEvidence(p) : null,
   ),
   good("shen_jia", "神假", "三诈五假", "天盘丁/己/癸 + 伤门 + 九地", "主借势压人、以快取胜；出手前先留证据。", (p) =>
-    matchesShenJia(p) ? gateEvidence(p) : null,
+    matchesShenJia(p) ? combinationEvidence(p) : null,
   ),
   good("gui_jia", "鬼假", "三诈五假", "天盘丁/己/癸 + 死门 + 九地", "主收束、了结与清算；宜处理旧账、止损退出。", (p) =>
-    matchesGuiJia(p) ? gateEvidence(p) : null,
+    matchesGuiJia(p) ? combinationEvidence(p) : null,
   ),
 
   // ---- 常用吉格 ----
   good("san_qi_zhi_ling", "三奇之灵", "常用吉格", "地盘乙/丙/丁 + 开/休/生门 + 太阴/六合/九地/九天", "三奇得吉门吉神，为办事顺利的基础吉格。", (p) =>
-    hasEarth(p, ...SAN_QI) && gateIn(p, SAN_MEN) && deityIn(p, SI_SHEN) ? gateEvidence(p) : null,
+    hasEarth(p, ...SAN_QI) && gateIn(p, SAN_MEN) && deityIn(p, SI_SHEN) ? combinationEvidence(p) : null,
   ),
   good("qi_you_lu_wei", "奇游禄位", "常用吉格", "天盘乙+震 3 / 丙+巽 4 / 丁+离 9，且门为开/休/生", "三奇临禄位又得吉门，主顺遂；缺吉门则力减。", (p) =>
     matchesQiYouLuWei(p) ? `${palaceLabel(p.position)}：天盘${stemsOf(p.heavenlyStem)} + ${p.gate}` : null,
