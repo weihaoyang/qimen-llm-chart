@@ -5,6 +5,12 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("names the actual 三奇受刑 cause on adjacent real charts", () => {
+    for (const [datetime, expected] of [["2026-01-01T00:00", "1宫：丁临坎"], ["2026-01-01T02:00", "1宫：丙临坎"]] as const) {
+      const report = evaluateQimenPatterns(buildChart({ datetime, timeZone: "Asia/Shanghai" }));
+      expect(report.checks.find(({ id }) => id === "san_qi_shou_xing")?.evidence).toContain(expected);
+    }
+  });
   it("recognizes chief over earth 己 without requiring a literal 甲 on the heaven plate", () => {
     const chart = buildChart({ datetime: "2026-01-02T08:00", timeZone: "Asia/Shanghai" });
     expect(chart.raw.timeInfo.xunShou).toBe("甲申");

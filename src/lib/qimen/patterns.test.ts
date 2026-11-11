@@ -186,6 +186,20 @@ describe("evaluateQimenPatterns", () => {
     expect(statusOf(report, "qi_ge")).toBe("成立");
   });
 
+  it("reports every distinct 三奇受刑 witness without attributing unrelated stems", () => {
+    const report = evaluateQimenPatterns(chartWith([
+      palace(1, { heavenlyStem: ["丙", "丁", "戊"], earthlyStem: ["壬", "癸"] }),
+      palace(6, { heavenlyStem: "乙", earthlyStem: ["庚", "辛"] }),
+      palace(8, { heavenlyStem: "乙", earthlyStem: "丁" }),
+    ]));
+    const check = report.checks.find(({ id }) => id === "san_qi_shou_xing")!;
+    expect(check.positions).toEqual([1, 6]);
+    expect(check.evidence).toEqual([
+      "1宫：丙临坎、丙加壬、丙加癸、丁临坎、丁加壬、丁加癸",
+      "6宫：乙临6宫、乙加庚、乙加辛",
+    ]);
+  });
+
   it("uses the four pillars for 日格 / 时格 / 飞干格", () => {
     const report = evaluateQimenPatterns(
       chartWith([palace(2, { heavenlyStem: "庚", earthlyStem: "戊" })]),
