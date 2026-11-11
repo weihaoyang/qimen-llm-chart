@@ -58,6 +58,7 @@ export type TaiyiChart = {
   format: "qmdj-taiyi-v1";
   input: { year: number; cycle: number; dun: TaiyiDun; ruJu: number; derived: boolean; dunDefaulted: boolean };
   accumulation: { jiyear: number; eraRemainder: number; ruJu: number };
+  annualGate: { name: string; yearInGate: number; yearInCycle: number };
   taiyi: { palace: number; trigram: string; position: string; element: string; block: number };
   tianMu: { position: string; deity: TaiyiDeity; palace: number | null; standing: "正宫" | "间神" };
   jiShen: { position: string; deity: TaiyiDeity };
@@ -83,6 +84,14 @@ export type TaiyiChart = {
 
 /** 积年：以上元甲子为始，据《太乙金镜式经》「至唐开元十二年（724）有 1937281 积年」。 */
 export const accumulatedYears = (year: number) => year + (1937281 - 724);
+
+/** 《金镜》卷一岁计新术：240 年八门，每门 30 年；积年 1 对应开门第一年。 */
+export const annualDutyGate = (jiyear: number) => {
+  if (!Number.isSafeInteger(jiyear)) throw new RangeError("积年必须为安全整数。");
+  const gates = ["开", "休", "生", "伤", "杜", "景", "死", "惊"];
+  const offset = mod(mod(jiyear, 240) - 1, 240);
+  return { name: `${gates[Math.floor(offset / 30)]}门`, yearInGate: offset % 30 + 1, yearInCycle: offset + 1 };
+};
 
 /** 入局数：积年累除元六纪周期，再累除七十二。 */
 export const ruJuNumber = (jiyear: number, cycle: number) => mod(mod(jiyear, cycle) - 1, 72) + 1;
@@ -372,6 +381,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
     format: "qmdj-taiyi-v1",
     input: { year, cycle, dun, ruJu, derived: override === null, dunDefaulted },
     accumulation: { jiyear, eraRemainder, ruJu },
+    annualGate: annualDutyGate(jiyear),
     taiyi: { palace, trigram: PALACES.find((item) => item.palace === palace)?.trigram ?? "", position: taiyiPosition, element: PALACES.find((item) => item.palace === palace)?.element ?? "", block },
     tianMu: { position: tianMuPos, deity: deityOf(tianMuPos), palace: tianMuPalace, standing: tianMuPalace === null ? "间神" : "正宫" },
     jiShen: { position: jiShenPos, deity: deityOf(jiShenPos) },

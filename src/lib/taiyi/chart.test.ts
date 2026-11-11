@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, parityLabel, ruJuNumber, shiJiPosition, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, parityLabel, ruJuNumber, shiJiPosition, taiyiPalace, tianMuPosition } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -31,6 +31,24 @@ describe("taiyi tables", () => {
 });
 
 describe("accumulation and palaces", () => {
+  it("reproduces annual duty gate examples and every thirty-year boundary", () => {
+    expect(annualDutyGate(accumulatedYears(724))).toEqual({ name: "开门", yearInGate: 1, yearInCycle: 1 });
+    expect(annualDutyGate(accumulatedYears(753)).name).toBe("开门");
+    expect(annualDutyGate(accumulatedYears(754))).toEqual({ name: "休门", yearInGate: 1, yearInCycle: 31 });
+    const gates = ["开门", "休门", "生门", "伤门", "杜门", "景门", "死门", "惊门"];
+    for (let i = 0; i < 8; i++) {
+      expect(annualDutyGate(1 + 30 * i)).toEqual({ name: gates[i], yearInGate: 1, yearInCycle: 1 + 30 * i });
+      expect(annualDutyGate(30 + 30 * i).name).toBe(gates[i]);
+    }
+    expect(annualDutyGate(0)).toEqual({ name: "惊门", yearInGate: 30, yearInCycle: 240 });
+    expect(annualDutyGate(-1)).toEqual(annualDutyGate(239));
+    expect(() => annualDutyGate(Number.NaN)).toThrow(RangeError);
+    const base = buildTaiyiChart({ year: 754, cycle: 360, dun: "阳遁", ruJu: null });
+    const override = buildTaiyiChart({ year: 754, cycle: 365, dun: "阴遁", ruJu: 10 });
+    expect(override.annualGate).toEqual(base.annualGate);
+    expect(serializeTaiyiToStructuredText(base)).toContain("岁计直门（《金镜》卷一新术）：休门");
+    expect(JSON.parse(serializeTaiyiToCompactJson(base)).annualGate.name).toBe("休门");
+  });
   it("preserves the cycle remainder for large safe integers and negative years", () => {
     const cycle = Number.MAX_SAFE_INTEGER;
     for (const year of [2026, -Number.MAX_SAFE_INTEGER]) {
