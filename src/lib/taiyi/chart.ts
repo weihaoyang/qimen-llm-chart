@@ -59,6 +59,8 @@ export type TaiyiChart = {
   input: { year: number; cycle: number; dun: TaiyiDun; ruJu: number; derived: boolean; dunDefaulted: boolean };
   accumulation: { jiyear: number; eraRemainder: number; ruJu: number };
   annualGate: { name: string; yearInGate: number; yearInCycle: number };
+  annualGatePalaces: Array<{ palace: number; gate: string }>;
+  fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   taiyi: { palace: number; trigram: string; position: string; element: string; block: number };
   tianMu: { position: string; deity: TaiyiDeity; palace: number | null; standing: "正宫" | "间神" };
   jiShen: { position: string; deity: TaiyiDeity };
@@ -86,11 +88,23 @@ export type TaiyiChart = {
 export const accumulatedYears = (year: number) => year + (1937281 - 724);
 
 /** 《金镜》卷一岁计新术：240 年八门，每门 30 年；积年 1 对应开门第一年。 */
+const EIGHT_GATES = ["开门", "休门", "生门", "伤门", "杜门", "景门", "死门", "惊门"];
+
 export const annualDutyGate = (jiyear: number) => {
   if (!Number.isSafeInteger(jiyear)) throw new RangeError("积年必须为安全整数。");
-  const gates = ["开", "休", "生", "伤", "杜", "景", "死", "惊"];
   const offset = mod(mod(jiyear, 240) - 1, 240);
-  return { name: `${gates[Math.floor(offset / 30)]}门`, yearInGate: offset % 30 + 1, yearInCycle: offset + 1 };
+  return { name: EIGHT_GATES[Math.floor(offset / 30)], yearInGate: offset % 30 + 1, yearInCycle: offset + 1 };
+};
+
+/** 从太乙宫起所指定门，按八正宫环依开休生伤杜景死惊次序顺布。 */
+export const taiyiEightGatePalaces = (palace: number, startGate: string) => {
+  const palaceStart = PALACE_RING.indexOf(palace);
+  const gateStart = EIGHT_GATES.indexOf(startGate);
+  if (palaceStart < 0 || gateStart < 0) throw new RangeError("太乙宫和起门必须为八正宫及八门之一。");
+  return Array.from({ length: 8 }, (_, offset) => ({
+    palace: PALACE_RING[(palaceStart + offset) % 8],
+    gate: EIGHT_GATES[(gateStart + offset) % 8],
+  }));
 };
 
 /** 入局数：积年累除元六纪周期，再累除七十二。 */
@@ -376,12 +390,15 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const tianMuPalace = isMain(tianMuPos) ? POSITION_TO_PALACE[tianMuPos] : null;
   const shiJiPalace = isMain(shiJiPos) ? POSITION_TO_PALACE[shiJiPos] : null;
   const deityOf = (position: string) => DEITIES.find((deity) => deity.position === position) ?? DEITIES[0];
+  const annualGate = annualDutyGate(jiyear);
 
   return {
     format: "qmdj-taiyi-v1",
     input: { year, cycle, dun, ruJu, derived: override === null, dunDefaulted },
     accumulation: { jiyear, eraRemainder, ruJu },
-    annualGate: annualDutyGate(jiyear),
+    annualGate,
+    annualGatePalaces: taiyiEightGatePalaces(palace, annualGate.name),
+    fixedOpenGatePalaces: taiyiEightGatePalaces(palace, "开门"),
     taiyi: { palace, trigram: PALACES.find((item) => item.palace === palace)?.trigram ?? "", position: taiyiPosition, element: PALACES.find((item) => item.palace === palace)?.element ?? "", block },
     tianMu: { position: tianMuPos, deity: deityOf(tianMuPos), palace: tianMuPalace, standing: tianMuPalace === null ? "间神" : "正宫" },
     jiShen: { position: jiShenPos, deity: deityOf(jiShenPos) },
@@ -407,7 +424,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       + "**遁不由局数推出**：卷三与秘書皆阳局七十二局、阴局七十二局并列（秘書阳局第一局太乙一宫、阴局第一局太乙九宫），故本仓须人工选定遁；未选定时按阳遁排出并在界面提示（input.dunDefaulted）。"
       + "格局参考卷三及《太乙秘書》局注，囚、关采用局注的同宫宽判。「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
       + "「前一宫／后一宫」按八正宫环（乾一坎八艮三震四巽九离二坤七兑六）定序，「前一辰／后一辰」按十六神环紧邻之间神定序。"
-      + "四郭固、四郭杜取所列合象读法；四郭杜中主客大将同宫本身已满足本站的关，并非另证其他格局。提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。「推执提法」需八门直事，本仓未排八门，故未实现。"
+      + "四郭固、四郭杜取所列合象读法；四郭杜中主客大将同宫本身已满足本站的关，并非另证其他格局。提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。岁计直门加太乙与开门加太乙分别列示；主客将八门及执提判定尚未实现。"
       + "和数只列事实、不下判词：算值、奇偶、所立正宫／间神，并按卷二〈推阴阳和不和〉列「上和十四、十八、三十三；次和二十三、二十九、三十二；下和十二、十六、二十七、三十四、三十八」。卷二与《太乙秘書》《太乙統宗寶鑑》《淘金歌》一系的和数清单不同（后者次和另含三十六、下和另含二十一、上和无三十三），且两书局注互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），同篇不合判据又含太乙宫、二目所立、算奇偶等多维（卷二另有『八三四九为阳宫、二七六一为阴宫』，与乾坎艮震为阳之常义相异），故本仓不输出和／不和与长／短判词。"
       + "已用《太乙秘書》阳局 1–24、阴局 1–12（共 36 局）逐局回归，字段以秘書原文为准、与卷三立成互校，秘書讹误或缺漏之字段在用例中具名跳过并注明（详见 mishu-corpus.ts）。"
       + "《太乙金镜式经》卷一岁计周纪取 360 年，本站默认沿用。365 为对照参数；起元另有异说，故入局数可覆盖。仅供研究，不构成预测或现实裁决。",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, parityLabel, ruJuNumber, shiJiPosition, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, parityLabel, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -35,6 +35,10 @@ describe("accumulation and palaces", () => {
     expect(annualDutyGate(accumulatedYears(724))).toEqual({ name: "开门", yearInGate: 1, yearInCycle: 1 });
     expect(annualDutyGate(accumulatedYears(753)).name).toBe("开门");
     expect(annualDutyGate(accumulatedYears(754))).toEqual({ name: "休门", yearInGate: 1, yearInCycle: 31 });
+    // 《景祐太乙福应经》乾德二年甲子、淳化五年甲午；《统宗宝鉴》端平元年甲午。
+    expect(annualDutyGate(accumulatedYears(964)).name).toBe("开门");
+    expect(annualDutyGate(accumulatedYears(994)).name).toBe("休门");
+    expect(annualDutyGate(accumulatedYears(1234)).name).toBe("休门");
     const gates = ["开门", "休门", "生门", "伤门", "杜门", "景门", "死门", "惊门"];
     for (let i = 0; i < 8; i++) {
       expect(annualDutyGate(1 + 30 * i)).toEqual({ name: gates[i], yearInGate: 1, yearInCycle: 1 + 30 * i });
@@ -48,6 +52,30 @@ describe("accumulation and palaces", () => {
     expect(override.annualGate).toEqual(base.annualGate);
     expect(serializeTaiyiToStructuredText(base)).toContain("岁计直门（《金镜》卷一新术）：休门");
     expect(JSON.parse(serializeTaiyiToCompactJson(base)).annualGate.name).toBe("休门");
+  });
+
+  it("places annual and fixed-open gate systems separately around all eight palaces", () => {
+    // 《图书集成》太乙在乾一宫以开起，依次坎休、艮生、震伤、巽杜、离景、坤死、兑惊。
+    const palaces = [1, 8, 3, 4, 9, 2, 7, 6];
+    const gates = ["开门", "休门", "生门", "伤门", "杜门", "景门", "死门", "惊门"];
+    expect(taiyiEightGatePalaces(1, "开门")).toEqual(palaces.map((palace, i) => ({ palace, gate: gates[i] })));
+    for (const startPalace of palaces) for (const startGate of gates) {
+      const result = taiyiEightGatePalaces(startPalace, startGate);
+      expect(result[0]).toEqual({ palace: startPalace, gate: startGate });
+      expect(new Set(result.map((entry) => entry.palace)).size).toBe(8);
+      expect(new Set(result.map((entry) => entry.gate)).size).toBe(8);
+      for (let i = 1; i < 8; i++) {
+        expect(result[i].palace).toBe(palaces[(palaces.indexOf(startPalace) + i) % 8]);
+        expect(result[i].gate).toBe(gates[(gates.indexOf(startGate) + i) % 8]);
+      }
+    }
+    expect(() => taiyiEightGatePalaces(5, "开门")).toThrow(RangeError);
+    expect(() => taiyiEightGatePalaces(1, "天门")).toThrow(RangeError);
+    const chart = buildTaiyiChart({ year: 754, cycle: 360, dun: "阳遁", ruJu: null });
+    expect(chart.annualGatePalaces[0]).toEqual({ palace: chart.taiyi.palace, gate: "休门" });
+    expect(chart.fixedOpenGatePalaces[0]).toEqual({ palace: chart.taiyi.palace, gate: "开门" });
+    expect(serializeTaiyiToStructuredText(chart)).toContain("开门加太乙（李淳风法）");
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).annualGatePalaces).toEqual(chart.annualGatePalaces);
   });
   it("preserves the cycle remainder for large safe integers and negative years", () => {
     const cycle = Number.MAX_SAFE_INTEGER;
