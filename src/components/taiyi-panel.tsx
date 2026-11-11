@@ -118,7 +118,9 @@ export function TaiyiPanel({
         <div><span>天目（文昌）</span><b>{chart.tianMu.deity.name}</b><em>{chart.tianMu.position} · {chart.tianMu.standing}{chart.tianMu.palace ? `（第 ${chart.tianMu.palace} 宫）` : ""}</em></div>
         <div><span>始击（客目）</span><b>{chart.shiJi.deity.name}</b><em>{chart.shiJi.position} · {chart.shiJi.standing}{chart.shiJi.palace ? `（第 ${chart.shiJi.palace} 宫）` : ""}</em></div>
         <div><span>计神</span><b>{chart.jiShen.deity.name}</b><em>{chart.jiShen.position} · 岁星之使</em></div>
-        <div><span>定计目</span><b>{chart.fixedPlanEye.deity.name}</b><em>太岁{chart.fixedPlanEye.yearBranch} · 合神{chart.fixedPlanEye.combiningBranch} · 定目{chart.fixedPlanEye.position}；定算及定将待核</em></div>
+        <div><span>定计目</span><b>{chart.fixedPlanEye.deity.name}</b><em>太岁{chart.fixedPlanEye.yearBranch} · 合神{chart.fixedPlanEye.combiningBranch} · 定目{chart.fixedPlanEye.position}</em></div>
+        <div><span>定算与定将</span><b>{chart.fixedPlan ? `${chart.fixedPlan.count} → 定大将${chart.fixedPlan.generalPalace}宫 · 定参将${chart.fixedPlan.deputyPalace}宫` : "定目与太乙同宫，待核"}</b><em>《金钥匙》太乙前止法；与《秘书》部分例子不同</em></div>
+        {chart.fixedPlan ? <div><span>开门加定大将</span><b>{chart.fixedPlan.gatePalaces?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "定大将落中宫，未排布"}</b><em>固定开门法</em></div> : null}
         <div><span>和数（事实）</span><b>主算 {chart.counts.hostHarmonyLevel} · 客算 {chart.counts.guestHarmonyLevel}</b><em>《太乙秘書》电子本清单（影印待核）：主算 {chart.counts.hostHarmonyLevelVariant} · 客算 {chart.counts.guestHarmonyLevelVariant}；本仓不下和/不和与长/短判词</em></div>
       </div>
 

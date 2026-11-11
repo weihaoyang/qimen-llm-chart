@@ -63,6 +63,7 @@ export type TaiyiChart = {
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
   fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
+  fixedPlan: { count: number; generalPalace: number; deputyPalace: number; gatePalaces: Array<{ palace: number; gate: string }> | null } | null;
   taiyi: { palace: number; trigram: string; position: string; element: string; block: number };
   tianMu: { position: string; deity: TaiyiDeity; palace: number | null; standing: "正宫" | "间神" };
   jiShen: { position: string; deity: TaiyiDeity };
@@ -405,6 +406,9 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const deityOf = (position: string) => DEITIES.find((deity) => deity.position === position) ?? DEITIES[0];
   const annualGate = annualDutyGate(jiyear);
   const fixedEye = fixedPlanEyePosition(year, tianMuPos);
+  // 《太乙金钥匙》定目数至太乙前：同宫时终点边界尚待核，保留未计算。
+  const fixedCount = fixedEye.position === taiyiPosition ? null : countSum(fixedEye.position, taiyiPosition);
+  const fixedGeneral = fixedCount === null ? null : generalPalace(fixedCount);
 
   return {
     format: "qmdj-taiyi-v1",
@@ -418,6 +422,12 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       guest: guestGeneral === 5 ? null : taiyiEightGatePalaces(guestGeneral, "开门"),
     },
     fixedPlanEye: { ...fixedEye, deity: deityOf(fixedEye.position) },
+    fixedPlan: fixedCount === null || fixedGeneral === null ? null : {
+      count: fixedCount,
+      generalPalace: fixedGeneral,
+      deputyPalace: generalSuPalace(fixedGeneral),
+      gatePalaces: fixedGeneral === 5 ? null : taiyiEightGatePalaces(fixedGeneral, "开门"),
+    },
     taiyi: { palace, trigram: PALACES.find((item) => item.palace === palace)?.trigram ?? "", position: taiyiPosition, element: PALACES.find((item) => item.palace === palace)?.element ?? "", block },
     tianMu: { position: tianMuPos, deity: deityOf(tianMuPos), palace: tianMuPalace, standing: tianMuPalace === null ? "间神" : "正宫" },
     jiShen: { position: jiShenPos, deity: deityOf(jiShenPos) },

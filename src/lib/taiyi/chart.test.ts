@@ -63,6 +63,29 @@ describe("accumulation and palaces", () => {
     // 原书记阳三十四、阴二十五；阴例未吻合，禁止将此假说当作完整规则。
     expect(result[1].hypothesis).not.toBe(25);
   });
+
+  it("follows the 金钥匙 定算 examples and preserves its contrast with 秘书", () => {
+    // 金钥匙戊戌月：定目戌，太乙巽，1+1+8+3+4=17；丁未日：定目艮，太乙子，3+4+9+2+7+6+1=32。
+    expect(countSum("戌", "巽")).toBe(17);
+    expect(countSum("艮", "子")).toBe(32);
+    expect([generalPalace(17), generalSuPalace(generalPalace(17))]).toEqual([7, 1]);
+    expect([generalPalace(32), generalSuPalace(generalPalace(32))]).toEqual([2, 6]);
+    const chart = buildTaiyiChart({ year: 1588, cycle: 360, dun: "阴遁", ruJu: null });
+    expect(chart.fixedPlanEye.position).toBe("戌");
+    expect(chart.taiyi.position).toBe("巽");
+    expect(chart.fixedPlan).toMatchObject({ count: 17, generalPalace: 7, deputyPalace: 1 });
+    expect(serializeTaiyiToStructuredText(chart)).toContain("与《太乙秘书》例有差异");
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).fixedPlan.count).toBe(17);
+    let samePalace = 0;
+    let centre = 0;
+    for (let year = 2020; year < 2032; year++) for (const dun of ["阳遁", "阴遁"] as const) for (let ruJu = 1; ruJu <= 72; ruJu++) {
+      const example = buildTaiyiChart({ year, cycle: 360, dun, ruJu });
+      if (example.fixedPlanEye.position === example.taiyi.position) { expect(example.fixedPlan).toBeNull(); samePalace++; }
+      else if (example.fixedPlan?.generalPalace === 5) { expect(example.fixedPlan.gatePalaces).toBeNull(); centre++; }
+    }
+    expect(samePalace).toBeGreaterThan(0);
+    expect(centre).toBeGreaterThan(0);
+  });
   it("reproduces annual duty gate examples and every thirty-year boundary", () => {
     expect(annualDutyGate(accumulatedYears(724))).toEqual({ name: "开门", yearInGate: 1, yearInCycle: 1 });
     expect(annualDutyGate(accumulatedYears(753)).name).toBe("开门");
