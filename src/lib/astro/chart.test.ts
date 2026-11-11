@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { calculateChart } from "celestine";
 import { getDefaultProfileInput, normalizeProfileInput } from "@/lib/profile";
 import { buildAstroChart, offsetMinutes } from "./chart";
 import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "./serializer";
@@ -211,4 +212,38 @@ it("keeps a late Pisces Sun below 30 degrees within its actual sign", () => {
   const chart = buildAstroChart(normalizeProfileInput({ ...input, datetime: "2026-03-20T14:36:05" }));
   expect(chart.sun.sign).toBe("双鱼");
   expect(chart.sun.degree).toBe(29.99);
+});
+
+
+it("preserves the computed longitude at an ascendant sign boundary", () => {
+  const rawAt = (longitude: number) => calculateChart({ year: 2000, month: 1, day: 1, hour: 12, minute: 0, second: 0, timezone: 0, latitude: 0, longitude }).angles.ascendant.longitude;
+  let interval: [number, number] | undefined;
+  for (let longitude = -180; longitude < 180; longitude++) {
+    if (rawAt(longitude) < 180 && rawAt(longitude + 1) >= 180 && rawAt(longitude + 1) < 181.5) {
+      interval = [longitude, longitude + 1];
+      break;
+    }
+  }
+  expect(interval).toBeDefined();
+  let [left, right] = interval!;
+  for (let i = 0; i < 45; i++) {
+    const middle = (left + right) / 2;
+    if (rawAt(middle) < 179.9999998) left = middle;
+    else right = middle;
+  }
+  const longitude = (left + right) / 2;
+  const raw = rawAt(longitude);
+  expect(raw).toBeLessThan(180);
+  expect(Number(raw.toFixed(6))).toBe(180); // old export crossed the boundary
+  const input = getDefaultProfileInput(new Date("2000-01-01T12:00:00Z"), "UTC");
+  input.location = { city: "Boundary", timeZone: "UTC", latitude: 0, longitude };
+  const chart = buildAstroChart(normalizeProfileInput(input));
+  expect(chart.ascendant.sign).toBe("处女");
+  expect(chart.ascendant.longitude).toBe(raw);
+  expect(chart.ascendant.longitude).toBeLessThan(180);
+  const engine = calculateChart({ year: 2000, month: 1, day: 1, hour: 12, minute: 0, second: 0, timezone: 0, latitude: 0, longitude });
+  expect(chart.sun.longitude).toBe(engine.planets.find((planet) => planet.name === "Sun")!.longitude);
+  expect(chart.houses.map((house) => house.longitude)).toEqual(engine.houses.cusps.map((cusp) => cusp.longitude));
+  for (const lot of chart.lots) expect(lot.longitude).toBe(engine.lots.find((item) => item.name === lot.latin)!.longitude);
+  expect(JSON.parse(serializeAstroToCompactJson(chart)).ascendant.longitude).toBe(raw);
 });

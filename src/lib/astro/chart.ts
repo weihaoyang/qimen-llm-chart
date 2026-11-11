@@ -80,7 +80,7 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
 
   const toPoint = (planet: { name: string; longitude: number; signName: string; house?: number }): AstroPoint => {
     const signIndex = EN_SIGNS.indexOf(planet.signName);
-    return { name: PLANET_NAMES[planet.name] ?? planet.name, longitude: Number(planet.longitude.toFixed(6)), sign: SIGNS[signIndex] ?? "未知", degree: degreeWithinSign(planet.longitude), house: hasPlace ? planet.house ?? null : null };
+    return { name: PLANET_NAMES[planet.name] ?? planet.name, longitude: planet.longitude, sign: SIGNS[signIndex] ?? "未知", degree: degreeWithinSign(planet.longitude), house: hasPlace ? planet.house ?? null : null };
   };
   // 交点与莉莉丝不在 chart.planets 内，但 celestine 已在同一坐标系下算出，
   // 且与行星之间已有相位；一并纳入 points，避免「相位与图形丢一半」的简化。
@@ -107,7 +107,7 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
   const patterns: AstroPattern[] = chart.patterns
     .filter((pattern) => pattern.bodies.every((body) => PLANET_NAMES[body]))
     .map((pattern) => ({ type: pattern.type, bodies: pattern.bodies.map((body) => PLANET_NAMES[body] ?? body), description: pattern.description }));
-  const houses: AstroHouseCusp[] = hasPlace ? chart.houses.cusps.map((cusp) => ({ house: cusp.house, longitude: Number(cusp.longitude.toFixed(6)), sign: SIGNS[cusp.sign] ?? "未知", degree: degreeWithinSign(cusp.longitude) })) : [];
+  const houses: AstroHouseCusp[] = hasPlace ? chart.houses.cusps.map((cusp) => ({ house: cusp.house, longitude: cusp.longitude, sign: SIGNS[cusp.sign] ?? "未知", degree: degreeWithinSign(cusp.longitude) })) : [];
   const houseSystem = hasPlace ? chart.houses.systemName : atPole ? "—（地理极点，宫位未计算）" : "—（未提供出生地，宫位未计算）";
   const aspectSummary = hasPlace
     ? chart.aspects.summary
@@ -127,7 +127,7 @@ export const buildAstroChart = (profile: NormalizedProfileInput): AstroChart => 
             alias: meta.alias,
             formula: lot.formula,
             sect: chart.calculated.isDaytime ? ("昼" as const) : ("夜" as const),
-            longitude: Number(lot.longitude.toFixed(6)),
+            longitude: lot.longitude,
             sign: SIGNS[signIndex] ?? "未知",
             degree: degreeWithinSign(lot.longitude),
             house: lot.house ?? null,
