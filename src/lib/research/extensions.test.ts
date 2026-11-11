@@ -147,6 +147,15 @@ it.each([
   expect(text).toContain(`| 末传 (归计) | ${repeated} |`);
 });
 
+it("reproduces the 辛丑 申将 巳时 别责 plate described in 六壬心镜", () => {
+  const datetime = "2026-05-27T10:00";
+  const { text } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
+  expect(text).toContain("辛丑日第三局 干上丑 / 别责课");
+  expect(text).toContain("月将: 申");
+  expect([...text.matchAll(/\| [一二三四]课[^|]*\|[^|]*\|\s*(\S+)\s*\|\s*(\S+)\s*\|/g)].map(([, upper, lower]) => upper + lower)).toEqual(["丑辛", "辰丑", "辰丑", "未辰"]);
+  expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map(match => match[1])).toEqual(["巳", "丑", "丑"]);
+});
+
 it.each([
   ["2031-01-14T08:00", "甲寅", "丑", "亥"],
   ["2024-10-10T02:00", "丁未", "亥", "戌"],
