@@ -165,6 +165,23 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("compares Jupiter and Mars palace labels with the Xingxue Dacheng passages", () => {
+    // 卷十四：木庙亥、旺未；卷十五：火乐戌、旺丑。现用表另行保存。
+    const cases = [
+      ["1990-07-15T12:00:00+08:00", "木星", "未", "庙", "旺"],
+      ["1998-07-15T12:00:00+08:00", "木星", "亥", "旺", "庙"],
+      ["1990-06-15T12:00:00+08:00", "火星", "戌", "旺", "乐"],
+      ["1990-02-15T12:00:00+08:00", "火星", "丑", "未列", "旺"],
+    ] as const;
+    for (const [date, name, branch, imported, classical] of cases) {
+      const input = getDefaultProfileInput(new Date(date), "Asia/Shanghai");
+      const star = buildQizhengChart(normalizeProfileInput(input)).stars.find((item) => item.name === name);
+      expect(star?.branch, date).toBe(branch);
+      expect(star?.dignity, date).toBe(imported);
+      expect(star?.dignity, date).not.toBe(classical);
+    }
+  });
+
   it("places seven luminaries and the three calculable remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
