@@ -107,6 +107,26 @@ def qing_1911_liu_comparison() -> list[tuple[date, Decimal, Decimal]]:
     return rows
 
 
+def qianlong_1911_comparison() -> list[tuple[date, str, Decimal]]:
+    """Use the Qianlong Jiazi table, independently of the Kangxi mansion coordinates."""
+    epoch = date(1743, 12, 23)  # conditional date of purple-qi epoch
+    mansion_epoch = date(1744, 1, 1)  # approximation for the Jiazi annual table
+    anchor = Decimal(227) + Decimal(50) / 60 + Decimal(14) / 3600 + Decimal(53) / 216000
+    # 鹑火(120°) at 井28°16′50″; 井 width 30°26′34″; 鬼 width 4°34′19″.
+    ghost = Decimal(120) + (Decimal(30) + Decimal(26) / 60 + Decimal(34) / 3600) - (Decimal(28) + Decimal(16) / 60 + Decimal(50) / 3600)
+    liu = ghost + Decimal(4) + Decimal(34) / 60 + Decimal(19) / 3600
+    samples = [(date(1911, 3, 30), "鬼", 225), (date(1911, 4, 9), "鬼", 246), (date(1911, 4, 19), "鬼", 267),
+               (date(1911, 4, 29), "柳", 14), (date(1911, 5, 9), "柳", 35), (date(1911, 5, 19), "柳", 56),
+               (date(1911, 10, 22), "柳", 385), (date(1911, 11, 1), "柳", 406), (date(1911, 11, 11), "柳", 428)]
+    rows = []
+    for day, name, observed in samples:
+        longitude = (Decimal(270) + anchor + Decimal((day - epoch).days) * Decimal("126.720777") / 3600) % 360
+        origin = ghost if name == "鬼" else liu
+        mansion = origin + Decimal((day - mansion_epoch).days) / Decimal("365.24233442") * Decimal(51) / 3600
+        rows.append((day, name, (longitude - mansion) * 60 - observed))
+    return rows
+
+
 def jiajing_1531_intervals() -> tuple[list[int], int]:
     # Each month: (month length, day entering a new whole degree).
     # Leap sixth month is kept as a separate month; the eleventh has two entries.
@@ -132,6 +152,9 @@ if __name__ == "__main__":
     for day, predicted, residual in qing_1911_liu_comparison():
         assert abs(residual) < 2
         print(f"{day}: conditional Willow {predicted:.3f} arcminutes; residual {residual:+.3f} arcminutes")
+    for day, name, residual in qianlong_1911_comparison():
+        assert abs(residual) < 1
+        print(f"{day}: Qianlong table {name} residual {residual:+.3f} arcminutes")
     assert midnight_jd(1531, 2, 4, gregorian=False) == 2280289.5
     assert midnight_jd(1667, 2, 1, gregorian=True) == 2329950.5
     assert midnight_jd(930, 10, 3, gregorian=False) == 2061015.5
