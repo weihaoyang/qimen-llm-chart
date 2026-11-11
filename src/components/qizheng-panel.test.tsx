@@ -37,4 +37,10 @@ describe("QizhengPanel", () => {
     render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);
     expect(screen.getByText(/〈火星庙旺乐顺留伏逆〉：乐；〈火星论〉：好/)).toBeInTheDocument();
   });
+  it("identifies the missing star in a partial chart", () => {
+    const full = chart();
+    render(<QizhengPanel value={{ ...full, complete: false, missingStars: ["火星"], stars: full.stars.filter((star) => star.name !== "火星") }} />);
+    expect(screen.getByRole("status")).toHaveTextContent("缺少 火星 的有效星位");
+  });
+
 });

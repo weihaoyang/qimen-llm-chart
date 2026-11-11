@@ -44,6 +44,7 @@ export function QizhengPanel({ value, onCopyJson, jsonCopied }: { value: Qizheng
         ))}
       </div>
 
+      {!value.complete ? <p role="status">部分排盘：缺少 {value.missingStars.join("、")} 的有效星位。</p> : null}
       <StarTable title="七政落宫" stars={value.stars.filter((star) => star.kind === "七政")} />
       <StarTable title="四余落宫" stars={value.stars.filter((star) => star.kind === "四余")} />
 

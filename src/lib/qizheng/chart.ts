@@ -93,6 +93,7 @@ export type QizhengChart = {
   palaces: Array<{ name: string; index: number; branch: string }>;
   stars: QizhengStar[];
   complete: boolean;
+  missingStars: string[];
   disclaimer: string;
 };
 
@@ -289,6 +290,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
   }
 
   for (const remnant of fourRemainders(utcMillis)) {
+    if (!Number.isFinite(remnant.longitude)) continue;
     const palace = longitudeToPalace(remnant.longitude);
     const branch = EARTHLY_BRANCHES[palace];
     stars.push({
@@ -311,14 +313,16 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     return { name, index, branch: EARTHLY_BRANCHES[index] as string };
   });
 
+  const missingStars = [...SEVEN_LUMINARIES.map(({ name }) => name), "罗睺", "计都", "月孛", "紫气"]
+    .filter((name) => !stars.some((star) => star.name === name));
   return {
     format: "qmdj-qizheng-chart-v1",
     input: { datetime: profile.normalized.datetime, civilDateTime: astro.input.datetime, timeZone: astro.input.timeZone },
     mingPalace: { index: mingIndex, branch: EARTHLY_BRANCHES[mingIndex] as string },
     palaces,
     stars,
-    complete: [...SEVEN_LUMINARIES.map(({ name }) => name), "罗睺", "计都", "月孛", "紫气"]
-      .every((name) => stars.some((star) => star.name === name && Number.isFinite(star.longitude))),
+    complete: missingStars.length === 0,
+    missingStars,
     disclaimer:
       "研究性七政四余：七政黄经用本仓真星历（celestine）。十二宫按古典十二次配宫（白羊=戌、金牛=酉、双子=申…，已修正上游脚本白羊=寅的错位）。命宫用果老式「以生时加太阳所躔之宫，顺数至卯」（非紫微斗数的生月/生时口径）。罗睺/计都取黄白平交点（果老旧法，罗睺=降交点），月孛取月远地点（Meeus 47.7 平根，即果老「月行最迟之处」，与《图书编》「六十二年而七周天」相符）。紫气使用清代平行研究模型，法元子正按 UTC+08 近似；已对照1911年鬼、柳两宿历书样本，其他年代为外推，宿界有版本差异。二十八宿用清代黄道宿度（《二十八宿黄道经纬度钤》，历元康熙二十三年甲子=1684，初宫起冬至，宿界即距星），按本仓 Lahiri 岁差折回该历元后定位，非等分；宿名在参/觜一带沿用该旧测的「参前觜后」口径（与乾隆十九年后「觜前参后」相差约 1.35°）。庙旺陷采用上游脚本的有限表项，与《星学大成》等文献有差异；未列出的宫位不推定为平。另列《星学大成》选定篇章中已核宫位，同书其他章节和宿度可能有异；未列不代表古籍没有记载。不作现实预测或吉凶裁决。",
   };
