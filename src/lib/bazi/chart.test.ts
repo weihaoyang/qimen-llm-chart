@@ -83,6 +83,17 @@ it("retains both actual pillar combinations when a complete trine has a repeated
   expect(trines.map(item => item.pillars)).toEqual([["year", "day", "time"], ["month", "day", "time"]]);
 });
 
+it("preserves both 六合 and the explicitly sourced 六破 reading for 寅亥 in a real chart", () => {
+  const raw = buildBaziChartFromProfile(normalizeProfileInput({
+    calendarMode: "solar", datetime: "2022-07-01T21:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+  })).raw;
+  expect(raw.baZi).toEqual(["壬寅", "丙午", "乙卯", "丁亥"]);
+  const relations = analyzePillarRelations(raw.pillars, { dayMaster: raw.dayMaster }).relations;
+  const yearTime = relations.filter(item => item.pillars.join(",") === "year,time" && item.symbols === "寅亥");
+  expect(yearTime.some(item => item.kind === "地支六合")).toBe(true);
+  expect(yearTime.find(item => item.kind === "地支六破")?.detail).toContain("《三命通会》破煞条对四生支不取");
+});
+
 describe("classical day-pillar Xun Kong", () => {
   it("matches all sixty pillars against the six ten-day void pairs", () => {
     const stems = Array.from("甲乙丙丁戊己庚辛壬癸");

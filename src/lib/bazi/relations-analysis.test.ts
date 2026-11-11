@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   analyzePillarRelations,
+  branchRelations,
   getBaziRelationGroup,
   groupBaziRelations,
   type RelationPillarInput,
@@ -21,6 +22,21 @@ const pillar = (
 });
 
 describe("analyzePillarRelations", () => {
+  it("matches all ordered branch pairs against the six-break table and identifies the alternate four-pair source", () => {
+    const branches = "子丑寅卯辰巳午未申酉戌亥";
+    const pairs = ["子酉", "丑辰", "寅亥", "卯午", "巳申", "未戌"];
+    for (const a of branches) for (const b of branches) {
+      const match = pairs.some(pair => pair.includes(a) && pair.includes(b) && a !== b);
+      const relations = branchRelations(a, b);
+      const broken = relations.find(item => item.kind === "地支六破");
+      expect(Boolean(broken), `${a}${b}`).toBe(match);
+      if (broken) {
+        const simultaneous = ["寅亥", "巳申"].some(pair => pair.includes(a) && pair.includes(b));
+        expect(broken.detail.includes("《三命通会》破煞条对四生支不取")).toBe(simultaneous);
+        expect(relations.some(item => item.kind === "地支六合")).toBe(simultaneous);
+      }
+    }
+  });
   it("reports 天干五合 and 地支六合", () => {
     const result = analyzePillarRelations(
       [pillar("year", "甲子"), pillar("month", "己丑"), pillar("day", "丙寅"), pillar("time", "丁卯")],

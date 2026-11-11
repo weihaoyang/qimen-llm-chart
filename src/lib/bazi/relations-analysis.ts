@@ -271,7 +271,13 @@ export const branchRelations = (a: string, b: string): LightRelation[] => {
     out.push({ kind: "地支六害", tone: "negative", detail: `${a}${b} 六害，隐性摩擦` });
   }
   if (at(BRANCH_BREAK, a, b)) {
-    out.push({ kind: "地支六破", tone: "negative", detail: `${a}${b} 六破，结构松动` });
+    const concurrentCombine = Boolean(at(BRANCH_COMBINE, a, b));
+    out.push({
+      kind: "地支六破", tone: "neutral",
+      detail: concurrentCombine
+        ? `${a}${b} 按六破表列为相破，同时也是六合；《三命通会》破煞条对四生支不取`
+        : `${a}${b} 按六破表列为相破；此处只记录支的组合`,
+    });
   }
   return out;
 };
