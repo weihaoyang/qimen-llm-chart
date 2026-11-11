@@ -13,7 +13,7 @@ const StarTable = ({ title, stars }: { title: string; stars: QizhengStar[] }) =>
           <span>{star.longitude}°</span>
           <span>{star.palaceName}({star.branch})</span>
           <span>宿{star.mansion}</span>
-          <span className={`qizheng-row__dignity is-${star.dignity === "庙" || star.dignity === "旺" ? "good" : star.dignity === "陷" ? "bad" : "flat"}`}>现表：{star.dignity}{star.classicalDignity ? <small>星学大成卷{star.classicalDignity.volume}：{star.classicalDignity.label}</small> : null}</span>
+          <span className={`qizheng-row__dignity is-${star.dignity === "庙" || star.dignity === "旺" ? "good" : star.dignity === "陷" ? "bad" : "flat"}`}>现表：{star.dignity}{star.classicalDignity ? <small>星学大成卷{star.classicalDignity.volume}{star.classicalDignity.passage ? `〈${star.classicalDignity.passage}〉` : ""}：{star.classicalDignity.label}{star.classicalDignity.alternatives?.map((item) => `；〈${item.passage}〉：${item.label}`)}</small> : null}</span>
           <span>{star.element} · {star.fortune}</span>
         </div>
       ))}

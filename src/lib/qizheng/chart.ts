@@ -80,7 +80,7 @@ export type QizhengStar = {
   palaceName: string;
   mansion: string;
   dignity: string;
-  classicalDignity?: { label: string; volume: number };
+  classicalDignity?: { label: string; volume: number; passage?: string; alternatives?: Array<{ label: string; passage: string }> };
   element: string;
   fortune: string;
   note?: string;
@@ -266,7 +266,12 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       mansion: longitudeToMansion(longitude, utcMillis),
       dignity: dignityOf(name, branch),
       classicalDignity: CLASSICAL_PALACE_REFERENCES[name]?.positions[branch]
-        ? { label: CLASSICAL_PALACE_REFERENCES[name].positions[branch], volume: CLASSICAL_PALACE_REFERENCES[name].volume }
+        ? {
+            label: CLASSICAL_PALACE_REFERENCES[name].positions[branch],
+            volume: CLASSICAL_PALACE_REFERENCES[name].volume,
+            ...(name === "火星" ? { passage: "火星庙旺乐顺留伏逆" } : {}),
+            ...(name === "火星" && branch === "戌" ? { alternatives: [{ label: "好", passage: "火星论" }] } : {}),
+          }
         : undefined,
       element: ELEMENT[name] ?? "无",
       fortune: FORTUNE[name] ?? "无",

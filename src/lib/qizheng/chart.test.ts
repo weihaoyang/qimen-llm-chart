@@ -208,6 +208,20 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("preserves both conflicting Mars passages in the same volume in exports", () => {
+    const input = getDefaultProfileInput(new Date("1990-06-15T12:00:00+08:00"), "Asia/Shanghai");
+    const chart = buildQizhengChart(normalizeProfileInput(input));
+    const mars = chart.stars.find((star) => star.name === "火星")!;
+    expect(mars.branch).toBe("戌");
+    expect(mars.classicalDignity).toEqual({
+      label: "乐", volume: 15, passage: "火星庙旺乐顺留伏逆",
+      alternatives: [{ label: "好", passage: "火星论" }],
+    });
+    const text = serializeQizhengToStructuredText(chart);
+    expect(text).toContain("〈火星庙旺乐顺留伏逆〉：乐；〈火星论〉：好");
+    expect(JSON.parse(serializeQizhengToCompactJson(chart)).stars.find((s: { name: string }) => s.name === "火星").classicalDignity).toEqual(mars.classicalDignity);
+  });
+
   it("compares Venus, Saturn and Mercury palace labels with selected classical passages", () => {
     // 《星学大成》卷16、17；"本宫"、"庙旺"按原文保留，不推断一一等义。
     const cases = [

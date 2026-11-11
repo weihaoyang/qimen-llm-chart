@@ -30,4 +30,10 @@ describe("QizhengPanel", () => {
     expect(screen.getByText(/庙旺陷采用上游有限表项/)).toBeInTheDocument();
     expect(container.querySelector(".qizheng-row__dignity small")).toHaveTextContent("星学大成卷");
   });
+
+  it("shows both named passages when the same book disagrees about Mars", () => {
+    const input = getDefaultProfileInput(new Date("1990-06-15T12:00:00+08:00"), "Asia/Shanghai");
+    render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);
+    expect(screen.getByText(/〈火星庙旺乐顺留伏逆〉：乐；〈火星论〉：好/)).toBeInTheDocument();
+  });
 });
