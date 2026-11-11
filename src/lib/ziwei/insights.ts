@@ -60,8 +60,9 @@ export const buildZiweiInsights = ({
       "《紫微斗数全书》卷三·天机：机梁守命加吉曜，与加刑忌分论"));
   }
 
-  if (["七杀", "破军", "贪狼"].every((star) => sanFangStars.has(star))) {
-    patterns.push(pattern("sha-po-lang", "杀破狼", "neutral", "命宫三方四正同时会见七杀、破军、贪狼，属于高变动结构，需结合四化和运限判断。", [`命宫三方四正=${sanFangNames.join("、")}`, "会见=七杀、破军、贪狼"], "《紫微斗数全书·杀破狼》"));
+  const shaPoLang = ["七杀", "破军", "贪狼"];
+  if (shaPoLang.every((star) => sanFangStars.has(star))) {
+    patterns.push(pattern("sha-po-lang", "杀破狼会见", "neutral", "命宫三方四正同时会见七杀、破军和贪狼；这是本程序的会见条件，具体解读还需结合所在宫位及其他星曜。", [`命宫三方四正=${sanFangNames.join("、")}`, ...shaPoLang.map(star => `${star}=${sanFang.filter(palace => has(palace, star)).map(palace => `${palace.name}（${palace.earthlyBranch}）`).join("、")}`)], "命宫三方四正会见结构；《紫微斗数全书》卷一·破军星另论子午守命与贪狼七杀相拱"));
   }
 
   const riYue = samePalace("太阳", "太阴");

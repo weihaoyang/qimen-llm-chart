@@ -19,6 +19,32 @@ const profile = {
 };
 
 describe("buildZiweiInsights", () => {
+  it("records the actual palaces of all three Sha Po Lang stars", () => {
+    const { raw } = buildZiweiChartFromProfile(profile);
+    const mingBranch = raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;
+    const palaces = structuredClone(raw.palaces);
+    const names = ["七杀", "破军", "贪狼"];
+    for (const palace of palaces) {
+      palace.majorStars = palace.majorStars.filter(s => !names.includes(s.name));
+      palace.minorStars = palace.minorStars.filter(s => !names.includes(s.name));
+      palace.adjectiveStars = palace.adjectiveStars.filter(s => !names.includes(s.name));
+    }
+    for (const [index, offset] of [0, 4, 8].entries()) {
+      palaces.find(p => p.branchIndex === (mingBranch + offset) % 12)!.majorStars.push({ name: names[index] });
+    }
+    const result = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
+    const meeting = result.patterns.find(p => p.id === "sha-po-lang")!;
+    expect(meeting.level).toBe("neutral");
+    for (const [index, offset] of [0, 4, 8].entries()) {
+      const palace = palaces.find(p => p.branchIndex === (mingBranch + offset) % 12)!;
+      expect(meeting.evidence).toContain(`${names[index]}=${palace.name}（${palace.earthlyBranch}）`);
+    }
+    const target = palaces.find(p => p.branchIndex === (mingBranch + 8) % 12)!;
+    target.majorStars = target.majorStars.filter(s => s.name !== "贪狼");
+    palaces.find(p => p.branchIndex === (mingBranch + 1) % 12)!.majorStars.push({ name: "贪狼" });
+    expect(buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch }).patterns.some(p => p.id === "sha-po-lang")).toBe(false);
+  });
+
   it("identifies Lu Cun and the actual natal transformation stars separately", () => {
     const { raw } = buildZiweiChartFromProfile(profile);
     const mingBranch = raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;
