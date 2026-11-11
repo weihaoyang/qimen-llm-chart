@@ -321,6 +321,7 @@ it.each([
   });
   expect(text).toContain(`(${expected})`);
   expect(json.天地盘.find((palace) => palace.天将 === "贵人")?.天盘).toBe(expected === "昼占" ? "丑" : "未");
+  expect(json.基本信息.贵人异说).toContain(expected === "昼占" ? "昼贵在未" : "夜贵在丑");
 });
 
 it("places the twenty day/night nobles and orders the generals from their earth seats", () => {
@@ -338,6 +339,23 @@ it("places the twenty day/night nobles and orders the generals from their earth 
       const direction = "亥子丑寅卯辰".includes(earth) ? 1 : -1;
       const actual = generals.map((_, step) => chart.gongInfos[(index + 12 + direction * step) % 12].tianJiang);
       expect(actual, `${date} ${hour}`).toEqual(generals);
+    }
+  }
+});
+
+it("compares all twenty noble positions with the explicit 探原 day and night verses", () => {
+  const day = Array.from("未申酉亥丑子丑寅卯巳");
+  const night = Array.from("丑子亥酉未申未午巳卯");
+  for (let offset = 0; offset < 10; offset += 1) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (const [time, expected, label] of [["12:00", day[offset], "昼"], ["18:00", night[offset], "夜"]] as const) {
+      const datetime = `${date}T${time}`;
+      const { text, json } = buildDaliurenResearch({
+        original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime },
+      });
+      const description = `《大六壬探原》${label}贵在${expected}；仅对照贵人位置，未重排天将`;
+      expect(text, datetime).toContain(description);
+      expect(json.基本信息.贵人异说, datetime).toBe(description);
     }
   }
 });
