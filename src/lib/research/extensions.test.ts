@@ -471,3 +471,27 @@ it("compares all available 探原 sixty-day transmission rows without filling om
   ].sort());
   for (const discrepancy of mismatches) expect(book[discrepancy.slice(0, 3)][1]).toBe("改正涉害");
 });
+
+
+it("checks six missing 探原 electronic rows against independent 六壬直指 cases", () => {
+  // 六壬直指：丁卯伏吟课初卯中子末午、退茹丑子亥；
+  // 丁亥干上寅初午中丑末申、干上卯为未卯亥；
+  // 戊申干上寅以寅发用并据天盘传亥、申，干上卯为丑亥酉。
+  const expected: Record<string, string> = {
+    丁卯未: "卯子午", 丁卯午: "丑子亥", 丁亥寅: "午丑申", 丁亥卯: "未卯亥",
+    戊申寅: "寅亥申", 戊申卯: "丑亥酉",
+  };
+  const found = new Set<string>();
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral: "子" };
+      const chart = calculateDaliuren(input);
+      const key = chart.dateInfo.ganZhi.day + chart.siKe.yiKe[0][0];
+      if (!expected[key]) continue;
+      expect([chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join(""), key).toBe(expected[key]);
+      found.add(key);
+    }
+  }
+  expect([...found].sort()).toEqual(Object.keys(expected).sort());
+});
