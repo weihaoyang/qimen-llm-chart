@@ -275,3 +275,17 @@ it("matches all 120 wood, metal, earth and fire positions transcribed from the M
   }
   expect(checked).toBe(120);
 });
+
+it("compares readable Water Two entries without filling the ambiguous twenty-first day", () => {
+  const table = mingTables.partialTables[0];
+  const dates = Object.entries(table.palaces).flatMap(([branch, days]) => days.map((day) => ({ day, branch })));
+  const seen = dates.map(({ day }) => day).sort((a, b) => a - b);
+  expect(seen).toEqual(Array.from({ length: 30 }, (_, i) => i + 1).filter((day) => !table.unresolvedDays.includes(day)));
+  expect(table.unresolvedDays).toEqual([21]);
+  for (const { day, branch } of dates) {
+    const date = Lunar.fromYmd(1990, 2, day).getSolar().toYmd();
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", `${date}T${String(table.hourIndex * 2).padStart(2, "0")}:00`));
+    expect(raw.fiveElementsClass).toBe(table.name);
+    expect(raw.palaces.filter((palace) => palace.majorStars.some((star) => star.name === "紫微")).map((palace) => palace.earthlyBranch), `水二局 day ${day}`).toEqual([branch]);
+  }
+});
