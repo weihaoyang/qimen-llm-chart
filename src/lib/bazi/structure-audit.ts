@@ -63,7 +63,7 @@ export const STRENGTH_FACTORS: Array<{ id: StrengthFactor; label: string; hint: 
   { id: "month-command", label: "月令", hint: "月支主气 + 月支藏干 + 当令加权" },
   { id: "visible-stems", label: "透干", hint: "四柱天干（月干加权）" },
   { id: "roots", label: "通根", hint: "其余地支本气与藏干通根" },
-  { id: "combinations", label: "合化", hint: "天干五合 / 地支六合·半合·三合·三会化气" },
+  { id: "combinations", label: "合会试算", hint: "按五合、六合、半合、三合、三会组合做固定权重试算，不等同合化成立" },
 ];
 
 /** Matches the conservative official audit: 合化 is shown separately, not scored. */
@@ -110,20 +110,20 @@ const combinationWeights = (pillars: BaziPillarDetail[]): { weights: Record<Elem
       const a = pillars[i];
       const b = pillars[j];
       const stem = at(STEM_COMBINE_ELEMENT, a.heavenlyStem, b.heavenlyStem);
-      if (stem) add(stem, 1, `天干五合 ${a.heavenlyStem}${b.heavenlyStem} → 化${ELEMENT_LABEL[stem]}`);
+      if (stem) add(stem, 1, `天干五合 ${a.heavenlyStem}${b.heavenlyStem} → ${ELEMENT_LABEL[stem]}权重试算`);
       const he = at(BRANCH_COMBINE_ELEMENT, a.earthlyBranch, b.earthlyBranch);
-      if (he) add(he, 1, `地支六合 ${a.earthlyBranch}${b.earthlyBranch} → 化${ELEMENT_LABEL[he]}`);
+      if (he) add(he, 1, `地支六合 ${a.earthlyBranch}${b.earthlyBranch} → ${ELEMENT_LABEL[he]}权重试算`);
       const half = at(BRANCH_HALF_ELEMENT, a.earthlyBranch, b.earthlyBranch);
-      if (half) add(half, 0.75, `地支半合 ${a.earthlyBranch}${b.earthlyBranch} → 化${ELEMENT_LABEL[half]}`);
+      if (half) add(half, 0.75, `地支半合 ${a.earthlyBranch}${b.earthlyBranch} → ${ELEMENT_LABEL[half]}权重试算`);
     }
   }
   const branchSet = pillars.map((pillar) => pillar.earthlyBranch);
-  const isGroup = (group: string) => group.length === branchSet.length && group.split("").every((branch) => branchSet.includes(branch));
+  const isGroup = (group: string) => group.split("").every((branch) => branchSet.includes(branch));
   for (const trio of BRANCH_TRIO) {
-    if (isGroup(trio.branches)) add(trio.element, 1.5, `地支三合 ${trio.branches} → 化${ELEMENT_LABEL[trio.element]}`);
+    if (isGroup(trio.branches)) add(trio.element, 1.5, `地支三合 ${trio.branches} → ${ELEMENT_LABEL[trio.element]}权重试算`);
   }
   for (const meet of BRANCH_MEET) {
-    if (isGroup(meet.branches)) add(meet.element, 1.5, `地支三会 ${meet.branches} → 化${ELEMENT_LABEL[meet.element]}`);
+    if (isGroup(meet.branches)) add(meet.element, 1.5, `地支三会 ${meet.branches} → ${ELEMENT_LABEL[meet.element]}权重试算`);
   }
   return { weights, details };
 };
@@ -209,7 +209,9 @@ export const computeStrengthBreakdown = (
     return {
       factor: factor.id,
       label: factor.label,
-      detail: factor.id === "combinations" && combo.details.length ? combo.details.join("；") : factor.hint,
+      detail: factor.id === "combinations" && combo.details.length
+        ? `固定权重试算，各组合可重复叠加，不等同合化成立：${combo.details.join("；")}`
+        : factor.hint,
       enabled: factors[factor.id],
       elements,
     };

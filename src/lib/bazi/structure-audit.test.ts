@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBaziStructureAudit } from "./structure-audit";
+import { buildBaziStructureAudit, computeStrengthBreakdown, DEFAULT_STRENGTH_FACTORS } from "./structure-audit";
 import type { BaziPillarDetail } from "./types";
 
 const pillar = (
@@ -64,5 +64,28 @@ describe("buildBaziStructureAudit", () => {
 
     expect(audit.followStructure).toBe("follow-wealth-candidate");
     expect(audit.supportingEvidence.join(" ")).toContain("财星最集中");
+  });
+});
+
+describe("strength sandbox combination membership", () => {
+  it.each([
+    ["申子辰", "三合", "水", "water"], ["亥卯未", "三合", "木", "wood"],
+    ["寅午戌", "三合", "火", "fire"], ["巳酉丑", "三合", "金", "metal"],
+    ["寅卯辰", "三会", "木", "wood"], ["巳午未", "三会", "火", "fire"],
+    ["申酉戌", "三会", "金", "metal"], ["亥子丑", "三会", "水", "water"],
+  ] as const)("includes %s %s in four-pillar sandbox once", (group, kind, element, key) => {
+    const makePillars = (branches: string) => (["year", "month", "day", "time"] as const)
+      .map((position, index) => pillar(position, "甲", branches[index], []));
+    const factors = { ...DEFAULT_STRENGTH_FACTORS, combinations: true };
+    const detail = `地支${kind} ${group} → ${element}权重试算`;
+    // Fourth pillar duplicates a member: one completed group, not four separate groups.
+    const full = computeStrengthBreakdown(makePillars(group + group[0]), "甲", factors);
+    expect(full.combinationDetails.filter(item => item === detail)).toHaveLength(1);
+    expect(full.contributions.find(item => item.factor === "combinations")?.elements[key]).toBeGreaterThanOrEqual(1.5);
+    expect(full.contributions.find(item => item.factor === "combinations")?.detail).toContain("不等同合化成立");
+    const incomplete = computeStrengthBreakdown(makePillars(group[0] + group[1] + group[0] + group[1]), "甲", factors);
+    expect(incomplete.combinationDetails).not.toContain(detail);
+    const disabled = computeStrengthBreakdown(makePillars(group + group[0]), "甲", DEFAULT_STRENGTH_FACTORS);
+    expect(disabled.combinationDetails).toEqual([]);
   });
 });

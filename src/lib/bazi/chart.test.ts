@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Solar } from "lunar-typescript";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "./chart";
+import { computeStrengthBreakdown, DEFAULT_STRENGTH_FACTORS } from "./structure-audit";
 
 describe("classical hidden stems and ten gods", () => {
   it("checks all twelve hidden-stem sets and all ten day masters through the product chart", () => {
@@ -51,6 +52,16 @@ describe("classical hidden stems and ten gods", () => {
     expect(yearPillar("li-chun")).toMatchObject({ pillar: "甲辰", hiddenStems: ["戊", "乙", "癸"] });
     expect(yearPillar("lunar-new-year")).toMatchObject({ pillar: "癸卯", hiddenStems: ["乙"] });
   });
+});
+
+it("recognizes a complete 申子辰 in an actual four-pillar sandbox", () => {
+  const raw = buildBaziChartFromProfile(normalizeProfileInput({
+    calendarMode: "solar", datetime: "2024-09-29T00:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+  })).raw;
+  expect(raw.baZi).toEqual(["甲辰", "癸酉", "丙申", "戊子"]);
+  const sandbox = computeStrengthBreakdown(raw.pillars, raw.dayMaster, { ...DEFAULT_STRENGTH_FACTORS, combinations: true });
+  expect(sandbox.combinationDetails).toContain("地支三合 申子辰 → 水权重试算");
+  expect(computeStrengthBreakdown(raw.pillars, raw.dayMaster).combinationDetails).toEqual([]);
 });
 
 describe("classical day-pillar Xun Kong", () => {
