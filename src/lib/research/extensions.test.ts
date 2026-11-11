@@ -66,6 +66,19 @@ it.each([
   }
 });
 
+it("names the noble convention and its classical alternative in both exports", () => {
+  // 甲午日午时: 存验 uses 丑 as day noble; 探原 explicitly uses 未.
+  const datetime = "2024-09-27T12:00";
+  const { text, json } = buildDaliurenResearch({
+    original: { ...profile.original, datetime },
+    normalized: { ...profile.normalized, datetime },
+  });
+  expect(json.天地盘.find((palace) => palace.天将 === "贵人")?.天盘).toBe("丑");
+  expect(text).toContain("贵人口径: 按《六壬存验》昼夜贵人口径");
+  expect(text).toContain("《大六壬探原》部分日干的昼夜贵人互换");
+  expect(json.基本信息.贵人口径).toContain("《大六壬探原》");
+});
+
 it("takes the sole upper-over-lower lesson as the Yuan Shou first transmission", () => {
   const datetime = "2024-03-29T18:00";
   const { text } = buildDaliurenResearch({

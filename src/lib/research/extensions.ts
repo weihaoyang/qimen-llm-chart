@@ -40,10 +40,11 @@ export const buildDaliurenResearch = (profile: NormalizedProfileInput) => {
   const remoteType = result.keTi.method === "遥克" ? result.keTi.subTypes[0] : undefined;
   const subtype = isJingLan ? "井栏射" : remoteType === "蒿失" ? "蒿矢" : remoteType;
   const plate = classifyLiuRenPlate(result.dateInfo.yueJiang, result.dateInfo.ganZhi.hour[1]);
-  const annotations = [plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : ""].filter(Boolean);
+  const nobleConvention = "按《六壬存验》昼夜贵人口径；《大六壬探原》部分日干的昼夜贵人互换";
+  const annotations = [plate ? `- 天地盘: ${plate}` : "", subtype ? `- 课体细分: ${subtype}` : "", `- 贵人口径: ${nobleConvention}`].filter(Boolean);
   return {
     text: annotations.length ? text.replace("\n- 月将:", `\n${annotations.join("\n")}\n- 月将:`) : text,
-    json: annotations.length ? { ...json, 基本信息: { ...json.基本信息, ...(plate ? { 天地盘: plate } : {}), ...(subtype ? { 课体细分: subtype } : {}) } } : json,
+    json: { ...json, 基本信息: { ...json.基本信息, ...(plate ? { 天地盘: plate } : {}), ...(subtype ? { 课体细分: subtype } : {}), 贵人口径: nobleConvention } },
     referenceEngine: TAIBU_CORE_REFERENCE,
   };
 };
