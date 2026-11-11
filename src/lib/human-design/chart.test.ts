@@ -183,3 +183,12 @@ it("matches the sixty-four gate order in the 1992 Rave I Ching index", () => {
     expect(longitudeToActivation(longitude), `gate ${gate}, longitude ${longitude}`).toMatchObject({ g: gate, l: 2 });
   });
 });
+
+it("documents the printed 45-gate endpoint conflict using its sixth line and the next gate", () => {
+  // 1992 index scan p.75: 45 header ends Gemini 22°27′30″, while 45.6
+  // ends 22°37′30″; p.76 starts gate 12 at that latter point.
+  // Gemini 22°30′ is inside the apparent ten-minute gap in the header.
+  expect(longitudeToActivation(60 + 22.5)).toMatchObject({ g: 45, l: 6 });
+  expect(longitudeToActivation(60 + 22 + 37.5 / 60 - 1e-7)).toMatchObject({ g: 45, l: 6 });
+  expect(longitudeToActivation(60 + 22 + 37.5 / 60)).toMatchObject({ g: 12, l: 1 });
+});
