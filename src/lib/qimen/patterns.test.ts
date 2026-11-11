@@ -175,7 +175,8 @@ describe("evaluateQimenPatterns", () => {
     );
     // day stem 戊, so 庚+戊 is 日格/伏干格 but not 时格.
     expect(statusOf(report, "ri_ge")).toBe("成立");
-    expect(statusOf(report, "fu_gan_ge")).toBe("成立");
+    expect(report.checks.find((check) => check.id === "ri_ge")?.name).toBe("日格（伏干格）");
+    expect(report.checks.some((check) => check.id === "fu_gan_ge")).toBe(false);
     expect(statusOf(report, "shi_ge")).toBe("未成立");
   });
 

@@ -5,6 +5,13 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("counts 日格 and its 伏干格 alias once on a real chart", () => {
+    const chart = buildChart({ datetime: "2026-01-01T02:00", timeZone: "Asia/Shanghai" });
+    const report = evaluateQimenPatterns(chart);
+    expect(chart.raw.fourPillars.day.stem).toBe("乙");
+    expect(report.formed.filter(({ id }) => id === "ri_ge")).toMatchObject([{ name: "日格（伏干格）", positions: [3] }]);
+    expect(report.checks.some(({ id }) => id === "fu_gan_ge")).toBe(false);
+  });
   it("distinguishes Taiyin and earth-Bing versions of Ren Dun on actual charts", () => {
     // 艺术典705卷取丁休太阴，707卷另列上丁中休下丙；不把两者合并。
     for (const item of [

@@ -300,10 +300,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("yue_ge", "月格", "常用凶格", "天盘庚 + 地盘月干", "主当月计划受阻；宜调整节奏。", (p, chart) =>
     hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.month.stem) ? pairEvidence(p) : null,
   ),
-  bad("ri_ge", "日格", "常用凶格", "天盘庚 + 地盘日干", "主当下就被压制；宜暂缓或借力。", (p, chart) =>
-    hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.day.stem) ? pairEvidence(p) : null,
-  ),
-  bad("fu_gan_ge", "伏干格", "常用凶格", "天盘庚 + 地盘日干（同 日格）", "主自我受制、内耗；凡事先安内。", (p, chart) =>
+  bad("ri_ge", "日格（伏干格）", "常用凶格", "天盘庚 + 地盘日干；日格和伏干格按本盘口径为同一项", "主当下就被压制；宜暂缓或借力。", (p, chart) =>
     hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.day.stem) ? pairEvidence(p) : null,
   ),
   bad("shi_ge", "时格", "常用凶格", "天盘庚 + 地盘时干", "主此时此刻被卡；重大动作宜改时辰。", (p, chart) =>
