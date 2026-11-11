@@ -316,6 +316,26 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("follows 推步捷例 daily, common-year and leap-year mean motions", () => {
+    const ziqi = (iso: string) => {
+      const input = getDefaultProfileInput(new Date(iso), "UTC");
+      return buildQizhengChart(normalizeProfileInput(input)).stars.find((item) => item.name === "紫气")?.longitude;
+    };
+    const advance = (start: number, end: number) => (end - start + 360) % 360;
+    const epoch = ziqi("1743-12-22T16:00:00Z");
+    const nextDay = ziqi("1743-12-23T16:00:00Z");
+    const leapYear = ziqi("1744-12-22T16:00:00Z");
+    const commonYear = ziqi("1745-12-22T16:00:00Z");
+    expect(epoch).toBeDefined();
+    expect(nextDay).toBeDefined();
+    expect(leapYear).toBeDefined();
+    expect(commonYear).toBeDefined();
+    // The displayed longitude is rounded to 0.01°, so two rounded values can differ by almost 0.01°.
+    expect(Math.abs(advance(epoch!, nextDay!) - 126.720777 / 3600)).toBeLessThan(0.011);
+    expect(Math.abs(advance(epoch!, leapYear!) - (12 + 52 / 60 + 59.804382 / 3600))).toBeLessThan(0.011);
+    expect(Math.abs(advance(leapYear!, commonYear!) - (12 + 50 / 60 + 53.083605 / 3600))).toBeLessThan(0.011);
+  });
+
   it("reproduces the 《清史稿》 康熙甲子年黄道十二次初度值宿 (epoch 1684, 初宫起冬至)", () => {
     // 《清史稿·卷二十八·天文三》「康熙甲子年黄道十二次初度值宿」逐条给出十二次初度落在何宿何度；
     // 十二次初度应落在回归黄经 270° + 30k（初宫=星纪初=冬至=270°）。以下为该表原值。
