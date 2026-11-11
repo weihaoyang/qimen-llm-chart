@@ -7,8 +7,16 @@ import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 describe("buildChart", () => {
   it("names the actual 三奇受刑 cause on adjacent real charts", () => {
     for (const [datetime, expected] of [["2026-01-01T00:00", "1宫：丁临坎"], ["2026-01-01T02:00", "1宫：丙临坎"]] as const) {
-      const report = evaluateQimenPatterns(buildChart({ datetime, timeZone: "Asia/Shanghai" }));
-      expect(report.checks.find(({ id }) => id === "san_qi_shou_xing")?.evidence).toContain(expected);
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const report = evaluateQimenPatterns(chart);
+      const check = report.checks.find(({ id }) => id === "san_qi_shou_xing")!;
+      expect(check.evidence).toContain(expected);
+      const id = "patterns.bad.san_qi_shou_xing";
+      const palaceHits = chart.raw.palaces.filter(p => p.inauspiciousPatterns?.some(pattern => pattern.id === id)).map(p => p.position);
+      const overview = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(pattern => pattern.id === id);
+      expect(palaceHits.sort()).toEqual([...check.positions].sort());
+      expect(overview.map(pattern => pattern.position).sort()).toEqual([...check.positions].sort());
+      expect(overview.find(pattern => pattern.position === 1)?.description).toContain(expected.split("：")[1]);
     }
   });
   it("recognizes chief over earth 己 without requiring a literal 甲 on the heaven plate", () => {

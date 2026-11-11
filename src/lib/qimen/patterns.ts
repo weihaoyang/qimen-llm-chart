@@ -94,6 +94,19 @@ export const matchesPillarFeiGan = (palace: Palace, pillar: { stem: string; bran
   const stem = pillarStemOnBoard(pillar);
   return Boolean(stem && hasHeaven(palace, stem) && hasEarth(palace, "庚"));
 };
+export const sanQiRestrictionReasons = (palace: Palace): string[] => {
+  const reasons: string[] = [];
+  for (const stem of ["丙", "丁"]) {
+    if (!hasHeaven(palace, stem)) continue;
+    if (palace.position === 1) reasons.push(`${stem}临坎`);
+    for (const earth of ["壬", "癸"]) if (hasEarth(palace, earth)) reasons.push(`${stem}加${earth}`);
+  }
+  if (hasHeaven(palace, "乙")) {
+    if (palace.position === 6 || palace.position === 7) reasons.push(`乙临${palace.position}宫`);
+    for (const earth of ["庚", "辛"]) if (hasEarth(palace, earth)) reasons.push(`乙加${earth}`);
+  }
+  return reasons;
+};
 export const sanQiTombStems = (palace: Palace): string[] => [
   ...(hasHeaven(palace, "乙") && (palace.position === 6 || palace.position === 2) ? ["乙"] : []),
   ...(hasHeaven(palace, "丙") && palace.position === 6 ? ["丙"] : []),
@@ -357,16 +370,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
       : null,
   ),
   bad("san_qi_shou_xing", "三奇受刑", "常用凶格", "天盘丙/丁遇 1 宫或地盘壬癸；天盘乙遇 6/7 宫或地盘庚辛", "按所选受制口径，逐项列出宫位与干配原因。", (p) => {
-    const reasons: string[] = [];
-    for (const stem of ["丙", "丁"]) {
-      if (!hasHeaven(p, stem)) continue;
-      if (p.position === 1) reasons.push(`${stem}临坎`);
-      for (const earth of ["壬", "癸"]) if (hasEarth(p, earth)) reasons.push(`${stem}加${earth}`);
-    }
-    if (hasHeaven(p, "乙")) {
-      if (p.position === 6 || p.position === 7) reasons.push(`乙临${p.position}宫`);
-      for (const earth of ["庚", "辛"]) if (hasEarth(p, earth)) reasons.push(`乙加${earth}`);
-    }
+    const reasons = sanQiRestrictionReasons(p);
     return reasons.length ? `${p.position}宫：${reasons.join("、")}` : null;
   }),
   bad("bei_ge", "悖格", "常用凶格", "天盘丙或地盘丙 临值符", "主事出反常、易生变数；决策留余地。", (p) =>
