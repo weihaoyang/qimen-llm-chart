@@ -161,3 +161,25 @@ it.each([
 ] as const)("derives authority precedence from active gates %j", (gates, authority) => {
   expect(deriveHumanDesignDesign(new Set<number>(gates)).authority).toBe(authority);
 });
+
+it("matches the sixty-four gate order in the 1992 Rave I Ching index", () => {
+  // Ra Uru Hu, The Human Design System (1992), printed pp. 34–40,
+  // PDF pages 73–85: each row starts with a gate followed by its six lines.
+  // 25 reappears at the end of p. 40 and is included only once here.
+  const byScanPage = [
+    [25, 17, 21, 51, 42], [3, 27, 24, 2, 23], [8, 20, 16, 35, 45],
+    [12, 15, 52, 39, 53], [62, 56, 31, 33, 7], [4, 29, 59, 40, 64],
+    [47, 6, 46, 18, 48], [57, 32, 50, 28, 44], [1, 43, 14, 34, 9],
+    [5, 26, 11, 10, 58], [38, 54, 61, 60, 41], [19, 13, 49, 30, 55],
+    [37, 63, 22, 36],
+  ];
+  const gates = byScanPage.flat();
+  expect(gates).toHaveLength(64);
+  expect(new Set(gates).size).toBe(64);
+  gates.forEach((gate, index) => {
+    // Original 25.1 starts at Pisces 28°15′ = 358.25°; one gate spans 5°37′30″.
+    // Quarter-gate is line 2's midpoint and avoids all boundaries.
+    const longitude = (358.25 + (index + 0.25) * 5.625) % 360;
+    expect(longitudeToActivation(longitude), `gate ${gate}, longitude ${longitude}`).toMatchObject({ g: gate, l: 2 });
+  });
+});
