@@ -64,6 +64,8 @@ describe("八字 + 中医运气对照视图", () => {
     expect(text).toContain("不给方药");
     expect(text).toContain("大寒");
     expect(text).toContain("医宗金鉴");
+    expect(text).toContain("另按古法列交司刻序及等时钟面换算");
+    expect(text).not.toContain("未推算交司时辰");
   });
 
   it("五行配属表五行齐全（《阴阳应象大论》《金匮真言论》）", () => {
