@@ -42,6 +42,21 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("distinguishes the cited six hour pillars from the heaven-stem palace rule", () => {
+    const selected = new Set(["戊戌", "壬辰", "丙戌", "癸未", "丁丑", "己丑"]);
+    const stems = "甲乙丙丁戊己庚辛壬癸";
+    const branches = "子丑寅卯辰巳午未申酉戌亥";
+    for (let i = 0; i < 60; i++) {
+      const stem = stems[i % 10];
+      const branch = branches[i % 12];
+      const report = evaluateQimenPatterns(chartWith([palace(1)], { fourPillars: { ...fourPillars, hour: { stem, branch } } }));
+      expect(statusOf(report, "hour_pillar_tomb_baojian"), stem + branch).toBe(selected.has(stem + branch) ? "成立" : "未成立");
+      expect(statusOf(report, "shi_gan_ru_mu")).toBe("未成立");
+    }
+    const report = evaluateQimenPatterns(chartWith([palace(2, { heavenlyStem: "乙", earthBranch: "未" })], { fourPillars }));
+    expect(statusOf(report, "shi_gan_ru_mu")).toBe("成立");
+    expect(statusOf(report, "hour_pillar_tomb_baojian")).toBe("未成立");
+  });
   it("includes stems, gate and deity in composite-pattern evidence", () => {
     const cases = [
       { id: "jiu_dun_tian", position: 1, heavenlyStem: "丙", earthlyStem: "丁", gate: "生门", deity: "九天" },

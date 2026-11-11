@@ -329,7 +329,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("bei_ge", "悖格", "常用凶格", "天盘丙或地盘丙 临值符", "主事出反常、易生变数；决策留余地。", (p) =>
     isZhiFu(p) && (hasHeaven(p, "丙") || hasEarth(p, "丙")) ? pairEvidence(p) : null,
   ),
-  bad("shi_gan_ru_mu", "时干入墓", "常用凶格", "天盘时干落其墓支之宫", "主此时行事被埋、难以发挥；宜改时辰。", (p, chart) => {
+  bad("shi_gan_ru_mu", "时干落宫入墓", "常用凶格", "本盘口径：天盘时干落其墓支之宫；与时柱干支判定分别计算", "该宫的天盘时干落于墓支所在宫。", (p, chart) => {
     const timeStem = chart.raw.fourPillars.hour.stem as string;
     const tombBranches = TOMB_MAP[timeStem] ?? [];
     const branches = valuesOf(p.earthBranch);
@@ -337,6 +337,11 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
       ? `${palaceLabel(p.position)}：天盘${timeStem}临${branches.join("/")}（墓支）`
       : null;
   }),
+  bad("hour_pillar_tomb_baojian", "时柱入墓（宝鉴六时）", "常用凶格", "《奇门宝鉴》选定版本：时柱为戊戌、壬辰、丙戌、癸未、丁丑或己丑；异本有别", "按时柱干支判定，不等同于天盘时干落宫入墓。", (_p, chart) => {
+    const hour = chart.raw.fourPillars.hour;
+    const pair = `${hour.stem}${hour.branch}`;
+    return ["戊戌", "壬辰", "丙戌", "癸未", "丁丑", "己丑"].includes(pair) ? `时柱${pair}` : null;
+  }, "global"),
   bad("liu_yi_ji_xing", "六仪击刑", "常用凶格", "任一天盘六仪落其刑宫（逐宫法）", "主事与己刑、力不从心；该宫对应事项易出问题。", (p) =>
     p.liuYiJiXing?.hasJiXing
       ? `${palaceLabel(p.position)}：${p.liuYiJiXing.type ?? "六仪击刑"}${p.liuYiJiXing.description ? `（${p.liuYiJiXing.description}）` : ""}`

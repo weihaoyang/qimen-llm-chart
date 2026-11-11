@@ -73,6 +73,7 @@ describe("serializeChartToStructuredText", () => {
     const parsed = JSON.parse(serializeSequenceToCompactJson(sequence)) as {
       format: string;
       count: number;
+      strengthMethod: string;
       legend: { chart: string[]; palace: string[] };
       items: Array<{
         datetime: string;
@@ -83,6 +84,10 @@ describe("serializeChartToStructuredText", () => {
 
     expect(parsed.format).toBe("qmdj-llm-sequence-compact-v1");
     expect(parsed.count).toBe(2);
+    expect(parsed.strengthMethod).toContain("旺3、相2");
+    const patternIndex = parsed.legend.chart.indexOf("登记格局判定");
+    expect(patternIndex).toBeGreaterThanOrEqual(0);
+    expect(parsed.items[0]?.chart[patternIndex]).not.toHaveProperty("strengthMethod");
     expect(parsed.legend.chart).toContain("时间信息");
     expect(parsed.items[1]?.datetime).toBe("2026-07-01T23:30");
     expect(parsed.items[0]?.palaces).toHaveLength(9);

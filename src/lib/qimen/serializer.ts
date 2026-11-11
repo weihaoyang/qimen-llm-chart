@@ -6,7 +6,7 @@ import type {
 } from "3meta";
 import type { ChartSequenceItem } from "./sequence";
 import type { NormalizedQimenChart } from "./types";
-import { evaluateQimenPatterns } from "./patterns";
+import { evaluateQimenPatterns, QIMEN_STRENGTH_METHOD } from "./patterns";
 
 const formatValue = (value: unknown): string => {
   if (value === undefined || value === null || value === "") {
@@ -265,8 +265,10 @@ const buildCompactSchema = () => {
   };
 };
 
-const buildCompactSections = (chart: NormalizedQimenChart) => {
+const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod = false) => {
   const { chartFields, palaceFields } = buildCompactSchema();
+  const patternSummary = summarizeRegisteredPatterns(chart, true);
+  const { strengthMethod: _strengthMethod, ...summaryWithoutMethod } = patternSummary;
 
   return {
     legend: {
@@ -288,7 +290,7 @@ const buildCompactSections = (chart: NormalizedQimenChart) => {
       normalizeValue(chart.raw.postHorse),
       normalizeValue(chart.hiddenStemsByPalace),
       normalizeValue(chart.raw.specialPatterns),
-      summarizeRegisteredPatterns(chart, true),
+      sharedStrengthMethod ? summaryWithoutMethod : patternSummary,
     ],
     palaces: chart.raw.palaces.map((palace) => [
       palace.position,
@@ -350,9 +352,10 @@ export const serializeSequenceToCompactJson = (
       format: "qmdj-llm-sequence-compact-v1",
       note: "legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。",
       count: sequence.length,
+      strengthMethod: QIMEN_STRENGTH_METHOD,
       legend: sharedLegend,
       items: sequence.map((item) => {
-        const { chart, palaces } = buildCompactSections(item.chart);
+        const { chart, palaces } = buildCompactSections(item.chart, true);
         return {
           index: item.index,
           datetime: item.input.datetime,
