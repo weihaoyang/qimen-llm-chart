@@ -78,6 +78,10 @@ it("requires both stars in the life palace with temple or prosperous brightness 
     palaces.find(p => p.branchIndex === (mingBranch + huoOffset) % 12)!.minorStars.push({ name: "火星", brightness: huoBrightness });
     const result = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch });
     expect(result.patterns.some(p => p.id === "tan-huo")).toBe(expected);
+    if (expected) {
+      expect(result.patterns.find(p => p.id === "tan-huo")?.summary).toContain("现用亮度表");
+      expect(result.patterns.find(p => p.id === "tan-huo")?.source).toContain("iztro");
+    }
     expect(result.patterns.some(p => p.id === "tan-huo-meeting")).toBe(true);
     expect(result.patterns.find(p => p.id === "tan-huo-meeting")?.name).toBe("贪狼会火星");
   }

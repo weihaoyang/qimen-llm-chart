@@ -308,3 +308,32 @@ it("compares Ziwei brightness in all twelve palaces with the Ming printed table"
   }
   expect(differences).toEqual(["寅：图庙 / 产品旺"]);
 });
+
+it("compares Tanlang and the three explicitly printed Huoxing positions against the Ming table", () => {
+  // 明刊上册影像88/89，将古图「利益」记作利、「平和」记作平、「落陷」记作陷。
+  const printed: Record<string, Record<string, string>> = {
+    贪狼: { 子: "旺", 丑: "利", 寅: "平", 卯: "得", 辰: "庙", 巳: "陷", 午: "旺", 未: "庙", 申: "平", 酉: "利", 戌: "庙", 亥: "陷" },
+    火星: { 子: "陷", 丑: "得", 卯: "利" },
+  };
+  const observations = new Map<string, string>();
+  for (let month = 1; month <= 12; month++) {
+    for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2000-${String(month).padStart(2, "0")}-15T${String(hour).padStart(2, "0")}:00`;
+      const { raw } = buildZiweiChartFromProfile(profileAt("midnight", datetime));
+      for (const palace of raw.palaces) {
+        for (const star of [...palace.majorStars, ...palace.minorStars]) {
+          if (printed[star.name]?.[palace.earthlyBranch]) observations.set(`${star.name}:${palace.earthlyBranch}`, star.brightness ?? "未提供");
+        }
+      }
+    }
+  }
+  const differences: string[] = [];
+  for (const [star, positions] of Object.entries(printed)) {
+    for (const [branch, ancient] of Object.entries(positions)) {
+      const current = observations.get(`${star}:${branch}`);
+      expect(current, `${star} ${branch} has an actual chart`).toBeDefined();
+      if (current !== ancient) differences.push(`${star}${branch}：图${ancient} / 产品${current}`);
+    }
+  }
+  expect(differences).toEqual(["贪狼丑：图利 / 产品庙", "贪狼卯：图得 / 产品利"]);
+});

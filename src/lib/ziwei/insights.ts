@@ -87,9 +87,9 @@ export const buildZiweiInsights = ({
   const inTempleOrProsperity = (brightness: string | undefined) => brightness === "庙" || brightness === "旺";
   if (ming && mingTanLang && mingHuoXing
     && inTempleOrProsperity(mingTanLang.brightness) && inTempleOrProsperity(mingHuoXing.brightness)) {
-    patterns.push(pattern("tan-huo", "贪火相逢", "good", "按《定贵局》的二星守命、同居庙旺条件成立；与一般三方会照分列。",
+    patterns.push(pattern("tan-huo", "贪火相逢", "good", "按现用亮度表套用《定贵局》的二星守命、同居庙旺条件成立；不同版本的庙旺可能导致结果不同。",
       [`命宫=${ming.name}（${ming.earthlyBranch}）`, `贪狼=${mingTanLang.brightness}`, `火星=${mingHuoXing.brightness}`],
-      "《紫微斗数全书》卷一·定贵局：贪火相逢"));
+      "《紫微斗数全书》卷一·定贵局：贪火相逢；亮度取当前 iztro 表"));
   }
 
   if (ming && ALL_STARS(ming).some((star) => star.name === "禄存" || star.mutagen === "禄")) {
