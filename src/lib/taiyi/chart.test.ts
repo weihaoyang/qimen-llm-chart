@@ -493,6 +493,18 @@ it("compares 秘書 Yang charts 25–40 with the computed positions and counts",
   ]);
 });
 
+it("compares the missing 秘書 Yang 60 and variant Yang 58 against 圖書集成", () => {
+  // 藝術典696卷作阳60局文昌亥、主算12、主将2/6、始击戌、客算13、客将3/9。
+  const sixty = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 60 });
+  expect([sixty.taiyi.palace, sixty.tianMu.position, sixty.counts.host,
+    sixty.counts.hostGeneralPalace, sixty.counts.hostSuPalace, sixty.shiJi.position,
+    sixty.counts.guest, sixty.counts.guestGeneralPalace, sixty.counts.guestSuPalace])
+    .toEqual([4, "亥", 12, 2, 6, "戌", 13, 3, 9]);
+  // 陽58局同卷主算12，秘書电子本作13；两书大将均二宫。
+  const fiftyEight = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 58 });
+  expect([fiftyEight.counts.host, fiftyEight.counts.hostGeneralPalace, fiftyEight.counts.hostSuPalace]).toEqual([12, 2, 6]);
+});
+
 it("compares readable 秘書 Yang charts 41–72 without repairing the text", () => {
   // 该电子本缺阳60局；41局六宫所属不明、49局写计辰而非计神，均不作确定字段。
   const cases: Array<[number, Array<string | number | null>]> = [
