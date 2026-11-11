@@ -48,6 +48,20 @@ def ming_930_comparison() -> tuple[Decimal, Decimal]:
     return (phase - liu_start) / 28, xing_start + 28 - phase
 
 
+def ming_1911_comparison() -> tuple[Decimal, Decimal]:
+    """Candidate only: the 1911 OCR column mapping has not been checked on the image."""
+    cycle = Decimal("10227.1792")
+    anchor = Decimal("268.52") + 11 * 28
+    elapsed = Decimal(str(
+        midnight_jd(1911, 4, 18, gregorian=True)
+        - midnight_jd(1531, 2, 4, gregorian=False)
+    ))
+    phase = (anchor + elapsed) % cycle
+    liu_start, xing_start = Decimal("6182.0192"), Decimal("6546.0192")
+    assert liu_start <= phase < xing_start
+    return elapsed, (phase - liu_start) / 28
+
+
 def jiajing_1531_intervals() -> tuple[list[int], int]:
     # Each month: (month length, day entering a new whole degree).
     # Leap sixth month is kept as a separate month; the eleventh has two entries.
@@ -70,6 +84,10 @@ if __name__ == "__main__":
     assert abs(liu_degree - Decimal("4.230114285714285714285714286")) < Decimal("0.00000001")
     assert delay_to_xing_one == Decimal("273.5568")
     print(f"930 Ming-table reconstruction: Liu {liu_degree:.3f} ancient degrees; {delay_to_xing_one} days before Xing 1")
+    elapsed_1911, degree_1911 = ming_1911_comparison()
+    assert elapsed_1911 == Decimal("138855")
+    assert abs(degree_1911 - Decimal("10.57754285714285714285714286")) < Decimal("0.00000001")
+    print(f"1911 candidate: {elapsed_1911} days from anchor; Ming-table Liu {degree_1911:.3f} ancient degrees")
     intervals, boundary = jiajing_1531_intervals()
     assert intervals == [28] * 12
     assert boundary == 13
