@@ -95,7 +95,13 @@ describe("buildChart", () => {
       expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(item.hour);
       expect(chart.raw.ju.number).toBe(item.juNumber);
       expect(chart.raw.palaces.find(p => p.position === 6)?.heavenlyStem).toBe(item.stem);
-      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "san_qi_ru_mu")?.positions.includes(6)).toBe(item.selectedHit);
+      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "san_qi_ru_mu")!;
+      expect(check.positions.includes(6)).toBe(item.selectedHit);
+      const id = "patterns.bad.san_qi_ru_mu";
+      const palaceHits = chart.raw.palaces.filter(p => p.inauspiciousPatterns?.some(pattern => pattern.id === id)).map(p => p.position);
+      const overviewHits = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(pattern => pattern.id === id).map(pattern => pattern.position);
+      expect(palaceHits.sort()).toEqual([...check.positions].sort());
+      expect(overviewHits.sort()).toEqual([...check.positions].sort());
     }
   });
 

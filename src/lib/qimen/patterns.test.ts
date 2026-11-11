@@ -426,3 +426,10 @@ it("uses each 甲 pillar's own hidden instrument for 岁格、月格 and 时格"
     }
   }
 });
+
+
+it("names only actual 三奇入墓 stems when a palace carries multiple heaven stems", () => {
+  const report = evaluateQimenPatterns(chartWith([palace(6, { heavenlyStem: ["丙", "丁", "戊"] })]));
+  const hit = report.checks.find((check) => check.id === "san_qi_ru_mu")!;
+  expect(hit.evidence).toEqual(["第 6 宫：天盘 丙 入墓"]);
+});

@@ -94,6 +94,11 @@ export const matchesPillarFeiGan = (palace: Palace, pillar: { stem: string; bran
   const stem = pillarStemOnBoard(pillar);
   return Boolean(stem && hasHeaven(palace, stem) && hasEarth(palace, "庚"));
 };
+export const sanQiTombStems = (palace: Palace): string[] => [
+  ...(hasHeaven(palace, "乙") && (palace.position === 6 || palace.position === 2) ? ["乙"] : []),
+  ...(hasHeaven(palace, "丙") && palace.position === 6 ? ["丙"] : []),
+  ...(hasHeaven(palace, "丁") && palace.position === 8 ? ["丁"] : []),
+];
 export const tianWangReasons = (palace: Palace, zhiFuPosition: number): string[] => [
   ...(hasHeaven(palace, "癸") && hasEarth(palace, "癸") ? ["癸加癸（演义举例）"] : []),
   ...(palace.position === zhiFuPosition && hasEarth(palace, "癸") ? ["值符加地癸（旨归）"] : []),
@@ -347,10 +352,8 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     return matchesPillarFeiGan(p, chart.raw.fourPillars.day) ? dayStemEvidence(chart, p) : null;
   }),
   bad("san_qi_ru_mu", "三奇入墓", "常用凶格", "本盘口径：天盘乙入 6/2 宫；丙入 6 宫；丁入 8 宫；古籍另有丙丁均入六宫之说", "主才能被埋、有力使不出；宜换时换方。", (p) =>
-    (hasHeaven(p, "乙") && (p.position === 6 || p.position === 2)) ||
-    (hasHeaven(p, "丙") && p.position === 6) ||
-    (hasHeaven(p, "丁") && p.position === 8)
-      ? `${palaceLabel(p.position)}：天盘 ${stemsOf(p.heavenlyStem)} 入墓`
+    sanQiTombStems(p).length
+      ? `${palaceLabel(p.position)}：天盘 ${sanQiTombStems(p).join("/")} 入墓`
       : null,
   ),
   bad("san_qi_shou_xing", "三奇受刑", "常用凶格", "天盘丙/丁遇 1 宫或地盘壬癸；天盘乙遇 6/7 宫或地盘庚辛", "按所选受制口径，逐项列出宫位与干配原因。", (p) => {
