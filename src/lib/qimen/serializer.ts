@@ -100,7 +100,7 @@ const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = fals
       ...(!compact && check.strengthNote ? { strengthNote: check.strengthNote } : {}),
       ...(!compact || check.usageRestrictions.length ? { usageRestrictions: check.usageRestrictions } : {}),
       positions: check.positions,
-      evidence: compact ? check.evidence.map((item) => item.replace("（现和/旨归义）", "（和/旨义）").replace("（现义/旨归和）", "（义/旨和）")) : check.evidence,
+      evidence: compact ? check.evidence.map((item) => item.replace("（现和/旨归义）", "（和/旨义）").replace("（现义/旨归和）", "（义/旨和）").replaceAll("天丙加地盘", "丙加地").replaceAll("天盘值符加地丙", "值符加地丙")) : check.evidence,
     })),
     failed: report.failed.map((check) => check.name),
   };
@@ -269,8 +269,8 @@ const buildCompactSchema = () => {
 const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
   ...chart.raw.specialPatterns,
   inauspiciousPatterns: (chart.raw.specialPatterns.inauspiciousPatterns ?? []).map((pattern) => {
-    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing"].includes(pattern.id)) return pattern;
-    return { id: pattern.id, name: pattern.name, type: pattern.type, position: pattern.position };
+    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing", "patterns.bad.bei_ge", "patterns.bad.tian_wang_si_zhang"].includes(pattern.id)) return pattern;
+    return { id: pattern.id, name: pattern.name, position: pattern.position };
   }),
 });
 

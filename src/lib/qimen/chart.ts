@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { sanQiRestrictionReasons, sanQiTombStems, tianWangReasons, matchesPillarGengGe, matchesPillarFeiGan, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
+import { beiGeReasons, sanQiRestrictionReasons, sanQiTombStems, tianWangReasons, matchesPillarGengGe, matchesPillarFeiGan, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesLongDun, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -91,7 +91,8 @@ export const buildChart = (
   const tianWangId = "patterns.bad.tian_wang_si_zhang";
   const sanQiTombId = "patterns.bad.san_qi_ru_mu";
   const sanQiRestrictionId = "patterns.bad.san_qi_shou_xing";
-  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || id === feiGanId || id === tianWangId || id === sanQiTombId || id === sanQiRestrictionId || id === "patterns.bad.fu_gan_ge" || pillarGengRules.some(rule => rule.id === id);
+  const beiGeId = "patterns.bad.bei_ge";
+  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || id === feiGanId || id === tianWangId || id === sanQiTombId || id === sanQiRestrictionId || id === beiGeId || id === "patterns.bad.fu_gan_ge" || pillarGengRules.some(rule => rule.id === id);
   const palaces = sortPalaces(rawChart).map((palace) => {
     const auspiciousPatterns = (palace.auspiciousPatterns ?? []).filter(({ id }) => !isCorrectedGoodPattern(id));
     const inauspiciousPatterns = (palace.inauspiciousPatterns ?? []).filter(({ id }) => !isCorrectedBadPattern(id));
@@ -123,6 +124,10 @@ export const buildChart = (
       if (matchesPillarGengGe(palace, rule.pillar)) {
         inauspiciousPatterns.push({ id: rule.id, name: rule.name, type: rule.name, position, description: "天盘庚加该柱地盘干；甲按本柱六甲遁仪" });
       }
+    }
+    const beiReasons = beiGeReasons(palace, rawChart.zhiFu.heavenlyStem, rawChart.zhiFu.position, rawChart.fourPillars);
+    if (beiReasons.length) {
+      inauspiciousPatterns.push({ id: beiGeId, name: "悖格", type: "悖格", position, description: beiReasons.join("、") });
     }
     const restrictionReasons = sanQiRestrictionReasons(palace);
     if (restrictionReasons.length) {

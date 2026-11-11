@@ -581,3 +581,20 @@ it("keeps day patterns consistent across the catalog, palace and overview", () =
     expect((chart.raw.specialPatterns.inauspiciousPatterns ?? []).some((pattern) => pattern.id === "patterns.bad.fu_gan_ge")).toBe(false);
   }
 });
+
+it("keeps 悖格 palace and overview consistent with the catalog across actual charts", () => {
+  let formed = 0;
+  let empty = 0;
+  for (let hour = 0; hour < 24; hour += 2) {
+    const chart = buildChart({ datetime: `2026-01-01T${String(hour).padStart(2, "0")}:00`, timeZone: "Asia/Shanghai" });
+    const check = evaluateQimenPatterns(chart).checks.find((item) => item.id === "bei_ge")!;
+    const id = "patterns.bad.bei_ge";
+    const palaces = chart.raw.palaces.filter(p => p.inauspiciousPatterns?.some(pattern => pattern.id === id)).map(p => p.position);
+    const overview = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(pattern => pattern.id === id);
+    expect(palaces.sort()).toEqual([...check.positions].sort());
+    expect(overview.map(pattern => pattern.position).sort()).toEqual([...check.positions].sort());
+    if (check.positions.length) formed++; else empty++;
+  }
+  expect(formed).toBeGreaterThan(0);
+  expect(empty).toBeGreaterThan(0);
+});

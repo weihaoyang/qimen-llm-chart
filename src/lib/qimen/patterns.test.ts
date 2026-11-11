@@ -433,3 +433,17 @@ it("names only actual 三奇入墓 stems when a palace carries multiple heaven s
   const hit = report.checks.find((check) => check.id === "san_qi_ru_mu")!;
   expect(hit.evidence).toEqual(["第 6 宫：天盘 丙 入墓"]);
 });
+
+it("distinguishes 丙加值符、值符加丙 and 丙加四柱", () => {
+  const test = (p: ReturnType<typeof palace>, chief = 1) => evaluateQimenPatterns(chartWith([p], { zhiFu: chief })).checks.find(check => check.id === "bei_ge")!;
+  const fu = test(palace(3, { heavenlyStem: "丙", earthlyStem: "戊" }));
+  expect(fu.evidence[0]).toContain("天丙加地盘值符遁仪（符悖）");
+  const fei = test(palace(1, { earthlyStem: "丙" }));
+  expect(fei.evidence[0]).toContain("天盘值符加地丙（飞悖）");
+  const hour = test(palace(3, { heavenlyStem: "丙", earthlyStem: "乙" }));
+  expect(hour.evidence[0]).toContain("天丙加地盘时干");
+  const wrong = test(palace(1, { heavenlyStem: "丙", earthlyStem: "壬", isZhiFu: true, deity: "值符" }));
+  expect(wrong.status).toBe("未成立");
+  const jia = test(palace(3, { heavenlyStem: "丙", earthlyStem: "戊" }));
+  expect(jia.evidence[0]).toContain("甲子遁戊");
+});

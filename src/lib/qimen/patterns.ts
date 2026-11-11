@@ -94,6 +94,19 @@ export const matchesPillarFeiGan = (palace: Palace, pillar: { stem: string; bran
   const stem = pillarStemOnBoard(pillar);
   return Boolean(stem && hasHeaven(palace, stem) && hasEarth(palace, "庚"));
 };
+export const beiGeReasons = (palace: Palace, chiefStem: string, chiefPosition: number, pillars: NormalizedQimenChart["raw"]["fourPillars"]): string[] => {
+  const reasons: string[] = [];
+  if (hasHeaven(palace, "丙")) {
+    if (hasEarth(palace, chiefStem)) reasons.push("天丙加地盘值符遁仪（符悖）");
+    for (const [key, label] of [["year", "年"], ["month", "月"], ["day", "日"], ["hour", "时"]] as const) {
+      const pillar = pillars[key];
+      const stem = pillarStemOnBoard(pillar);
+      if (stem && hasEarth(palace, stem)) reasons.push(`天丙加地盘${label}干${pillar.stem === "甲" ? `（${pillar.stem}${pillar.branch}遁${stem}）` : ""}`);
+    }
+  }
+  if (palace.position === chiefPosition && hasEarth(palace, "丙")) reasons.push("天盘值符加地丙（飞悖）");
+  return reasons;
+};
 export const sanQiRestrictionReasons = (palace: Palace): string[] => {
   const reasons: string[] = [];
   for (const stem of ["丙", "丁"]) {
@@ -373,9 +386,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     const reasons = sanQiRestrictionReasons(p);
     return reasons.length ? `${p.position}宫：${reasons.join("、")}` : null;
   }),
-  bad("bei_ge", "悖格", "常用凶格", "天盘丙或地盘丙 临值符", "主事出反常、易生变数；决策留余地。", (p) =>
-    isZhiFu(p) && (hasHeaven(p, "丙") || hasEarth(p, "丙")) ? pairEvidence(p) : null,
-  ),
+  bad("bei_ge", "悖格", "常用凶格", "天丙加地盘值符遁仪或年月日时干；天盘值符加地丙，甲柱按其遁仪", "符悖、飞悖与丙加四柱分别列出；甲柱遁仪为本站推导口径。", (p, chart) => {
+    const reasons = beiGeReasons(p, chart.raw.zhiFu.heavenlyStem, chart.raw.zhiFu.position, chart.raw.fourPillars);
+    return reasons.length ? `${p.position}宫：${reasons.join("、")}` : null;
+  }),
   bad("shi_gan_ru_mu", "时干落宫入墓", "常用凶格", "本盘口径：天盘时干落其墓支之宫；与时柱干支判定分别计算", "该宫的天盘时干落于墓支所在宫。", (p, chart) => {
     const timeStem = chart.raw.fourPillars.hour.stem as string;
     const tombBranches = TOMB_MAP[timeStem] ?? [];
