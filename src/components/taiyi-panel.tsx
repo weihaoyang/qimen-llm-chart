@@ -110,6 +110,8 @@ export function TaiyiPanel({
         <div><span>岁计直门</span><b>{chart.annualGate.name}</b><em>《金镜》卷一新术 · 该门第 {chart.annualGate.yearInGate} 年；按积年计算</em></div>
         <div><span>直门加太乙</span><b>{chart.annualGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>按岁计直门自太乙宫顺布八正宫</em></div>
         <div><span>开门加太乙</span><b>{chart.fixedOpenGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>李淳风固定开门法，供对照</em></div>
+        <div><span>开门加主大将</span><b>{chart.generalGatePalaces.host?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "主大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
+        <div><span>开门加客大将</span><b>{chart.generalGatePalaces.guest?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "客大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
         <div><span>太乙</span><b>{chart.taiyi.palace} 宫</b><em>{chart.taiyi.trigram} · {chart.taiyi.element} · 本周第 {chart.taiyi.block} 个三年</em></div>
         <div><span>主算 → 主大将</span><b>{chart.counts.host} → 大将 {chart.counts.hostGeneralPalace} 宫 · 参将 {chart.counts.hostSuPalace} 宫</b><em>主算{chart.counts.hostParity} · 主算{chart.counts.hostHarmonyLevel}（卷二）</em></div>
         <div><span>客算 → 客大将</span><b>{chart.counts.guest} → 大将 {chart.counts.guestGeneralPalace} 宫 · 参将 {chart.counts.guestSuPalace} 宫</b><em>客算{chart.counts.guestParity} · 客算{chart.counts.guestHarmonyLevel}（卷二）</em></div>

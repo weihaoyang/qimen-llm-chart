@@ -77,6 +77,35 @@ describe("accumulation and palaces", () => {
     expect(serializeTaiyiToStructuredText(chart)).toContain("开门加太乙（李淳风法）");
     expect(JSON.parse(serializeTaiyiToCompactJson(chart)).annualGatePalaces).toEqual(chart.annualGatePalaces);
   });
+
+  it("places the host and guest general gates without assigning the centre to a palace", () => {
+    // 《太乙秘书》阳四局主将、阳七局客将不出中宫；书注八门杜。
+    expect(buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 4 }).generalGatePalaces.host).toBeNull();
+    expect(buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 7 }).generalGatePalaces.guest).toBeNull();
+    let centreHost = 0;
+    let centreGuest = 0;
+    let outsideHost = 0;
+    let outsideGuest = 0;
+    for (const dun of ["阳遁", "阴遁"] as const) for (let ruJu = 1; ruJu <= 72; ruJu++) {
+      const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun, ruJu });
+      for (const [side, palace] of [["host", chart.counts.hostGeneralPalace], ["guest", chart.counts.guestGeneralPalace]] as const) {
+        const gates = chart.generalGatePalaces[side];
+        if (palace === 5) {
+          expect(gates).toBeNull();
+          if (side === "host") centreHost++; else centreGuest++;
+        } else {
+          expect(gates).toEqual(taiyiEightGatePalaces(palace, "开门"));
+          if (side === "host") outsideHost++; else outsideGuest++;
+        }
+      }
+      const text = serializeTaiyiToStructuredText(chart);
+      const json = JSON.parse(serializeTaiyiToCompactJson(chart));
+      expect(json.generalGatePalaces).toEqual(chart.generalGatePalaces);
+      if (chart.counts.hostGeneralPalace === 5) expect(text).toContain("主大将落中宫，八门杜，未排布");
+      if (chart.counts.guestGeneralPalace === 5) expect(text).toContain("客大将落中宫，八门杜，未排布");
+    }
+    expect([centreHost, centreGuest, outsideHost, outsideGuest].every((count) => count > 0)).toBe(true);
+  });
   it("preserves the cycle remainder for large safe integers and negative years", () => {
     const cycle = Number.MAX_SAFE_INTEGER;
     for (const year of [2026, -Number.MAX_SAFE_INTEGER]) {
