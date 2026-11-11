@@ -13,11 +13,11 @@ describe("provenance scope agrees with active calculations", () => {
     expect(note).not.toContain("自挟」未实现");
   });
 
-  it("identifies historical Ziqi anchors while the chart omits its unverified coordinate", () => {
+  it("identifies the approximations of the calculated historical Ziqi model", () => {
     const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T04:00:00Z"), "Asia/Shanghai")));
-    expect(chart.stars.some((item) => item.name === "紫气")).toBe(false);
+    expect(chart.stars.some((item) => item.name === "紫气")).toBe(true);
     const note = PROVENANCE.find((item) => item.id === "qizheng-four-remainders")?.note;
-    expect(note).toContain("历史年表锚点");
-    expect(note).toContain("尚未核完");
+    expect(note).toContain("乾隆甲子法元");
+    expect(note).toContain("其他年代为外推");
   });
 });

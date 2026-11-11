@@ -241,14 +241,14 @@ describe("qizheng siyu chart", () => {
     }
   });
 
-  it("places seven luminaries and the three calculable remainders", () => {
+  it("places seven luminaries and four remainders", () => {
     const chart = buildQizhengChart(profile());
     expect(chart.format).toBe("qmdj-qizheng-chart-v1");
-    expect(chart.complete).toBe(false);
+    expect(chart.complete).toBe(true);
     const luminaries = chart.stars.filter((star) => star.kind === "七政");
     const remainders = chart.stars.filter((star) => star.kind === "四余");
     expect(luminaries).toHaveLength(SEVEN_LUMINARIES.length);
-    expect(remainders.map((star) => star.name)).toEqual(["罗睺", "计都", "月孛"]);
+    expect(remainders.map((star) => star.name)).toEqual(["罗睺", "计都", "月孛", "紫气"]);
     expect(chart.palaces).toHaveLength(12);
     expect(chart.palaces[0]?.name).toBe("命宫");
     for (const star of chart.stars) {
@@ -288,10 +288,13 @@ describe("qizheng siyu chart", () => {
     expect(40.69).toBeLessThan(classicalPerYear * 1.03);
   });
 
-  it("omits Zi Qi when its historical epoch cannot be established", () => {
+  it("computes Qing Zi Qi and identifies its approximation", () => {
     const chart = buildQizhengChart(profile());
-    expect(chart.stars.some((star) => star.name === "紫气")).toBe(false);
-    expect(chart.disclaimer).toContain("紫气历史历元与坐标转换尚未完成核验");
+    expect(chart.stars.find((star) => star.name === "紫气")?.note).toContain("其他年代为外推");
+    expect(chart.disclaimer).toContain("紫气使用清代平行研究模型");
+    const input = getDefaultProfileInput(new Date("1911-04-18T16:00:00Z"), "Asia/Shanghai");
+    const historical = buildQizhengChart(normalizeProfileInput(input));
+    expect(historical.stars.find((star) => star.name === "紫气")?.longitude).toBeCloseTo(128.99, 2);
   });
 
   it("reproduces the 《清史稿》 康熙甲子年黄道十二次初度值宿 (epoch 1684, 初宫起冬至)", () => {
@@ -330,12 +333,12 @@ describe("qizheng siyu chart", () => {
     expect(text).toContain("四余·罗睺");
     expect(text).toContain("果老旧法");
     expect(text).toContain("二十八宿黄道经纬度钤");
-    expect(text).toContain("完整性：部分排盘");
+    expect(text).toContain("完整性：完整");
     expect(text).toContain("未列出的宫位不推定为平");
     expect(text).toContain("星学大成卷");
-    expect(text).toContain("紫气历史历元与坐标转换尚未完成核验");
-    expect(text).not.toContain("四余·紫气：");
-    expect(JSON.parse(serializeQizhengToCompactJson(buildQizhengChart(profile()))).complete).toBe(false);
+    expect(text).toContain("紫气使用清代平行研究模型");
+    expect(text).toContain("四余·紫气：");
+    expect(JSON.parse(serializeQizhengToCompactJson(buildQizhengChart(profile()))).complete).toBe(true);
   });
 });
 

@@ -29,7 +29,7 @@ export function QizhengPanel({ value, onCopyJson, jsonCopied }: { value: Qizheng
         <div>
           <p className="divination-panel__kicker">SEVEN LUMINARIES / FOUR REMNANTS</p>
           <h2>七政四余</h2>
-          <p className="divination-panel__subhead">七政＝日月与水金火木土五星；四余＝罗睺、计都、月孛、紫气。黄经取本仓真星历；罗睺/计都为黄白平交点（果老旧法），月孛为月远地点。二十八宿用清代黄道宿度（《二十八宿黄道经纬度钤》，历元 1684，宿界即距星），按 Lahiri 岁差折回历元后定位，非等分。十二宫按古典十二次（白羊＝戌），命宫用果老式。庙旺陷采用上游有限表项，与古籍有异，未列位置标为“未列”。紫气历史历元与坐标转换尚未完成核验，本盘列出可算的三余。</p>
+          <p className="divination-panel__subhead">七政＝日月与水金火木土五星；四余＝罗睺、计都、月孛、紫气。七政黄经取本仓真星历；罗睺/计都为黄白平交点，月孛为平月远地点。紫气用清代平行研究模型，法元子正按 UTC+08 近似；1911 年鬼、柳两宿已有样本对照，其他年代为外推。二十八宿用康熙旧钤并按岁差推移，与乾隆宿界存在差异。十二宫按古典十二次，命宫用果老式。庙旺陷采用有限表项，未列不等于古籍无说。</p>
         </div>
         <div className="divination-panel__header-actions">
           {onCopyJson ? <button type="button" className="divination-panel__export" onClick={onCopyJson}>复制 JSON <span>{jsonCopied ? "✓" : "⧉"}</span></button> : null}
