@@ -115,6 +115,9 @@ def qianlong_1911_comparison() -> list[tuple[date, str, Decimal]]:
     # 鹑火(120°) at 井28°16′50″; 井 width 30°26′34″; 鬼 width 4°34′19″.
     ghost = Decimal(120) + (Decimal(30) + Decimal(26) / 60 + Decimal(34) / 3600) - (Decimal(28) + Decimal(16) / 60 + Decimal(50) / 3600)
     liu = ghost + Decimal(4) + Decimal(34) / 60 + Decimal(19) / 3600
+    # Independently derive 柳 from 鹑尾(150°) in 七星6°17′01″ and 柳16°58′56″.
+    liu_from_xing = Decimal(150) - (Decimal(6) + Decimal(17) / 60 + Decimal(1) / 3600) - (Decimal(16) + Decimal(58) / 60 + Decimal(56) / 3600)
+    assert abs(liu - liu_from_xing) < Decimal("0.000000000000001")
     samples = [(date(1911, 3, 30), "鬼", 225), (date(1911, 4, 9), "鬼", 246), (date(1911, 4, 19), "鬼", 267),
                (date(1911, 4, 29), "柳", 14), (date(1911, 5, 9), "柳", 35), (date(1911, 5, 19), "柳", 56),
                (date(1911, 10, 22), "柳", 385), (date(1911, 11, 1), "柳", 406), (date(1911, 11, 11), "柳", 428)]
