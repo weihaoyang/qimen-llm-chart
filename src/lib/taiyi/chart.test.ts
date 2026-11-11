@@ -245,6 +245,13 @@ describe("taiyi chart", () => {
     expect(noCentre.some(p => p.startsWith("杜塞："))).toBe(false);
   });
 
+  it("states when 四郭杜's general conjunction itself supplies 关", () => {
+    const patterns = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "艮", shiJiPosition: "寅", hostGeneralPalace: 4, hostSuPalace: 5, guestGeneralPalace: 4, guestSuPalace: 3 });
+    expect(patterns).toContain("关：主大将、客大将同在4宫；客参将、天目（文昌）同在3宫");
+    expect(patterns).toContain("四郭杜：客参将同文昌、主大将同客大将（该将并本身亦为关）");
+    expect(patterns.some((item) => /^(掩|击|迫|格|提挟)/.test(item))).toBe(false);
+  });
+
   it("retains every simultaneous Taiyi and general flank witness", () => {
     const patterns = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "亥", hostGeneralPalace: 8, guestGeneralPalace: 8, hostSuPalace: 5, guestSuPalace: 5 });
     const flank = patterns.find(entry => entry.startsWith("提挟："))!;

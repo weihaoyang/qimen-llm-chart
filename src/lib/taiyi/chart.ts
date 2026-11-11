@@ -311,10 +311,9 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   }
   // 四郭固：二相掩囚（目与太乙同宫）又值四将相关（关）
   const siGuoGu = (tianMuPalace !== null && tianMuPalace === taiyiPalace || shiJiPalace !== null && shiJiPalace === taiyiPalace) && generalsGuan;
-  // 四郭杜：客参将与文昌将并、主大将与客大将并，兼之掩迫关格提挟
+  // 选定合象：两组并见。主客大将同宫本身即满足本仓「关」，不是额外独立命中。
   const siGuoDu = tianMuPalace !== null && input.guestSuPalace === tianMuPalace
-    && input.hostGeneralPalace === input.guestGeneralPalace
-    && (yanTaiyi || Boolean(ji) || outer.length > 0 || inner.length > 0 || guan || ge || ties.length > 0);
+    && input.hostGeneralPalace === input.guestGeneralPalace;
 
   return [
     yanTaiyi || yanHostGeneral ? `掩：${[yanTaiyi ? "始击将临太乙宫" : "", yanHostGeneral ? "始击掩主大将" : ""].filter(Boolean).join("、")}` : "",
@@ -326,7 +325,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     ge ? `格：${geActors.join("、")}与太乙对宫` : "",
     dui ? "对：文昌与太乙对冲" : "",
     siGuoGu ? "四郭固：二目掩囚太乙宫，又值四将相关" : "",
-    siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将，兼之掩迫关格提挟" : "",
+    siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将（该将并本身亦为关）" : "",
     ties.length ? `提挟：${ties.join("、")}` : "",
     pairedFlanks.length ? `大小将挟：《太乙秘書》局注口径，${pairedFlanks.join("、")}` : "",
     generalPalaces.includes(5) ? `杜塞：${generals.filter(general => general.palace === 5).map(general => general.label).join("、")}落入中宫` : "",
@@ -391,7 +390,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       + "**遁不由局数推出**：卷三与秘書皆阳局七十二局、阴局七十二局并列（秘書阳局第一局太乙一宫、阴局第一局太乙九宫），故本仓须人工选定遁；未选定时按阳遁排出并在界面提示（input.dunDefaulted）。"
       + "格局参考卷三及《太乙秘書》局注，囚、关采用局注的同宫宽判。「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
       + "「前一宫／后一宫」按八正宫环（乾一坎八艮三震四巽九离二坤七兑六）定序，「前一辰／后一辰」按十六神环紧邻之间神定序。"
-      + "四郭固、四郭杜原文为「或」字并列之合象，本仓取可核验之合象读法并在条目内注明；提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。「推执提法」需八门直事，本仓未排八门，故未实现。"
+      + "四郭固、四郭杜取所列合象读法；四郭杜中主客大将同宫本身已满足本站的关，并非另证其他格局。提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。「推执提法」需八门直事，本仓未排八门，故未实现。"
       + "和数只列事实、不下判词：算值、奇偶、所立正宫／间神，并按卷二〈推阴阳和不和〉列「上和十四、十八、三十三；次和二十三、二十九、三十二；下和十二、十六、二十七、三十四、三十八」。卷二与《太乙秘書》《太乙統宗寶鑑》《淘金歌》一系的和数清单不同（后者次和另含三十六、下和另含二十一、上和无三十三），且两书局注互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），同篇不合判据又含太乙宫、二目所立、算奇偶等多维（卷二另有『八三四九为阳宫、二七六一为阴宫』，与乾坎艮震为阳之常义相异），故本仓不输出和／不和与长／短判词。"
       + "已用《太乙秘書》阳局 1–24、阴局 1–12（共 36 局）逐局回归，字段以秘書原文为准、与卷三立成互校，秘書讹误或缺漏之字段在用例中具名跳过并注明（详见 mishu-corpus.ts）。"
       + "《太乙金镜式经》卷一岁计周纪取 360 年，本站默认沿用。365 为对照参数；起元另有异说，故入局数可覆盖。仅供研究，不构成预测或现实裁决。",
