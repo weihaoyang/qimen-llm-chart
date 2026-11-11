@@ -5,6 +5,23 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("keeps two sourced 天网 conditions distinct while counting one catalog entry", () => {
+    const cases = [
+      { datetime: "2026-01-01T00:00", position: 9, evidence: ["癸加癸"], absent: "值符加地癸" },
+      { datetime: "2026-01-01T14:00", position: 9, evidence: ["值符加地癸"], absent: "癸加癸" },
+      { datetime: "2026-01-04T04:00", position: 9, evidence: ["癸加癸", "值符加地癸"], absent: "不存在的条件" },
+    ];
+    for (const item of cases) {
+      const report = evaluateQimenPatterns(buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai" }));
+      const hits = report.formed.filter(({ id }) => id === "tian_wang_si_zhang");
+      expect(hits).toHaveLength(1);
+      expect(hits[0].positions).toContain(item.position);
+      for (const expected of item.evidence) expect(hits[0].evidence.join(" ")).toContain(expected);
+      expect(hits[0].evidence.join(" ")).not.toContain(item.absent);
+    }
+    const neither = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T02:00", timeZone: "Asia/Shanghai" }));
+    expect(neither.checks.find(({ id }) => id === "tian_wang_si_zhang")?.status).toBe("未成立");
+  });
   it("counts 日格 and its 伏干格 alias once on a real chart", () => {
     const chart = buildChart({ datetime: "2026-01-01T02:00", timeZone: "Asia/Shanghai" });
     const report = evaluateQimenPatterns(chart);

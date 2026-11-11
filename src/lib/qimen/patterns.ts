@@ -304,7 +304,13 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     matchesFuGong(p, chart.raw.zhiFu.heavenlyStem) ? pairEvidence(p) : null),
   bad("fei_gong_ge", "飞宫格", "常用凶格", "天盘值符临地盘庚", "据《遁甲演义》直符加庚。", (p, chart) =>
     matchesFeiGong(p, chart.raw.zhiFu.position) ? pairEvidence(p) : null),
-  bad("tian_wang_si_zhang", "天网四张", "常用凶格", "天盘癸 + 地盘癸", "主受困受限、网罗缠身；宜守不宜攻。", stemPair("癸", "癸")),
+  bad("tian_wang_si_zhang", "天网四张（两种口径）", "常用凶格", "癸加癸例，或值符加地癸；两种判据并列，另有以天癸落宫论网之说", "按命中证据区分不同口径，不作单一古法。", (p, chart) => {
+    const conditions = [
+      ...(hasHeaven(p, "癸") && hasEarth(p, "癸") ? ["癸加癸（演义举例）"] : []),
+      ...(p.position === chart.raw.zhiFu.position && hasEarth(p, "癸") ? ["值符加地癸（旨归）"] : []),
+    ];
+    return conditions.length ? `${pairEvidence(p)}：${conditions.join("、")}` : null;
+  }),
   bad("sui_ge", "岁格", "常用凶格", "天盘庚 + 地盘年干", "主与年上大势相悖；年度层面易受制。", (p, chart) =>
     hasHeaven(p, "庚") && hasEarth(p, chart.raw.fourPillars.year.stem) ? pairEvidence(p) : null,
   ),
