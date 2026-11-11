@@ -4,6 +4,7 @@ import { Solar } from "lunar-typescript";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { buildBaziChartFromProfile } from "./chart";
 import { computeStrengthBreakdown, DEFAULT_STRENGTH_FACTORS } from "./structure-audit";
+import { analyzePillarRelations } from "./relations-analysis";
 
 describe("classical hidden stems and ten gods", () => {
   it("checks all twelve hidden-stem sets and all ten day masters through the product chart", () => {
@@ -62,6 +63,15 @@ it("recognizes a complete 申子辰 in an actual four-pillar sandbox", () => {
   const sandbox = computeStrengthBreakdown(raw.pillars, raw.dayMaster, { ...DEFAULT_STRENGTH_FACTORS, combinations: true });
   expect(sandbox.combinationDetails).toContain("地支三合 申子辰 → 水权重试算");
   expect(computeStrengthBreakdown(raw.pillars, raw.dayMaster).combinationDetails).toEqual([]);
+});
+
+it("does not mistake repeated 辰 and 子 for a full 申子辰 in a real chart", () => {
+  const raw = buildBaziChartFromProfile(normalizeProfileInput({
+    calendarMode: "solar", datetime: "2024-10-07T00:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+  })).raw;
+  expect(raw.baZi).toEqual(["甲辰", "癸酉", "甲辰", "甲子"]);
+  const relations = analyzePillarRelations(raw.pillars, { dayMaster: raw.dayMaster }).relations;
+  expect(relations.some(item => item.kind === "地支三合" || item.kind === "地支三会")).toBe(false);
 });
 
 describe("classical day-pillar Xun Kong", () => {

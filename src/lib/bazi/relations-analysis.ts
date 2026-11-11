@@ -225,7 +225,7 @@ export const stemRelations = (a: string, b: string): LightRelation[] => {
   const out: LightRelation[] = [];
   const combine = at(STEM_COMBINE, a, b);
   if (combine) {
-    out.push({ kind: "天干五合", tone: "positive", detail: `${a}${b} 相合，合化为${combine}` });
+    out.push({ kind: "天干五合", tone: "neutral", detail: `${a}${b} 相合，传统化气对应${combine}；是否化成需另查条件` });
   }
   const clash = at(STEM_CLASH, a, b);
   if (clash) {
@@ -251,7 +251,7 @@ export const branchRelations = (a: string, b: string): LightRelation[] => {
   const out: LightRelation[] = [];
   const combine = at(BRANCH_COMBINE, a, b);
   if (combine) {
-    out.push({ kind: "地支六合", tone: "positive", detail: `${a}${b} 六合，合化为${combine}` });
+    out.push({ kind: "地支六合", tone: "neutral", detail: `${a}${b} 六合，传统化气对应${combine}；是否化成需另查条件` });
   }
   const half = at(BRANCH_HALF_COMBINE, a, b);
   if (half) {
@@ -362,7 +362,7 @@ export const analyzePillarRelations = (
 
   // Branch trios (three of four pillars).
   const isTrio = (branches: string[], group: string) =>
-    group.length === branches.length && branches.every((branch) => group.includes(branch));
+    branches.length === group.length && new Set(branches).size === group.length && branches.every((branch) => group.includes(branch));
   for (let i = 0; i < ordered.length; i += 1) {
     for (let j = i + 1; j < ordered.length; j += 1) {
       for (let k = j + 1; k < ordered.length; k += 1) {

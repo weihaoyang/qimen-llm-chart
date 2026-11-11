@@ -29,6 +29,11 @@ describe("analyzePillarRelations", () => {
 
     expect(result.relations.some((item) => item.kind === "天干五合" && item.symbols === "甲己")).toBe(true);
     expect(result.relations.some((item) => item.kind === "地支六合" && item.symbols === "子丑")).toBe(true);
+    for (const relation of result.relations.filter(item => item.kind === "天干五合" || item.kind === "地支六合")) {
+      expect(relation.detail).toContain("是否化成需另查条件");
+      expect(relation.detail).not.toContain("合化为");
+      expect(relation.tone).toBe("neutral");
+    }
     expect(result.relations.every((item) => item.pillars.length >= 2)).toBe(true);
   });
 
@@ -55,6 +60,19 @@ describe("analyzePillarRelations", () => {
       { dayMaster: "戊" },
     );
     expect(meeting.relations.some((item) => item.kind === "地支三会" && item.symbols === "寅卯辰")).toBe(true);
+  });
+
+  it.each([
+    ["申子辰", "地支三合"], ["亥卯未", "地支三合"], ["寅午戌", "地支三合"], ["巳酉丑", "地支三合"],
+    ["寅卯辰", "地支三会"], ["巳午未", "地支三会"], ["申酉戌", "地支三会"], ["亥子丑", "地支三会"],
+  ] as const)("requires three distinct branches for %s %s", (group, kind) => {
+    const analyze = (branches: string) => analyzePillarRelations(
+      (["year", "month", "day", "time"] as const).map((key, i) => pillar(key, "甲" + branches[i])),
+      { dayMaster: "甲" },
+    ).relations;
+    expect(analyze(group + group[0]).some(item => item.kind === kind && new Set(item.symbols).size === 3)).toBe(true);
+    const incomplete = group[0] + group[0] + group[1] + group[1];
+    expect(analyze(incomplete).some(item => item.kind === "地支三合" || item.kind === "地支三会")).toBe(false);
   });
 
   it("reports 半合, 六害, 六破, self-punishment and 伏吟", () => {
