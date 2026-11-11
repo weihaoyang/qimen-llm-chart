@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateDaliuren } from "taibu-core/daliuren";
-import { buildDaliurenResearch } from "./extensions";
+import { buildDaliurenResearch, classifyLiuRenPlate } from "./extensions";
 
 const profile = {
   original: { calendarMode: "solar", datetime: "2026-08-07T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil" },
@@ -24,9 +24,31 @@ it("reproduces the Renchen Fuyin example from Liu Ren Da Quan, volume 7", () => 
   });
   expect(text).toContain("壬辰日第一局");
   expect(text).toContain("伏吟课");
+  expect(text).toContain("天地盘: 伏吟");
   expect(text).toContain("月将: 酉");
   expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map(match => match[1]))
     .toEqual(["亥", "辰", "戌"]);
+});
+
+it("reports a 返吟 plate independently of the 涉害 transmission method", () => {
+  const datetime = "2024-01-22T12:00";
+  const { text, json } = buildDaliurenResearch({ original: { ...profile.original, datetime }, normalized: { ...profile.normalized, datetime } });
+  expect(text).toContain("乙酉日第十二局 干上戌 / 涉害课");
+  expect(text).toContain("天地盘: 返吟");
+  expect(text).toContain("月将: 子");
+  expect(json.基本信息).toMatchObject({ 天地盘: "返吟" });
+  expect([...text.matchAll(/\| [初中末]传[^|]*\|\s*(\S+)\s*\|/g)].map(match => match[1])).toEqual(["卯", "酉", "卯"]);
+});
+
+it("classifies all month-general and hour-branch combinations without treating malformed inputs as 子", () => {
+  const branches = "子丑寅卯辰巳午未申酉戌亥";
+  for (let i = 0; i < branches.length; i++) for (let j = 0; j < branches.length; j++) {
+    const expected = i === j ? "伏吟" : (i + 6) % 12 === j ? "返吟" : undefined;
+    expect(classifyLiuRenPlate(branches[i], branches[j]), `${branches[i]}将/${branches[j]}时`).toBe(expected);
+  }
+  expect(classifyLiuRenPlate("", "子")).toBeUndefined();
+  expect(classifyLiuRenPlate("子", "")).toBeUndefined();
+  expect(classifyLiuRenPlate("子", undefined)).toBeUndefined();
 });
 
 it.each([
