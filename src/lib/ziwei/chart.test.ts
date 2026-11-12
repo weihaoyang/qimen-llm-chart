@@ -309,6 +309,12 @@ it("compares Ziwei brightness in all twelve palaces with the Ming printed table"
   expect(differences).toEqual(["寅：图庙 / 产品旺"]);
 });
 
+it("carries the Ming printed lunar difference through the normalized chart", () => {
+  const { raw } = buildZiweiChartFromProfile(profileAt("midnight", "2000-02-15T18:00"));
+  const lunar = raw.palaces.find(p => p.earthlyBranch === "寅")?.majorStars.find(star => star.name === "太阴");
+  expect(lunar).toMatchObject({ brightness: "旺", mingPrintBrightness: "陷" });
+});
+
 it("compares solar and lunar brightness labels with the Ming printed table", () => {
   // 日本国立公文书馆影像88、89：仅把图表“不得地”缩写为引擎的“不”，不合并其他等级。
   const printed: Record<string, string> = { 子: "陷", 丑: "不", 寅: "旺", 卯: "庙", 辰: "旺", 巳: "旺", 午: "旺", 未: "得", 申: "得", 酉: "平", 戌: "不", 亥: "陷" };

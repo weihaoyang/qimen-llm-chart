@@ -3,6 +3,7 @@ import type { NormalizedProfileInput } from "@/lib/profile";
 export type ZiweiStarSummary = {
   name: string;
   brightness?: string;
+  mingPrintBrightness?: string;
   mutagen?: string;
   scope?: string;
 };

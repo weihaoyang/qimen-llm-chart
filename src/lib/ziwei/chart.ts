@@ -74,6 +74,12 @@ const serializeStar = (star: {
   scope: star.scope,
 });
 
+// 日本国立公文书馆明刊《紫微斗数全书》上册影像 88–89；“不”表示不得地。
+const MING_PRINT_BRIGHTNESS: Record<string, Record<string, string>> = {
+  太阳: Object.fromEntries(BRANCHES.map((branch, i) => [branch, ["陷", "不", "旺", "庙", "旺", "旺", "旺", "得", "得", "平", "不", "陷"][i]])),
+  太阴: Object.fromEntries(BRANCHES.map((branch, i) => [branch, ["庙", "庙", "陷", "陷", "陷", "陷", "不", "得", "利", "旺", "旺", "庙"][i]])),
+};
+
 const serializePalace = (palace: {
   index: number;
   name: string;
@@ -118,7 +124,10 @@ const serializePalace = (palace: {
   heavenlyStem: palace.heavenlyStem,
   earthlyBranch: palace.earthlyBranch,
   branchIndex: palace.branchIndex ?? -1,
-  majorStars: palace.majorStars.map(serializeStar),
+  majorStars: palace.majorStars.map((star) => ({
+    ...serializeStar(star),
+    ...(MING_PRINT_BRIGHTNESS[star.name]?.[palace.earthlyBranch] ? { mingPrintBrightness: MING_PRINT_BRIGHTNESS[star.name][palace.earthlyBranch] } : {}),
+  })),
   minorStars: palace.minorStars.map(serializeStar),
   adjectiveStars: palace.adjectiveStars.map(serializeStar),
   changsheng12: palace.changsheng12,

@@ -147,6 +147,7 @@ export const serializeZiweiToStructuredText = (chart: NormalizedZiweiChart) => {
       `宫干: ${palace.heavenlyStem}`,
       `宫支: ${palace.earthlyBranch}`,
       `主星: ${palace.majorStars.map((item) => item.name).join(" / ") || "无"}`,
+      ...palace.majorStars.filter((item) => item.mingPrintBrightness && item.mingPrintBrightness !== item.brightness).map((item) => `亮度版本对照: ${item.name}${palace.earthlyBranch}宫，现表${item.brightness ?? "未提供"}；明刊图表${item.mingPrintBrightness}（《紫微斗数全书》明刊影像88–89）`),
       `辅星: ${palace.minorStars.map((item) => item.name).join(" / ") || "无"}`,
       `杂曜: ${palace.adjectiveStars.map((item) => item.name).join(" / ") || "无"}`,
       `长生十二神: ${palace.changsheng12}`,

@@ -72,6 +72,13 @@ describe("ZiweiPanel", () => {
     expect(divideFor("zi-start")).toBe("forward");
   });
 
+  it("shows a sourced brightness disagreement for the current chart", () => {
+    const value = { ...baseValue, datetime: "2000-02-15T18:00", gender: "female" as const };
+    const chart = buildZiweiChartFromProfile({ original: value, normalized: { datetime: value.datetime, timeZone: value.timeZone, calendarMode: "solar", timeBasis: "civil" } });
+    const view = render(<ZiweiPanel value={value} chart={chart} />);
+    expect(screen.getByLabelText("亮度版本对照").textContent).toContain("太阴寅宫：现表旺，明刊陷");
+    view.unmount();
+  });
   it("shows auditable chart structure when a normalized chart is supplied", () => {
     const chart = buildZiweiChartFromProfile({
       original: { ...baseValue, timeZone: "Asia/Shanghai" },

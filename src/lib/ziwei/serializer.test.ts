@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { buildZiweiChartFromProfile } from "./chart";
-import { serializeZiweiToCompactJson } from "./serializer";
+import { serializeZiweiToCompactJson, serializeZiweiToStructuredText } from "./serializer";
 
 describe("serializeZiweiToCompactJson", () => {
+  it("includes the selected Ming-table brightness comparison in both formats", () => {
+    const datetime = "2000-02-15T18:00";
+    const chart = buildZiweiChartFromProfile({
+      original: { calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender: "female", timeBasis: "civil" },
+      normalized: { datetime, timeZone: "Asia/Shanghai", calendarMode: "solar", timeBasis: "civil" },
+    });
+    expect(serializeZiweiToStructuredText(chart)).toContain("太阴寅宫，现表旺；明刊图表陷");
+    expect(serializeZiweiToCompactJson(chart)).toContain('"mingPrintBrightness":"陷"');
+  });
   it("serializes a 12-palace ziwei payload", () => {
     const chart = buildZiweiChartFromProfile({
       original: {
