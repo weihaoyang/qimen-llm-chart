@@ -370,6 +370,32 @@ it("compares Tanlang and the three explicitly printed Huoxing positions against 
   expect(differences).toEqual(["贪狼丑：图利 / 产品庙", "贪狼卯：图得 / 产品利"]);
 });
 
+it("compares Ming Wuqv, Lianzhen, Tianxiang and readable Qisha entries", () => {
+  const printed: Record<string, Record<string, string>> = {
+    武曲: { 子: "旺", 丑: "庙", 寅: "得", 卯: "利", 辰: "庙", 巳: "平", 午: "旺", 未: "庙", 申: "得", 酉: "利", 戌: "庙", 亥: "平" },
+    廉贞: { 子: "平", 丑: "利", 寅: "平", 卯: "平", 辰: "利", 巳: "陷", 午: "平", 未: "利", 申: "庙", 酉: "平", 戌: "利", 亥: "陷" },
+    天相: { 子: "庙", 丑: "庙", 寅: "庙", 卯: "陷", 辰: "平", 巳: "得", 午: "得", 未: "得", 申: "庙", 酉: "陷", 戌: "得", 亥: "得" },
+    七杀: { 丑: "庙", 寅: "庙", 卯: "旺", 辰: "得", 巳: "平", 午: "旺", 申: "庙", 酉: "旺", 戌: "庙", 亥: "平" },
+  };
+  const observed = new Map<string, string>();
+  for (let month = 1; month <= 12; month++) for (let hour = 0; hour < 24; hour += 2) {
+    const datetime = `2000-${String(month).padStart(2, "0")}-15T${String(hour).padStart(2, "0")}:00`;
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", datetime));
+    for (const palace of raw.palaces) for (const star of palace.majorStars) {
+      if (!(star.name in printed)) continue;
+      expect(star.mingPrintBrightness, `${star.name}${palace.earthlyBranch}`).toBe(printed[star.name][palace.earthlyBranch]);
+      observed.set(`${star.name}${palace.earthlyBranch}`, star.brightness ?? "未提供");
+    }
+  }
+  const differences: string[] = [];
+  for (const [star, cells] of Object.entries(printed)) for (const [branch, label] of Object.entries(cells)) {
+    expect(observed.has(star + branch), star + branch).toBe(true);
+    if (observed.get(star + branch) !== label) differences.push(`${star}${branch}：图${label} / 产品${observed.get(star + branch)}`);
+  }
+  expect(observed.has("七杀子") && observed.has("七杀未")).toBe(true);
+  expect(differences).toEqual(["廉贞寅：图平 / 产品庙", "天相辰：图平 / 产品得", "天相午：图得 / 产品庙", "七杀辰：图得 / 产品庙"]);
+});
+
 it("compares Tiantong and legible Pojun cells against the Ming table", () => {
   const printed: Record<string, Record<string, string>> = {
     天同: { 子: "旺", 丑: "不", 寅: "利", 卯: "庙", 辰: "平", 巳: "庙", 午: "陷", 未: "不", 申: "旺", 酉: "平", 戌: "平", 亥: "庙" },
