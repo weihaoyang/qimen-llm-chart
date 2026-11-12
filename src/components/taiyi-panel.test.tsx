@@ -60,4 +60,10 @@ describe("TaiyiPanel", () => {
     render(<TaiyiPanel chart={chart} yearInput="2024" cycle={360} dun="阳遁" ruJuInput="15" />);
     expect(screen.getByText(/太乙与天目（文昌）共挟始击（客目）于正宫/)).toBeInTheDocument();
   });
+
+  it("shows the source-specific opposing host general", () => {
+    const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 13 });
+    render(<TaiyiPanel chart={chart} yearInput="2024" cycle={360} dun="阳遁" ruJuInput="13" />);
+    expect(screen.getByText(/主参将与太乙对冲（《太白》口径）/)).toBeInTheDocument();
+  });
 });

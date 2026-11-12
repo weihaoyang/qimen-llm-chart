@@ -366,6 +366,21 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
+  it("checks 对 actors by source", () => {
+    const base = { taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "子", shiJiPosition: "亥", hostGeneralPalace: 9, hostSuPalace: 9, guestGeneralPalace: 3, guestSuPalace: 4 };
+    expect(detectPatterns(base)).toContain("对：主大将、主参将与太乙对冲（《太白》口径）");
+    expect(detectPatterns({ ...base, tianMuPosition: "巽" })).toContain("对：文昌与太乙对冲（《金镜》口径）；主大将、主参将与太乙对冲（《太白》口径）");
+    expect(detectPatterns({ ...base, hostGeneralPalace: 5, hostSuPalace: 3 }).some(item => item.startsWith("对："))).toBe(false);
+    for (const [ruJu, taiyi, hostSu] of [[13, 6, 4], [16, 7, 3]] as const) {
+      const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu });
+      expect(chart.taiyi.palace).toBe(taiyi);
+      expect(chart.counts.hostSuPalace).toBe(hostSu);
+      const expected = "对：主参将与太乙对冲（《太白》口径）";
+      expect(chart.patterns).toContain(expected);
+      expect(serializeTaiyiToStructuredText(chart)).toContain(expected);
+      expect(JSON.parse(serializeTaiyiToCompactJson(chart)).patterns).toContain(expected);
+    }
+  });
   it("reproduces the 太乙秘書 worked examples (入局 1 阳遁, 万历戊子 阴遁)", () => {
     const yang = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 1 });
     expect(yang.taiyi.palace).toBe(1); // 太乙乾一宫

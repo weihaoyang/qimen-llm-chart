@@ -316,8 +316,9 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     { label: "客参将", palace: input.guestSuPalace },
   ].filter(actor => opposite(actor.palace, taiyiPalace)).map(actor => actor.label);
   const ge = geActors.length > 0;
-  // 对：下目文昌将与太乙冲而相当
-  const dui = opposite(tianMuPalace, taiyiPalace);
+  // 《金镜》取文昌；《太白》另将主大小将对太乙列为对，分明记录来源。
+  const duiWenchang = opposite(tianMuPalace, taiyiPalace);
+  const duiTaibai = generals.slice(0, 2).filter(actor => opposite(actor.palace, taiyiPalace)).map(actor => actor.label);
   // 提挟：太乙与主/客大将共挟某目或将（正宫取邻宫、间神取邻辰，即挟闭）
   const targets = [
     { label: "天目（文昌）", palace: tianMuPalace, position: tianMuPosition },
@@ -386,7 +387,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     qiuActors.length ? `囚：${qiuActors.join("、")}与太乙同在${taiyiPalace}宫` : "",
     guan ? `关：${guanActors.join("；")}` : "",
     ge ? `格：${geActors.join("、")}与太乙对宫` : "",
-    dui ? "对：文昌与太乙对冲" : "",
+    duiWenchang || duiTaibai.length ? `对：${[duiWenchang ? "文昌与太乙对冲（《金镜》口径）" : "", duiTaibai.length ? `${duiTaibai.join("、")}与太乙对冲（《太白》口径）` : ""].filter(Boolean).join("；")}` : "",
     siGuoGu ? `四郭固：${siGuoGuEyes.join("、")}与太乙同在${taiyiPalace}宫；${generalsGuanGroups.join("；")}` : "",
     siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将（该将并本身亦为关）" : "",
     ties.length ? `提挟：${ties.join("、")}` : "",
