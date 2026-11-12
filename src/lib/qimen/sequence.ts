@@ -44,6 +44,11 @@ const toCalendarDate = (datetime: string) => {
   const date = new Date(0);
   date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
   date.setUTCHours(parts.hour, parts.minute, 0, 0);
+  if (date.getUTCFullYear() !== parts.year || date.getUTCMonth() !== parts.month - 1 ||
+      date.getUTCDate() !== parts.day || date.getUTCHours() !== parts.hour ||
+      date.getUTCMinutes() !== parts.minute) {
+    throw new Error(`无效的序列日期时间: ${datetime}`);
+  }
   return date;
 };
 

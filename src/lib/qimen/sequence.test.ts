@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { buildChartSequence, buildChartSequenceByCount, buildSequenceInputs } from "./sequence";
 
 describe("buildChartSequenceByCount", () => {
+  it("rejects invalid start dates instead of silently rolling them forward", () => {
+    expect(() => buildChartSequenceByCount("2026-02-30T10:00", "UTC", "day", 2)).toThrow(/无效的序列日期时间/);
+  });
   it("clamps month steps without adding 1900 to the historical year", () => {
     const result = buildChartSequenceByCount("0096-01-31T10:00", "UTC", "month", 3);
     expect(result.map(({ input }) => input.datetime)).toEqual([
@@ -18,6 +21,14 @@ describe("buildChartSequenceByCount", () => {
 });
 
 describe("buildSequenceInputs", () => {
+  it("validates both endpoints and preserves Gregorian leap days", () => {
+    const valid = { startDatetime: "2000-02-29T10:00", endDatetime: "2000-03-01T10:00", timeZone: "UTC", step: "day" as const };
+    expect(buildSequenceInputs(valid).map((item) => item.datetime)).toEqual(["2000-02-29T10:00", "2000-03-01T10:00"]);
+    for (const invalid of ["1900-02-29T10:00", "2026-02-30T10:00", "2026-13-01T10:00", "2026-01-01T24:00", "2026-01-01T10:60"]) {
+      expect(() => buildSequenceInputs({ ...valid, startDatetime: invalid })).toThrow(/无效的序列日期时间/);
+      expect(() => buildSequenceInputs({ ...valid, endDatetime: invalid })).toThrow(/无效的序列日期时间/);
+    }
+  });
   it("creates inclusive double-hour sequence inputs", () => {
     const result = buildSequenceInputs({
       startDatetime: "2026-07-01T21:30",
