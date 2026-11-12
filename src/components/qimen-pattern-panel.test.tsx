@@ -91,8 +91,8 @@ describe("QimenPatternPanel", () => {
   });
 
   it("shows the six-hour and palace disagreement without changing the count", () => {
-    const input = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 2 } });
+    const input = buildChart({ datetime: "2026-01-01T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 5 } });
     render(<QimenPatternPanel chart={input} />);
-    expect(screen.getByText(/时柱丙子不属于《奇门宝鉴》所列六时/)).toHaveTextContent("地丁与值使同宫成立");
+    expect(screen.getByText(/时柱壬午不属于《奇门宝鉴》所列六时/)).toHaveTextContent("地丁与值使同宫成立");
   });
 });

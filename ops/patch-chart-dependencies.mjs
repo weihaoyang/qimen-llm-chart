@@ -67,6 +67,21 @@ for (const [path, before, after] of [
   if (source.split(before).length !== 2) throw new Error("Review 3meta central palace gate counting patch");
   writeFileSync(file, source.replace(before, after));
 }
+// 选择《奇门遁甲统宗》阴阳均寄坤口径：中五落宫与寄干统一归坤二。
+for (const [path, before, after] of [
+  ["lib/qimen/calculator.js", "const rawPosition = position;\n    if (position === 5)\n        position = isYangdun ? 8 : 2;", "const rawPosition = position;\n    if (position === 5)\n        position = 2;"],
+  ["lib/qimen/calculator.js", "const targetPos = isYangdun ? 8 : 2;", "const targetPos = 2;"],
+  ["lib/qimen/calculator.js", "type: isYangdun ? '阳遁寄艮八' : '阴遁寄坤二'", "type: '中五寄坤二'"],
+  ["dist/3meta.esm.js", "return 5===g&&(g=t?8:2),{gate:a,position:g,rawPosition:o}", "return 5===g&&(g=2),{gate:a,position:g,rawPosition:o}"],
+  ["dist/3meta.esm.js", "const a=e?8:2,s=t.find(e=>e.position===a)", "const a=2,s=t.find(e=>e.position===a)"],
+  ["dist/3meta.esm.js", 'type:e?"阳遁寄艮八":"阴遁寄坤二"', 'type:"中五寄坤二"'],
+]) {
+  const file = new URL("../node_modules/3meta/" + path, import.meta.url);
+  const source = readFileSync(file, "utf8");
+  if (source.includes(after)) continue;
+  if (source.split(before).length !== 2) throw new Error("Review 3meta Kun palace hosting patch");
+  writeFileSync(file, source.replace(before, after));
+}
 for (const [path, before, after] of qimenJuPatches) {
   const file = new URL("../node_modules/3meta/" + path, import.meta.url);
   const source = readFileSync(file, "utf8");

@@ -79,6 +79,7 @@ export function QimenPatternPanel({
               </div>
             </header>
 
+            <p>中五寄宫采用阴阳均寄坤二，天禽随天芮；古籍另有分寄口径。</p>
             {report.sourceNotes.map((note) => <p key={note}>{note}</p>)}
 
             {groups.map(({ group, items }) => (

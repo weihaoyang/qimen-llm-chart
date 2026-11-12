@@ -11,12 +11,12 @@ import { DEFAULT_QIMEN_SETTINGS } from "./settings";
 
 describe("serializeChartToStructuredText", () => {
   it("retains the 玉女守门 source disagreement in text and compact JSON", () => {
-    const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 2 } });
-    expect(serializeChartToStructuredText(chart)).toContain("时柱丙子不属于《奇门宝鉴》所列六时");
+    const chart = buildChart({ datetime: "2026-01-01T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 5 } });
+    expect(serializeChartToStructuredText(chart)).toContain("时柱壬午不属于《奇门宝鉴》所列六时");
     expect(serializeChartToCompactJson(chart)).toContain("地丁与值使同宫成立");
     expect(serializeChartToCompactJson(chart)).toContain("值使原到中五宫后寄出");
-    expect(serializeChartToStructuredText(chart)).toContain("地盘中五寄艮八；天禽随天芮、时干中五寄坤二");
-    expect(serializeChartToCompactJson(chart)).toContain("地盘中五寄艮八");
+    expect(serializeChartToStructuredText(chart)).toContain("阴阳均寄坤二，天禽随天芮");
+    expect(serializeChartToCompactJson(chart)).toContain("中五阴阳均寄坤二");
   });
   it("serializes overview and all nine palaces in stable order", () => {
     const chart = buildChart({

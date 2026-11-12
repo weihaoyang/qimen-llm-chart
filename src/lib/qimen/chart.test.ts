@@ -14,6 +14,9 @@ describe("buildChart", () => {
       for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
         const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
         const chart = buildChart({ datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: dunType === "yang" ? "冬至" : "夏至", dunType, juNumber: juNumber as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 } });
+        const middleStem = chart.raw.palaces.find(p => p.position === 5)!.earthlyStem;
+        expect([chart.raw.palaces.find(p => p.position === 2)!.earthlyStem].flat()).toContain(middleStem);
+        expect(chart.raw.palaces.find(p => p.position === 8)!.earthlyStem).not.toEqual(expect.arrayContaining([middleStem]));
         const pillar = chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch;
         const report = evaluateQimenPatterns(chart).checks.find(item => item.id === "yu_nu_shou_men")!;
         const expected = hours.has(pillar);
@@ -28,7 +31,7 @@ describe("buildChart", () => {
           const middleStem = ownStem(chart.raw.palaces.find(p => p.position === 5)!) === "丁";
           centerStem += Number(middleStem); centerGate += Number(rawPosition === 5); both += Number(middleStem && rawPosition === 5);
           expect(middleStem || rawPosition === 5).toBe(true);
-          expect(chart.raw.zhiShi.position).toBe(dunType === "yang" ? 8 : 2);
+          expect(chart.raw.zhiShi.position).toBe(2);
           expect(evaluateQimenPatterns(chart).sourceNotes.find(note => note.startsWith("玉女守门"))).toContain(middleStem ? "地丁原在中五宫" : "值使原到中五宫");
         }
         expect(evaluateQimenPatterns(chart).sourceNotes.some(note => note.startsWith("玉女守门")), `${dunType} ${juNumber} ${datetime}`).toBe((report.status === "成立") !== expected);
@@ -37,7 +40,7 @@ describe("buildChart", () => {
     expect(seen).toEqual(hours);
     expect(discrepancies.filter(item => item.endsWith("time-only"))).toHaveLength(0);
     expect(discrepancies.filter(item => item.endsWith("palace-only"))).toHaveLength(56);
-    expect(discrepancies).toContain("yang 2 2026-01-01T00:00 丙子 8 伤门 palace-only");
+    expect(discrepancies).toContain("yang 5 2026-01-01T12:00 壬午 2 开门 palace-only");
     expect([centerStem, centerGate, both]).toEqual([28, 28, 0]);
   });
   it("counts 值使 from 中五 while borrowing the 坤 gate", () => {
@@ -46,16 +49,15 @@ describe("buildChart", () => {
     expect(chart.raw.palaces.find(p => p.position === 7)?.earthlyStem).toBe("丁");
     expect(evaluateQimenPatterns(chart).checks.find(item => item.id === "yu_nu_shou_men")?.status).toBe("成立");
   });
-  it("discloses the separate hosts used by the earth and celestial layers", () => {
+  it("uses Kun as the center host across the earth, star and gate layers", () => {
     const settings = { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至" as const, dunType: "yang" as const, juNumber: 1 as const };
     const chart = buildChart({ datetime: "2026-01-01T12:00", timeZone: "Asia/Shanghai", qimenSettings: settings });
     expect(chart.raw.fourPillars.hour.stem).toBe("壬");
     expect(chart.raw.palaces.find(p => p.position === 5)?.earthlyStem).toBe("壬");
-    expect(chart.raw.palaces.find(p => p.position === 8)?.earthlyStem).toContain("壬");
+    expect(chart.raw.palaces.find(p => p.position === 2)?.earthlyStem).toContain("壬");
     expect(chart.raw.zhiFu.position).toBe(2);
-    expect(evaluateQimenPatterns(chart).sourceNotes.join(" ")).toContain("地盘中五寄艮八；天禽随天芮、时干中五寄坤二");
     const yin = buildChart({ datetime: "2026-01-01T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...settings, solarTerm: "夏至", dunType: "yin" } });
-    expect(evaluateQimenPatterns(yin).sourceNotes.some(note => note.startsWith("阳遁寄宫"))).toBe(false);
+    expect(Array.isArray(yin.raw.palaces.find(p => p.position === 2)?.earthlyStem)).toBe(true);
   });
   it("shows 丙生临戊 天遁 and its bird pattern in the same real palace", () => {
     const chart = buildChart({ datetime: "2026-01-01T20:00", timeZone: "Asia/Shanghai" });
@@ -175,7 +177,8 @@ describe("buildChart", () => {
       expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(example.hour);
       expect(chart.raw.zhiFu.star).toBe(example.chief);
       const palace = chart.raw.palaces.find(p => p.position === example.palace)!;
-      expect(palace).toMatchObject({ gate: "开门", heavenlyStem: "乙", earthlyStem: "己" });
+      expect(palace).toMatchObject({ gate: "开门", heavenlyStem: "乙" });
+      expect([palace.earthlyStem].flat()).toContain("己");
       expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_di")?.positions).toContain(example.palace);
       expect(palace.auspiciousPatterns?.some(p => p.id === "patterns.jiu_dun.di_dun")).toBe(true);
     }
@@ -205,11 +208,11 @@ describe("buildChart", () => {
       expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
     }
   });
-  it("recognizes 乙开坤 云遁 variant on a real chart without falsely adding 地辛", () => {
-    const chart = buildChart({ datetime: "2026-01-06T18:00", timeZone: "Asia/Shanghai" });
+  it("recognizes 乙开坤 云遁 without inventing the 地辛 clause", () => {
+    const chart = buildChart({ datetime: "2026-01-02T06:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
     const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_yun")!;
     expect(check.positions).toEqual([2]);
-    expect(check.evidence[0]).toContain("天乙 地戊 开门");
+    expect(check.evidence[0]).toContain("天乙 地己/壬 开门");
     expect(check.evidence[0]).toContain("乙开临坤（一云）");
     expect(check.evidence[0]).not.toContain("乙合三吉门临地辛");
     const id = "patterns.jiu_dun.yun_dun";
@@ -233,12 +236,9 @@ describe("buildChart", () => {
     }
   });
   it("distinguishes the real 欢怡 and 相佐 palace examples", () => {
-    const xiang = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" }));
-    expect(xiang.checks.find(check => check.id === "xiang_zuo")?.positions).toEqual([2]);
-    expect(xiang.checks.find(check => check.id === "huan_yi")?.positions).not.toContain(2);
-    const huan = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T10:00", timeZone: "Asia/Shanghai" }));
-    expect(huan.checks.find(check => check.id === "huan_yi")?.positions).toEqual([8]);
-    expect(huan.checks.find(check => check.id === "xiang_zuo")?.positions).not.toContain(8);
+    const report = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T02:00", timeZone: "Asia/Shanghai" }));
+    expect(report.checks.find(check => check.id === "xiang_zuo")?.positions).toEqual([1]);
+    expect(report.checks.find(check => check.id === "huan_yi")?.positions).toEqual([2]);
   });
   it("keeps 欢怡 and 相佐 consistent across registry, palace marks and summary on real charts", () => {
     let huanYiHits = 0;
@@ -279,13 +279,13 @@ describe("buildChart", () => {
     }
   });
   it("recognizes chief over earth 己 without requiring a literal 甲 on the heaven plate", () => {
-    const chart = buildChart({ datetime: "2026-01-02T08:00", timeZone: "Asia/Shanghai" });
+    const chart = buildChart({ datetime: "2026-01-02T02:00", timeZone: "Asia/Shanghai" });
     expect(chart.raw.timeInfo.xunShou).toBe("甲申");
-    expect(chart.raw.zhiFu.position).toBe(8);
+    expect(chart.raw.zhiFu.position).toBe(2);
     const check = evaluateQimenPatterns(chart).checks.find(({ id }) => id === "qi_yi_xiang_he")!;
-    expect(check.positions).toContain(8);
+    expect(check.positions).toContain(2);
     expect(check.evidence.join(" ")).toContain("值符加己（甲己）");
-    expect(chart.raw.palaces.find(({ position }) => position === 8)?.gate).toBe("开门");
+    expect(["开门", "休门", "生门"]).toContain(chart.raw.palaces.find(({ position }) => position === 2)?.gate);
   });
   it("exposes both 门宫和义 naming conventions on the same chart", () => {
     const report = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T06:00", timeZone: "Asia/Shanghai" }));
@@ -324,13 +324,13 @@ describe("buildChart", () => {
     expect(report.checks.some(({ id }) => id === "fu_gan_ge")).toBe(false);
   });
 
-  it("finds both day-stem patterns on a 甲午 day using 辛 rather than the hour's hidden instrument", () => {
+  it("uses the 甲午 day hidden 辛 rather than the hour's hidden instrument", () => {
     const chart = buildChart({ datetime: "2026-01-20T22:00", timeZone: "Asia/Shanghai" });
     expect(chart.raw.fourPillars.day).toMatchObject({ stem: "甲", branch: "午" });
     expect(chart.raw.fourPillars.hour).toMatchObject({ stem: "乙", branch: "亥" });
     const checks = evaluateQimenPatterns(chart).checks;
     expect(checks.find(({ id }) => id === "ri_ge")?.positions).toEqual([6]);
-    expect(checks.find(({ id }) => id === "fei_gan_ge")?.positions).toEqual([8]);
+    expect(checks.find(({ id }) => id === "fei_gan_ge")?.positions).toEqual([]);
     expect(checks.find(({ id }) => id === "ri_ge")?.evidence[0]).toContain("甲午日遁辛");
   });
   it("distinguishes Taiyin and earth-Bing versions of Ren Dun on actual charts", () => {
@@ -342,7 +342,7 @@ describe("buildChart", () => {
       const chart = buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai" });
       const palace = chart.raw.palaces.find(p => p.position === item.position)!;
       expect(palace.heavenlyStem).toBe("丁");
-      expect(palace.earthlyStem).toBe(item.earth);
+      expect([palace.earthlyStem].flat()).toContain(item.earth);
       expect(palace.gate).toBe("休门");
       expect(palace.deity).toBe(item.deity);
       const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")!;
