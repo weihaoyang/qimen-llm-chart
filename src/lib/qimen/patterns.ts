@@ -64,6 +64,8 @@ const dayStemEvidence = (chart: NormalizedQimenChart, palace: Palace) => {
 const STAR_NATIVE: Record<string, number> = { 天蓬: 1, 天芮: 2, 天冲: 3, 天辅: 4, 天禽: 5, 天心: 6, 天柱: 7, 天任: 8, 天英: 9 };
 const GATE_NATIVE: Record<string, number> = { 休门: 1, 生门: 8, 伤门: 3, 杜门: 4, 景门: 9, 死门: 2, 惊门: 7, 开门: 6 };
 const OPPOSITE: Record<number, number> = { 1: 9, 9: 1, 2: 8, 8: 2, 3: 7, 7: 3, 4: 6, 6: 4, 5: 5 };
+// 当前转盘天禽随天芮寄坤；仅用于外八宫值符星位置比较，不改天禽中五原位。
+const chiefStarNative = (star: string) => star === "天禽" ? 2 : STAR_NATIVE[star];
 const placedStars = (chart: NormalizedQimenChart) =>
   chart.raw.palaces
     .filter((palace) => palace.position !== 5)
@@ -499,9 +501,9 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     const items = placedGates(chart);
     return items.length === 8 && items.every(({ palace, native }) => native === palace.position) ? "八门皆归本位" : null;
   }, "global"),
-  bad("fu_yin_zhi_fu", "值符伏吟", "伏吟反吟", "值符星回到本宫", "据《遁甲演义》取值符星原位。", (_p, chart) => {
+  bad("fu_yin_zhi_fu", "值符伏吟", "伏吟反吟", "值符星回到本宫；天禽按随芮寄坤比较", "按本站天禽随芮寄坤口径计算。", (_p, chart) => {
     const chief = chart.raw.zhiFu;
-    return chief && STAR_NATIVE[chief.star] === chief.position ? `值符 ${chief.star} 回到第 ${chief.position} 宫` : null;
+    return chief && chiefStarNative(chief.star) === chief.position ? `值符 ${chief.star} 回到第 ${chief.position} 宫` : null;
   }, "global"),
   bad("fan_yin_star", "星反吟", "伏吟反吟", "外八宫主星各临对冲之宫", "主局势动荡、来回翻覆；宜留后手、随时调整。", (_p, chart) => {
     const items = placedStars(chart);
@@ -511,9 +513,9 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     const items = placedGates(chart);
     return items.length === 8 && items.every(({ palace, native }) => native === OPPOSITE[palace.position]) ? "八门皆临对冲宫" : null;
   }, "global"),
-  bad("fan_yin_zhi_fu", "值符反吟", "伏吟反吟", "值符星临本宫的对冲宫", "据《遁甲演义》取值符星原位的对冲。", (_p, chart) => {
+  bad("fan_yin_zhi_fu", "值符反吟", "伏吟反吟", "值符星临本宫的对冲宫；天禽按随芮寄坤比较", "按本站天禽随芮寄坤口径计算。", (_p, chart) => {
     const chief = chart.raw.zhiFu;
-    return chief && chief.position !== 5 && STAR_NATIVE[chief.star] === OPPOSITE[chief.position]
+    return chief && chief.position !== 5 && chiefStarNative(chief.star) === OPPOSITE[chief.position]
       ? `值符 ${chief.star} 临第 ${chief.position} 宫`
       : null;
   }, "global"),

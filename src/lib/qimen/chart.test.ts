@@ -79,6 +79,34 @@ describe("buildChart", () => {
     }
     expect(seen.size).toBe(64);
   });
+  it("handles 天禽 chief at its borrowed palace and opposite in actual charts", () => {
+    for (const [datetime, position, formed, absent] of [
+      ["2026-01-01T00:00", 2, "fu_yin_zhi_fu", "fan_yin_zhi_fu"],
+      ["2026-01-01T12:00", 8, "fan_yin_zhi_fu", "fu_yin_zhi_fu"],
+    ] as const) {
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 4 } });
+      expect(chart.raw.zhiFu).toMatchObject({ star: "天禽", position });
+      expect([chart.raw.palaces.find(p => p.position === position)!.star].flat()).toEqual(expect.arrayContaining(["天禽", "天芮"]));
+      const checks = evaluateQimenPatterns(chart).checks;
+      expect(checks.find(p => p.id === formed)?.status).toBe("成立");
+      expect(checks.find(p => p.id === absent)?.status).toBe("未成立");
+      expect(checks.find(p => p.id === (position === 2 ? "fu_yin_star" : "fan_yin_star"))?.status).toBe("成立");
+    }
+  });
+  it("checks the 天禽 chief rule across both dun, ju and the daily hours", () => {
+    const seen = new Set<number>();
+    for (const dunType of ["yang", "yin"] as const) for (let ju = 1; ju <= 9; ju++) for (let day = 1; day <= 5; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: dunType === "yang" ? "冬至" : "夏至", dunType, juNumber: ju as 1|2|3|4|5|6|7|8|9 } });
+      if (chart.raw.zhiFu.star !== "天禽") continue;
+      const position = chart.raw.zhiFu.position;
+      seen.add(position);
+      const checks = evaluateQimenPatterns(chart).checks;
+      expect(checks.find(p => p.id === "fu_yin_zhi_fu")?.status === "成立", datetime).toBe(position === 2);
+      expect(checks.find(p => p.id === "fan_yin_zhi_fu")?.status === "成立", datetime).toBe(position === 8);
+    }
+    expect(seen.size).toBe(8);
+  });
   it("independently enumerates chief, envoy, gates, stars and deities over both dun and nine ju", () => {
     const stemOrder = "戊己庚辛壬癸丁丙乙";
     const stems = "甲乙丙丁戊己庚辛壬癸", branches = "子丑寅卯辰巳午未申酉戌亥";
