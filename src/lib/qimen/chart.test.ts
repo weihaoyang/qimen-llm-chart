@@ -5,6 +5,42 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("independently enumerates chief, envoy and eight gates over both dun and nine ju", () => {
+    const stemOrder = "戊己庚辛壬癸丁丙乙";
+    const stems = "甲乙丙丁戊己庚辛壬癸", branches = "子丑寅卯辰巳午未申酉戌亥";
+    const cycle = Array.from({ length: 60 }, (_, i) => stems[i % 10] + branches[i % 12]);
+    const ring = [1, 8, 3, 4, 9, 2, 7, 6];
+    const gates = ["休门", "生门", "伤门", "杜门", "景门", "死门", "惊门", "开门"];
+    const stars = ["", "天蓬", "天芮", "天冲", "天辅", "天禽", "天心", "天柱", "天任", "天英"];
+    const mod = (value: number, base: number) => ((value % base) + base) % base;
+    const observedHours = new Set<string>();
+    for (const dunType of ["yang", "yin"] as const) for (let juNumber = 1; juNumber <= 9; juNumber++) {
+      for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
+        const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+        const chart = buildChart({ datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: dunType === "yang" ? "冬至" : "夏至", dunType, juNumber: juNumber as 1|2|3|4|5|6|7|8|9 } });
+        const pillar = chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch;
+        observedHours.add(pillar);
+        const index = cycle.indexOf(pillar);
+        expect(index, datetime).toBeGreaterThanOrEqual(0);
+        const direction = dunType === "yang" ? 1 : -1;
+        const earth = Array.from({ length: 9 }, (_, i) => ({ position: mod(juNumber - 1 + direction * i, 9) + 1, stem: stemOrder[i] }));
+        const chiefOrigin = earth.find(p => p.stem === stemOrder[Math.floor(index / 10)])!.position;
+        const timeStem = pillar[0] === "甲" ? stemOrder[Math.floor(index / 10)] : pillar[0];
+        const timeOrigin = earth.find(p => p.stem === timeStem)!.position;
+        expect(chart.raw.zhiFu, datetime).toMatchObject({ star: stars[chiefOrigin], position: timeOrigin === 5 ? 2 : timeOrigin });
+        const envoyGate = gates[ring.indexOf(chiefOrigin === 5 ? 2 : chiefOrigin)];
+        const gateRaw = mod(chiefOrigin - 1 + direction * (index % 10), 9) + 1;
+        const gatePosition = gateRaw === 5 ? 2 : gateRaw;
+        expect(chart.raw.zhiShi, datetime).toMatchObject({ gate: envoyGate, position: gatePosition });
+        const startPalaceIndex = ring.indexOf(gatePosition), startGateIndex = gates.indexOf(envoyGate);
+        for (let i = 0; i < 8; i++) {
+          const palace = ring[(startPalaceIndex + i) % 8];
+          expect(chart.raw.palaces.find(p => p.position === palace)?.gate, `${datetime} ${palace}`).toBe(gates[(startGateIndex + i) % 8]);
+        }
+      }
+    }
+    expect(observedHours.size).toBe(60);
+  });
   it("compares the six 玉女守门 hours from 宝鉴 across all ju and both dun", () => {
     const hours = new Set(["庚午", "己卯", "戊子", "丁酉", "丙午", "乙卯"]);
     const seen = new Set<string>();
@@ -48,6 +84,19 @@ describe("buildChart", () => {
     expect(chart.raw.zhiShi).toMatchObject({ gate: "死门", position: 7 });
     expect(chart.raw.palaces.find(p => p.position === 7)?.earthlyStem).toBe("丁");
     expect(evaluateQimenPatterns(chart).checks.find(item => item.id === "yu_nu_shou_men")?.status).toBe("成立");
+  });
+  it("matches the 阳一 甲子、乙丑 and 甲辰 cases in 奇门遁甲统宗", () => {
+    const settings = { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至" as const, dunType: "yang" as const, juNumber: 1 as const };
+    for (const example of [
+      { datetime: "2026-01-05T00:00", hour: "甲子", star: "天蓬", chief: 1, gate: "休门", envoy: 1 },
+      { datetime: "2026-01-05T02:00", hour: "乙丑", star: "天蓬", chief: 9, gate: "休门", envoy: 2 },
+      { datetime: "2026-01-03T08:00", hour: "甲辰", star: "天禽", chief: 2, gate: "死门", envoy: 2 },
+    ]) {
+      const chart = buildChart({ datetime: example.datetime, timeZone: "Asia/Shanghai", qimenSettings: settings });
+      expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(example.hour);
+      expect(chart.raw.zhiFu).toMatchObject({ star: example.star, position: example.chief });
+      expect(chart.raw.zhiShi).toMatchObject({ gate: example.gate, position: example.envoy });
+    }
   });
   it("uses Kun as the center host across the earth, star and gate layers", () => {
     const settings = { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至" as const, dunType: "yang" as const, juNumber: 1 as const };
