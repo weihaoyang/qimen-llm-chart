@@ -33,6 +33,23 @@ describe("astro chart", () => {
   });
 
   it.each([
+    ["2000-01-01T12:00:00Z", 60, 0, "Placidus", [40.390859, 71.994842, 86.918494, 99.611088, 114.451658, 139.768619, 220.390859, 251.994842, 266.918494, 279.611088, 294.451658, 319.768619]],
+    ["1980-06-01T12:00:00Z", -70, 0, "Porphyry", [235.914581, 241.159138, 246.403694, 251.648251, 306.403694, 1.159138, 55.914581, 61.159138, 66.403694, 71.648251, 126.403694, 181.159138]],
+    ["2050-01-01T12:00:00Z", 70, 0, "Porphyry", [314.448471, 3.108312, 51.768152, 100.427992, 111.768152, 123.108312, 134.448471, 183.108312, 231.768152, 280.427992, 291.768152, 303.108312]],
+    ["2050-10-01T12:00:00Z", -89.95, 121.47, "Whole Sign", [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]],
+  ] as const)("compares all twelve house cusps against Swiss at %s, %s, %s", (at, latitude, longitude, system, expected) => {
+    const input = getDefaultProfileInput(new Date(at), "UTC");
+    input.location = { timeZone: "UTC", latitude, longitude };
+    const chart = buildAstroChart(normalizeProfileInput(input));
+    expect(chart.houseSystem).toBe(system);
+    expect(chart.houses).toHaveLength(12);
+    chart.houses.forEach((house, i) => {
+      const difference = Math.abs(((house.longitude - expected[i] + 540) % 360) - 180);
+      expect(difference, `cusp ${i + 1}`).toBeLessThan(0.02);
+    });
+  });
+
+  it.each([
     ["2000-01-01T12:00:00Z", "夜"],
     ["2000-06-21T00:00:00Z", "昼"],
   ])("determines polar sect from the horizon at %s", (date, sect) => {

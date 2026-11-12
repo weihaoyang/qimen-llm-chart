@@ -1400,3 +1400,9 @@ K线评分复核发现，奇门原始结果的wuBuYuShi是一个带isWuBuYuShi�
 RuneS 数据库将 Kylver 石刻 G 88 长行转写为 `fuþarkgwhnijpïzstbemlŋdo`，其中首字本身受损。以转写对应的24个字母身份对照本站数组，只有第13、14位相反：石刻为 p、ï，本站为 Eihwaz（ï）、Perthro（p）；两者末位均为 d、o。另一件 Vadstena 金饰 IK 377,1 的转写在 j 后为 ï，其后第14位标为不确定，结尾 o 后的 d 也有残缺标记；不能把它的缺字说成可直接目验的确定 p、d。学术研究对前者及这两件器物的次序差异另有重建和讨论，但这些重建需要与数据库可读字符区分。
 
 站内采用的是现代常见的 ï、p 和 d、o 组合，不是上述任一单件铭文的逐字顺序。现将此限制写入页面、结构化文本、JSON 和出处材料，保留既有数组顺序以免改变同种子的抽取结果；独立测试按 Kylver 的字母身份逐位比较并固定差异为13、14。此处比较的是字母身份及顺序，不能由标准化 Unicode 字形断定石刻每个字形、朝向、具体年代或古代占法与现代抽取相同。[RuneS：Kylver G 88](https://www.runesdb.de/find/266) [RuneS：Vadstena IK 377,1](https://www.runesdb.de/find/179) [R. I. Page 所绘铭文对照](https://public.gettysburg.edu/~cfee/DIS/DIS-Vikings-in-Britain/Vikings-Complete-Course-Readings/Runes-RI%20Page.pdf)
+
+## 西洋星盘宫头跨纬度抽样（2026-11-12）
+
+补充宫制外部对照：以1980、2000、2050年各1、6、10月1日12:00 UTC，纬度 −89.95、−70、−60、0、30、60、70、89.95 度，经度 −120、0、121.47 度构成216盘、2592个宫头。按 Celestine 每盘实际返回的宫制分别调用 Swiss Ephemeris 2.10.03 的 `houses`：108盘 Placidus、54盘 Porphyry、54盘 Whole Sign，角差按圆周最短弧计算。最大差约0.018245°，见2000-01-01北纬60度、零经度 Placidus 第一宫：Celestine 40.409104°，Swiss 40.390859°。另将1980南纬70度、2050北纬70度的 Porphyry 和2050南纬89.95度 Whole Sign 四盘十二宫头固定为产品适配层回归，逐项容差0.02°。
+
+完整网格用 `python docs/research/astro-house-grid.py` 复算，需要锁定产品依赖并安装 `pyswisseph==2.10.3.2`；脚本对照上游 Celestine，四组产品测试另验证适配层。参考库按产品已选择的宫制计算，故该实验不独立验证自动回退阈值、落宫、所有时间地点或占星解释，0.018245°也不是全时空的误差上界；边界附近仍可能因微小角差落入不同星座或宫位。[Swiss Ephemeris 宫制源码](https://github.com/aloistr/swisseph/blob/master/swehouse.c) [Swiss Ephemeris 编程手册](https://www.astro.com/swisseph/swephprg.htm)
