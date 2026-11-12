@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, buildTaiyiChart, countSum, detectPatterns, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -366,6 +366,21 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
+  it("distinguishes 三门具 from unknown 間神 and from 五将发", () => {
+    const gates = taiyiEightGatePalaces(3, "杜门");
+    expect(annualThreeGateStatus(gates, 3, "酉")).toMatchObject({ status: "不具", taiyiGate: "杜门", eyeGate: "休门" });
+    expect(annualThreeGateStatus(gates, 3, "卯")).toMatchObject({ status: "具", taiyiGate: "杜门", eyeGate: "景门" });
+    expect(annualThreeGateStatus(gates, 3, "巳")).toMatchObject({ status: "未定", eyeGate: null });
+    expect(annualThreeGateStatus(taiyiEightGatePalaces(3, "开门"), 3, "巳").status).toBe("不具");
+    // 《武备志》辛未例明确天目巳临死门；本实现不将单例外推成所有间神规则。
+    const chart = buildTaiyiChart({ year: 1571, cycle: 360, dun: "阳遁", ruJu: 32 });
+    expect(chart.annualGate.name).toBe("杜门");
+    expect(chart.taiyi.palace).toBe(3);
+    expect(chart.tianMu.position).toBe("巳");
+    expect(chart.annualThreeGates).toMatchObject({ status: "未定", taiyiGate: "杜门", eyeGate: null });
+    expect(serializeTaiyiToStructuredText(chart)).toContain("门位待核");
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).annualThreeGates.status).toBe("未定");
+  });
   it("reports fixed-plan-eye pressure with the 秘書 source in all four neighboring positions", () => {
     const base = { taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "寅", shiJiPosition: "巳", hostGeneralPalace: 3, hostSuPalace: 4, guestGeneralPalace: 5, guestSuPalace: 7 };
     for (const [position, kind, detail] of [["亥", "外迫", "前一辰"], ["戌", "内迫", "后一辰"], ["子", "外迫", "前一宫"], ["酉", "内迫", "后一宫"]] as const) {

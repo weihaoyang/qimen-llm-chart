@@ -72,4 +72,10 @@ describe("TaiyiPanel", () => {
     render(<TaiyiPanel chart={chart} yearInput="1588" cycle={360} dun="阳遁" ruJuInput="3" />);
     expect(screen.getByText(/定计目（《太乙秘书》）在太乙后一宫/)).toBeInTheDocument();
   });
+
+  it("shows uncertain gate status when the eye is an interval deity", () => {
+    const chart = buildTaiyiChart({ year: 1571, cycle: 360, dun: "阳遁", ruJu: 32 });
+    render(<TaiyiPanel chart={chart} yearInput="1571" cycle={360} dun="阳遁" ruJuInput="32" />);
+    expect(screen.getByText("未定 · 太乙杜门 · 天目巳间神，门位待核")).toBeInTheDocument();
+  });
 });

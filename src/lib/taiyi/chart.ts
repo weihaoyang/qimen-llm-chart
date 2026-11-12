@@ -60,6 +60,7 @@ export type TaiyiChart = {
   accumulation: { jiyear: number; eraRemainder: number; ruJu: number };
   annualGate: { name: string; yearInGate: number; yearInCycle: number };
   annualGatePalaces: Array<{ palace: number; gate: string }>;
+  annualThreeGates: { status: "具" | "不具" | "未定"; taiyiGate: string; eyeGate: string | null; eyePosition: string };
   dutyGateRelation: { result: "执提" | "提格" | "未命中"; palace: number; gate: string; oppositePalace: number; oppositeGate: string };
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
@@ -112,6 +113,18 @@ export const taiyiEightGatePalaces = (palace: number, startGate: string) => {
     palace: PALACE_RING[(palaceStart + offset) % 8],
     gate: EIGHT_GATES[(gateStart + offset) % 8],
   }));
+};
+
+/** 岁计直门加太乙的三门具判定；目落间神时不擅定其所属门。 */
+export const annualThreeGateStatus = (gates: Array<{ palace: number; gate: string }>, taiyiPalace: number, eyePosition: string): TaiyiChart["annualThreeGates"] => {
+  const taiyiGate = gates.find((item) => item.palace === taiyiPalace)?.gate;
+  if (!taiyiGate) throw new RangeError("太乙宫不在门盘中。");
+  const eyePalace = POSITION_TO_PALACE[eyePosition];
+  const eyeGate = eyePalace === undefined ? null : gates.find((item) => item.palace === eyePalace)?.gate ?? null;
+  const auspicious = ["开门", "休门", "生门"];
+  const status = auspicious.includes(taiyiGate) || (eyeGate !== null && auspicious.includes(eyeGate))
+    ? "不具" : eyeGate === null ? "未定" : "具";
+  return { status, taiyiGate, eyeGate, eyePosition };
 };
 
 /** 入局数：积年累除元六纪周期，再累除七十二。 */
@@ -428,6 +441,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const deityOf = (position: string) => DEITIES.find((deity) => deity.position === position) ?? DEITIES[0];
   const annualGate = annualDutyGate(jiyear);
   const annualGatePalaces = taiyiEightGatePalaces(palace, annualGate.name);
+  const annualThreeGates = annualThreeGateStatus(annualGatePalaces, palace, tianMuPos);
   const oppositePalace = OPPOSITE_PALACE[palace];
   const oppositeGate = annualGatePalaces.find((item) => item.palace === oppositePalace)!.gate;
   const dutyGateRelation = { result: (["开门", "生门"].includes(annualGate.name) ? "执提" : ["开门", "生门"].includes(oppositeGate) ? "提格" : "未命中") as "执提" | "提格" | "未命中", palace, gate: annualGate.name, oppositePalace, oppositeGate };
@@ -442,6 +456,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
     accumulation: { jiyear, eraRemainder, ruJu },
     annualGate,
     annualGatePalaces,
+    annualThreeGates,
     dutyGateRelation,
     fixedOpenGatePalaces: taiyiEightGatePalaces(palace, "开门"),
     generalGatePalaces: {

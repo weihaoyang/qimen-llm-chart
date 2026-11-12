@@ -110,6 +110,7 @@ export function TaiyiPanel({
         <div><span>岁计直门</span><b>{chart.annualGate.name}</b><em>《金镜》卷一新术 · 该门第 {chart.annualGate.yearInGate} 年；按积年计算</em></div>
         <div><span>执提直门法</span><b>{chart.dutyGateRelation.result} · 太乙{chart.dutyGateRelation.palace}宫{chart.dutyGateRelation.gate}，对宫{chart.dutyGateRelation.oppositePalace}宫{chart.dutyGateRelation.oppositeGate}</b><em>按《统宗宝鉴》乾化二年例；其他读法可能不同</em></div>
         <div><span>直门加太乙</span><b>{chart.annualGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>按岁计直门自太乙宫顺布八正宫</em></div>
+        <div><span>三门具（直门法）</span><b>{chart.annualThreeGates.status} · 太乙{chart.annualThreeGates.taiyiGate} · 天目{chart.annualThreeGates.eyePosition}{chart.annualThreeGates.eyeGate ?? "间神，门位待核"}</b><em>依据《武备志》岁计直门加太乙；门具与将发分别判断</em></div>
         <div><span>开门加太乙</span><b>{chart.fixedOpenGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>李淳风固定开门法，供对照</em></div>
         <div><span>开门加主大将</span><b>{chart.generalGatePalaces.host?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "主大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
         <div><span>开门加客大将</span><b>{chart.generalGatePalaces.guest?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "客大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
