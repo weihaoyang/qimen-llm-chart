@@ -25,12 +25,21 @@ export const MATERIALS: ProvenanceMaterialSet = {
       note: "据 Dickins 1915 编译的三部符文诗及其校注。晚出的古英语和北欧诗各有字母变化，不能把所有释义都称作古弗萨克时代的直接记载。",
     },
     {
-      title: "24 符文名与字形（runes-data.js 逐条，传统次序）",
+      title: "24 符文名与字形（runes-data.js 逐条，现代常见次序）",
       lines: [
         "Fehu ᚠ／Uruz ᚢ／Thurisaz ᚦ／Ansuz ᚨ／Raidho ᚱ／Kaunan ᚲ／Gebo ᚷ／Wunjo ᚹ",
         "Hagalaz ᚺ／Nauthiz ᚾ／Isa ᛁ／Jera ᛃ／Eihwaz ᛇ／Perthro ᛈ／Algiz ᛉ／Sowilo ᛊ",
         "Tiwaz ᛏ／Berkano ᛒ／Ehwaz ᛖ／Mannaz ᛗ／Laguz ᛚ／Ingwaz ᛜ／Dagaz ᛞ／Othala ᛟ",
       ],
+    },
+    {
+      title: "两件铭文的字序对照",
+      lines: [
+        "Kylver 石刻：第13、14位为 p、ï，第23、24位为 d、o；首字受损。",
+        "Vadstena 金饰：第13位为 ï，末两位读作 o、（d）；第14位存疑、末字部分受遮。",
+        "本站为 ï、p 和 d、o 的组合，不能当作任何一件铭文的原样抄录。",
+      ],
+      note: "对照 RuneS 铭文数据库 G 88 与 IK 377,1；字形、转写和重建名不是同一层。https://www.runesdb.de/find/266 https://www.runesdb.de/find/179",
     },
     {
       title: "三 aettir 与来源自述（runes-data.js 头部）",

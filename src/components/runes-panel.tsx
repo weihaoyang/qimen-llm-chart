@@ -1,6 +1,6 @@
 "use client";
 
-import { AETTIR, SPREADS, SPREAD_IDS, type SpreadId } from "@/lib/runes/data";
+import { AETTIR, RUNE_ORDER_NOTE, SPREADS, SPREAD_IDS, type SpreadId } from "@/lib/runes/data";
 import type { RuneReading } from "@/lib/runes/draw";
 import { NINE_WORLDS } from "@/lib/runes/nine-worlds";
 import { ProvenanceBlock } from "./provenance-block";
@@ -64,6 +64,7 @@ export function RunesPanel({ reading, onSpreadChange, onRedraw, onCopyJson, json
         ))}
       </div>
 
+      <p className="divination-panel__note"><span>字序</span>{RUNE_ORDER_NOTE}</p>
       <p className="divination-panel__note"><span>BOUNDARY</span>符文名称依据后世语言材料重建；组名、牌义及诺恩与过去现在未来的对应为现代解释（数据移植自 MIT 项目 evoluteur/rune-reading）；抽符为反思提示，不是预测，也不作医疗、心理或现实裁决。</p>
       <ProvenanceBlock system="runes" />
     </section>

@@ -1394,3 +1394,9 @@ K线评分复核发现，奇门原始结果的wuBuYuShi是一个带isWuBuYuShi�
 韦特《The Pictorial Key to the Tarot》第三部分对愚者给出正位愚行、放纵等词，逆位包括疏忽与漠然；当前 tarot-kit 对愚者则以自由、新想法与逆位犹疑等现代说法展开。圣杯一在原书正位包括喜悦与丰足，逆位涉及虚假、不稳定及变化；当前库正位侧重情感丰沛，逆位侧重情感枯竭或压抑。两例存在重叠和取义差异，说明沿用韦特–史密斯牌组的编号并不等于逐字采用韦特牌义；不能仅凭措辞不同断言现代释义计算出错。产品明确标记现代释义，不用古书词表悄悄覆盖。原书将愚者正逆词分别列出；库每张牌的核心词却只有一个，与方向分开。此前页面和导出将该核心词直接放在“逆位”之后，容易误认为它是专属逆位关键词；现分别标为“牌面核心词”和按方向读取的牌义，JSON说明也指出核心词不区分正逆。程序遍历78张牌验证两方向文本均存在，并以实际抽到的逆位检查导出；这不等于逐一核对78张全部牌义。[韦特原书，愚者与圣杯一](https://www.labirintoermetico.com/02Tarocchi/Waite_Pictorial_Key_to_the_Tarot.pdf)
 
 同时在当前代码上重新启用外部 Fate-Bench 回归：提交 `0a6e47c2f9efc927cc6a9f46e001768a2898175c` 的 `data/cases.json` SHA-256 为 `b14f74227ac71bf2cc2693b1c741bb39789ca67186eced5d393fbc2e8a539dc7`，71 条中69条符合公历、可用时刻与四柱筛选；两项产品级测试均通过，紫微的两例换日口径与一例来源差异仍按既有记录分列。该语料含生成的排盘结果，不能仅凭回归通过推定它和本站底层依赖完全独立，更不能作为预测准确率。[固定版本语料](https://github.com/shunshi-ai/fate-bench/tree/0a6e47c2f9efc927cc6a9f46e001768a2898175c/data)
+
+## 老弗萨克字序的铭文对照（2026-11-12）
+
+RuneS 数据库将 Kylver 石刻 G 88 长行转写为 `fuþarkgwhnijpïzstbemlŋdo`，其中首字本身受损。以转写对应的24个字母身份对照本站数组，只有第13、14位相反：石刻为 p、ï，本站为 Eihwaz（ï）、Perthro（p）；两者末位均为 d、o。另一件 Vadstena 金饰 IK 377,1 的转写在 j 后为 ï，其后第14位标为不确定，结尾 o 后的 d 也有残缺标记；不能把它的缺字说成可直接目验的确定 p、d。学术研究对前者及这两件器物的次序差异另有重建和讨论，但这些重建需要与数据库可读字符区分。
+
+站内采用的是现代常见的 ï、p 和 d、o 组合，不是上述任一单件铭文的逐字顺序。现将此限制写入页面、结构化文本、JSON 和出处材料，保留既有数组顺序以免改变同种子的抽取结果；独立测试按 Kylver 的字母身份逐位比较并固定差异为13、14。此处比较的是字母身份及顺序，不能由标准化 Unicode 字形断定石刻每个字形、朝向、具体年代或古代占法与现代抽取相同。[RuneS：Kylver G 88](https://www.runesdb.de/find/266) [RuneS：Vadstena IK 377,1](https://www.runesdb.de/find/179) [R. I. Page 所绘铭文对照](https://public.gettysburg.edu/~cfee/DIS/DIS-Vikings-in-Britain/Vikings-Complete-Course-Readings/Runes-RI%20Page.pdf)

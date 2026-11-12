@@ -5,7 +5,7 @@
  * https://github.com/evoluteur/rune-reading
  * (c) 2026 Olivier Giulieri - MIT license
  *
- * 符文序列与三组结构有历史依据；名称为后世语言材料支持的重建，组名及主题为现代沿用；keywords / upright / reversed /
+ * 符文序列采用现代常见排列，并非任何单一铭文的完整次序；名称为后世语言材料支持的重建，组名及主题为现代沿用；keywords / upright / reversed /
  * advice 为该项目的原创简述。`path` 用 40×64 的 SVG 笔画绘制符文，不依赖字体。
  * `reversed` 为 null 表示上游牌库没有提供逆位释义。
  *
@@ -18,6 +18,8 @@
  */
 
 export type Aett = { name: string; theme: string };
+
+export const RUNE_ORDER_NOTE = "本序列采用现代常见排列：第13、14位为 Eihwaz、Perthro，第23、24位为 Dagaz、Othala；Kylver 石刻的第13、14位次序相反，历史铭文中的排列并不完全一致。";
 
 export const AETTIR: Aett[] = [
   { name: "Freyr's aett", theme: "生命、资源与人性" },

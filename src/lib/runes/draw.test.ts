@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AETTIR, RUNES, SPREADS, SPREAD_IDS } from "./data";
+import { AETTIR, RUNES, RUNE_ORDER_NOTE, SPREADS, SPREAD_IDS } from "./data";
 import { buildRuneReading } from "./draw";
 import { NINE_WORLDS } from "./nine-worlds";
 import { serializeRunesToCompactJson, serializeRunesToStructuredText } from "./serializer";
@@ -14,13 +14,24 @@ describe("elder futhark runes", () => {
     expect(new Set(RUNES.map((rune) => rune.id)).size).toBe(24);
   });
 
-  it("marks the nine runes that cannot be reversed", () => {
+  it("marks the nine runes without a reverse interpretation in this data set", () => {
     expect(RUNES.filter((rune) => rune.reversed === null)).toHaveLength(9);
     for (const rune of RUNES) {
       expect(rune.char.length).toBeGreaterThan(0);
       expect(rune.path.length).toBeGreaterThan(0);
       expect(rune.keywords.length).toBeGreaterThan(0);
     }
+  });
+
+  it("records the Kylver inscription's different thirteenth and fourteenth positions", () => {
+    // RuneS G 88 transliteration; IDs standardize differing glyph forms.
+    const kylver = ["fehu", "uruz", "thurisaz", "ansuz", "raidho", "kaunan", "gebo", "wunjo", "hagalaz", "nauthiz", "isa", "jera", "perthro", "eihwaz", "algiz", "sowilo", "tiwaz", "berkano", "ehwaz", "mannaz", "laguz", "ingwaz", "dagaz", "othala"];
+    const differences = RUNES.flatMap((rune, i) => rune.id === kylver[i] ? [] : [i + 1]);
+    expect(differences).toEqual([13, 14]);
+    expect(RUNE_ORDER_NOTE).toContain("Kylver");
+    const reading = buildRuneReading("kylver-audit", "three");
+    expect(serializeRunesToStructuredText(reading)).toContain(RUNE_ORDER_NOTE);
+    expect(JSON.parse(serializeRunesToCompactJson(reading)).runeOrderNote).toBe(RUNE_ORDER_NOTE);
   });
 
   it("defines four spreads whose positions fit their grids", () => {

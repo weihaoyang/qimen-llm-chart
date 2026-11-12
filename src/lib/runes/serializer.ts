@@ -1,11 +1,12 @@
 import type { RuneReading } from "./draw";
-import { AETTIR } from "./data";
+import { AETTIR, RUNE_ORDER_NOTE } from "./data";
 import { NINE_WORLDS, YGGDRASIL_LEVELS } from "./nine-worlds";
 
 export const serializeRunesToStructuredText = (reading: RuneReading) => [
   "卢恩符文（Elder Futhark）",
   `复现种子：${reading.seed}`,
   `牌阵：${reading.spread.name}（${reading.spread.short}）—— ${reading.spread.tagline}`,
+  `字序：${RUNE_ORDER_NOTE}`,
   ...reading.draws.map((draw, index) => {
     const position = reading.spread.positions[index];
     const meaning = draw.orientation === "reversed" ? draw.rune.reversed : draw.rune.upright;
@@ -32,6 +33,7 @@ export const serializeRunesToCompactJson = (reading: RuneReading) =>
       advice: draw.rune.advice,
     })),
     sourceNote: "符文名称依后世语言材料重建；组名及占义为现代沿用；诺恩对应过去、现在、未来是牌阵的现代解释。",
+    runeOrderNote: RUNE_ORDER_NOTE,
     nineWorldsNote: "九界名称与三层分布为现代整理；九符阵的位置不逐一对应九界。",
     nineWorlds: NINE_WORLDS,
   });
