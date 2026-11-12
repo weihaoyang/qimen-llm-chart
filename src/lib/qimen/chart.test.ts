@@ -304,6 +304,22 @@ describe("buildChart", () => {
     expect(palace.deity).toBe("太阴");
     expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")?.positions).toContain(6);
   });
+  it("does not treat the 己巳 caption as the 乙庚-day 丙子 人遁 plate", () => {
+    const settings = { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang" as const, juNumber: 7 as const };
+    const bingzi = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: settings });
+    const jisi = buildChart({ datetime: "2026-01-05T10:00", timeZone: "Asia/Shanghai", qimenSettings: settings });
+    expect(bingzi.raw.fourPillars.day.stem).toBe("乙");
+    expect(bingzi.raw.fourPillars.hour).toMatchObject({ stem: "丙", branch: "子" });
+    expect(bingzi.raw.zhiFu).toMatchObject({ star: "天任", position: 2 });
+    expect(bingzi.raw.zhiShi).toMatchObject({ gate: "生门", position: 1 });
+    expect(bingzi.raw.palaces.find(p => p.position === 6)).toMatchObject({ gate: "休门", heavenlyStem: "丁", earthlyStem: "乙" });
+    expect(jisi.raw.fourPillars.day.stem).toBe("己");
+    expect(jisi.raw.fourPillars.hour).toMatchObject({ stem: "己", branch: "巳" });
+    expect(jisi.raw.zhiFu).toMatchObject({ star: "天柱", position: 8 });
+    expect(jisi.raw.zhiShi).toMatchObject({ gate: "惊门", position: 3 });
+    expect(jisi.raw.palaces.find(p => p.position === 6)).toMatchObject({ gate: "杜门", heavenlyStem: "庚", earthlyStem: "乙" });
+  });
+
   it("reconstructs the two 地遁 examples in 遁甲演义 without dropping 乙 from the rule", () => {
     const examples = [
       { datetime: "2026-01-02T06:00", dayStem: "丙", hour: "辛卯", dunType: "yang", solarTerm: "冬至", juNumber: 1, palace: 2, chief: "天冲" },
