@@ -115,6 +115,7 @@ export function TaiyiPanel({
         <div><span>开门加太乙</span><b>{chart.fixedOpenGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>李淳风固定开门法，供对照</em></div>
         <div><span>开门加主大将</span><b>{chart.generalGatePalaces.host?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "主大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
         <div><span>开门加客大将</span><b>{chart.generalGatePalaces.guest?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "客大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
+        {([ ["太乙", chart.fixedOpenCompleteness.taiyi], ["主将", chart.fixedOpenCompleteness.host], ["客将", chart.fixedOpenCompleteness.guest] ] as const).map(([label, item]) => <div key={label}><span>固定开门{label}门具</span><b>{item.status} · 太乙{item.taiyiGate ?? "未排布"} · 目{item.eyePosition}{item.eyeGate ?? "门位未定"}</b><em>《统宗宝鉴》口径；太乙盘只检查文昌，主客盘各检查太乙及对应目</em></div>)}
         <div><span>太乙</span><b>{chart.taiyi.palace} 宫</b><em>{chart.taiyi.trigram} · {chart.taiyi.element} · 本周第 {chart.taiyi.block} 个三年</em></div>
         <div><span>主算 → 主大将</span><b>{chart.counts.host} → 大将 {chart.counts.hostGeneralPalace} 宫 · 参将 {chart.counts.hostSuPalace} 宫</b><em>主算{chart.counts.hostParity} · 主算{chart.counts.hostHarmonyLevel}（卷二）</em></div>
         <div><span>客算 → 客大将</span><b>{chart.counts.guest} → 大将 {chart.counts.guestGeneralPalace} 宫 · 参将 {chart.counts.guestSuPalace} 宫</b><em>客算{chart.counts.guestParity} · 客算{chart.counts.guestHarmonyLevel}（卷二）</em></div>

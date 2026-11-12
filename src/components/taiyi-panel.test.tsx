@@ -85,4 +85,12 @@ describe("TaiyiPanel", () => {
     expect(screen.getByText("不具 · 太乙杜门 · 天目巽休门")).toBeInTheDocument();
     expect(screen.getByText("符合 · 文昌不四迫、始击无掩击")).toBeInTheDocument();
   });
+
+  it("distinguishes the three fixed-open gate assessments", () => {
+    const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 2 });
+    render(<TaiyiPanel chart={chart} yearInput="2024" cycle={360} dun="阳遁" ruJuInput="2" />);
+    expect(screen.getByText("固定开门太乙门具").nextElementSibling).toHaveTextContent("具 · 太乙开门 · 目酉惊门");
+    expect(screen.getByText("固定开门主将门具").nextElementSibling).toHaveTextContent("不具 · 太乙休门 · 目酉开门");
+    expect(screen.getByText("固定开门客将门具")).toBeInTheDocument();
+  });
 });

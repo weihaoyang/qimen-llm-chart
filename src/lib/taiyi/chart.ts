@@ -65,6 +65,7 @@ export type TaiyiChart = {
   dutyGateRelation: { result: "执提" | "提格" | "未命中"; palace: number; gate: string; oppositePalace: number; oppositeGate: string };
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
+  fixedOpenCompleteness: { taiyi: GateCompleteness; host: GateCompleteness; guest: GateCompleteness };
   fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
   fixedPlan: { count: number; generalPalace: number; deputyPalace: number; gatePalaces: Array<{ palace: number; gate: string }> | null } | null;
   fixedPlanSamePalaceCandidate: { count: number; generalPalace: number; deputyPalace: number; method: string } | null;
@@ -92,6 +93,8 @@ export type TaiyiChart = {
   cycle: TaiyiDeity[];
   disclaimer: string;
 };
+
+export type GateCompleteness = { status: "具" | "不具" | "未定" | "未排布"; taiyiGate: string | null; eyeGate: string | null; eyePosition: string };
 
 /** 积年：以上元甲子为始，据《太乙金镜式经》「至唐开元十二年（724）有 1937281 积年」。 */
 export const accumulatedYears = (year: number) => year + (1937281 - 724);
@@ -125,6 +128,18 @@ export const annualThreeGateStatus = (gates: Array<{ palace: number; gate: strin
   const auspicious = ["开门", "休门", "生门"];
   const status = auspicious.includes(taiyiGate) || (eyeGate !== null && auspicious.includes(eyeGate))
     ? "不具" : eyeGate === null ? "未定" : "具";
+  return { status, taiyiGate, eyeGate, eyePosition };
+};
+
+/** 《统宗宝鉴》固定开门法：太乙盘只验文昌；主客将盘还分别验太乙与文昌/始击。 */
+export const fixedOpenGateCompleteness = (gates: Array<{ palace: number; gate: string }> | null, taiyiPalace: number, eyePosition: string, checkTaiyi: boolean): GateCompleteness => {
+  if (!gates) return { status: "未排布", taiyiGate: null, eyeGate: null, eyePosition };
+  const taiyiGate = gates.find(item => item.palace === taiyiPalace)?.gate ?? null;
+  const eyePalace = POSITION_TO_PALACE[eyePosition];
+  const eyeGate = eyePalace === undefined ? null : gates.find(item => item.palace === eyePalace)?.gate ?? null;
+  const auspicious = ["开门", "休门", "生门"];
+  const status = (checkTaiyi && taiyiGate !== null && auspicious.includes(taiyiGate)) || (eyeGate !== null && auspicious.includes(eyeGate))
+    ? "不具" : eyeGate === null || (checkTaiyi && taiyiGate === null) ? "未定" : "具";
   return { status, taiyiGate, eyeGate, eyePosition };
 };
 
@@ -457,6 +472,11 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const annualGate = annualDutyGate(jiyear);
   const annualGatePalaces = taiyiEightGatePalaces(palace, annualGate.name);
   const annualThreeGates = annualThreeGateStatus(annualGatePalaces, palace, tianMuPos);
+  const fixedOpenGatePalaces = taiyiEightGatePalaces(palace, "开门");
+  const generalGatePalaces = {
+    host: hostGeneral === 5 ? null : taiyiEightGatePalaces(hostGeneral, "开门"),
+    guest: guestGeneral === 5 ? null : taiyiEightGatePalaces(guestGeneral, "开门"),
+  };
   const oppositePalace = OPPOSITE_PALACE[palace];
   const oppositeGate = annualGatePalaces.find((item) => item.palace === oppositePalace)!.gate;
   const dutyGateRelation = { result: (["开门", "生门"].includes(annualGate.name) ? "执提" : ["开门", "生门"].includes(oppositeGate) ? "提格" : "未命中") as "执提" | "提格" | "未命中", palace, gate: annualGate.name, oppositePalace, oppositeGate };
@@ -474,10 +494,12 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
     annualThreeGates,
     wujingReadiness: wujingReadiness(palace, taiyiPosition, tianMuPos, shiJiPos, hostGeneral),
     dutyGateRelation,
-    fixedOpenGatePalaces: taiyiEightGatePalaces(palace, "开门"),
-    generalGatePalaces: {
-      host: hostGeneral === 5 ? null : taiyiEightGatePalaces(hostGeneral, "开门"),
-      guest: guestGeneral === 5 ? null : taiyiEightGatePalaces(guestGeneral, "开门"),
+    fixedOpenGatePalaces,
+    generalGatePalaces,
+    fixedOpenCompleteness: {
+      taiyi: fixedOpenGateCompleteness(fixedOpenGatePalaces, palace, tianMuPos, false),
+      host: fixedOpenGateCompleteness(generalGatePalaces.host, palace, tianMuPos, true),
+      guest: fixedOpenGateCompleteness(generalGatePalaces.guest, palace, shiJiPos, true),
     },
     fixedPlanEye: { ...fixedEye, deity: deityOf(fixedEye.position) },
     fixedPlan: fixedCount === null || fixedGeneral === null ? null : {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition, wujingReadiness } from "./chart";
+import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedOpenGateCompleteness, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition, wujingReadiness } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -366,6 +366,22 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
+  it("computes the three fixed-open methods independently and preserves unknowns", () => {
+    const gates = taiyiEightGatePalaces(3, "开门");
+    expect(fixedOpenGateCompleteness(gates, 3, "午", false)).toMatchObject({ status: "具", taiyiGate: "开门", eyeGate: "伤门" });
+    expect(fixedOpenGateCompleteness(gates, 3, "午", true).status).toBe("不具");
+    expect(fixedOpenGateCompleteness(gates, 6, "巳", true)).toMatchObject({ status: "未定", eyeGate: null });
+    expect(fixedOpenGateCompleteness(null, 3, "巳", true).status).toBe("未排布");
+    const two = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 2 });
+    expect(two.fixedOpenCompleteness.taiyi).toMatchObject({ status: "具", taiyiGate: "开门", eyePosition: "酉", eyeGate: "惊门" });
+    expect(two.fixedOpenCompleteness.host).toMatchObject({ status: "不具", taiyiGate: "休门", eyeGate: "开门" });
+    expect(serializeTaiyiToStructuredText(two)).toContain("固定开门太乙门具：具");
+    expect(JSON.parse(serializeTaiyiToCompactJson(two)).fixedOpenCompleteness).toEqual(two.fixedOpenCompleteness);
+    const seven = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 7 });
+    expect(seven.fixedOpenCompleteness.taiyi.status).toBe("具");
+    expect(seven.fixedOpenCompleteness.host.status).toBe("不具");
+    expect(seven.fixedOpenCompleteness.guest.status).toBe("未排布");
+  });
   it("keeps 武经总要's non-gate readiness independent of the gate chart", () => {
     expect(wujingReadiness(1, "乾", "艮", "巽", 4)).toEqual({ status: "符合", blockers: [] });
     expect(wujingReadiness(1, "乾", "亥", "乾", 1)).toEqual({ status: "不符合", blockers: ["文昌四迫", "始击掩太乙", "始击掩主大将"] });
