@@ -1408,3 +1408,9 @@ RuneS 数据库将 Kylver 石刻 G 88 长行转写为 `fuþarkgwhnijpïzstbemlŋ
 完整网格用 `python docs/research/astro-house-grid.py` 复算，需要锁定产品依赖并安装 `pyswisseph==2.10.3.2`；脚本对照上游 Celestine，四组产品测试另验证适配层。参考库按产品已选择的宫制计算，故该实验不独立验证自动回退阈值、落宫、所有时间地点或占星解释，0.018245°也不是全时空的误差上界；边界附近仍可能因微小角差落入不同星座或宫位。[Swiss Ephemeris 宫制源码](https://github.com/aloistr/swisseph/blob/master/swehouse.c) [Swiss Ephemeris 编程手册](https://www.astro.com/swisseph/swephprg.htm)
 
 在自动回退边界进一步发现，原引擎固定以纬度绝对值大于66°强制从 Placidus 切为 Porphyry，早于当日黄赤交角对应的极圈。2000-01-01 12:00 UTC、北纬66.1°、零经度时，Swiss 可计算 Placidus：第五宫头 106.117945°；原产品提前切为 Porphyry，其对应参考为155.915254°，相差约49.80°，可显著改变落宫。现按计算日期的引擎黄赤交角判断极圈，圈内仍回退 Porphyry；若圈外的 Placidus 迭代未收敛，交由上层执行并标记 Porphyry，而不是返回替代宫头却仍标 Placidus。北纬66.1°、66.55°与南纬66.1°按 Swiss 的 Placidus 十二宫对照，北纬66.57°按 Porphyry 对照，容差0.04°；2000-01-01 00:00 UTC、北纬66.5607088°另覆盖极圈边缘迭代不收敛的标签。运行 `npm ci` 后连续应用补丁两次均成功，相关测试通过。此次阈值修正涉及已选的默认 Placidus，不代表全部宫制或古代流派均已验证；0.04°是测试容差而非全天地精度保证。前文“北纬66.1°显示 Porphyry”是修正前状态。[Swiss Ephemeris 宫制实现](https://github.com/aloistr/swisseph/blob/master/swehouse.c) [Swiss Ephemeris 极圈回退说明](https://www.astro.com/swisseph/swephprg.htm)
+
+## 七政紫气的传统属性与位置分层（2026-11-12）
+
+《新刊京本厘正总括天机星学正传》紫气条明确称其为木之余气与吉祥之曜；《图书编》卷二十一亦将紫气列为木之余。此前产品虽然输出紫气位置，属性和吉凶分类却留作“未列”。现在按前书对应项列为“木余、吉”，并在该星说明中标明来源；“木余”保留原有的余气关系，不径称它是木星本体。实际盘例中紫气的分类、页面、结构化文本及 JSON 同步验证，原清代平行位置模型和输出黄经不变。
+
+这是选定文本的一般分类，不是根据星历证明现实吉凶，也不验证其余曜的所有分类或紫气跨年代位置。正传电子转录对运行周期另有记载，与当前选定的清代平行法并非同一模型；本次没有以属性记载替换计算参数。[《星学正传》紫气条](https://www.shidianguji.com/book/NA09025/chapter/1m6t72odpijhy) [《图书编》卷二十一](https://www.shidianguji.com/book/HY7197/chapter/1kzvk06irpslo)

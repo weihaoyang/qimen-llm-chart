@@ -391,8 +391,13 @@ describe("qizheng siyu chart", () => {
     const chart = buildQizhengChart(profile());
     const ziQi = chart.stars.find((star) => star.name === "紫气");
     expect(ziQi?.note).toContain("其他年代为外推");
-    expect(ziQi?.element).toBe("未列");
-    expect(ziQi?.fortune).toBe("未列");
+    expect(ziQi?.element).toBe("木余");
+    expect(ziQi?.fortune).toBe("吉");
+    expect(ziQi?.note).toContain("《星学正传》");
+    expect(ziQi?.note).toContain("并非位置模型的验证");
+    expect(serializeQizhengToStructuredText(chart)).toContain("木余 · 吉");
+    const exported = JSON.parse(serializeQizhengToCompactJson(chart));
+    expect(exported.stars.find((star: { name: string }) => star.name === "紫气")).toMatchObject({ element: "木余", fortune: "吉", note: expect.stringContaining("《星学正传》") });
     expect(chart.disclaimer).toContain("紫气使用清代平行研究模型");
     const input = getDefaultProfileInput(new Date("1911-04-18T16:00:00Z"), "Asia/Shanghai");
     const historical = buildQizhengChart(normalizeProfileInput(input));

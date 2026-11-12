@@ -27,7 +27,7 @@ describe("QizhengPanel", () => {
     expect(screen.getByText("四余落宫")).toBeInTheDocument();
     expect(screen.getByText("罗睺")).toBeInTheDocument();
     expect(screen.getByText("紫气")).toBeInTheDocument();
-    expect(screen.getByText("紫气").closest(".qizheng-row")).toHaveTextContent("未列 · 未列");
+    expect(screen.getByText("紫气").closest(".qizheng-row")).toHaveTextContent("木余 · 吉");
     expect(screen.getAllByText(/其他年代为外推/).length).toBeGreaterThan(0);
     expect(container.querySelector(".qizheng-row__dignity small")).toHaveTextContent("星学大成卷");
   });
