@@ -1114,3 +1114,16 @@ it.each([
   );
   expect(evaluateQimenPatterns(chart).formed.find(check => check.id === "jiu_dun_shen")?.evidence.join(" ")).toContain(reason);
 });
+
+it("contrasts the flight-to-hole rule of 遁甲演义 against fixed 丙加戊", () => {
+  const options = { timeZone: "Asia/Shanghai" };
+  const variant = evaluateQimenPatterns(buildChart({ ...options, datetime: "2026-01-05T22:00" }));
+  expect(variant.sourceNotes).toContain("飞鸟跌穴：《遁甲演义》丙加己（甲戌旬）3宫，固定丙加戊未命中。");
+  const common = evaluateQimenPatterns(buildChart({
+    ...options,
+    datetime: "2026-01-05T14:00",
+    qimenSettings: { solarTerm: "大寒", dunType: "yang", juNumber: 9, yearDivide: "exact" },
+  }));
+  expect(common.formed.find(check => check.id === "fei_niao_die_xue")?.positions).toContain(9);
+  expect(common.sourceNotes.some(note => note.startsWith("飞鸟跌穴："))).toBe(false);
+});

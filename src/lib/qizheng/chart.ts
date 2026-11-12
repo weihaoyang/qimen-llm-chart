@@ -111,6 +111,7 @@ export type QizhengChart = {
   format: "qmdj-qizheng-chart-v1";
   input: { datetime: string; civilDateTime: string; timeZone: string };
   mingPalace: { index: number; branch: string };
+  bodyDegree: { mansion: Mansion; degreesFromMansionStart: number; ruler: Ruler } | null;
   palaces: ReturnType<typeof qizhengPalaces>;
   stars: QizhengStar[];
   complete: boolean;
@@ -205,7 +206,7 @@ const MANSION_STARTS_1684: Array<{ name: Mansion; longitude: number }> = MANSION
  * @param tropicalLongitude 当日回归黄经（度，celestine 口径）
  * @param utcMillis 出生（或所求）时刻的 UTC 毫秒；决定岁差折回量
  */
-export const longitudeToMansion = (tropicalLongitude: number, utcMillis: number) => {
+const mansionPosition = (tropicalLongitude: number, utcMillis: number) => {
   const jd = utcMillis / 86_400_000 + 2_440_587.5;
   const epochLongitude = wrap(tropicalLongitude - (ayanamsa(jd) - ayanamsa(MANSION_EPOCH_JD)));
   let index = MANSION_STARTS_1684.length - 1;
@@ -216,8 +217,12 @@ export const longitudeToMansion = (tropicalLongitude: number, utcMillis: number)
     }
     index = i;
   }
-  return MANSION_STARTS_1684[(index + MANSION_STARTS_1684.length) % MANSION_STARTS_1684.length].name;
+  const start = MANSION_STARTS_1684[(index + MANSION_STARTS_1684.length) % MANSION_STARTS_1684.length];
+  return { mansion: start.name, degreesFromMansionStart: wrap(epochLongitude - start.longitude) };
 };
+
+export const longitudeToMansion = (tropicalLongitude: number, utcMillis: number) =>
+  mansionPosition(tropicalLongitude, utcMillis).mansion;
 
 /** 只替换牛宿界作灵敏度对照，其余宿界与岁差仍用本仓表，并非重建《五礼通考》全表。 */
 export const niuMansionComparison = (longitude: number, utcMillis: number) => {
@@ -374,12 +379,16 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     });
   }
 
+  // 《张果星宗》〈安命度法〉：以太阴所躔宿度取身度主。
+  const moon = stars.find((star) => star.name === "太阴");
+  const bodyDegree = moon ? { ...mansionPosition(moon.longitude, utcMillis), ruler: moon.mansionRuler } : null;
   const missingStars = [...SEVEN_LUMINARIES.map(({ name }) => name), "罗睺", "计都", "月孛", "紫气"]
     .filter((name) => !stars.some((star) => star.name === name));
   return {
     format: "qmdj-qizheng-chart-v1",
     input: { datetime: profile.normalized.datetime, civilDateTime: astro.input.datetime, timeZone: astro.input.timeZone },
     mingPalace: { index: mingIndex, branch: EARTHLY_BRANCHES[mingIndex] as string },
+    bodyDegree,
     palaces,
     stars,
     complete: missingStars.length === 0,

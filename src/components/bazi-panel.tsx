@@ -542,6 +542,19 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
               <div>{MONTH_LABELS.map((label, index) => { const month = index + 1; return <button type="button" className={activeLiuYueMonth === month ? "is-active" : ""} key={label} onClick={() => setSelectedLiuYueMonth(month)}><small>{label}</small><strong>{getLiuYueGanZhi(activeLiuNianYear, month)}</strong></button>; })}</div>
             </div>
             <p>当前：{selectedDaYun?.ganZhi ?? "暂无大运"} · {activeLiuNian}年 · {activeLiuYue}月</p>
+            {chart.raw.xiaoYun?.length ? (
+              <details className="bazi-details">
+                <summary>小运两法（首十二岁序）</summary>
+                <table>
+                  <thead><tr><th>岁序</th><th>时柱起</th><th>固定起</th></tr></thead>
+                  <tbody>
+                    {chart.raw.xiaoYun.map(({ age, birthHourMethod, fixedStartMethod }) => (
+                      <tr key={age}><td>{age}</td><td>{birthHourMethod}</td><td>{fixedStartMethod}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </details>
+            ) : null}
           </section>
         </div>
 

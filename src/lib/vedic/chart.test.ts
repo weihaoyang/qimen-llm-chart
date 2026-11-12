@@ -146,6 +146,22 @@ describe("varga rules (Shodashavarga)", () => {
     expect(vargaSign(1, boundary - 1e-8, "D27")).toBe(9);
     expect(vargaSign(1, boundary, "D27")).toBe(10);
   });
+
+  it("keeps the immediately preceding floating-point degree on its own side of D27 and D45 boundaries", () => {
+    const storage = new DataView(new ArrayBuffer(8));
+    const previousFloat = (value: number) => {
+      storage.setFloat64(0, value);
+      storage.setBigUint64(0, storage.getBigUint64(0) - BigInt(1));
+      return storage.getFloat64(0);
+    };
+    for (const [code, divisions] of [["D27", 27], ["D45", 45]] as const) {
+      for (let boundary = 1; boundary < divisions; boundary++) {
+        const degree = boundary * 30 / divisions;
+        expect(vargaSign(1, previousFloat(degree), code), `${code} before ${boundary}`).toBe(((boundary - 1) % 12) + 1);
+        expect(vargaSign(1, degree, code), `${code} at ${boundary}`).toBe((boundary % 12) + 1);
+      }
+    }
+  });
 });
 
 describe("vedic chart", () => {

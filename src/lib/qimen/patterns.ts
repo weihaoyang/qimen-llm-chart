@@ -707,6 +707,17 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
       sourceNotes.push(`六仪击刑：《遁甲演义》值符${describe(classicalPalaces)}，逐宫${describe(perPalace)}。`);
     }
   }
+  // 《遁甲演义》以本时甲旬头为地盘甲，固定戊式在其余五旬可能给出不同宫位。
+  const xunStem = xunShou?.[0] === "甲" ? JIA_HIDDEN_STEM[xunShou[1]] : undefined;
+  if (xunStem && xunStem !== "戊") {
+    const birdPalaces = chart.raw.palaces.filter(palace => hasHeaven(palace, "丙"));
+    const classicalBirdPalaces = birdPalaces.filter(palace => hasEarth(palace, xunStem));
+    const fixedBirdPalaces = birdPalaces.filter(palace => hasEarth(palace, "戊"));
+    if (classicalBirdPalaces.some(palace => !fixedBirdPalaces.includes(palace)) || fixedBirdPalaces.some(palace => !classicalBirdPalaces.includes(palace))) {
+      const describe = (palaces: Palace[]) => palaces.length ? palaces.map(palace => `${palace.position}宫`).join("、") : "未命中";
+      sourceNotes.push(`飞鸟跌穴：《遁甲演义》丙加${xunStem}（${xunShou}旬）${describe(classicalBirdPalaces)}，固定丙加戊${describe(fixedBirdPalaces)}。`);
+    }
+  }
   const tombVariants = chart.raw.palaces.flatMap((palace) => {
     const stems = valuesOf(palace.heavenlyStem);
     return [

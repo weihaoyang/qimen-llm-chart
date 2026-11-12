@@ -69,6 +69,18 @@ describe("qizheng siyu chart", () => {
     expect(json.stars).toContainEqual(expect.objectContaining({ name: "计都", mansionRuler: "金星" }));
   });
 
+  it("derives the body degree from the Moon in the selected mansion frame", () => {
+    const chart = buildQizhengChart(profile());
+    const moon = chart.stars.find((star) => star.name === "太阴")!;
+    // 室宿旧钤起于 270° + 2 × 30° + 19°07′。
+    const start = 349 + 7 / 60;
+    const epochLongitude = moon.longitude - drift(Date.parse("1990-05-20T00:30:00Z"));
+    expect(chart.bodyDegree).toMatchObject({ mansion: "室", ruler: "火星" });
+    expect(chart.bodyDegree?.degreesFromMansionStart).toBeCloseTo(epochLongitude - start, 8);
+    expect(serializeQizhengToStructuredText(chart)).toContain("身度（张果星宗伴月法）：室宿");
+    expect(JSON.parse(serializeQizhengToCompactJson(chart)).bodyDegree).toEqual(chart.bodyDegree);
+  });
+
   it("maps longitudes into palaces with the classical 十二次 (Aries = 戌)", () => {
     expect(longitudeToPalace(0)).toBe(10); // 0° 白羊 → 戌宫
     expect(longitudeToPalace(30)).toBe(9); // 30° 金牛 → 酉宫

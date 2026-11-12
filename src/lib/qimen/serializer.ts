@@ -87,7 +87,7 @@ const relationOf = (entry: { relation?: string } | undefined) => entry?.relation
 const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = false, isSequence = false) => {
   const report = evaluateQimenPatterns(chart);
   const sourceNotes = isSequence
-    ? report.sourceNotes.filter(note => !note.startsWith("六仪击刑："))
+    ? report.sourceNotes.filter(note => !note.startsWith("六仪击刑：") && !note.startsWith("飞鸟跌穴："))
     : report.sourceNotes;
   return {
     registered: report.registered,

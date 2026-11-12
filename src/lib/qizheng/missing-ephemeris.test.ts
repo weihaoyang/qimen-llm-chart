@@ -37,3 +37,21 @@ it.each([null, Number.NaN])("marks non-solar missing longitude %s as a partial c
   expect(serializeQizhengToStructuredText(chart)).toContain("部分排盘（缺少：火星）");
   expect(JSON.parse(serializeQizhengToCompactJson(chart)).missingStars).toEqual(["火星"]);
 });
+
+it.each([0, null])("handles a body degree around the longitude wrap or without a Moon: %s", async (longitude) => {
+  const actual = await vi.importActual<typeof import("@/lib/astro/chart")>("@/lib/astro/chart");
+  vi.mocked(buildAstroChart).mockImplementationOnce((input) => {
+    const chart = actual.buildAstroChart(input);
+    return { ...chart, points: chart.points.map((point) => point.name === "月亮" ? { ...point, longitude } : point) };
+  });
+  const profile = normalizeProfileInput(getDefaultProfileInput(new Date("1684-01-01T00:00:00Z"), "UTC"));
+  const chart = buildQizhengChart(profile);
+  if (longitude === null) {
+    expect(chart.bodyDegree).toBeNull();
+    expect(chart.missingStars).toContain("太阴");
+    expect(serializeQizhengToStructuredText(chart)).toContain("身度未计算：缺少太阴位置");
+  } else {
+    expect(chart.bodyDegree).toMatchObject({ mansion: "室", ruler: "火星" });
+    expect(chart.bodyDegree?.degreesFromMansionStart).toBeCloseTo(10 + 53 / 60, 8);
+  }
+});

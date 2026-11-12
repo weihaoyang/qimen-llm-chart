@@ -443,6 +443,7 @@ export const serializeBaziToCompactJson = (
         "起运与大运",
         "子平与禄命规则审计",
         "时间边界审计",
+        "小运两法（岁序）",
       ],
     },
     chart: [
@@ -471,6 +472,7 @@ export const serializeBaziToCompactJson = (
       normalizeValue(chart.raw.yun),
       normalizeValue(chart.raw.structureAudit),
       normalizeValue(chart.raw.boundaryAudit),
+      normalizeValue(chart.raw.xiaoYun ?? []),
     ],
     relations,
   });
@@ -501,6 +503,11 @@ export const serializeBaziToStructuredText = (
     `命宫: ${chart.raw.mingGong.pillar} (${chart.raw.mingGong.naYin})`,
     `身宫: ${chart.raw.shenGong.pillar} (${chart.raw.shenGong.naYin})`,
     `起运: ${chart.raw.yun.startSolar} / ${chart.raw.yun.direction}`,
+    ...(chart.raw.xiaoYun?.length ? [
+      "小运两法（岁序）：",
+      ...chart.raw.xiaoYun.map(({ age, birthHourMethod, fixedStartMethod }) =>
+        `${age}岁：时柱起 ${birthHourMethod} / 固定起 ${fixedStartMethod}`),
+    ] : []),
     `规则审计: ${chart.raw.structureAudit.engineVersion}`,
     `日主强弱候选: ${chart.raw.structureAudit.dayMasterStrength}；从格候选: ${chart.raw.structureAudit.followStructure}；置信度: ${chart.raw.structureAudit.confidence}`,
     `支持证据: ${chart.raw.structureAudit.supportingEvidence.join("；")}`,

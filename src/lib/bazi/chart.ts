@@ -218,6 +218,22 @@ const palacePillarForYear = (palace: string, yearStem: string) => {
   return { pillar, naYin: LunarUtil.NAYIN[pillar] ?? "" };
 };
 
+// 《三命通会》卷二〈论小运〉并载固定起点法和醉醒子的时柱法。
+const buildXiaoYun = (timePillar: string, gender: "male" | "female", direction: BaziYunPreview["direction"]) => {
+  const cycle = LunarUtil.JIA_ZI;
+  const timeIndex = cycle.indexOf(timePillar);
+  const fixedStart = cycle.indexOf(gender === "male" ? "丙寅" : "壬申");
+  const step = direction === "forward" ? 1 : -1;
+  const fixedStep = gender === "male" ? 1 : -1;
+  const at = (index: number) => cycle[(index + cycle.length) % cycle.length];
+
+  return Array.from({ length: 12 }, (_, index) => ({
+    age: index + 1,
+    birthHourMethod: at(timeIndex + (index + 1) * step),
+    fixedStartMethod: at(fixedStart + index * fixedStep),
+  }));
+};
+
 const buildYunPreview = (
   gender: NormalizedProfileInput["original"]["gender"],
   eightChar: EightCharInstance,
@@ -291,6 +307,7 @@ export const buildBaziChartFromProfile = (
   const structureAudit = buildBaziStructureAudit(pillars, eightChar.getDayGan(), naYin, mingGong.pillar, shenGong.pillar);
   const baZi = pillars.map((pillar) => pillar.pillar);
   const boundaryAudit = buildBoundaryAudit(profile.normalized.datetime, instant, baZi, conventions);
+  const yun = buildYunPreview(profile.original.gender, eightChar, conventions);
 
   return {
     input: profile,
@@ -314,7 +331,8 @@ export const buildBaziChartFromProfile = (
       shenGong,
       structureAudit,
       boundaryAudit,
-      yun: buildYunPreview(profile.original.gender, eightChar, conventions),
+      yun,
+      xiaoYun: buildXiaoYun(eightChar.getTime(), profile.original.gender, yun.direction),
     },
   };
 };

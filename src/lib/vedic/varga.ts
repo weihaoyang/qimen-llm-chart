@@ -36,8 +36,11 @@ const elementStart = (rashi0: number, fireStart: number, earthStart: number, air
 const step = (start: number, part: number) => (start + part) % 12;
 
 const partIndex = (degreeInRashi: number, divisions: number) => {
-  const index = Math.floor((degreeInRashi * divisions) / 30);
-  return index >= divisions ? divisions - 1 : index;
+  const approximate = Math.min(divisions - 1, Math.floor((degreeInRashi * divisions) / 30));
+  // 乘除可能将边界前一个浮点数舍入到整数，需与该分段的实际边界复核。
+  const lower = (approximate * 30) / divisions;
+  const upper = ((approximate + 1) * 30) / divisions;
+  return degreeInRashi < lower ? approximate - 1 : degreeInRashi >= upper ? Math.min(approximate + 1, divisions - 1) : approximate;
 };
 
 /** D30 Trimsamsa 的阳/阴宫分段表（上界，目标宫 0 基）。 */

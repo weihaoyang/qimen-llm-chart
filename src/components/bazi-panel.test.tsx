@@ -52,6 +52,14 @@ describe("BaziPanel", () => {
     }
   });
 
+  it("renders both Xiao Yun methods beside the timing tracks", () => {
+    render(<BaziPanel chart={chart} />);
+    const panel = screen.getByText("小运两法（首十二岁序）").parentElement!;
+    expect(within(panel).getByText("时柱起")).toBeTruthy();
+    expect(within(panel).getByText("固定起")).toBeTruthy();
+    expect(panel.querySelectorAll("tbody tr")).toHaveLength(12);
+  });
+
   it("selects 流年 and 流月 from the injected clock, not the wall clock", () => {
     // The panel used to call `new Date()` during render, which produced different
     // HTML on the server and in the browser. It now takes the instant as a prop.

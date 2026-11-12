@@ -252,6 +252,22 @@ describe("buildBaziChartFromProfile", () => {
     expect(lunar.shenGong).toEqual(lunar.mingGong);
   });
 
+  it("compares the two classical Xiao Yun methods for a Jia-Zi birth hour", () => {
+    const date = "1984-06-09T00:00";
+    const male = chartFor(date, "male").raw;
+    const female = chartFor(date, "female").raw;
+    expect(male.baZi[0]).toBe("甲子");
+    expect(male.baZi[3]).toBe("甲子");
+    expect(male.xiaoYun?.slice(0, 2)).toEqual([
+      { age: 1, birthHourMethod: "乙丑", fixedStartMethod: "丙寅" },
+      { age: 2, birthHourMethod: "丙寅", fixedStartMethod: "丁卯" },
+    ]);
+    expect(female.xiaoYun?.slice(0, 2)).toEqual([
+      { age: 1, birthHourMethod: "癸亥", fixedStartMethod: "壬申" },
+      { age: 2, birthHourMethod: "壬戌", fixedStartMethod: "辛未" },
+    ]);
+  });
+
   it("keeps the current lunar-typescript solar-term boundary stable", () => {
     expect(chartFor("2024-02-04T16:20").raw.baZi).toEqual(["癸卯", "乙丑", "戊戌", "庚申"]);
     expect(chartFor("2024-02-04T17:20").raw.baZi).toEqual(["甲辰", "丙寅", "戊戌", "辛酉"]);

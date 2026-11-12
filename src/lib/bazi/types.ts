@@ -102,5 +102,7 @@ export type NormalizedBaziChart = {
       note: string;
     };
     yun: BaziYunPreview;
+    /** First twelve nominal ages; legacy saved charts may omit this comparison. */
+    xiaoYun?: Array<{ age: number; birthHourMethod: string; fixedStartMethod: string }>;
   };
 };
