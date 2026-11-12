@@ -21,6 +21,11 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeChartToCompactJson(chart)).toContain("中五阴阳均寄坤二");
     expect(serializeChartToCompactJson(chart)).toContain("八神用白虎、玄武");
   });
+  it("exports the actual 丁临六 textual disagreement in both formats", () => {
+    const chart = buildChart({ datetime: "2026-01-02T06:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
+    expect(serializeChartToStructuredText(chart)).toContain("丁临六：王璋列入，本站未列");
+    expect(serializeChartToCompactJson(chart)).toContain("丁临六：王璋列入，本站未列");
+  });
   it("serializes overview and all nine palaces in stable order", () => {
     const chart = buildChart({
       datetime: "2026-07-01T21:30",

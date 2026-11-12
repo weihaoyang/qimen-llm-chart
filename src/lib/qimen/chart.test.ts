@@ -541,8 +541,10 @@ describe("buildChart", () => {
       expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(item.hour);
       expect(chart.raw.ju.number).toBe(item.juNumber);
       expect(chart.raw.palaces.find(p => p.position === 6)?.heavenlyStem).toBe(item.stem);
-      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "san_qi_ru_mu")!;
+      const report = evaluateQimenPatterns(chart);
+      const check = report.checks.find(p => p.id === "san_qi_ru_mu")!;
       expect(check.positions.includes(6)).toBe(item.selectedHit);
+      expect(report.sourceNotes.some(note => note.includes("丁临六：王璋列入，本站未列"))).toBe(item.stem === "丁");
       const id = "patterns.bad.san_qi_ru_mu";
       const palaceHits = chart.raw.palaces.filter(p => p.inauspiciousPatterns?.some(pattern => pattern.id === id)).map(p => p.position);
       const overviewHits = (chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(pattern => pattern.id === id).map(pattern => pattern.position);

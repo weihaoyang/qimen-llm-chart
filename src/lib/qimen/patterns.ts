@@ -676,6 +676,15 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
   const sourceNotes = yuNuTime !== yuNuPalace
     ? [`玉女守门口径差异：时柱${hourPillar}${yuNuTime ? "属于" : "不属于"}《奇门宝鉴》所列六时；本站地丁与值使同宫${yuNuPalace ? "成立" : "未成立"}。${centerNote}两种判定暂不强行等同。`]
     : [];
+  const tombVariants = chart.raw.palaces.flatMap((palace) => {
+    const stems = valuesOf(palace.heavenlyStem);
+    return [
+      ...(palace.position === 6 && stems.includes("丁") ? ["丁临六：王璋列入，本站未列"] : []),
+      ...(palace.position === 6 && stems.includes("乙") ? ["乙临六：本站列入，王璋本段未列"] : []),
+      ...(palace.position === 8 && stems.includes("丁") ? ["丁临八：本站列入，王璋本段未列"] : []),
+    ];
+  });
+  if (tombVariants.length) sourceNotes.push(`三奇入墓异说：${tombVariants.join("；")}（艺术典705，仅比较所列条件）。`);
   const strengthCounts: Record<QimenPatternStrength, number> = { 有力: 0, 中平: 0, 无力: 0 };
   for (const check of formed) {
     if (check.strength) strengthCounts[check.strength] += 1;

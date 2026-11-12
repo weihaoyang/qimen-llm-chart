@@ -67,6 +67,12 @@ describe("QimenPatternPanel", () => {
     expect(screen.getByText(/本站迫指门克宫，制指宫克门/)).toBeInTheDocument();
   });
 
+  it("shows the actual 丁六 source difference for the historical example", () => {
+    const actual = buildChart({ datetime: "2026-01-02T06:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
+    render(<QimenPatternPanel chart={actual} />);
+    expect(screen.getByText(/丁临六：王璋列入，本站未列/)).toBeInTheDocument();
+  });
+
   it("filters to formed or failed", () => {
     render(<QimenPatternPanel chart={chart} />);
 

@@ -221,6 +221,18 @@ describe("evaluateQimenPatterns", () => {
     expect(QIMEN_PATTERN_CATALOG.find(p => p.id === "san_qi_ru_mu")?.requirement).toContain("古籍另有");
   });
 
+  it("reports the specific 三奇入墓 source difference only for the stems on the plate", () => {
+    const six = evaluateQimenPatterns(chartWith([palace(6, { heavenlyStem: ["乙", "丁", "丙"] })]));
+    const note = six.sourceNotes.find(item => item.startsWith("三奇入墓异说"))!;
+    expect(note).toContain("丁临六：王璋列入，本站未列");
+    expect(note).toContain("乙临六：本站列入，王璋本段未列");
+    expect(note).not.toContain("丁临八");
+    const eight = evaluateQimenPatterns(chartWith([palace(8, { heavenlyStem: "丁" })]));
+    expect(eight.sourceNotes.join(" ")).toContain("丁临八：本站列入，王璋本段未列");
+    const agree = evaluateQimenPatterns(chartWith([palace(2, { heavenlyStem: "乙" }), palace(6, { heavenlyStem: "丙" })]));
+    expect(agree.sourceNotes.some(item => item.startsWith("三奇入墓异说"))).toBe(false);
+  });
+
   it("partitions the whole catalog into formed and failed", () => {
     const report = evaluateQimenPatterns(chartWith([palace(1)]));
     expect(report.registered).toBe(QIMEN_PATTERN_CATALOG.length);
