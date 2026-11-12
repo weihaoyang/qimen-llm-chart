@@ -211,6 +211,38 @@ describe("qizheng siyu chart", () => {
       expect(jsonStar.classicalDignity).toEqual(star.classicalDignity);
     }
   });
+  it("retains the 2026 remnant examples in both exports", () => {
+    const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-03T12:00:00+08:00"), "Asia/Shanghai")));
+    expect(chart.stars.find(s => s.name === "计都")).toMatchObject({ branch: "亥", classicalDignity: { label: "庙", volume: 22, passage: "计都论" } });
+    expect(chart.stars.find(s => s.name === "月孛")).toMatchObject({ branch: "寅", classicalDignity: { label: "旺", volume: 20, passage: "月孛论" } });
+    expect(chart.stars.find(s => s.name === "罗睺")?.classicalDignity).toBeUndefined();
+    const text = serializeQizhengToStructuredText(chart);
+    expect(text).toContain("星学大成卷22〈计都论〉：庙");
+    expect(text).toContain("星学大成卷20〈月孛论〉：旺");
+    const exported = JSON.parse(serializeQizhengToCompactJson(chart)).stars.find((s: { name: string }) => s.name === "计都");
+    expect(exported.classicalDignity.label).toBe("庙");
+  });
+  it("transcribes all four remnant palace labels without inventing unlisted ones", () => {
+    const entries: Record<string, { volume: number; positions: Record<string, string> }> = {
+      紫气: { volume: 19, positions: { 丑: "庙", 亥: "旺", 寅: "好", 申: "乐", 午: "喜", 戌: "喜", 未: "怒" } },
+      月孛: { volume: 20, positions: { 未: "庙", 寅: "旺", 巳: "好", 酉: "乐", 申: "喜", 子: "顺", 戌: "怒" } },
+      罗睺: { volume: 21, positions: { 午: "庙", 卯: "乐", 辰: "旺", 酉: "好", 戌: "喜", 申: "怒" } },
+      计都: { volume: 22, positions: { 亥: "庙", 戌: "旺", 寅: "乐", 未: "好", 卯: "喜", 巳: "喜", 辰: "怒" } },
+    };
+    const seen = Object.fromEntries(Object.keys(entries).map(name => [name, new Set<string>()]));
+    for (let month = 0; month < 36 * 12; month++) {
+      const date = new Date(Date.UTC(1990, month, 15, 4));
+      const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(date, "Asia/Shanghai")));
+      for (const [name, reference] of Object.entries(entries)) {
+        const star = chart.stars.find(item => item.name === name)!;
+        seen[name].add(star.branch);
+        const label = reference.positions[star.branch];
+        expect(star.classicalDignity, `${name} ${star.branch} ${date.toISOString()}`).toEqual(label ? { label, volume: reference.volume, passage: `${name}论` } : undefined);
+        expect(star.dignity).toBe("—");
+      }
+    }
+    for (const name of Object.keys(entries)) expect(seen[name].size, name).toBe(12);
+  });
   it("compares Jupiter and Mars palace labels with the Xingxue Dacheng passages", () => {
     // 卷十四：木庙亥、旺未；卷十五：火乐戌、旺丑。现用表另行保存。
     const cases = [

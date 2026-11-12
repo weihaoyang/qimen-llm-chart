@@ -42,6 +42,11 @@ describe("QizhengPanel", () => {
     render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);
     expect(screen.getByText(/〈太阴行度〉：本宫/)).toBeInTheDocument();
   });
+  it("shows the classical reference for a remnant without assigning a modern-table rank", () => {
+    const input = getDefaultProfileInput(new Date("2026-01-03T12:00:00+08:00"), "Asia/Shanghai");
+    render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);
+    expect(screen.getByText(/星学大成卷22〈计都论〉：庙/)).toBeInTheDocument();
+  });
   it("identifies the missing star in a partial chart", () => {
     const full = chart();
     render(<QizhengPanel value={{ ...full, complete: false, missingStars: ["火星"], stars: full.stars.filter((star) => star.name !== "火星") }} />);

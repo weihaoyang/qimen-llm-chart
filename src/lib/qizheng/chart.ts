@@ -66,6 +66,10 @@ const CLASSICAL_PALACE_REFERENCES: Record<string, { volume: number; positions: R
   土星: { volume: 16, positions: { 丑: "庙", 辰: "旺", 子: "乐", 戌: "好", 午: "喜" } },
   金星: { volume: 16, positions: { 辰: "庙旺", 酉: "乐", 亥: "旺", 巳: "好", 午: "喜", 寅: "怒" } },
   水星: { volume: 17, positions: { 申: "本宫", 巳: "旺", 午: "庙", 辰: "喜", 亥: "好", 子: "好", 戌: "怒" } },
+  紫气: { volume: 19, positions: { 丑: "庙", 亥: "旺", 寅: "好", 申: "乐", 午: "喜", 戌: "喜", 未: "怒" } },
+  月孛: { volume: 20, positions: { 未: "庙", 寅: "旺", 巳: "好", 酉: "乐", 申: "喜", 子: "顺", 戌: "怒" } },
+  罗睺: { volume: 21, positions: { 午: "庙", 卯: "乐", 辰: "旺", 酉: "好", 戌: "喜", 申: "怒" } },
+  计都: { volume: 22, positions: { 亥: "庙", 戌: "旺", 寅: "乐", 未: "好", 卯: "喜", 巳: "喜", 辰: "怒" } },
 };
 
 const ELEMENT: Record<string, string> = { 太阳: "火", 太阴: "水", 木星: "木", 火星: "火", 土星: "土", 金星: "金", 水星: "水", 罗睺: "火", 计都: "土", 月孛: "水" };
@@ -304,6 +308,9 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       palaceName: palaceNameOf(palace),
       mansion: longitudeToMansion(remnant.longitude, utcMillis),
       dignity: "—",
+      classicalDignity: CLASSICAL_PALACE_REFERENCES[remnant.name]?.positions[branch]
+        ? { label: CLASSICAL_PALACE_REFERENCES[remnant.name].positions[branch], volume: CLASSICAL_PALACE_REFERENCES[remnant.name].volume, passage: `${remnant.name}论` }
+        : undefined,
       element: ELEMENT[remnant.name] ?? "未列",
       fortune: FORTUNE[remnant.name] ?? "未列",
       note: remnant.note,
