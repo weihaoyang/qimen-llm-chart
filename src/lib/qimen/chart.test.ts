@@ -73,6 +73,32 @@ describe("buildChart", () => {
       expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
     }
   });
+  it("labels 龙遁 sources consistently across actual chart outputs", () => {
+    let kanHits = 0, guiHits = 0;
+    const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const expected = chart.raw.palaces.filter(p => values(p.heavenlyStem).includes("乙") && ((p.position === 1 && ["开门", "休门", "生门"].includes(p.gate as string)) || (p.gate === "休门" && values(p.earthlyStem).includes("癸"))));
+      const report = evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_long")!;
+      expect(report.positions, datetime).toEqual(expected.map(p => p.position));
+      const id = "patterns.jiu_dun.long_dun";
+      const summary = (chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id);
+      expect(summary.map(p => p.position), datetime).toEqual(expected.map(p => p.position));
+      for (const p of expected) {
+        const isKan = p.position === 1, isGui = p.gate === "休门" && values(p.earthlyStem).includes("癸");
+        kanHits += Number(isKan); guiHits += Number(isGui);
+        const record = p.auspiciousPatterns?.filter(item => item.id === id) ?? [];
+        expect(record).toHaveLength(1);
+        expect(record[0].description?.includes("乙合三吉门临坎（艺术典704）")).toBe(isKan);
+        expect(record[0].description?.includes("艺术典704一云")).toBe(isKan && p.gate === "休门");
+        expect(record[0].description?.includes("奇门吉格")).toBe(isGui);
+        expect(summary.find(item => item.position === p.position)?.description).toBe(record[0].description);
+      }
+    }
+    expect(kanHits).toBeGreaterThan(0);
+    expect(guiHits).toBeGreaterThan(0);
+  });
   it("compares the 人遁 example across 艺术典 704 and 705", () => {
     const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 7 } });
     expect(chart.raw.fourPillars.day.stem).toBe("乙");

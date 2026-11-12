@@ -42,6 +42,26 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("identifies the sourced 龙遁 clauses and retains both when they overlap", () => {
+    const check = evaluateQimenPatterns(chartWith([
+      palace(1, { heavenlyStem: "乙", earthlyStem: "癸", gate: "休门" }),
+      palace(2, { heavenlyStem: "乙", earthlyStem: "癸", gate: "休门" }),
+      palace(3, { heavenlyStem: "乙", earthlyStem: "癸", gate: "开门" }),
+    ])).checks.find(item => item.id === "jiu_dun_long")!;
+    expect(check.positions).toEqual([1, 2]);
+    expect(check.evidence[0]).toContain("乙休临坎（艺术典704一云）");
+    expect(check.evidence[0]).toContain("乙合三吉门临坎（艺术典704）");
+    expect(check.evidence[0]).toContain("乙休临地癸（奇门吉格）");
+    expect(check.evidence[1]).toContain("乙休临地癸（奇门吉格）");
+    expect(check.evidence[1]).not.toContain("艺术典704一云");
+    const onlyKan = evaluateQimenPatterns(chartWith([palace(1, { heavenlyStem: "乙", earthlyStem: "丁", gate: "休门" })])).checks.find(item => item.id === "jiu_dun_long")!;
+    expect(onlyKan.evidence[0]).toContain("艺术典704一云");
+    expect(onlyKan.evidence[0]).not.toContain("奇门吉格");
+    const openKan = evaluateQimenPatterns(chartWith([palace(1, { heavenlyStem: "乙", earthlyStem: "丁", gate: "开门" })])).checks.find(item => item.id === "jiu_dun_long")!;
+    expect(openKan.positions).toEqual([1]);
+    expect(openKan.evidence[0]).toContain("乙合三吉门临坎（艺术典704）");
+    expect(openKan.evidence[0]).not.toContain("一云");
+  });
   it("records both Ren Dun textual variants without duplicating a palace", () => {
     const check = evaluateQimenPatterns(chartWith([
       palace(1, { heavenlyStem: "丁", earthlyStem: "己", gate: "休门", deity: "太阴" }),
@@ -411,7 +431,7 @@ it("requires a heaven-plate qi for all three zha patterns", () => {
 it("keeps the dragon, tiger and ghost alternatives as complete classical clauses", () => {
   const formed = (id: string, position: number, fields: Record<string, unknown>) =>
     statusOf(evaluateQimenPatterns(chartWith([palace(position, fields)])), id);
-  expect(formed("jiu_dun_long", 1, { heavenlyStem: "乙", gate: "开门" })).toBe("未成立");
+  expect(formed("jiu_dun_long", 1, { heavenlyStem: "乙", gate: "开门" })).toBe("成立");
   expect(formed("jiu_dun_long", 1, { heavenlyStem: "乙", gate: "休门" })).toBe("成立");
   expect(formed("jiu_dun_long", 3, { heavenlyStem: "乙", earthlyStem: "癸", gate: "休门" })).toBe("成立");
   expect(formed("jiu_dun_hu", 8, { heavenlyStem: "乙", gate: "休门" })).toBe("未成立");

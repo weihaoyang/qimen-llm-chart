@@ -134,9 +134,16 @@ const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes
 const palaceLabel = (position: Position) => `第 ${position} 宫`;
 const stemsOf = (value: unknown) => valuesOf(value).join("/") || "无";
 
-export const matchesLongDun = (palace: Palace) =>
-  hasHeaven(palace, "乙") && gateIn(palace, ["休门"])
-    && (palace.position === 1 || hasEarth(palace, "癸"));
+/** 坎宫宽式见《图书集成》704；临癸式见《奇门遁甲秘笈大全》。 */
+export const longDunReasons = (palace: Palace): string[] => {
+  if (!hasHeaven(palace, "乙")) return [];
+  return [
+    ...(palace.position === 1 && gateIn(palace, SAN_MEN) ? ["乙合三吉门临坎（艺术典704）"] : []),
+    ...(palace.position === 1 && gateIn(palace, ["休门"]) ? ["乙休临坎（艺术典704一云）"] : []),
+    ...(hasEarth(palace, "癸") && gateIn(palace, ["休门"]) ? ["乙休临地癸（奇门吉格）"] : []),
+  ];
+};
+export const matchesLongDun = (palace: Palace) => longDunReasons(palace).length > 0;
 
 /** 《奇门吉格》云遁主式与“一云”分开保留；《旨归》坤宫辛为主式的较窄版本。 */
 export const yunDunReasons = (palace: Palace): string[] => {
@@ -299,9 +306,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
     const reasons = yunDunReasons(p);
     return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
   }),
-  good("jiu_dun_long", "龙遁", "九遁", "天盘乙 + 休门 + 坎 1 宫或地盘癸", "主潜藏蓄势、后发制人；宜谋定而后动。", (p) =>
-    matchesLongDun(p) ? combinationEvidence(p) : null,
-  ),
+  good("jiu_dun_long", "龙遁", "九遁", "天乙合三吉门临坎，或天乙休门临地癸", "按命中的文献条件分别列出证据；同宫多式并见只登记一次。", (p) => {
+    const reasons = longDunReasons(p);
+    return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
+  }),
   good("jiu_dun_hu", "虎遁", "九遁", "乙加辛休门在艮；或辛生门在艮；一云丙加辛生门", "主威势、攻取与决断；宜竞争、出手，但忌过刚。", (p) =>
     matchesHuDun(p) ? combinationEvidence(p) : null,
   ),
