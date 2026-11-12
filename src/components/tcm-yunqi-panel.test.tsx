@@ -34,6 +34,13 @@ describe("TcmYunqiPanel", () => {
     expect(container.querySelectorAll(".tcm-attributes .hd-cell")).toHaveLength(5);
   });
 
+  it("shows 顺 and 逆 for the two source-specific fire combinations", () => {
+    const { rerender } = render(<TcmYunqiPanel value={buildView(2026)} yearInput="2026" />);
+    expect(screen.getByText(/君相火相临：顺/)).toBeInTheDocument();
+    rerender(<TcmYunqiPanel value={buildView(2029)} yearInput="2029" />);
+    expect(screen.getByText(/君相火相临：逆/)).toBeInTheDocument();
+  });
+
   it("gives every pillar an organ and a meridian from the sourced songs", () => {
     const view = buildView(2026);
     const { container } = render(<TcmYunqiPanel value={view} yearInput="2026" />);

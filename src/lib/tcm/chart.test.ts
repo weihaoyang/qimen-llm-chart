@@ -68,6 +68,14 @@ describe("八字 + 中医运气对照视图", () => {
     expect(text).not.toContain("未推算交司时辰");
   });
 
+  it("exports both directions of the traditional two-fire ordering", () => {
+    for (const [year, name, order] of [[2026, "三之气", "顺"], [2029, "二之气", "逆"]] as const) {
+      const result = buildTcmYunqiView(chart, year);
+      expect(serializeTcmToStructuredText(result)).toContain(`君相火相临：${order}`);
+      expect(JSON.parse(serializeTcmToCompactJson(result)).fireOrders).toContainEqual([name, order]);
+    }
+  });
+
   it("五行配属表五行齐全（《阴阳应象大论》《金匮真言论》）", () => {
     expect(view.elementAttributes.map((item) => item.element)).toEqual(["木", "火", "土", "金", "水"]);
     expect(view.elementAttributes.find((item) => item.element === "木")?.orifice).toContain("目");

@@ -128,6 +128,8 @@ export type QiStep = {
   generating: boolean;
   /** 客主相克（不相得）。 */
   overcoming: boolean;
+  /** 君火与相火相临时，客君主相为顺，客相主君为逆；其余为空。 */
+  fireOrder: "顺" | "逆" | null;
   /** 「主胜逆，客胜从」（《至真要大论》）——按五行相克判谁胜。 */
   verdict: "相得" | "不相得（主胜逆）" | "不相得（客胜从）";
 };
@@ -135,16 +137,18 @@ export type QiStep = {
 const WU_XING_SHENG: Record<WuXing, WuXing> = { 木: "火", 火: "土", 土: "金", 金: "水", 水: "木" };
 const WU_XING_KE: Record<WuXing, WuXing> = { 木: "土", 土: "水", 水: "火", 火: "金", 金: "木" };
 
-const relationOf = (zhuQi: QiName, keQi: QiName): Pick<QiStep, "sameQi" | "generating" | "overcoming" | "verdict"> => {
+const relationOf = (zhuQi: QiName, keQi: QiName): Pick<QiStep, "sameQi" | "generating" | "overcoming" | "verdict" | "fireOrder"> => {
   const zhu = QI_WU_XING[zhuQi];
   const ke = QI_WU_XING[keQi];
   const sameQi = zhu === ke;
-  if (sameQi) return { sameQi, generating: false, overcoming: false, verdict: "相得" };
+  const fireOrder = zhuQi === "少阳相火" && keQi === "少阴君火" ? "顺"
+    : zhuQi === "少阴君火" && keQi === "少阳相火" ? "逆" : null;
+  if (sameQi) return { sameQi, fireOrder, generating: false, overcoming: false, verdict: "相得" };
   const generating = WU_XING_SHENG[zhu] === ke || WU_XING_SHENG[ke] === zhu;
-  if (generating) return { sameQi, generating, overcoming: false, verdict: "相得" };
+  if (generating) return { sameQi, fireOrder, generating, overcoming: false, verdict: "相得" };
   // 相克：客克主为「客胜从」，主克客为「主胜逆」。
   const keWins = WU_XING_KE[ke] === zhu;
-  return { sameQi, generating: false, overcoming: true, verdict: keWins ? "不相得（客胜从）" : "不相得（主胜逆）" };
+  return { sameQi, fireOrder, generating: false, overcoming: true, verdict: keWins ? "不相得（客胜从）" : "不相得（主胜逆）" };
 };
 
 export type YunQiAnalysis = {

@@ -94,7 +94,7 @@ export function TcmYunqiPanel({
             <span className="hd-cell__number">{step.name} · {step.startTerm}{step.startDate ? ` ${step.startDate}` : ""}</span>
             <b>主 {step.zhuQi}</b>
             <span className="hd-cell__side"><i />客 {step.keQi}</span>
-            <span className="hd-cell__side">{step.verdict}</span>
+            <span className="hd-cell__side">{step.verdict}{step.fireOrder ? ` · 君相火相临：${step.fireOrder}` : ""}</span>
           </div>
         ))}
       </div>

@@ -92,6 +92,17 @@ describe("五运六气内核", () => {
     }
   });
 
+  it("distinguishes the two fire orders without conflating them with five-element overcoming", () => {
+    const shun = analyzeYunQi(2026).steps[2];
+    expect(shun).toMatchObject({ zhuQi: "少阳相火", keQi: "少阴君火", sameQi: true, overcoming: false, verdict: "相得", fireOrder: "顺" });
+    const ni = analyzeYunQi(2029).steps[1];
+    expect(ni).toMatchObject({ zhuQi: "少阴君火", keQi: "少阳相火", sameQi: true, overcoming: false, verdict: "相得", fireOrder: "逆" });
+    for (let year = 2000; year < 2012; year++) for (const step of analyzeYunQi(year).steps) {
+      const expected = step.zhuQi === "少阳相火" && step.keQi === "少阴君火" ? "顺" : step.zhuQi === "少阴君火" && step.keQi === "少阳相火" ? "逆" : null;
+      expect(step.fireOrder, `${year} ${step.name}`).toBe(expected);
+    }
+  });
+
   it("客主相克时区分主胜逆与客胜从", () => {
     // 找一个人为组合验证判定方向：主木 / 客土 → 木克土（主胜）→ 主胜逆
     const cases = [2010, 2011, 2012, 2013, 2014].map((year) => analyzeYunQi(year));
