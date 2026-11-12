@@ -5,6 +5,26 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("checks metal-star-in-fire separately from stem matching on actual charts", () => {
+    let heart = 0, pillar = 0, different = 0;
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2,"0")}T${String(hour).padStart(2,"0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const palace = chart.raw.palaces.find(p => p.position === 9)!;
+      const star = [palace.star].flat();
+      const expected = star.includes("天心") || star.includes("天柱");
+      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "jin_ru_huo_xiang_star")!;
+      expect(check.positions, datetime).toEqual(expected ? [9] : []);
+      const id = "patterns.bad.jin_ru_huo_xiang_star";
+      expect(palace.inauspiciousPatterns?.filter(p => p.id === id).length ?? 0, datetime).toBe(Number(expected));
+      expect((chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected ? [9] : []);
+      if (expected) {
+        heart += Number(star.includes("天心")); pillar += Number(star.includes("天柱"));
+        if (!evaluateQimenPatterns(chart).checks.find(p => p.id === "tai_bai_ru_ying")!.positions.includes(9)) different++;
+      }
+    }
+    expect(heart).toBeGreaterThan(0); expect(pillar).toBeGreaterThan(0); expect(different).toBeGreaterThan(0);
+  });
   it("independently enumerates chief, envoy, gates, stars and deities over both dun and nine ju", () => {
     const stemOrder = "戊己庚辛壬癸丁丙乙";
     const stems = "甲乙丙丁戊己庚辛壬癸", branches = "子丑寅卯辰巳午未申酉戌亥";

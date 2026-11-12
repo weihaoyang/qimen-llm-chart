@@ -145,6 +145,11 @@ export const longDunReasons = (palace: Palace): string[] => {
 };
 export const matchesLongDun = (palace: Palace) => longDunReasons(palace).length > 0;
 
+/** 艺术典704：天心或天柱临离，另称金入火乡；不与庚加丙合并。 */
+export const metalStarInFireReasons = (palace: Palace): string[] => palace.position === 9
+  ? valuesOf(palace.star).filter(star => star === "天心" || star === "天柱").map(star => `${star}临离九宫`)
+  : [];
+
 /** 《奇门吉格》云遁主式与“一云”分开保留；《旨归》坤宫辛为主式的较窄版本。 */
 export const yunDunReasons = (palace: Palace): string[] => {
   if (!hasHeaven(palace, "乙")) return [];
@@ -400,6 +405,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("bai_hu_chang_kuang", "白虎猖狂", "常用凶格", "天盘辛 + 地盘乙", "主冲突、口舌与损耗；宜收缩防守。", stemPair("辛", "乙")),
   bad("ying_ru_tai_bai", "荧入太白", "常用凶格", "天盘丙 + 地盘庚", "主火克金、事多争斗；忌强行推进。", stemPair("丙", "庚")),
   bad("tai_bai_ru_ying", "太白入荧", "常用凶格", "天盘庚 + 地盘丙", "主外力入侵、被迫应对；留意对手动作。", stemPair("庚", "丙")),
+  bad("jin_ru_huo_xiang_star", "金入火乡（星）", "常用凶格", "天心或天柱临离九宫", "《古今图书集成》另列星宫条件；与庚加丙分列，不要求二者同时成立。", (p) => {
+    const reasons = metalStarInFireReasons(p);
+    return reasons.length ? `${palaceLabel(p.position)}：${reasons.join("、")}（艺术典704）` : null;
+  }),
   bad("zhu_que_tou_jiang", "朱雀投江", "常用凶格", "天盘丁 + 地盘癸", "主文书口舌受挫、信息落空；重报文不重口头。", stemPair("丁", "癸")),
   bad("teng_she_yao_jiao", "螣蛇夭矫", "常用凶格", "天盘癸 + 地盘丁", "主虚惊、反复与纠缠；避开情绪化决策。", stemPair("癸", "丁")),
   bad("da_ge", "大格", "常用凶格", "天盘庚 + 地盘癸", "主阻滞、进退两难；宜换路径或借他宫。", stemPair("庚", "癸")),

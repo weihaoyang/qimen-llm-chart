@@ -42,6 +42,18 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("separates 金入火乡 by star from the 庚加丙 stem rule", () => {
+    const report = evaluateQimenPatterns(chartWith([
+      palace(9, { star: "天心", heavenlyStem: "乙", earthlyStem: "丁" }),
+      palace(6, { star: "天柱", heavenlyStem: "庚", earthlyStem: "丙" }),
+    ]));
+    expect(report.checks.find(p => p.id === "jin_ru_huo_xiang_star")?.positions).toEqual([9]);
+    expect(report.checks.find(p => p.id === "jin_ru_huo_xiang_star")?.evidence[0]).toContain("天心临离九宫");
+    expect(report.checks.find(p => p.id === "tai_bai_ru_ying")?.positions).toEqual([6]);
+    const pillar = evaluateQimenPatterns(chartWith([palace(9, { star: ["天柱", "天禽"] })]));
+    expect(pillar.checks.find(p => p.id === "jin_ru_huo_xiang_star")?.evidence[0]).toContain("天柱临离九宫");
+    expect(evaluateQimenPatterns(chartWith([palace(9, { star: "天英" })])).checks.find(p => p.id === "jin_ru_huo_xiang_star")?.status).toBe("未成立");
+  });
   it("identifies the sourced 龙遁 clauses and retains both when they overlap", () => {
     const check = evaluateQimenPatterns(chartWith([
       palace(1, { heavenlyStem: "乙", earthlyStem: "癸", gate: "休门" }),

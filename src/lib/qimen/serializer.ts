@@ -239,7 +239,6 @@ const buildCompactSchema = () => {
     "是否值使宫",
     "是否驿马宫",
     "暗干",
-    "空亡地支",
     "本宫地支",
     "本宫空亡",
     "是否空亡",
@@ -277,7 +276,7 @@ const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
     return { id: pattern.id, name: pattern.name, position: pattern.position };
   }),
   inauspiciousPatterns: (chart.raw.specialPatterns.inauspiciousPatterns ?? []).map((pattern) => {
-    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing", "patterns.bad.bei_ge", "patterns.bad.tian_wang_si_zhang"].includes(pattern.id)) return pattern;
+    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing", "patterns.bad.bei_ge", "patterns.bad.tian_wang_si_zhang", "patterns.bad.jin_ru_huo_xiang_star"].includes(pattern.id)) return pattern;
     return { id: pattern.id, name: pattern.name, position: pattern.position };
   }),
 });
@@ -323,7 +322,6 @@ const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod 
       Boolean(palace.isZhiShi),
       Boolean(palace.isPostHorse),
       normalizeValue(chart.hiddenStemsByPalace[palace.position] ?? "无"),
-      normalizeValue(palace.voidness?.voidBranches),
       normalizeValue(palace.voidness?.palaceBranches),
       normalizeValue(palace.voidness?.voidInPalace),
       normalizeValue(palace.voidness?.hasVoidness),

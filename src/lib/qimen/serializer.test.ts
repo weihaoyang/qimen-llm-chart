@@ -65,6 +65,8 @@ describe("serializeChartToStructuredText", () => {
     expect(result).not.toContain("\n");
     expect(parsed.format).toBe("qmdj-llm-compact-v1");
     expect(parsed.legend.chart).toContain("时间信息");
+    const timeInfo = parsed.chart[parsed.legend.chart.indexOf("时间信息")] as { voidness: unknown };
+    expect(timeInfo.voidness).toBeDefined();
     expect(parsed.legend.chart).toContain("登记格局判定");
     expect(parsed.legend.palace).toContain("十干克应_天对地");
     expect(parsed.chart).toHaveLength(parsed.legend.chart.length);
