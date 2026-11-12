@@ -738,6 +738,15 @@ it("matches the annual generals in the Ji Cheng charts for 430 and 441", () => {
   }
 });
 
+it("reconstructs the two explicit generals in 南齐书 元兴二年", () => {
+  // 《南齐书》卷一给出太乙七宫、大将一宫、参相三宫；未明确标主客。
+  const chart = buildTaiyiChart({ year: 403, cycle: 360, dun: "阳遁", ruJu: null });
+  expect(chart.taiyi.palace).toBe(7);
+  expect(chart.counts.hostGeneralPalace).toBe(1);
+  expect(chart.counts.hostSuPalace).toBe(3);
+  // 只比较书中明确列举的两个数，不将史文未写出的其他将位作为历史事实。
+});
+
 it("reconstructs four dated annual examples in 太乙统宗宝鉴卷四", () => {
   // Independently transcribed from the dated examples, not the product's ju table.
   const cases = [

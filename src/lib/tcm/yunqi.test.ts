@@ -174,13 +174,16 @@ it("reproduces the four traditional handover groups and six half-ke steps", () =
 });
 
 it("anchors the traditional clock at yin-chu and handles midnight without ordinal drift", () => {
+  // 《类经图翼》卷二列四组刻序；《运气易览》列寅初与同刻分组。
+  expect([2024, 2025, 2026, 2027].map(year => analyzeYunQi(year).handoverLocalTime[0]))
+    .toEqual(["03:00:00", "09:00:00", "15:00:00", "21:00:00"]);
   expect(analyzeYunQi(2026).handoverLocalTime).toEqual([
     "15:00:00", "12:00:00", "09:00:00", "06:00:00", "03:00:00", "00:00:00",
   ]);
   expect(analyzeYunQi(2024).handoverLocalTime).toEqual([
     "03:00:00", "00:00:00", "21:00:00", "18:00:00", "15:00:00", "12:00:00",
   ]);
-  // 《天元玉册》卷十二丁卯例：前七十五刻为终气，七十六刻即亥初一刻。
+  // 《类经图翼》卷二丁卯例：初气始于七十六刻；《天元玉册》释为亥初。
   // 21:00 是等时钟面约定，不能据此称为原文给出的现代法定时刻。
   const dingMao = analyzeYunQi(2027);
   expect(dingMao.handoverKe[0]).toBe("76刻");

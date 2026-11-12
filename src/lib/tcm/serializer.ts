@@ -33,7 +33,7 @@ export const serializeTcmToStructuredText = (view: TcmYunqiView) => [
   "",
   `古法交司刻序（百刻制，初至终）：${view.yunqi.handoverKe.join("、")}`,
   "",
-  `寅初起算的当地等时钟面：${view.yunqi.handoverLocalTime.join("、")}（寅初按03:00）`,
+  `寅初起算的等时钟面示意：${view.yunqi.handoverLocalTime.join("、")}（寅初按03:00折算，不是历史精确时刻）`,
   "五运分段（《医宗金鉴》，按日）：",
   ...view.yunqi.movementPeriods.map((period, index) => `- 第 ${index + 1} 运：主运 ${period.host}、客运 ${period.guest}${period.startDate ? `（${period.startDate} 至 ${period.endDateExclusive} 前）` : ""}`),
   "",
