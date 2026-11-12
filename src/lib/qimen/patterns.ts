@@ -653,6 +653,9 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
   const sourceNotes = yuNuTime !== yuNuPalace
     ? [`玉女守门口径差异：时柱${hourPillar}${yuNuTime ? "属于" : "不属于"}《奇门宝鉴》所列六时；本站地丁与值使同宫${yuNuPalace ? "成立" : "未成立"}。${centerNote}两种判定暂不强行等同。`]
     : [];
+  if (dun === "阳遁") {
+    sourceNotes.push("阳遁寄宫：地盘中五寄艮八；天禽随天芮、时干中五寄坤二，各层口径不同。");
+  }
   const strengthCounts: Record<QimenPatternStrength, number> = { 有力: 0, 中平: 0, 无力: 0 };
   for (const check of formed) {
     if (check.strength) strengthCounts[check.strength] += 1;

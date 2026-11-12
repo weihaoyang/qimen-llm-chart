@@ -29,9 +29,9 @@ describe("buildChart", () => {
           centerStem += Number(middleStem); centerGate += Number(rawPosition === 5); both += Number(middleStem && rawPosition === 5);
           expect(middleStem || rawPosition === 5).toBe(true);
           expect(chart.raw.zhiShi.position).toBe(dunType === "yang" ? 8 : 2);
-          expect(evaluateQimenPatterns(chart).sourceNotes[0]).toContain(middleStem ? "地丁原在中五宫" : "值使原到中五宫");
+          expect(evaluateQimenPatterns(chart).sourceNotes.find(note => note.startsWith("玉女守门"))).toContain(middleStem ? "地丁原在中五宫" : "值使原到中五宫");
         }
-        expect(evaluateQimenPatterns(chart).sourceNotes.length, `${dunType} ${juNumber} ${datetime}`).toBe(Number((report.status === "成立") !== expected));
+        expect(evaluateQimenPatterns(chart).sourceNotes.some(note => note.startsWith("玉女守门")), `${dunType} ${juNumber} ${datetime}`).toBe((report.status === "成立") !== expected);
       }
     }
     expect(seen).toEqual(hours);
@@ -45,6 +45,17 @@ describe("buildChart", () => {
     expect(chart.raw.zhiShi).toMatchObject({ gate: "死门", position: 7 });
     expect(chart.raw.palaces.find(p => p.position === 7)?.earthlyStem).toBe("丁");
     expect(evaluateQimenPatterns(chart).checks.find(item => item.id === "yu_nu_shou_men")?.status).toBe("成立");
+  });
+  it("discloses the separate hosts used by the earth and celestial layers", () => {
+    const settings = { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至" as const, dunType: "yang" as const, juNumber: 1 as const };
+    const chart = buildChart({ datetime: "2026-01-01T12:00", timeZone: "Asia/Shanghai", qimenSettings: settings });
+    expect(chart.raw.fourPillars.hour.stem).toBe("壬");
+    expect(chart.raw.palaces.find(p => p.position === 5)?.earthlyStem).toBe("壬");
+    expect(chart.raw.palaces.find(p => p.position === 8)?.earthlyStem).toContain("壬");
+    expect(chart.raw.zhiFu.position).toBe(2);
+    expect(evaluateQimenPatterns(chart).sourceNotes.join(" ")).toContain("地盘中五寄艮八；天禽随天芮、时干中五寄坤二");
+    const yin = buildChart({ datetime: "2026-01-01T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...settings, solarTerm: "夏至", dunType: "yin" } });
+    expect(evaluateQimenPatterns(yin).sourceNotes.some(note => note.startsWith("阳遁寄宫"))).toBe(false);
   });
   it("shows 丙生临戊 天遁 and its bird pattern in the same real palace", () => {
     const chart = buildChart({ datetime: "2026-01-01T20:00", timeZone: "Asia/Shanghai" });
