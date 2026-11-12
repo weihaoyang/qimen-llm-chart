@@ -78,4 +78,11 @@ describe("TaiyiPanel", () => {
     render(<TaiyiPanel chart={chart} yearInput="1571" cycle={360} dun="阳遁" ruJuInput="32" />);
     expect(screen.getByText("未定 · 太乙杜门 · 天目巳间神，门位待核")).toBeInTheDocument();
   });
+
+  it("displays the Wu Jing non-gate method separately from the annual gate method", () => {
+    const chart = buildTaiyiChart({ year: 1571, cycle: 360, dun: "阳遁", ruJu: 13 });
+    render(<TaiyiPanel chart={chart} yearInput="1571" cycle={360} dun="阳遁" ruJuInput="13" />);
+    expect(screen.getByText("不具 · 太乙杜门 · 天目巽休门")).toBeInTheDocument();
+    expect(screen.getByText("符合 · 文昌不四迫、始击无掩击")).toBeInTheDocument();
+  });
 });

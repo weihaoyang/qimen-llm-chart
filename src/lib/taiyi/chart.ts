@@ -61,6 +61,7 @@ export type TaiyiChart = {
   annualGate: { name: string; yearInGate: number; yearInCycle: number };
   annualGatePalaces: Array<{ palace: number; gate: string }>;
   annualThreeGates: { status: "具" | "不具" | "未定"; taiyiGate: string; eyeGate: string | null; eyePosition: string };
+  wujingReadiness: { status: "符合" | "不符合"; blockers: string[] };
   dutyGateRelation: { result: "执提" | "提格" | "未命中"; palace: number; gate: string; oppositePalace: number; oppositeGate: string };
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
@@ -260,6 +261,20 @@ export type TaiyiPatternInput = {
   guestSuPalace: number;
 };
 
+/** 《武经总要》以文昌不四迫、始击无掩击为门具将发，不使用八门。 */
+export const wujingReadiness = (taiyiPalace: number, taiyiPosition: string, tianMuPosition: string, shiJiPosition: string, hostGeneralPalace: number): TaiyiChart["wujingReadiness"] => {
+  const chens = chenNeighbors(taiyiPosition);
+  const palaces = palaceNeighbors(taiyiPalace);
+  const neighbors = [chens.front, chens.back, PALACE_TO_POSITION[palaces.front], PALACE_TO_POSITION[palaces.back]];
+  const blockers = [
+    ...(neighbors.includes(tianMuPosition) ? ["文昌四迫"] : []),
+    ...(shiJiPosition === taiyiPosition ? ["始击掩太乙"] : []),
+    ...(POSITION_TO_PALACE[shiJiPosition] === hostGeneralPalace ? ["始击掩主大将"] : []),
+    ...(neighbors.includes(shiJiPosition) ? ["始击击太乙"] : []),
+  ];
+  return { status: blockers.length ? "不符合" : "符合", blockers };
+};
+
 /** 格局判据（照《太乙金镜式经》卷三诸「推…法」原文）：掩、击、迫、囚、关、格、对、
  *  四郭固、四郭杜、提挟、杜塞。宫／辰边界：太乙恒居八正宫，故「前一辰／后一辰」为十六神
  *  环上紧邻之间神，「前一宫／后一宫」为八正宫环上紧邻之宫。击用始击（上目·客）、
@@ -457,6 +472,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
     annualGate,
     annualGatePalaces,
     annualThreeGates,
+    wujingReadiness: wujingReadiness(palace, taiyiPosition, tianMuPos, shiJiPos, hostGeneral),
     dutyGateRelation,
     fixedOpenGatePalaces: taiyiEightGatePalaces(palace, "开门"),
     generalGatePalaces: {

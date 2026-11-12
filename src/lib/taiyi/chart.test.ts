@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition } from "./chart";
+import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition, wujingReadiness } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -366,6 +366,19 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
+  it("keeps 武经总要's non-gate readiness independent of the gate chart", () => {
+    expect(wujingReadiness(1, "乾", "艮", "巽", 4)).toEqual({ status: "符合", blockers: [] });
+    expect(wujingReadiness(1, "乾", "亥", "乾", 1)).toEqual({ status: "不符合", blockers: ["文昌四迫", "始击掩太乙", "始击掩主大将"] });
+    expect(wujingReadiness(1, "乾", "艮", "子", 3)).toEqual({ status: "不符合", blockers: ["始击击太乙"] });
+    expect(wujingReadiness(1, "乾", "艮", "巽", 9)).toEqual({ status: "不符合", blockers: ["始击掩主大将"] });
+    for (const [ruJu, eyeGate] of [[13, "休门"], [20, "生门"]] as const) {
+      const chart = buildTaiyiChart({ year: 1571, cycle: 360, dun: "阳遁", ruJu });
+      expect(chart.annualThreeGates).toMatchObject({ status: "不具", eyeGate });
+      expect(chart.wujingReadiness).toEqual({ status: "符合", blockers: [] });
+      expect(serializeTaiyiToStructuredText(chart)).toContain("门具将发（《武经总要》不依八门说）：符合");
+      expect(JSON.parse(serializeTaiyiToCompactJson(chart)).wujingReadiness.status).toBe("符合");
+    }
+  });
   it("distinguishes 三门具 from unknown 間神 and from 五将发", () => {
     const gates = taiyiEightGatePalaces(3, "杜门");
     expect(annualThreeGateStatus(gates, 3, "酉")).toMatchObject({ status: "不具", taiyiGate: "杜门", eyeGate: "休门" });

@@ -111,6 +111,7 @@ export function TaiyiPanel({
         <div><span>执提直门法</span><b>{chart.dutyGateRelation.result} · 太乙{chart.dutyGateRelation.palace}宫{chart.dutyGateRelation.gate}，对宫{chart.dutyGateRelation.oppositePalace}宫{chart.dutyGateRelation.oppositeGate}</b><em>按《统宗宝鉴》乾化二年例；其他读法可能不同</em></div>
         <div><span>直门加太乙</span><b>{chart.annualGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>按岁计直门自太乙宫顺布八正宫</em></div>
         <div><span>三门具（直门法）</span><b>{chart.annualThreeGates.status} · 太乙{chart.annualThreeGates.taiyiGate} · 天目{chart.annualThreeGates.eyePosition}{chart.annualThreeGates.eyeGate ?? "间神，门位待核"}</b><em>依据《武备志》岁计直门加太乙；门具与将发分别判断</em></div>
+        <div><span>门具将发（《武经总要》）</span><b>{chart.wujingReadiness.status} · {chart.wujingReadiness.blockers.length ? chart.wujingReadiness.blockers.join("、") : "文昌不四迫、始击无掩击"}</b><em>不依八门的另一说，与直门法分列</em></div>
         <div><span>开门加太乙</span><b>{chart.fixedOpenGatePalaces.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ")}</b><em>李淳风固定开门法，供对照</em></div>
         <div><span>开门加主大将</span><b>{chart.generalGatePalaces.host?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "主大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
         <div><span>开门加客大将</span><b>{chart.generalGatePalaces.guest?.map(({ palace, gate }) => `${palace}宫${gate}`).join(" · ") ?? "客大将落中宫，八门杜，未排布"}</b><em>李淳风固定开门法</em></div>
