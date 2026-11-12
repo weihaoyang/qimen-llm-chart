@@ -718,6 +718,11 @@ it("compares the missing 秘書 Yin 60 with the separate 圖書集成 example", 
   expect(chart.counts.hostSuPalace).toBe(sourceDiagram);
   expect(chart.counts.hostSuPalace).not.toBe(sourceProse);
   expect(generalSuPalace(1)).toBe(3);
+  expect(chart.hostDeputySourceComparison).toMatchObject({ diagramPalace: 3, prosePalace: 2 });
+  expect(serializeTaiyiToStructuredText(chart)).toContain("图列3宫，正文列2宫");
+  expect(JSON.parse(serializeTaiyiToCompactJson(chart)).hostDeputySourceComparison.prosePalace).toBe(2);
+  expect(buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 60 }).hostDeputySourceComparison).toBeNull();
+  expect(buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 59 }).hostDeputySourceComparison).toBeNull();
   // 同一图中客大、客参均标五宫；正文仅说二将不出。
   expect([chart.counts.guestGeneralPalace, chart.counts.guestSuPalace]).toEqual([5, 5]);
 });

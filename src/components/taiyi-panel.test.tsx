@@ -26,6 +26,13 @@ describe("TaiyiPanel", () => {
     expect(screen.queryByText(/本仓未能核到其一手出处/)).not.toBeInTheDocument();
   });
 
+  it("shows the Yin 60 diagram and prose discrepancy without claiming to calculate the source hour", () => {
+    const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 60 });
+    render(<TaiyiPanel chart={chart} yearInput="724" cycle={360} dun="阴遁" ruJuInput="60" />);
+    expect(screen.getByText("图列3宫 · 正文列2宫")).toBeInTheDocument();
+    expect(screen.getByText(/原书为时计局例/)).toBeInTheDocument();
+  });
+
   it("shows the specific generals and target for the 秘書 flanking example", () => {
     const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阳遁", ruJu: 2 });
     render(<TaiyiPanel chart={chart} yearInput="724" cycle={360} dun="阳遁" ruJuInput="2" />);
