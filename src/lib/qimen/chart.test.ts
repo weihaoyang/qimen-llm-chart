@@ -73,6 +73,18 @@ describe("buildChart", () => {
       expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
     }
   });
+  it("compares the 艺术典 705 人遁 example while retaining its 值使 discrepancy", () => {
+    const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 7 } });
+    expect(chart.raw.fourPillars.day.stem).toBe("乙");
+    expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe("丙子");
+    expect(chart.raw.zhiFu).toMatchObject({ star: "天任", heavenlyStem: "己" });
+    expect(chart.raw.zhiShi).toMatchObject({ gate: "生门", position: 1 });
+    const palace = chart.raw.palaces.find(p => p.position === 6)!;
+    expect(palace.gate).toBe("休门");
+    expect([palace.heavenlyStem].flat()).toContain("丁");
+    expect(palace.deity).toBe("太阴");
+    expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")?.positions).toContain(6);
+  });
   it("reconstructs the two 地遁 examples in 遁甲演义 without dropping 乙 from the rule", () => {
     const examples = [
       { datetime: "2026-01-02T06:00", dayStem: "丙", hour: "辛卯", dunType: "yang", solarTerm: "冬至", juNumber: 1, palace: 2, chief: "天冲" },
