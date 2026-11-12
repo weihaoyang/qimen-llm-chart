@@ -4,6 +4,34 @@ import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "./serializer";
 
 describe("serializeBaziToCompactJson", () => {
+  it("retains both possible year pillars on the Beijing civil date containing lichun", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+    }));
+    const timing = (day: number) => JSON.parse(serializeBaziToCompactJson(chart, {
+      referenceDate: new Date(2024, 1, day),
+    })).relations.timing as { liuNian: { ganZhi: string | null; xun: string | null; xunKong: string | null; candidates: Array<{ ganZhi: string }> }; note: string };
+    expect(timing(3).liuNian.ganZhi).toBe("癸卯");
+    expect(timing(4).liuNian).toMatchObject({ ganZhi: null, xun: null, xunKong: null, candidates: [{ ganZhi: "癸卯" }, { ganZhi: "甲辰" }] });
+    expect(timing(4).note).toContain("缺少具体时刻");
+    expect(timing(5).liuNian.ganZhi).toBe("甲辰");
+    const text = serializeBaziToStructuredText(chart, { referenceDate: new Date(2024, 1, 4) });
+    expect(text).toContain("交节前后待定：癸卯");
+    expect(text).toContain("甲辰");
+  });
+  it("keeps the lunar-new-year convention distinct from the lichun boundary", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+      baziSettings: { yearBoundary: "lunar-new-year", dayBoundary: "midnight" },
+    }));
+    const year = (day: number) => JSON.parse(serializeBaziToCompactJson(chart, {
+      referenceDate: new Date(2024, 1, day),
+    })).relations.timing.liuNian as { ganZhi: string | null; candidates: unknown[] };
+    expect(year(4).ganZhi).toBe("癸卯");
+    expect(year(9).ganZhi).toBe("癸卯");
+    expect(year(10).ganZhi).toBe("甲辰");
+    expect(year(10).candidates).toHaveLength(1);
+  });
   it("does not switch ten-year luck cycles at the beginning of the calendar year", () => {
     const chart = buildBaziChartFromProfile(normalizeProfileInput({
       calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",

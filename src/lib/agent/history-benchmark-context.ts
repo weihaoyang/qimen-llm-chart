@@ -118,8 +118,8 @@ export const buildHistoricalBenchmarkContext = ({
       year,
       age,
       liuNian: timing.liuNian,
-      liuNianTenGod: LunarUtil.SHI_SHEN[`${bazi.raw.dayMaster}${timing.liuNian.ganZhi[0]}`] ?? null,
-      liuNianBranchInteractions: branchInteractions(timing.liuNian.ganZhi[1] ?? "", bazi),
+      liuNianTenGod: timing.liuNian.ganZhi ? LunarUtil.SHI_SHEN[`${bazi.raw.dayMaster}${timing.liuNian.ganZhi[0]}`] ?? null : null,
+      liuNianBranchInteractions: timing.liuNian.ganZhi ? branchInteractions(timing.liuNian.ganZhi[1] ?? "", bazi) : [],
       daYun: timing.currentDaYun ? {
         ganZhi: timing.currentDaYun.ganZhi,
         years: [timing.currentDaYun.startYear, timing.currentDaYun.endYear],

@@ -4,7 +4,8 @@ import { analyzeBaziRelations, type BaziRelation } from "./relations-analysis";
 
 export type BaziSerializationOptions = {
   /**
-   * The instant the "current" 流年 / 大运 fields are derived from.
+   * A Date whose local calendar fields specify the reference civil date.
+   * Its time of day is not used to choose a side of a transition.
    *
    * Leaving it unset falls back to the wall clock, which makes the payload vary
    * with time — correct for the browser workbench (the user's clock *is* the
@@ -50,9 +51,10 @@ export type BaziRelationSummary = {
     referenceDate: string;
     liuNian: {
       calendarYear: number;
-      ganZhi: string;
-      xun: string;
-      xunKong: string;
+      ganZhi: string | null;
+      xun: string | null;
+      xunKong: string | null;
+      candidates: Array<{ ganZhi: string; xun: string; xunKong: string }>;
     };
     currentDaYun: NormalizedBaziChart["raw"]["yun"]["daYun"][number] | null;
     note: string;
@@ -263,6 +265,16 @@ const buildTimingSummary = (
   );
   const lunar = solar.getLunar();
   const useLunarNewYear = chart.raw.conventions.yearBoundary === "lunar-new-year";
+  // lunar-typescript's solar terms are expressed in China civil time. A date
+  // without a time cannot determine which side of an intraday 立春 it denotes.
+  const endOfDayLunar = Solar.fromYmdHms(calendarYear, referenceDate.getMonth() + 1, referenceDate.getDate(), 23, 59, 59).getLunar();
+  const yearFields = (value: typeof lunar) => useLunarNewYear
+    ? { ganZhi: value.getYearInGanZhi(), xun: value.getYearXun(), xunKong: value.getYearXunKong() }
+    : { ganZhi: value.getYearInGanZhiExact(), xun: value.getYearXunExact(), xunKong: value.getYearXunKongExact() };
+  const firstYear = yearFields(lunar);
+  const lastYear = yearFields(endOfDayLunar);
+  const candidates = firstYear.ganZhi === lastYear.ganZhi ? [firstYear] : [firstYear, lastYear];
+  const selectedYear = candidates.length === 1 ? firstYear : null;
   // The reference is only used as a civil date here. On the transition date
   // the time is unknown, so neither adjacent cycle can be selected safely.
   const startMatch = /^(\d{4})-(\d{2})-(\d{2}) /.exec(chart.raw.yun.startSolar);
@@ -282,12 +294,13 @@ const buildTimingSummary = (
     referenceDate: reference,
     liuNian: {
       calendarYear,
-      ganZhi: useLunarNewYear ? lunar.getYearInGanZhi() : lunar.getYearInGanZhiExact(),
-      xun: useLunarNewYear ? lunar.getYearXun() : lunar.getYearXunExact(),
-      xunKong: useLunarNewYear ? lunar.getYearXunKong() : lunar.getYearXunKongExact(),
+      ganZhi: selectedYear?.ganZhi ?? null,
+      xun: selectedYear?.xun ?? null,
+      xunKong: selectedYear?.xunKong ?? null,
+      candidates,
     },
     currentDaYun,
-    note: `${useLunarNewYear ? "流年按农历春节年干支" : "流年按参考日期的节气年干支"}提供；${currentNote}`,
+    note: `${useLunarNewYear ? "流年按农历春节年干支" : "流年按北京时间参考日期的立春节气年干支"}${selectedYear ? "提供" : "：该日跨立春，缺少具体时刻，列出前后候选"}；${currentNote}`,
   };
 };
 
@@ -494,7 +507,7 @@ export const serializeBaziToStructuredText = (
     "",
     "### 流年与当前大运",
     `参考日期: ${timing.referenceDate}`,
-    `流年: ${timing.liuNian.calendarYear} ${timing.liuNian.ganZhi}（${timing.liuNian.xun} / ${timing.liuNian.xunKong}）`,
+    `流年: ${timing.liuNian.calendarYear} ${timing.liuNian.ganZhi ? `${timing.liuNian.ganZhi}（${timing.liuNian.xun} / ${timing.liuNian.xunKong}）` : `交节前后待定：${timing.liuNian.candidates.map(item => `${item.ganZhi}（${item.xun} / ${item.xunKong}）`).join("、")}`}`,
     `当前大运: ${timing.currentDaYun?.ganZhi ?? "无法按参考日期确定"}`,
     timing.currentDaYun
       ? `当前大运年份: ${timing.currentDaYun.startYear}-${timing.currentDaYun.endYear}，年龄: ${timing.currentDaYun.startAge}-${timing.currentDaYun.endAge}岁`
