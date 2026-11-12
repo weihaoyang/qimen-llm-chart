@@ -42,6 +42,20 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("retains both sourced 天遁 stem pairings with their actual evidence", () => {
+    const report = evaluateQimenPatterns(chartWith([
+      palace(1, { heavenlyStem: "丙", earthlyStem: "丁", gate: "生门" }),
+      palace(4, { heavenlyStem: "丙", earthlyStem: "戊", gate: "生门" }),
+      palace(8, { heavenlyStem: "丙", earthlyStem: ["丁", "戊"], gate: "生门" }),
+      palace(9, { heavenlyStem: "丙", earthlyStem: "戊", gate: "开门" }),
+    ]));
+    const check = report.checks.find(p => p.id === "jiu_dun_tian")!;
+    expect(check.positions).toEqual([1, 4, 8]);
+    expect(check.evidence[0]).toContain("丙生临地丁");
+    expect(check.evidence[1]).toContain("丙生临地戊（行军要略）");
+    expect(check.evidence[2]).toContain("丙生临地丁");
+    expect(check.evidence[2]).toContain("丙生临地戊（行军要略）");
+  });
   it("distinguishes the 风遁 乙 and 丙 variant conditions", () => {
     const one = evaluateQimenPatterns(chartWith([palace(4, { heavenlyStem: "乙", gate: "休门" })]));
     expect(one.checks.find(p => p.id === "jiu_dun_feng")?.evidence[0]).toContain("乙合三吉门临巽");

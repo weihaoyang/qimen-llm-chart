@@ -5,6 +5,29 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("shows 丙生临戊 天遁 and its bird pattern in the same real palace", () => {
+    const chart = buildChart({ datetime: "2026-01-01T04:00", timeZone: "Asia/Shanghai" });
+    const checks = evaluateQimenPatterns(chart).checks;
+    const tian = checks.find(item => item.id === "jiu_dun_tian")!;
+    expect(tian.positions).toContain(4);
+    expect(tian.evidence.join(" ")).toContain("丙生临地戊（行军要略）");
+    expect(checks.find(item => item.id === "fei_niao_die_xue")?.positions).toContain(4);
+    const id = "patterns.jiu_dun.tian_dun";
+    expect(chart.raw.palaces.find(p => p.position === 4)?.auspiciousPatterns?.filter(p => p.id === id)).toHaveLength(1);
+    expect(chart.raw.specialPatterns.auspiciousPatterns?.filter(p => p.id === id).map(p => p.position)).toContain(4);
+  });
+  it("checks both 天遁 pairings across 96 real charts and both raw outputs", () => {
+    const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const expected = chart.raw.palaces.filter(p => p.gate === "生门" && values(p.heavenlyStem).includes("丙") && values(p.earthlyStem).some(stem => ["丁", "戊"].includes(stem))).map(p => p.position);
+      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_tian")?.positions, datetime).toEqual(expected);
+      const id = "patterns.jiu_dun.tian_dun";
+      expect(chart.raw.palaces.filter(p => p.auspiciousPatterns?.some(q => q.id === id)).map(p => p.position), datetime).toEqual(expected);
+      expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
+    }
+  });
   it("reconstructs the two 地遁 examples in 遁甲演义 without dropping 乙 from the rule", () => {
     const examples = [
       { datetime: "2026-01-02T06:00", dayStem: "丙", hour: "辛卯", dunType: "yang", solarTerm: "冬至", juNumber: 1, palace: 2, chief: "天冲" },
