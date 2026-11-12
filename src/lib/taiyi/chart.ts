@@ -60,6 +60,7 @@ export type TaiyiChart = {
   accumulation: { jiyear: number; eraRemainder: number; ruJu: number };
   annualGate: { name: string; yearInGate: number; yearInCycle: number };
   annualGatePalaces: Array<{ palace: number; gate: string }>;
+  dutyGateRelation: { result: "执提" | "提格" | "未命中"; palace: number; gate: string; oppositePalace: number; oppositeGate: string };
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
   fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
@@ -407,6 +408,10 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
   const shiJiPalace = isMain(shiJiPos) ? POSITION_TO_PALACE[shiJiPos] : null;
   const deityOf = (position: string) => DEITIES.find((deity) => deity.position === position) ?? DEITIES[0];
   const annualGate = annualDutyGate(jiyear);
+  const annualGatePalaces = taiyiEightGatePalaces(palace, annualGate.name);
+  const oppositePalace = OPPOSITE_PALACE[palace];
+  const oppositeGate = annualGatePalaces.find((item) => item.palace === oppositePalace)!.gate;
+  const dutyGateRelation = { result: (["开门", "生门"].includes(annualGate.name) ? "执提" : ["开门", "生门"].includes(oppositeGate) ? "提格" : "未命中") as "执提" | "提格" | "未命中", palace, gate: annualGate.name, oppositePalace, oppositeGate };
   const fixedEye = fixedPlanEyePosition(year, tianMuPos);
   // 《太乙金钥匙》定目数至太乙前：同宫时终点边界尚待核，保留未计算。
   const fixedCount = fixedEye.position === taiyiPosition ? null : countSum(fixedEye.position, taiyiPosition);
@@ -417,7 +422,8 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
     input: { year, cycle, dun, ruJu, derived: override === null, dunDefaulted },
     accumulation: { jiyear, eraRemainder, ruJu },
     annualGate,
-    annualGatePalaces: taiyiEightGatePalaces(palace, annualGate.name),
+    annualGatePalaces,
+    dutyGateRelation,
     fixedOpenGatePalaces: taiyiEightGatePalaces(palace, "开门"),
     generalGatePalaces: {
       host: hostGeneral === 5 ? null : taiyiEightGatePalaces(hostGeneral, "开门"),
@@ -461,7 +467,7 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       + "**遁不由局数推出**：卷三与秘書皆阳局七十二局、阴局七十二局并列（秘書阳局第一局太乙一宫、阴局第一局太乙九宫），故本仓须人工选定遁；未选定时按阳遁排出并在界面提示（input.dunDefaulted）。"
       + "格局参考卷三及《太乙秘書》局注，囚、关采用局注的同宫宽判。「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
       + "「前一宫／后一宫」按八正宫环（乾一坎八艮三震四巽九离二坤七兑六）定序，「前一辰／后一辰」按十六神环紧邻之间神定序。"
-      + "四郭固、四郭杜取所列合象读法；四郭杜中主客大将同宫本身已满足本站的关，并非另证其他格局。提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。岁计直门加太乙与开门加太乙分别列示；主客大将以开门加将宫，落中宫时标八门杜而不擅自寄宫。执提判定尚未实现。"
+      + "四郭固、四郭杜取所列合象读法；四郭杜中主客大将同宫本身已满足本站的关，并非另证其他格局。提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。岁计直门加太乙与开门加太乙分别列示；主客大将以开门加将宫，落中宫时标八门杜而不擅自寄宫。执提仅列岁计直门加太乙的一种图示口径，不代表全部传本；840年执提记载此法未命中。"
       + "和数只列事实、不下判词：算值、奇偶、所立正宫／间神，并按卷二〈推阴阳和不和〉列「上和十四、十八、三十三；次和二十三、二十九、三十二；下和十二、十六、二十七、三十四、三十八」。卷二与《太乙秘書》《太乙統宗寶鑑》《淘金歌》一系的和数清单不同（后者次和另含三十六、下和另含二十一、上和无三十三），且两书局注互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），同篇不合判据又含太乙宫、二目所立、算奇偶等多维（卷二另有『八三四九为阳宫、二七六一为阴宫』，与乾坎艮震为阳之常义相异），故本仓不输出和／不和与长／短判词。"
       + "已用《太乙秘書》阳局 1–24、阴局 1–12（共 36 局）逐局回归，字段以秘書原文为准、与卷三立成互校，秘書讹误或缺漏之字段在用例中具名跳过并注明（详见 mishu-corpus.ts）。"
       + "《太乙金镜式经》卷一岁计周纪取 360 年，本站默认沿用。365 为对照参数；起元另有异说，故入局数可覆盖。仅供研究，不构成预测或现实裁决。",

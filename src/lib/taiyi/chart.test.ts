@@ -128,6 +128,22 @@ describe("accumulation and palaces", () => {
     expect(JSON.parse(serializeTaiyiToCompactJson(base)).annualGate.name).toBe("休门");
   });
 
+  it("compares duty gate and opposite gate using the 912 提格 example", () => {
+    // 《统宗宝鉴》乾化二年：死门直事加太乙坎八，对生门，是提格。
+    const chart = buildTaiyiChart({ year: 912, cycle: 360, dun: "阳遁", ruJu: null });
+    expect(chart.input.ruJu).toBe(21);
+    expect(chart.dutyGateRelation).toEqual({ result: "提格", palace: 8, gate: "死门", oppositePalace: 2, oppositeGate: "生门" });
+    expect(serializeTaiyiToStructuredText(chart)).toContain("太乙8宫死门，对宫2宫生门");
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).dutyGateRelation.result).toBe("提格");
+    const results = ["执提", "未命中", "执提", "未命中", "提格", "未命中", "提格", "未命中"];
+    for (let i = 0; i < 8; i++) for (const dun of ["阳遁", "阴遁"] as const) {
+      const candidate = buildTaiyiChart({ year: 724 + i * 30, cycle: 360, dun, ruJu: null });
+      expect(candidate.dutyGateRelation.result).toBe(results[i]);
+      expect(candidate.annualGatePalaces.find(p => p.palace === candidate.dutyGateRelation.oppositePalace)?.gate).toBe(candidate.dutyGateRelation.oppositeGate);
+    }
+    expect(buildTaiyiChart({ year: 840, cycle: 360, dun: "阳遁", ruJu: null }).dutyGateRelation.result).toBe("未命中");
+  });
+
   it("preserves the 开成五年 执提 evidence without inferring an unsupported rule", () => {
     // 《统宗宝鉴》卷十六记开成五年二十一局有执提；其余排法并非原文明确列出。
     const chart = buildTaiyiChart({ year: 840, cycle: 360, dun: "阳遁", ruJu: null });

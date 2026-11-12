@@ -26,6 +26,12 @@ describe("TaiyiPanel", () => {
     expect(screen.queryByText(/本仓未能核到其一手出处/)).not.toBeInTheDocument();
   });
 
+  it("shows the sourced 912 opposite-gate case", () => {
+    const chart = buildTaiyiChart({ year: 912, cycle: 360, dun: "阳遁", ruJu: null });
+    render(<TaiyiPanel chart={chart} yearInput="912" cycle={360} dun="阳遁" ruJuInput="" />);
+    expect(screen.getByText("提格 · 太乙8宫死门，对宫2宫生门")).toBeInTheDocument();
+  });
+
   it("shows the Yin 60 diagram and prose discrepancy without claiming to calculate the source hour", () => {
     const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 60 });
     render(<TaiyiPanel chart={chart} yearInput="724" cycle={360} dun="阴遁" ruJuInput="60" />);
