@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildBaziChartFromProfile } from "./chart";
 import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "./serializer";
@@ -18,6 +18,38 @@ describe("serializeBaziToCompactJson", () => {
     const text = serializeBaziToStructuredText(chart, { referenceDate: new Date(2024, 1, 4) });
     expect(text).toContain("交节前后待定：癸卯");
     expect(text).toContain("甲辰");
+  });
+  it("locates lichun on the reference zone's civil date rather than the server's date", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+    }));
+    const year = (day: number, referenceTimeZone: string) => JSON.parse(serializeBaziToCompactJson(chart, {
+      referenceDate: new Date(2024, 1, day), referenceTimeZone,
+    })).relations.timing.liuNian as { ganZhi: string | null; candidates: Array<{ ganZhi: string }> };
+    // 2024 立春 at 16:27 UTC+8 is February 3, 22:27 in Honolulu.
+    expect(year(2, "Pacific/Honolulu").ganZhi).toBe("癸卯");
+    expect(year(3, "Pacific/Honolulu")).toMatchObject({ ganZhi: null, candidates: [{ ganZhi: "癸卯" }, { ganZhi: "甲辰" }] });
+    expect(year(4, "Pacific/Honolulu").ganZhi).toBe("甲辰");
+    expect(year(3, "Asia/Shanghai").ganZhi).toBe("癸卯");
+  });
+  it("uses the profile zone for today's default and handles a DST-skipped midnight", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Pacific/Honolulu", gender: "male", timeBasis: "civil",
+    }));
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2024-02-04T06:00:00Z"));
+      const timing = JSON.parse(serializeBaziToCompactJson(chart)).relations.timing;
+      expect(timing.referenceDate).toBe("2024-02-03");
+      expect(timing.liuNian.ganZhi).toBeNull();
+      const dst = JSON.parse(serializeBaziToCompactJson(chart, {
+        referenceDate: new Date(2018, 10, 4), referenceTimeZone: "America/Sao_Paulo",
+      })).relations.timing;
+      expect(dst.referenceDate).toBe("2018-11-04");
+      expect(dst.liuNian.ganZhi).toBe("戊戌");
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it("keeps the lunar-new-year convention distinct from the lichun boundary", () => {
     const chart = buildBaziChartFromProfile(normalizeProfileInput({

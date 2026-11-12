@@ -1,6 +1,7 @@
 import { Solar } from "lunar-typescript";
 import type { BaziPillarDetail, NormalizedBaziChart } from "./types";
 import { analyzeBaziRelations, type BaziRelation } from "./relations-analysis";
+import { getChinaEphemerisParts, getTimeZoneParts, toZonedDate } from "@/lib/qimen/timezone";
 
 export type BaziSerializationOptions = {
   /**
@@ -15,6 +16,8 @@ export type BaziSerializationOptions = {
    * caller's civil date explicitly and pass it in.
    */
   referenceDate?: Date;
+  /** Zone of the reference civil date; defaults to the profile's time zone. */
+  referenceTimeZone?: string;
 };
 
 export type BaziRelationMatch = {
@@ -256,6 +259,7 @@ const formatReferenceDate = (date: Date) => {
 const buildTimingSummary = (
   chart: NormalizedBaziChart,
   referenceDate: Date,
+  referenceTimeZone: string,
 ): BaziRelationSummary["timing"] => {
   const calendarYear = referenceDate.getFullYear();
   const solar = Solar.fromYmd(
@@ -265,13 +269,30 @@ const buildTimingSummary = (
   );
   const lunar = solar.getLunar();
   const useLunarNewYear = chart.raw.conventions.yearBoundary === "lunar-new-year";
-  // lunar-typescript's solar terms are expressed in China civil time. A date
-  // without a time cannot determine which side of an intraday 立春 it denotes.
-  const endOfDayLunar = Solar.fromYmdHms(calendarYear, referenceDate.getMonth() + 1, referenceDate.getDate(), 23, 59, 59).getLunar();
+  // Convert both ends of the selected local date to the ephemeris clock before
+  // evaluating 立春; the local date containing that instant varies by zone.
+  const reference = formatReferenceDate(referenceDate);
+  const lunarAtDayEdge = (first: boolean) => {
+    // Some zones skip midnight for DST. Find the first/last valid wall minute;
+    // do not silently map a completely skipped civil date to a different day.
+    for (let offset = 0; offset < 1440; offset++) {
+      const minute = first ? offset : 1439 - offset;
+      const time = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}:${first ? "00" : "59"}`;
+      try {
+        const china = getChinaEphemerisParts(toZonedDate(`${reference}T${time}`, referenceTimeZone));
+        return Solar.fromYmdHms(china.year, china.month, china.day, china.hour, china.minute, china.second).getLunar();
+      } catch {
+        // Try the next minute on the same civil date.
+      }
+    }
+    throw new Error(`时区 ${referenceTimeZone} 不存在日期 ${reference}`);
+  };
+  const firstLunar = useLunarNewYear ? lunar : lunarAtDayEdge(true);
+  const endOfDayLunar = useLunarNewYear ? lunar : lunarAtDayEdge(false);
   const yearFields = (value: typeof lunar) => useLunarNewYear
     ? { ganZhi: value.getYearInGanZhi(), xun: value.getYearXun(), xunKong: value.getYearXunKong() }
     : { ganZhi: value.getYearInGanZhiExact(), xun: value.getYearXunExact(), xunKong: value.getYearXunKongExact() };
-  const firstYear = yearFields(lunar);
+  const firstYear = yearFields(firstLunar);
   const lastYear = yearFields(endOfDayLunar);
   const candidates = firstYear.ganZhi === lastYear.ganZhi ? [firstYear] : [firstYear, lastYear];
   const selectedYear = candidates.length === 1 ? firstYear : null;
@@ -279,7 +300,6 @@ const buildTimingSummary = (
   // the time is unknown, so neither adjacent cycle can be selected safely.
   const startMatch = /^(\d{4})-(\d{2})-(\d{2}) /.exec(chart.raw.yun.startSolar);
   const start = startMatch ? Solar.fromYmd(Number(startMatch[1]), Number(startMatch[2]), Number(startMatch[3])) : null;
-  const reference = formatReferenceDate(referenceDate);
   const boundaries = start ? Array.from({ length: chart.raw.yun.daYun.length + 1 }, (_, i) => start.nextYear(i * 10).toYmd()) : [];
   const atBoundary = boundaries.includes(reference);
   const currentIndex = atBoundary ? -1 : boundaries.findIndex((boundary, i) =>
@@ -300,7 +320,7 @@ const buildTimingSummary = (
       candidates,
     },
     currentDaYun,
-    note: `${useLunarNewYear ? "流年按农历春节年干支" : "流年按北京时间参考日期的立春节气年干支"}${selectedYear ? "提供" : "：该日跨立春，缺少具体时刻，列出前后候选"}；${currentNote}`,
+    note: `${useLunarNewYear ? "流年按参考日期的农历春节年干支" : `流年按 ${referenceTimeZone} 参考日期对应的立春节气年干支`}${selectedYear ? "提供" : "：该日跨立春，缺少具体时刻，列出前后候选"}；${currentNote}`,
   };
 };
 
@@ -355,7 +375,10 @@ export const buildBaziRelationSummary = (
     missingElements: engine.missingElements,
     dayMasterStrength: chart.raw.structureAudit.dayMasterStrength,
     notes: engine.notes,
-    timing: buildTimingSummary(chart, options.referenceDate ?? new Date()),
+    timing: buildTimingSummary(chart, options.referenceDate ?? (() => {
+      const now = getTimeZoneParts(new Date(), options.referenceTimeZone ?? chart.input.normalized.timeZone);
+      return new Date(now.year, now.month - 1, now.day, 12);
+    })(), options.referenceTimeZone ?? chart.input.normalized.timeZone),
   };
 };
 
