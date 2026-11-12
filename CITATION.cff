@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "如引用本项目或研究，请使用以下信息。"
+type: software
+title: "知几排盘：古籍对照与可复算排盘研究"
+authors:
+  - name: "奇点序列及贡献者"
+repository-code: "https://github.com/weihaoyang/qimen-llm-chart"
+license: GPL-3.0-only

@@ -20,7 +20,8 @@ describe("QizhengPanel", () => {
     const value = chart();
     const { container } = render(<QizhengPanel value={value} />);
     expect(screen.getByRole("heading", { name: "七政四余" })).toBeInTheDocument();
-    expect(container.querySelectorAll(".qizheng-palaces span")).toHaveLength(12);
+    expect(container.querySelector(".qizheng-palaces")?.querySelectorAll(":scope > span")).toHaveLength(12);
+    expect(container.querySelector("details .qizheng-palaces")?.querySelectorAll(":scope > span")).toHaveLength(12);
     for (const palace of value.palaces) {
       expect(container.querySelector(".qizheng-palaces")).toHaveTextContent(palace.name);
       expect(container.querySelector(".qizheng-palaces")).toHaveTextContent(palace.branch);

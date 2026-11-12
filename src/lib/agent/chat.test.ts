@@ -292,12 +292,12 @@ describe("agent chat helpers", () => {
       jsonPayload: "{}",
     });
 
-    expect(baziMessages[1]?.content).toContain("原始古籍摘录上下文：");
+    expect(baziMessages[1]?.content).toContain("古籍主题概述上下文：");
     expect(baziMessages[1]?.content).toContain("《渊海子平》");
-    expect(qimenMessages[1]?.content).not.toContain("原始古籍摘录上下文：");
+    expect(qimenMessages[1]?.content).not.toContain("古籍主题概述上下文：");
   });
 
-  it("ranks excerpts by the user's requested Bazi angle", () => {
+  it("ranks summaries by the user's requested Bazi angle", () => {
     const context = selectBaziClassicsContext({
       question: "请只看大运和流年触发。",
       structuredText: "当前大运：丙午",
@@ -306,11 +306,11 @@ describe("agent chat helpers", () => {
     });
 
     expect(context).toContain("论大运");
-    expect(context).toContain("大运看支");
-    expect(context).toContain("摘录（未逐字校对）：八字 - 渊海子平.txt");
+    expect(context).toContain("大运以月柱为排列起点");
+    expect(context).toContain("本站概述｜https://www.chinese-classics.org/");
   });
 
-  it("selects a Tai Sui excerpt for a current-year question", () => {
+  it("selects a Tai Sui summary for a current-year question", () => {
     const context = selectBaziClassicsContext({
       question: "请分析今年流年和太岁如何触发。",
       structuredText: "流年：丙午",
@@ -319,7 +319,7 @@ describe("agent chat helpers", () => {
     });
 
     expect(context).toContain("《三命通会》｜论太岁");
-    expect(context).toContain("逐年太岁游行十二宫");
+    expect(context).toContain("将太岁作为流年的参照");
     // 现代编者话必须与古籍摘录分离，并被标注为不可引用
     expect(context).not.toContain("不可只凭流年一个字作断");
     expect(context).toContain("编者按（本仓现代说明，非原文，禁止作为古籍引用）：若五行有救、四柱有情，仍须结合原局与行运详审，不可只凭流年一字作断。");

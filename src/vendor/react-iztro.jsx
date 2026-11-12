@@ -1,5 +1,8 @@
 "use client";
 
+// Adapted from react-iztro 1.4.2 (Copyright (c) 2023 Sylar Long).
+// MIT license and full notice are in LICENSES/react-iztro-MIT.txt.
+
 import classNames from "classnames";
 import {
   useCallback,

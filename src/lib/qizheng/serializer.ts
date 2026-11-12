@@ -11,6 +11,7 @@ export const serializeQizhengToStructuredText = (chart: QizhengChart) =>
       : "身度未计算：缺少太阴位置。",
     `完整性：${chart.complete ? "完整" : `部分排盘（缺少：${chart.missingStars.join("、")}）`}`,
     `十二宫：${chart.palaces.map((palace) => `${palace.name}(${palace.branch}) · 宫主${palace.ruler}`).join("、")}`,
+    `岁小限（《张果星宗》附〈定小限例〉，生年支${chart.annualMinorLimits.birthYearBranch}按当地民用日期的农历年取）：${chart.annualMinorLimits.byYearBranch.map((limit) => `${limit.yearBranch}年${limit.branch}宫·限主${limit.ruler}`).join("、")}`,
     ...chart.stars.map((star) => `${star.kind}·${star.name}：${star.longitude}° · ${star.palaceName}(${star.branch}宫) · 宿${star.mansion}${star.mansionComparison ? `（牛宿界对照：${star.mansionComparison.mansion}，${star.mansionComparison.method}）` : ""} · 度主${star.mansionRuler}${star.nodeConventionComparison ? ` · 新法命名对照：${star.nodeConventionComparison.longitude}° · ${star.nodeConventionComparison.palaceName}(${star.nodeConventionComparison.branch}宫) · 宿${star.nodeConventionComparison.mansion}（${star.nodeConventionComparison.method}）` : ""} · ${star.dignity}${star.classicalDignity ? ` · 星学大成卷${star.classicalDignity.volume}${star.classicalDignity.passage ? `〈${star.classicalDignity.passage}〉` : ""}：${star.classicalDignity.label}${star.classicalDignity.alternatives?.map((item) => `；〈${item.passage}〉：${item.label}`).join("") ?? ""}` : ""} · ${star.element} · ${star.fortune}${star.note ? ` · ${star.note}` : ""}`),
     `边界：${chart.disclaimer}`,
   ].join("\n");

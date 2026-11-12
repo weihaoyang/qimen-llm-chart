@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { BAZI_CLASSIC_EXCERPTS, selectBaziClassicsContext } from "./bazi-classics";
+import { BAZI_CLASSIC_SUMMARIES, selectBaziClassicsContext } from "./bazi-classics";
 
 describe("bazi classics payload", () => {
   it("never claims verbatim quotations and keeps editor's notes out of the excerpt text", () => {
-    for (const excerpt of BAZI_CLASSIC_EXCERPTS) {
-      expect(excerpt.text.trim().length).toBeGreaterThan(0);
+    for (const excerpt of BAZI_CLASSIC_SUMMARIES) {
+      expect(excerpt.summary.trim().length).toBeGreaterThan(0);
       expect(excerpt.sourceBook).toMatch(/^《.+》$/);
       expect(excerpt.section.length).toBeGreaterThan(0);
       // 编者按不得混入摘录正文
-      expect(excerpt.text).not.toContain("编者按");
+      expect(excerpt.summary).not.toContain("编者按");
       if (excerpt.editorial) {
         expect(excerpt.editorial.length).toBeGreaterThan(0);
-        expect(excerpt.text).not.toContain(excerpt.editorial);
+        expect(excerpt.summary).not.toContain(excerpt.editorial);
       }
     }
   });
 
-  it("labels excerpts as un-proofread and forbids verbatim citation", () => {
+  it("labels summaries as site-authored and forbids verbatim citation", () => {
     const context = selectBaziClassicsContext({ question: "请分析流年太岁", structuredText: "", jsonPayload: "", limit: 6 });
-    expect(context).toContain("未逐字校对");
+    expect(context).toContain("本站撰写");
     expect(context).toContain("只能表述为「据《书名·篇目》大意」");
-    expect(context).toContain("禁止把摘录当作逐字原文引用");
+    expect(context).toContain("禁止把概述当作逐字原文引用");
     // 旧的「原始语料/原文摘录」口径不得再出现
     expect(context).not.toContain("原始语料");
     expect(context).not.toContain("原文摘录");

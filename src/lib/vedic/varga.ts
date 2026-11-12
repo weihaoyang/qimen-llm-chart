@@ -1,7 +1,7 @@
 /**
  * 分盘（varga）换算规则。
  *
- * 移植自 MIT 许可的 `vedic-kundali`（(c) ravipathak3001）`src/astro/varga.ts`：
+ * 移植自 MIT 许可的 `vedic-kundali`（Copyright (c) 2026 Vastukosh）`src/astro/varga.ts`：
  *   https://github.com/ravipathak3001/vedic-panchang
  * 规则本身出自古典占星文献（Parashara 体系的十六分盘），属公共领域内容；
  * 此处只做 TypeScript 改写与命名整理。

@@ -2,7 +2,7 @@
 
 ## 结论
 
-`shunshi-ai/fate-bench` 是当前最适合加入本地回归的公开扩展集：63 个命盘、295 道全球算命师大赛历史题，数据 CC BY 4.0，代码 MIT。它同时包含八字与紫微字段，并明确哪些命盘缺失出生时刻或出生资料。
+`shunshi-ai/fate-bench` 是当前最适合加入本地回归的公开扩展集：63 个命盘、295 道全球算命师大赛历史题，上游代码为 MIT，编制数据为 CC BY 4.0，后者的授权范围不包含底层比赛题、答案等来源材料。本文保留对照统计和复现命令，原始生辰和题库由审计者另行取得。[上游许可及数据说明](https://github.com/shunshi-ai/fate-bench#license)它同时包含八字与紫微字段，并明确哪些命盘缺失出生时刻或出生资料。
 
 本地下载物：`F:\temp\fate-bench\cases.json`、`F:\temp\fate-bench\fate_bench.jsonl`。
 

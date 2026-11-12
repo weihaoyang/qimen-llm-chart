@@ -1,7 +1,7 @@
 /**
  * Lahiri（Chitrapaksha）岁差与 UT→TT 修正。
  *
- * 移植自 MIT 许可的 `vedic-panchanga`（(c) ravipathak3001）：
+ * 移植自 MIT 许可的 `vedic-panchanga`（Copyright (c) 2026 Vastukosh）：
  *   https://github.com/ravipathak3001/vedic-panchang
  *   `src/ayanamsa.ts`（J2000 起算的岁差多项式 + 各体系 J2000 基准值）
  *   `src/astro/julian.ts`（deltaT / jdToJDE）

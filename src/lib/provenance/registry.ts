@@ -400,11 +400,11 @@ export const PROVENANCE: readonly ProvenanceEntry[] = [
     system: "bazi",
     kind: "计算口径",
     status: "已核",
-    title: "四柱/藏干/十神/纳音/空亡/大运 与 古籍摘录、结构审计",
-    citation: "npm `lunar-typescript@1.8.6`（MIT）＋ 本仓 `src/lib/agent/bazi-classics.ts` 摘录（`BAZI_CLASSIC_EXCERPTS`）＋ `structure-audit.ts` 启发式",
-    license: "MIT（历法库）；古籍摘录属公共领域",
+    title: "四柱/藏干/十神/纳音/空亡/大运 与古籍主题概述、结构审计",
+    citation: "npm `lunar-typescript@1.8.6`（MIT）＋ 本仓 `src/lib/agent/bazi-classics.ts` 主题概述（`BAZI_CLASSIC_SUMMARIES`）＋ `structure-audit.ts` 启发式",
+    license: "MIT（历法库）；古籍主题概述为本站撰写",
     note:
-      "四柱与十神等由 lunar-typescript 产出。以上 12 条即本仓 `src/lib/agent/bazi-classics.ts` 的 `BAZI_CLASSIC_EXCERPTS` 全表（`text` 逐字照录，`editorial` 以「【editorial…】」标注并明示非原文）。古籍摘录**未经逐字校对**，界面与载荷都要求只能引作「据《书名·篇目》大意」，禁止当逐字原文；`editorial` 为本仓现代编者按，不得挂书名引用。旺衰权重、从格门槛、调候取用为**本仓启发式**，不是古籍固定算法。",
+      "四柱与十神由 lunar-typescript 产出。古籍材料为本站撰写的主题概述，各条附对应书名、篇目和可读版本链接。旺衰权重、从格门槛、调候取用属于本仓启发式。",
   },
   {
     id: "daliuren-upstream",

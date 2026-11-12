@@ -1,11 +1,25 @@
 # 第三方声明（Third-Party Notices）
 
+项目代码按仓库根目录 GPL-3.0-only 发布。下列第三方原始许可和署名继续适用。随论文保存的影印资料及独立转录见[影像来源与再利用记录](research/sources/RIGHTS.md)。
+
 ## 随仓库内嵌（vendored）的代码
+
+### 紫微斗数盘界面（react-iztro）
+
+- 来源：[react-iztro 1.4.2](https://www.npmjs.com/package/react-iztro/v/1.4.2)，Copyright (c) 2023 Sylar Long。
+- 位置：`src/vendor/react-iztro.jsx` 为本站修改的副本。npm 安装的 react-iztro 包另按原包许可分发。
+- 完整许可见 [react-iztro MIT](../LICENSES/react-iztro-MIT.txt)。
+
+### 人生 K 线可视化（life-kline）
+
+- 来源：[miounet11/life-kline](https://github.com/miounet11/life-kline)，Copyright 2024-2025 Life-Kline Team，核查版本 `7abf184df370452ee8279d72c8b45bc09e19913b`。
+- 位置：`src/lib/kline/life-kline-reading.ts`、`src/components/kline-hud.tsx` 与 `src/app/paipan/research.css` 含改写的可视化逻辑及样式。
+- 完整许可和署名见 [Apache-2.0](../LICENSES/life-kline-LICENSE.txt) 与 [上游 NOTICE](../LICENSES/life-kline-NOTICE.txt)。NOTICE 保留上游依赖清单，该清单描述的是 life-kline。
 
 ### 皇极经世 · 元会运世纪年
 
 - 来源：<https://github.com/Ryanlyly-ai/huangji-jingshi>（`src/chronology.ts`、`src/constants.ts`、`src/types.ts`）
-- 许可：MIT License — Copyright (c) 2026 Huangji Jingshi contributors
+- 许可：[完整 MIT 声明](../LICENSES/huangji-jingshi-MIT.txt)，Copyright (c) 2026 Huangji Jingshi contributors。
 - 位置：`src/lib/huangji/chronology.ts`（忠实移植并改写导出与文档注释，算法与原实现一致）
 - 说明：本仓库为 GPL-3.0-only。MIT 为宽松许可，允许在有署名与许可声明的前提下使用、修改与再分发；MIT 代码并入 GPL 项目是允许的方向。上表许可原文如下。
 
@@ -36,27 +50,27 @@ SOFTWARE.
 ### 七政四余（框架与表格）
 
 - 来源：<https://github.com/dglijin-oss/chinese-metaphysics-skills>（`qizheng-siyu-skill`）
-- 许可：MIT License — Copyright (c) 2026 天工长老
+- 许可：[完整 MIT 声明](../LICENSES/qizheng-siyu-MIT.txt)，Copyright (c) 2026 天工长老。
 - 位置：`src/lib/qizheng/chart.ts`
 - 采用部分：十二宫名与顺序（命宫/财帛/兄弟/田宅/子女/奴仆/夫妻/疾厄/迁移/官禄/福德/相貌）、二十八宿序、庙旺陷表、七政与四余的五行/吉凶表。
 - **已修正上游脚本的错误**：上游 `longitudeToPalace` 把白羊 0° 映射到「寅宫」，与其自身按古典键位（太阳庙于**戌**＝白羊）编制的庙旺陷表互相矛盾。本仓改为古典十二次口径（白羊=戌、金牛=酉、双子=申、巨蟹=未、狮子=午、处女=巳、天秤=辰、天蝎=卯、射手=寅、摩羯=丑、水瓶=子、双鱼=亥），修正后庙旺判定才可达（如太阳入白羊即得「庙」）。
 - **命宫（已改果老式）**：上游用紫微斗数的「寅起正月、顺数至生月、再逆数至生时」且月取公历月；本仓改用果老式「以生时加太阳所躔之宫，顺数至卯」。
 - **二十八宿（已改一手宿度表）**：改用清代《二十八宿黄道经纬度钤》的距星黄道经度表（公有领域），宿界＝距星，并把当日回归黄经按岁差折回 1684（康熙甲子）历元；以《清史稿·卷28》「康熙甲子年黄道十二次初度值宿」与 Spica（角宿一）J2000 折算互证（差 0.003°）。本表沿用 1684 年「参前觜后」次序；清乾隆十九年改「觜前参后」后通行次序与之一致，二者在觜/参交界约差 1.4°，界面已注明。岁差量取本仓 Lahiri 多项式（印度口径，仅作数值近似）。
-- **紫气**：上游约定「紫气 = 太阴黄经 − 90°」，与古典长周期紫气不同，本仓已移除该代用值。已有历史年表锚点，但古度及现代坐标转换尚待独立核验，故不输出紫气位置。
+- **紫气**：本站采用《清史稿》所载乾隆甲子法元的平行研究模型。法元子正按 UTC+08 近似，已与 1911 年鬼、柳两宿的历史样本对照。其余日期为该模型的外推，宿界沿用本站康熙旧钤。
 - 未采用部分：该脚本的简化天文（太阳/月亮/五星线性近似）；本仓改用真星历（celestine）。
-- 待办：继续复核紫气历史历表、度制和坐标转换；清代二十八宿距度及岁差近似已接入，月孛采用平月远地点。
+- 月孛采用平月远地点。紫气的跨年代外推精度和不同历史度制仍待复核。
 
 ### 神圣几何（图案定义）
 
 - 来源：<https://github.com/evoluteur/sacred-geometry>（`patterns.js`；npm 包 `sacred-geometry-generator`）
-- 许可：MIT License — (c) 2026 Olivier Giulieri
+- 许可：[完整 MIT 声明](../LICENSES/sacred-geometry-MIT.txt)，Copyright (c) 2026 Olivier Giulieri。
 - 位置：`src/lib/sacred-geometry/patterns.ts`
 - 采用部分：Vesica Piscis、Seed of Life、Flower of Life、Metatron's Cube、Golden Spiral 的**图案定义与几何构造**（单位空间、构造圆半径 = 1，返回形状描述符）；本仓只改写为 TypeScript 并自行渲染 SVG。
 
 ### 卢恩符文（Elder Futhark）
 
 - 来源：<https://github.com/evoluteur/rune-reading>（`js/runes-data.js`）
-- 许可：MIT License — (c) 2026 Olivier Giulieri
+- 许可：[完整 MIT 声明](../LICENSES/rune-reading-MIT.txt)，Copyright (c) 2026 Olivier Giulieri。
 - 位置：`src/lib/runes/data.ts`
 - 采用部分：24 符文的名称、Unicode 字符、读音、三个 aett 的划分、传统 lore、关键词、正/逆位含义与建议；四组牌阵（单符文 / 三女神 / 五符文十字 / 奥丁九符）的位置与问题。本仓改写为 TypeScript，并保留原项目的 40×64 SVG 笔画路径以便不依赖符文专用字体。
 - 未采用部分：无（数据整体移植并注明来源）。
@@ -75,16 +89,17 @@ SOFTWARE.
 
 - 传统部分（长纪年 / 卓尔金 / 哈布 / 夜之主 / 历法轮）：本仓自实现，采用 GMT 相关系数 584283；日名与月名（尤卡坦语与基切语）为公共领域的历史名称。卓尔金口径与 `nahuales@1.0.4`（ISC License, Sergio Zuleta / Walter Vides）及 `MiguelYax/mayan-calendar`（MIT）一致，并以 1983-09-16 = 1 Bʼatzʼ 校验。
 - 13:20 部分（Kin / 印章 / 调性 / 波符 / 城堡 / 神谕 / 十三月历）：
-  - 来源：<https://github.com/oshimish/dreamspell-math>（`@oshimishi/dreamspell-math`，MIT，(c) oshimish）
-  - 来源：<https://github.com/joyozhang333-lgtm/mayan-kin>（MIT，参考日 2013-07-26 = Kin 164 与「闰日不推进」约定）
+  - 来源：<https://github.com/oshimish/dreamspell-math>（`@oshimishi/dreamspell-math`，[完整 MIT 声明](../LICENSES/dreamspell-math-MIT.txt)，Copyright (c) 2018 oshimish）
+  - 来源：<https://github.com/joyozhang333-lgtm/mayan-kin>（[完整 MIT 声明](../LICENSES/mayan-kin-MIT.txt)，Copyright (c) 2026 joyozhang333-lgtm，参考日 2013-07-26 = Kin 164 与「闰日不推进」约定）
   - 位置：`src/lib/maya/dreamspell.ts`
   - 采用部分：13:20 计数与闰日约定、印章/调性/颜色/波符/神谕（高我五位）推导、十三月历（13×28 + 无时间日）的月日与四周划分，以及**银河门户 `PORTALS_MATRIX`（260 值）与神秘柱（第 7 列，kin 121–140）**（来源 `src/Kin.ts:6-27`、`76-91`）。
   - 命名说明：印章与调性名称（红龙、磁性…）出自 José Argüelles 的 Dreamspell / 13 Moon Calendar 体系，此处按上述开源实现转写，属该体系的通行命名与象征解释。
 
 ### 吠陀占星分盘（Vedic / Shodashavarga）
 
-- 来源：<https://github.com/ravipathak3001/vedic-panchang>（`vedic-kundali` 与 `vedic-panchanga`，MIT，(c) ravipathak3001）
+- 来源：<https://github.com/ravipathak3001/vedic-panchang>（`vedic-kundali` 与 `vedic-panchanga`，MIT，npm 原包许可署名 Copyright (c) 2026 Vastukosh）
 - 溯源状态：上述 GitHub 仓库已 **404**（2026-10 核实）。本仓数值以 npm 上仍在发布的 `vedic-panchanga@0.2.0` / `vedic-kundali@0.1.0` 逐项比对为准（分盘规则另经古典 BPHS 复核）。
+- 完整原包许可：[vedic-kundali](../LICENSES/vedic-kundali-MIT.txt) 与 [vedic-panchanga](../LICENSES/vedic-panchanga-MIT.txt)。
 - 位置：`src/lib/vedic/data.ts`、`src/lib/vedic/varga.ts`、`src/lib/vedic/ayanamsa.ts`、`src/lib/vedic/chart.ts`
 - 采用部分：
   - 16 分盘定义（Shodashavarga）与各分盘的 `vargaSign` 换算规则（含 D30 Trimsamsa 阳/阴宫分段表、D2 Hora 的日月时划分、各盘的起点规则）。
@@ -102,7 +117,7 @@ SOFTWARE.
 
 ### 太乙神数（三式之一）
 
-- **未采用 taibu-core 的 `taiyi` 域**：经阅读源码确认为「太乙九星推演」——以 `lunar-javascript` 的年/月/日/时九星换皮，并非古典太乙神数（无十六神、天目、始击、主客算、格局）。该「太乙·九星」观测入口与 `buildTaiyiResearch` 已从产品中**移除**，只保留本仓的古典太乙神数。（注：本仓确实依赖 `taibu-core`，但只用于**大六壬**域，未调用其 `taiyi` 域。）
+- **未采用 taibu-core 的 `taiyi` 域**：经阅读源码确认为「太乙九星推演」——以 `lunar-javascript` 的年/月/日/时九星换皮，并非古典太乙神数（无十六神、天目、始击、主客算、格局）。该「太乙·九星」观测入口与 `buildTaiyiResearch` 已从产品中**移除**，只保留本仓的古典太乙神数。（注：本仓确实依赖 `taibu-core`，用于大六壬及八字运年，未调用其 `taiyi` 域。）
 - 位置：`src/lib/taiyi/data.ts`、`src/lib/taiyi/chart.ts`、`src/lib/taiyi/mishu-corpus.ts`
 - 依据（公共领域古籍，逐字见界面「出处与原文」区块）：《太乙金鏡式經》卷二（推五将所主法、推十六神所主法、推陰陽和不和）与卷三（推掩/击/迫/囚/关/格/对/四郭固/郭杜/执提/提挟法，及阳局/阴局七十二局立成）；《太乙秘書》（阳局/阴局七十二局局注，用作回归语料）；《太乙淘金歌》（计神、参将口诀）；《太乙統宗寶鑑》《古今图书集成·艺术典》（异文与释义）。
 - **已修正的错解**（2026-10 审计，含本仓上一轮自造）：
@@ -112,13 +127,13 @@ SOFTWARE.
   - **参将宫** 补齐：「三因大将，满十去之」＝大将宫×3 取个位。
   - **撤掉自造的「上和/次和/下和＝主客两算俱和」**：卷二原文是按**算值**列清单（上和 14/18/33；次和 23/29/32；下和 12/16/27/34/38），现按值查表并并列《秘書》一系异文（次和另含 36、下和另含 21）。
   - **不再输出「和/不和」与「长/短」判词**：两书局注互相矛盾（同局一作和、一作不和），且长短非算数单值函数（12/13/16 既作短又作长），故只呈算值、奇偶与二目所立（正宫/间神）等事实。
-- 格局：页面列掩/击/迫/囚/关/格/对/四郭固/四郭杜/提挟/大小将挟/杜塞。部分采用局注宽判、合象或邻位解释，区别于原书逐字条件；大小将挟覆盖指定目标，其他组合未穷举。「执提」需八门直事，尚未实现。
+- 格局：页面列掩、击、迫、囚、关、格、对、四郭固、四郭杜、提挟、大小将挟和杜塞。部分按《太乙秘书》局注宽判，或按已列的合象及邻位解释。岁计直门加太乙另列执提、提格及未命中，采用一种八门直事读法。840 年的执提记录仍未由此法复现。
 - 校验（古籍自带算例，均已作测试向量）：入局 1（阳遁）→ 太乙乾一宫、天目申、主算 7、客算 13、主参 1、客参 9；万历戊子（入局 49，阴遁）→ 太乙九宫、主算 16、客算 1、主参 8、客参 3；另有《秘書》阳局 1–24 与阴局 1–12 共 36 局逐字语料，字段级一致（含具名跳过项）。
 - 异说标注：「元六纪周期」古籍作三百六十五，本仓默认 360 且可在界面切换；阳宫阴阳归属两说（卷二「八三四九为阳」vs《淘金歌》「一是纯阳九绝阴」）并存。
 
 ### 赫尔墨斯卡巴拉（四界 · 十辉 · 二十二字母 · 数术）
 
-- 来源：<https://github.com/moshejs/mispar>（npm `mispar`，MIT，(c) Moshe Malka）
+- 来源：<https://github.com/moshejs/mispar>（npm `mispar`，[完整 MIT 声明](../LICENSES/mispar-MIT.txt)，Copyright (c) 2026 Moshe Malka）
 - 位置：`src/lib/qabalah/gematria.ts`
 - 采用部分：希伯来字母数值表、终形（final form）处理、十三种 gematria 算法（hechrachi / gadol / katan / siduri / katan-mispari / perati / meshulash / kidmi / boneeh / haakhor / milui / atbash / albam）与「拼读（milui）」拼写表。算法本身为犹太数术的古典方法。
 - 未采用：`kaabalah`（AGPL-3.0）等被红线排除的库。
@@ -160,7 +175,7 @@ SOFTWARE.
 
 ## 运行时依赖（直接调用，未修改其源码）
 
-下列 npm 依赖被本仓直接调用（作为库使用，未修改、未内嵌其源码）。各包完整许可文本随其发布物提供。
+下表列出主要算法依赖及许可。各包完整许可随发布物提供，安装后算法补丁集中记录在 `ops/patch-chart-dependencies.mjs`。
 
 | 包 | 版本 | 许可 | 用途 | 来源 |
 | --- | --- | --- | --- | --- |
@@ -171,32 +186,32 @@ SOFTWARE.
 | `celestine` | ^0.2.1 | MIT | 真星历：行星/日月的黄经、宫位、相位、四轴（星盘、吠陀、七政四余共用） | <https://github.com/Anonyfox/celestine> |
 | `hd-chart-engine` | ^0.1.1 | MIT | 人类图激活计算（门/爻/色/调/基、中心与通道） | <https://github.com/domalhambra/hd-chart-engine> |
 | `astronomy-engine` | ^2.1.19 | MIT | `hd-chart-engine` 的底层天文计算（间接依赖） | <https://github.com/cosinekitty/astronomy> |
-| `taibu-core` | ^3.5.0 | MIT | **仅用其大六壬域**（天地盘/四课三传），底层为 `liuren-ts-lib` | <https://github.com/hhszzzz/taibu> |
+| `taibu-core` | ^3.5.0 | MIT | 用于大六壬及八字运年。大六壬底层为 `liuren-ts-lib` | <https://github.com/hhszzzz/taibu> |
 | `@cometpisces/tarot-kit` | ^0.2.0 | MIT | 78 张塔罗牌数据、正逆位与中文牌义 | npm（CometPisces） |
 
 - 其余依赖（如 `react-iztro` 的紫微盘渲染组件、`@singseq/platform-sdk` 平台 SDK、AI 与 UI 相关包等）见 `package.json` 的 `dependencies` / `devDependencies`；其许可随各自发布物提供。本表列出的是**会产出术数计算结果**、或其口径直接影响结果的依赖。
 - `taobi` 为 **MPL-2.0**（文件级 copyleft）：本仓只把其作为依赖调用、未修改其文件，也不内嵌其源码；MPL-2.0 允许与 GPL 项目组合（其 §3.3 明确允许在 GPL 等次级许可下分发）。
-- 其余依赖均为 MIT，MIT 代码可并入 GPL-3.0-only 项目（保留署名与许可声明）。
+- 完整依赖树以 `package-lock.json` 和各发布包附带的许可为准。生产依赖还包含 Apache-2.0、ISC、BSD、MPL-2.0、LGPL-3.0-or-later、CC-BY-4.0 等许可。旧版 commander 的 MIT 声明见其 `index.js` 文件头。分发构建产物时核对实际随附的代码、二进制和数据，并保留适用的许可与署名。
 
 ## 本仓自撰的启发式、近似与未实现项（如实声明）
 
 以下内容**没有**开源实现或古典原文可直接对齐，属本仓自撰或近似，已在代码注释、界面或载荷中标注，不作为古典判据：
 
 - **八字结构审计与调候**（`src/lib/bazi/structure-audit.ts`、`shen-sha.ts`）：旺衰权重、从格门槛、调候取用为**产品启发式**打分，不是古籍中的固定算法。
-- **八字古籍摘录**（`src/lib/agent/bazi-classics.ts`）：`text` 为原项目语料摘录，**未经逐字校对**；`editorial` 为本仓现代说明。载荷已明令：只能表述为「据《书名·篇目》大意」，禁止当逐字原文引用；「编者按」不得挂书名引用。
-- **术数研究 / 人生 K 线打分**（`src/lib/qimen/kline.ts`、`src/lib/qimen/trend.ts`、`src/lib/research/*`）：线型权重与 STAGE_SCORE 为产品启发式；K 线可视化层移植自 `miounet11/life-kline`（Apache-2.0，参见 `src/lib/research/life-kline-reading.ts` 头注释）。
+- **八字古籍主题概述**（`src/lib/agent/bazi-classics.ts`）：各条由本站撰写，附书名、篇目及可读版本链接。此前从 Quantum Bazi 语料继承的摘录授权未核，已从运行版本替换。
+- **术数研究 / 人生 K 线打分**（`src/lib/qimen/kline.ts`、`src/lib/qimen/trend.ts`、`src/lib/research/*`）：线型权重与 STAGE_SCORE 为产品启发式；K 线可视化层移植自 `miounet11/life-kline`（Apache-2.0，参见 `src/lib/kline/life-kline-reading.ts` 头注释）。
 - **奇门格局评分与话术**（`src/lib/qimen/patterns.ts`）：旺衰分档与判定文案为本仓所加，非上游 `3meta` 输出。
 - **奇门「拆补/茅山」已撤下**：`taobi`（MPL-2.0）对三元局法与八神自注 `@check FALSE` 并留 TODO，茅山法可算出**负局数**，且其四柱取自 `tao_calendar` 的宿主 `getHours()`／`getTimezoneOffset()`（随宿主时区变化，UTC 下多例抛错）。「拆补」在 3meta 中本就是默认（符头定元），不是第二套局法。故本仓只保留 3meta 默认口径，适配器已删除；「茅山道人法」无古籍逐字定局规则，本仓不实现、不自造。
 - **星盘**（`src/lib/astro/*`）：宫位沿用 `celestine` 默认的 Placidus（盘面与载荷已标注宫制；高纬约 |φ|>66° 时库内会自动回退，已在宫制说明中提示）。相位与图形已覆盖 10 行星 + 凯龙 + 谷神/智神/婚神/灶神 + 黄白交点 + 莉莉丝（不再截断为十大行星）；**未纳入**阿拉伯点（lots）与恒星。
 - **人类图**（`src/lib/human-design/chart.ts`）：激活为权威算法；但 `incarnationCross` 只给角度类型与四个门，**不给十字名**（免责声明已声明该限制）；`tone/base` 为估值（上游 `hd-chart-engine` 自带 `precision` 字段已透出）。
-- **七政四余**：二十八宿为等分近似、紫气为脚本约定虚星（详见上文该条）。
+- **七政四余**：二十八宿按康熙甲子黄道宿度与距星定位。紫气采用上文所述清代平行研究模型。
 - **泛音（谐波）盘**（`src/lib/harmonic/chart.ts`）：把黄经按 ×n 折算后**只判合相**——这是 Addey 一系谐波盘的通行读取口径（如 Astrodienst：「In the harmonic chart, these planets form conjunctions」），属**取值口径而非简化**；谐波盘专属的四轴反推做法（部分流派由谐波中天反推上升）未实现（无统一规则，不新造）。
 - **玛雅 Dreamspell**（`src/lib/maya/dreamspell.ts`）：已移植 13:20 计数、闰日约定、印章/调性/波符/神谕/十三月历，以及**银河门户 `PORTALS_MATRIX` 与神秘柱**（来源 `oshimish/dreamspell-math` `src/Kin.ts:6-27`、`76-91`，MIT）。上游未提供「门户日名称/含义」数据，故未新增。
 - **吠陀**（`src/lib/vedic/*`）：罗睺/计都**可切平/真交点**（默认平；真交点取 celestine 的 Meeus 级数实现）；岁差为「J2000 常量 + 一般岁差多项式」，非 Spica 锚定的严格 Chitrapaksha（差异在角秒级）。
 - **卡巴拉**（`src/lib/qabalah/gematria.ts`）：十三法与上游 `mispar` 逐行等价；`letterValues` 逐字入口对 `katan-mispari` **已按上游一致抛 `RangeError`**（该法归约作用在总和上，逐字拆解无定义；来源 `mispar` `src/index.ts:257-264`）。「数根 → 辉位」对照链为本仓所加（界面标注为对照而非等式）。
 - **神圣几何**（`src/lib/sacred-geometry/patterns.ts`）：图形按几何构造分层生成（非写死坐标）；`PHI` 为上游导出但本仓未使用的死常量。
 - **汉堡学派**（`src/lib/uranian/elements.ts`）：轨道要素与开普勒解算忠实移植 Astrolog；未做周年光行差（差约 0.006°，远小于 1.5° 容许度）。盘面支持 90°/45°/22.5° 切换，并实现中点（A/B=C）、和点（A+B=C）、差点（A−B=C）与和点等式（A+B=C+D）四类检索。
-- **太乙神数**：格局未收「击/迫/提挟/四郭固」；「上和/次和/下和」按本仓口径合成（详见上文该条）。
+- **太乙神数**：格局与执提的现行规则见上文。“上和／次和／下和”采用本站合成口径。
 - **阿卡西记录**：非可计算体系，本仓只列知识条目，**不提供任何「读取」**。
 
 ## 已评估但**未采用**的开源实现（许可不兼容）

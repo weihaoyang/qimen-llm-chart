@@ -1,120 +1,72 @@
-# 知几排盘（QMDJ）
+# 知几排盘 · QMDJ
 
-一个基于 `Next.js` 的命理三盘排盘工作台，产品名为 **知几排盘**，服务标识为 **QMDJ**。
+**把传统排盘规则、古籍异文和可复算案例放在同一个开源工作台。**
 
-它同时提供两种输出：
+[在线体验](https://qmdj.singseq.com/paipan) · [研究索引](docs/research/INDEX.md) · [完整研究论文](docs/research/calculation-audit-paper.md) · [参与贡献](CONTRIBUTING.md) · [English](#english)
 
-- 给人看的九宫盘界面
-- 给 LLM 使用的严格结构化文本
+知几提供奇门、八字、紫微、太乙、大六壬、七政等排盘，也收录现代占星、吠陀分盘、人类图等研究入口。盘面可以导出结构化文本与 JSON，便于复核和后续处理。各体系的来源和完成度不同，**已有案例通过不代表整个体系已经核完**。
 
-## 特性
+## 为什么值得看
 
-- 输入日期时间和时区直接排盘
-- 左侧展示九宫盘
-- 右侧输出结构化文本
-- 可通过服务端代理调用标准 OpenAI 兼容模型接口
-- 支持复制结构化文本和原始 JSON
-- 两种输出都来自同一个排盘对象，避免信息偏差
-- 标题栏可切换星盘、人类图与塔罗牌研究性 MVP 模式
+- **从书到盘**：记录原书、版本、判据、输入与输出，将规则落实到可运行的测试。
+- **把分歧摆出来**：同一术语或盘式在不同古籍中的解释可能不同；尽可能分别展示，不用一种说法覆盖所有版本。
+- **保留未完成项**：标明转录、影印、数值模型和历史日期转换的证据边界，方便继续校订。
+- **开放复现**：TypeScript 计算代码、盘例和 Vitest 测试都在本仓库；研究文档链接具体书目、页面和测试。
 
-## 技术栈
+## 从几个真实问题开始
 
-- Next.js
-- React
-- TypeScript
-- 3meta
-- Tailwind CSS
-- shadcn/ui
+| 问题 | 对照结果 | 入口 |
+| --- | --- | --- |
+| 奇门六仪击刑 | 《遁甲演义》的值符法与本站逐宫法并列；2026-01-05 上海 02:00 两法不同，12:00 两法同中三宫 | [研究索引](docs/research/INDEX.md) · [测试](src/lib/qimen/chart.test.ts) |
+| 太乙岁计边界 | 采用 360 年周期与阳遁局表时，1971 年为第 72 局、1972 年回到第 1 局；另列不同古籍解读 | [研究论文](docs/research/calculation-audit-paper.md) · [测试](src/lib/taiyi/chart.test.ts) |
+| 八字立春节界 | 上海 2024-02-04 16:27 与 16:28 分别位于依赖库所算交节时刻两侧；春节换年是独立口径 | [研究索引](docs/research/INDEX.md) · [测试](src/lib/bazi/reverse.test.ts) |
+| 七政牛宿界 | 《推步法解》与《五礼通考》卷一九五的牛宿距星表相差 10′；站内保留单边界敏感性对照 | [论文与影印定位](docs/research/calculation-audit-paper.md#牛宿界异文对实际盘面的影响) · [测试](src/lib/qizheng/chart.test.ts) |
+| 大六壬伏吟 | 六甲日伏吟三传按所选规则与《六壬大全》对照；《太白》一条电子文本存在末字异文 | [研究索引](docs/research/INDEX.md) · [测试](src/lib/research/extensions.test.ts) |
+
+更多跨书对照、精确输入、原始链接及未解决问题见[研究索引](docs/research/INDEX.md)与[完整论文](docs/research/calculation-audit-paper.md)。历史例证支持的是所列字段或规则的复算，不能单凭相符证明预测效果。
 
 ## 本地运行
 
+需要 **Node.js 20.9 或更高版本**、npm 和可访问的依赖下载源：
+
 ```bash
+git clone https://github.com/weihaoyang/qimen-llm-chart.git
+cd qimen-llm-chart
 npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-默认访问（开发服务器会使用 3000 端口）：
+Windows PowerShell 可用 `Copy-Item .env.example .env.local`。打开 <http://localhost:3000/paipan>。页面启动需要 `.env.example` 中的 `PLATFORM_BASE_URL` 与 `PLATFORM_PRODUCT_CODE`；示例指向奇点序列正式平台。开发环境中的第三方部署应使用自己登记的 OAuth 客户端与回调地址，不要把示例客户端当成通用凭据。
 
-```text
-http://localhost:3000/paipan
-```
+基础排盘与登录、AI 调用分开。真实登录和 AI 用量还需要可用的平台、已登记的 OAuth 客户端、账户额度与服务端模型配置；数据库相关功能需要独立的 PostgreSQL 配置。示例密钥和数据库密码都是占位值，**不要提交真实密钥**。账户与 AI 用量细节见[运行说明](docs/AI_ACCESS_RUNBOOK.md)。
 
-如需启用右侧 `AI 分析`，先配置服务端环境变量：
+## 测试
 
 ```bash
-cp .env.example .env.local
-```
-
-```text
-OPENAI_API_KEY=your_api_key
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4.1-mini
-```
-
-也可以直接使用 Gemini 兼容变量；使用 YYRouter 时将 `GEMINI_BASE_URL` 改为你的供应商地址：
-
-```text
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_BASE_URL=https://yyrouter.cc/v1beta
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-平台 OAuth 与额度配置使用：
-
-```text
-NEXT_PUBLIC_PLATFORM_BASE_URL=https://platform.singseq.com
-NEXT_PUBLIC_PLATFORM_OAUTH_CLIENT_ID=8766d44c460e495994ec6f2011cfcbf2
-NEXT_PUBLIC_PLATFORM_PRODUCT_CODE=qimen
-PLATFORM_BASE_URL=https://platform.singseq.com
-PLATFORM_OAUTH_CLIENT_ID=8766d44c460e495994ec6f2011cfcbf2
-PLATFORM_PRODUCT_CODE=qimen
-```
-
-产品标识固定为 `qimen`；OAuth scope 为 `account.read usage.write`。发布仍需验证真实账户和用量结算。
-
-统一登录由 Casdoor 提供，账户、支付与额度由 SingSeq Platform 提供。本仓库只发起
-OAuth/PKCE、恢复平台 session，并由平台用量预留原子授权受限 AI 调用；不得在知几内部
-实现 CAPTCHA、OTP、用户或会员真相。
-
-## 构建与测试
-
-```bash
-npm run lint
+npm run typecheck
 npm test
 npm run build
+# 一次运行上述检查及 ESLint
+npm run ci
 ```
 
-`npm test` 在 **PGlite**（编译到 WASM 的 Postgres）上跑真实的迁移与真实的
-repository 代码，无需本机数据库。它验的是**语义**：cast 是否写对了列类型、
-`jsonb` / `timestamptz` 存进去的值是否正确、约束是否真的拒绝非法写入。
-
-PGlite 用例不能证明真实数据库并发行为；数据库并发验收必须使用独立测试环境。
-
-生产构建若与本地 `next dev` 预览同时进行，`next build` 会因为抢占 `.next`
-而报 `EPERM`。用独立输出目录避开：
+只核查论文列出的案例：
 
 ```bash
-NEXT_DIST_DIR=.next-verify npm run build
+npm test -- src/lib/qimen src/lib/taiyi src/lib/research src/lib/bazi src/lib/ziwei src/lib/qizheng
 ```
 
-统一账户与 AI 用量链路的运行不变量和发布验收，见 [`docs/AI_ACCESS_RUNBOOK.md`](./docs/AI_ACCESS_RUNBOOK.md)。
+测试中部分数据库用例使用 PGlite，无需外部数据库；它们不能代替真实数据库的并发验收。测试覆盖和跳过项以实际运行结果为准。
 
-## 生产发布
+## 参与研究
 
-统一使用基础设施仓库的 `k8s/ship.py qmdj --ref main`，见 [发布说明](docs/RELEASE.md)。
+欢迎提交原书版本和页码、可复算的盘例、算法修正与测试。报告差异时请附时间、时区、输入设置、期望输出及出处；影印不清或仅有转录时请说明。具体流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## 许可证
+代码采用 [GPL-3.0-only](LICENSE)。移植代码及依赖的版权和许可见[第三方声明](docs/THIRD_PARTY_NOTICES.md)；古籍扫描、图像和外部资料的权利及使用条件见[影像权利记录](docs/research/sources/RIGHTS.md)，不能仅据本仓库许可证推定。研究材料与程序用于历史文本、计算方法和文化研究，不构成对占断结果的科学验证。
 
-本项目使用 `GNU GPL v3.0` 许可证，详见 [LICENSE](./LICENSE)。
+## English
 
-## 生产入口
+QMDJ is an open-source chart workbench and a source-led research project covering Qimen Dunjia, BaZi, Zi Wei, Taiyi, Da Liu Ren, Qizheng and other traditions. Its distinguishing feature is traceability: primary texts, variant rules, reproducible examples and executable tests are documented together. See the [research index](docs/research/INDEX.md) and [audit paper](docs/research/calculation-audit-paper.md). The documents are currently in Chinese.
 
-知几是 SingSeq 的术数排盘产品，生产入口为 `https://qmdj.singseq.com/paipan`。
-
-本仓库只负责排盘工作台、八字/奇门/紫微/三式盘面及其分析入口。账户、订单、支付和会员权益统一通过 SingSeq Platform API 与 `@singseq/platform-sdk` 处理。
-
-胜天半子代码位于独立产品仓库；知几正式入口为 `https://qmdj.singseq.com/paipan`。
-
-2026-09-16 统一登录 CAPTCHA 故障已在平台与官网边界修复：平台使用
-form-urlencoded 调用 Cap siteverify，官网移动控件使用平台签发的 canonical
-Cap endpoint。知几无需、也禁止复制该逻辑。
+Install Node.js >= 20.9, run `npm ci`, copy `.env.example` to `.env.local`, run `npm run dev`, and open `/paipan`. The example platform settings point to the production SingSeq service; a separate deployment needs its own registered OAuth client. Code is GPL-3.0-only; third-party code and historical images have their own attribution and usage conditions. The project does not establish predictive validity.

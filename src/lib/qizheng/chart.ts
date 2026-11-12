@@ -21,6 +21,7 @@
  * Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
  */
 import { toZonedDate } from "@/lib/qimen/timezone";
+import { Solar } from "lunar-typescript";
 import { buildAstroChart } from "@/lib/astro/chart";
 import type { NormalizedProfileInput } from "@/lib/profile";
 import { ayanamsa, jdToJDE, julianCenturies } from "@/lib/vedic/ayanamsa";
@@ -113,6 +114,10 @@ export type QizhengChart = {
   mingPalace: { index: number; branch: string };
   bodyDegree: { mansion: Mansion; degreesFromMansionStart: number; ruler: Ruler } | null;
   palaces: ReturnType<typeof qizhengPalaces>;
+  annualMinorLimits: {
+    birthYearBranch: (typeof EARTHLY_BRANCHES)[number];
+    byYearBranch: ReturnType<typeof annualMinorLimit>[];
+  };
   stars: QizhengStar[];
   complete: boolean;
   missingStars: string[];
@@ -262,6 +267,12 @@ export const qizhengPalaces = (mingIndex: number) => TWELVE_PALACES.map((name, o
   return { name, index, branch: EARTHLY_BRANCHES[index], ruler: PALACE_RULERS[index] };
 });
 
+/** 《张果星宗》附〈定小限例〉：生年加命宫，按太岁地支差逆移。 */
+export const annualMinorLimit = (mingIndex: number, birthYearIndex: number, yearIndex: number) => {
+  const index = (mingIndex + birthYearIndex - yearIndex + 12) % 12;
+  return { yearBranch: EARTHLY_BRANCHES[yearIndex], branch: EARTHLY_BRANCHES[index], ruler: PALACE_RULERS[index] };
+};
+
 /** 生时（小时）→ 地支下标。23:00–00:59 为子时。 */
 export const hourToBranchIndex = (hour: number) => Math.floor(((hour + 1) % 24) / 2);
 
@@ -304,6 +315,14 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
   const sunPalace = longitudeToPalace(sunLongitude);
   const mingIndex = mingPalaceIndex(sunPalace, hourToBranchIndex(hour));
   const palaces = qizhengPalaces(mingIndex);
+  // The text supplies sexagenary year labels. The product uses the birth
+  // date's local civil lunar year to obtain the natal label.
+  const [year, month, day] = astro.input.datetime.slice(0, 10).split("-").map(Number);
+  const birthYearIndex = Solar.fromYmd(year, month, day).getLunar().getYearZhiIndex();
+  const annualMinorLimits = {
+    birthYearBranch: EARTHLY_BRANCHES[birthYearIndex],
+    byYearBranch: EARTHLY_BRANCHES.map((_, yearIndex) => annualMinorLimit(mingIndex, birthYearIndex, yearIndex)),
+  };
   const palaceNameOf = (palace: number) => palaces.find((item) => item.index === palace)!.name;
 
   for (const { name, planet } of SEVEN_LUMINARIES) {
@@ -390,6 +409,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     mingPalace: { index: mingIndex, branch: EARTHLY_BRANCHES[mingIndex] as string },
     bodyDegree,
     palaces,
+    annualMinorLimits,
     stars,
     complete: missingStars.length === 0,
     missingStars,

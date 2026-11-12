@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { ayanamsa } from "@/lib/vedic/ayanamsa";
-import { buildQizhengChart, niuMansionComparison, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, qizhengPalaces, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
+import { annualMinorLimit, buildQizhengChart, niuMansionComparison, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, qizhengPalaces, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
 import { serializeQizhengToCompactJson, serializeQizhengToStructuredText } from "./serializer";
 
 const profile = () => {
@@ -79,6 +79,24 @@ describe("qizheng siyu chart", () => {
     expect(chart.bodyDegree?.degreesFromMansionStart).toBeCloseTo(epochLongitude - start, 8);
     expect(serializeQizhengToStructuredText(chart)).toContain("身度（张果星宗伴月法）：室宿");
     expect(JSON.parse(serializeQizhengToCompactJson(chart)).bodyDegree).toEqual(chart.bodyDegree);
+  });
+
+  it("matches the two classical annual minor-limit cases", () => {
+    // 《张果星宗》附例：甲子生、寅命、壬辰太岁，落戌。
+    expect(annualMinorLimit(2, 0, 4)).toEqual({ yearBranch: "辰", branch: "戌", ruler: "火星" });
+    // 《星学大成》卷八：午生、午命、戌年，落寅。
+    expect(annualMinorLimit(6, 6, 10)).toEqual({ yearBranch: "戌", branch: "寅", ruler: "木星" });
+  });
+
+  it("uses the civil lunar birth year and exports all twelve annual branches", () => {
+    const before = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(new Date("2024-02-09T23:30:00+08:00"), "Asia/Shanghai")));
+    const after = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(new Date("2024-02-10T00:30:00+08:00"), "Asia/Shanghai")));
+    expect(before.annualMinorLimits.birthYearBranch).toBe("卯");
+    expect(after.annualMinorLimits.birthYearBranch).toBe("辰");
+    expect(after.annualMinorLimits.byYearBranch[4].branch).toBe(after.mingPalace.branch);
+    expect(new Set(after.annualMinorLimits.byYearBranch.map((row) => row.branch)).size).toBe(12);
+    expect(serializeQizhengToStructuredText(after)).toContain(`辰年${after.mingPalace.branch}宫·限主`);
+    expect(JSON.parse(serializeQizhengToCompactJson(after)).annualMinorLimits).toEqual(after.annualMinorLimits);
   });
 
   it("maps longitudes into palaces with the classical 十二次 (Aries = 戌)", () => {

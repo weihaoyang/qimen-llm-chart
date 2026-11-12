@@ -45,6 +45,15 @@ export function QizhengPanel({ value, onCopyJson, jsonCopied }: { value: Qizheng
       </div>
 
       {value.bodyDegree ? <p>身度（伴月法） · {value.bodyDegree.mansion}宿起点东行约 {value.bodyDegree.degreesFromMansionStart.toFixed(2)}° · 度主{value.bodyDegree.ruler}</p> : null}
+      <details>
+        <summary>岁小限 · 按太岁地支查表</summary>
+        <p>生年支 {value.annualMinorLimits.birthYearBranch}，按当地民用日期的农历年取。依《张果星宗》附〈定小限例〉逆布。</p>
+        <div className="qizheng-palaces">
+          {value.annualMinorLimits.byYearBranch.map((limit) => (
+            <span key={limit.yearBranch}>{limit.yearBranch}年<b>{limit.branch}宫 · {limit.ruler}</b></span>
+          ))}
+        </div>
+      </details>
       {!value.complete ? <p role="status">部分排盘：缺少 {value.missingStars.join("、")} 的有效星位。</p> : null}
       <StarTable title="七政落宫" stars={value.stars.filter((star) => star.kind === "七政")} />
       <StarTable title="四余落宫" stars={value.stars.filter((star) => star.kind === "四余")} />
