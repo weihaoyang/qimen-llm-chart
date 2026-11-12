@@ -14,6 +14,7 @@ describe("serializeChartToStructuredText", () => {
     const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 2 } });
     expect(serializeChartToStructuredText(chart)).toContain("时柱丙子不属于《奇门宝鉴》所列六时");
     expect(serializeChartToCompactJson(chart)).toContain("地丁与值使同宫成立");
+    expect(serializeChartToCompactJson(chart)).toContain("值使原到中五宫后寄出");
   });
   it("serializes overview and all nine palaces in stable order", () => {
     const chart = buildChart({

@@ -9,6 +9,7 @@ describe("buildChart", () => {
     const hours = new Set(["庚午", "己卯", "戊子", "丁酉", "丙午", "乙卯"]);
     const seen = new Set<string>();
     const discrepancies: string[] = [];
+    let centerStem = 0, centerGate = 0, both = 0;
     for (const dunType of ["yang", "yin"] as const) for (let juNumber = 1; juNumber <= 9; juNumber++) {
       for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
         const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
@@ -18,6 +19,18 @@ describe("buildChart", () => {
         const expected = hours.has(pillar);
         if (expected) seen.add(pillar);
         if ((report.status === "成立") !== expected) discrepancies.push(`${dunType} ${juNumber} ${datetime} ${pillar} ${chart.raw.zhiShi.position} ${chart.raw.zhiShi.gate} ${expected ? "time-only" : "palace-only"}`);
+        if ((report.status === "成立") !== expected) {
+          const ownStem = (p: typeof chart.raw.palaces[number]) => Array.isArray(p.earthlyStem) ? p.earthlyStem[0] : p.earthlyStem;
+          const origin = chart.raw.palaces.find(p => ownStem(p) === chart.raw.zhiFu.heavenlyStem)!.position;
+          const branches = "子丑寅卯辰巳午未申酉戌亥";
+          const steps = (branches.indexOf(chart.raw.fourPillars.hour.branch) - branches.indexOf(chart.raw.timeInfo.xunShou[1]) + 12) % 12;
+          const rawPosition = ((origin - 1 + (dunType === "yang" ? steps : -steps)) % 9 + 9) % 9 + 1;
+          const middleStem = ownStem(chart.raw.palaces.find(p => p.position === 5)!) === "丁";
+          centerStem += Number(middleStem); centerGate += Number(rawPosition === 5); both += Number(middleStem && rawPosition === 5);
+          expect(middleStem || rawPosition === 5).toBe(true);
+          expect(chart.raw.zhiShi.position).toBe(dunType === "yang" ? 8 : 2);
+          expect(evaluateQimenPatterns(chart).sourceNotes[0]).toContain(middleStem ? "地丁原在中五宫" : "值使原到中五宫");
+        }
         expect(evaluateQimenPatterns(chart).sourceNotes.length, `${dunType} ${juNumber} ${datetime}`).toBe(Number((report.status === "成立") !== expected));
       }
     }
@@ -25,6 +38,7 @@ describe("buildChart", () => {
     expect(discrepancies.filter(item => item.endsWith("time-only"))).toHaveLength(0);
     expect(discrepancies.filter(item => item.endsWith("palace-only"))).toHaveLength(56);
     expect(discrepancies).toContain("yang 2 2026-01-01T00:00 丙子 8 伤门 palace-only");
+    expect([centerStem, centerGate, both]).toEqual([28, 28, 0]);
   });
   it("counts 值使 from 中五 while borrowing the 坤 gate", () => {
     const chart = buildChart({ datetime: "2026-01-03T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });

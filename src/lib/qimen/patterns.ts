@@ -635,8 +635,23 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
   const hourPillar = `${chart.raw.fourPillars.hour.stem}${chart.raw.fourPillars.hour.branch}`;
   const yuNuTime = ["庚午", "己卯", "戊子", "丁酉", "丙午", "乙卯"].includes(hourPillar);
   const yuNuPalace = checks.find(check => check.id === "yu_nu_shou_men")?.status === "成立";
+  const ownStem = (palace: Palace) => valuesOf(palace.earthlyStem)[0];
+  const middle = chart.raw.palaces.find(palace => palace.position === 5);
+  const chiefOrigin = chart.raw.palaces.find(palace => ownStem(palace) === chart.raw.zhiFu.heavenlyStem);
+  const branches = "子丑寅卯辰巳午未申酉戌亥";
+  const startBranch = chart.raw.timeInfo?.xunShou?.[1];
+  const startIndex = startBranch ? branches.indexOf(startBranch) : -1;
+  const hourIndex = branches.indexOf(chart.raw.fourPillars.hour.branch);
+  const steps = startIndex < 0 || hourIndex < 0 ? null : (hourIndex - startIndex + 12) % 12;
+  const dun = chart.raw.ju?.type;
+  const rawGatePosition = chiefOrigin && steps !== null && (dun === "阳遁" || dun === "阴遁")
+    ? ((chiefOrigin.position - 1 + (dun === "阳遁" ? steps : -steps)) % 9 + 9) % 9 + 1
+    : null;
+  const centerNote = rawGatePosition === 5
+    ? "值使原到中五宫后寄出。"
+    : middle && ownStem(middle) === "丁" ? "地丁原在中五宫，盘面将其寄出。" : "";
   const sourceNotes = yuNuTime !== yuNuPalace
-    ? [`玉女守门口径差异：时柱${hourPillar}${yuNuTime ? "属于" : "不属于"}《奇门宝鉴》所列六时；本站地丁与值使同宫${yuNuPalace ? "成立" : "未成立"}。两种判定暂不强行等同。`]
+    ? [`玉女守门口径差异：时柱${hourPillar}${yuNuTime ? "属于" : "不属于"}《奇门宝鉴》所列六时；本站地丁与值使同宫${yuNuPalace ? "成立" : "未成立"}。${centerNote}两种判定暂不强行等同。`]
     : [];
   const strengthCounts: Record<QimenPatternStrength, number> = { 有力: 0, 中平: 0, 无力: 0 };
   for (const check of formed) {
