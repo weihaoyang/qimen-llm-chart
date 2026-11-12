@@ -707,6 +707,17 @@ it("compares the missing 秘書 Yang 60 and variant Yang 58 against 圖書集成
   expect([fiftyEight.counts.host, fiftyEight.counts.hostGeneralPalace, fiftyEight.counts.hostSuPalace]).toEqual([12, 2, 6]);
 });
 
+it("compares the missing 秘書 Yin 60 with the separate 圖書集成 example", () => {
+  // 藝術典692卷阴60：太乙六、文昌巳、主算十、主大一、主参二、始击戌、客算35。
+  // 该电子文本主参二与「主大一乘三」不合；不代古文改字，也不把另一部书补入秘书。
+  const chart = buildTaiyiChart({ year: 724, cycle: 360, dun: "阴遁", ruJu: 60 });
+  expect([chart.taiyi.palace, chart.tianMu.position, chart.counts.host, chart.counts.hostGeneralPalace,
+    chart.shiJi.position, chart.counts.guest]).toEqual([6, "巳", 10, 1, "戌", 35]);
+  expect(chart.counts.hostSuPalace).toBe(3);
+  expect(chart.counts.hostSuPalace).not.toBe(2);
+  expect(generalSuPalace(1)).toBe(3);
+});
+
 it("compares readable 秘書 Yang charts 41–72 without repairing the text", () => {
   // 该电子本缺阳60局；41局六宫所属不明、49局写计辰而非计神，均不作确定字段。
   const cases: Array<[number, Array<string | number | null>]> = [
