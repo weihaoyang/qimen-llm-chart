@@ -166,6 +166,15 @@ export const tianDunReasons = (palace: Palace): string[] => {
   ];
 };
 
+/** 《图书集成》705卷丁休太阴，与707卷上丁中休下丙分别记证据。 */
+export const renDunReasons = (palace: Palace): string[] => {
+  if (!hasHeaven(palace, "丁") || !gateIn(palace, ["休门"])) return [];
+  return [
+    ...(deityIn(palace, ["太阴"]) ? ["天丁休门临太阴（艺术典705）"] : []),
+    ...(hasEarth(palace, "丙") ? ["天丁休门临地丙（艺术典707）"] : []),
+  ];
+};
+
 export const matchesHuDun = (palace: Palace) =>
   (palace.position === 8 && hasHeaven(palace, "乙") && hasEarth(palace, "辛") && gateIn(palace, ["休门"]))
   || (palace.position === 8 && hasHeaven(palace, "辛") && gateIn(palace, ["生门"]))
@@ -278,9 +287,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("jiu_dun_di", "地遁", "九遁", "天盘乙 + 地盘己 + 开门", "主稳固、落地与根基；宜置产、开张、长线布局。", (p) =>
     hasHeaven(p, "乙") && hasEarth(p, "己") && gateIn(p, ["开门"]) ? combinationEvidence(p) : null,
   ),
-  good("jiu_dun_ren", "人遁", "九遁", "本盘口径：天盘丁 + 休门 + 太阴；古籍另有天盘丁 + 休门 + 地盘丙", "主人和、内应与暗中助力；宜谈判、协调、私下沟通。", (p) =>
-    hasHeaven(p, "丁") && gateIn(p, ["休门"]) && deityIn(p, ["太阴"]) ? combinationEvidence(p) : null,
-  ),
+  good("jiu_dun_ren", "人遁", "九遁", "天丁、休门临太阴（艺术典705）；或天丁、休门临地丙（艺术典707）", "两种文献条件分别列证据；同宫两式并见只登记一次。", (p) => {
+    const reasons = renDunReasons(p);
+    return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
+  }),
   good("jiu_dun_feng", "风遁", "九遁", "天盘乙合三吉门临巽；另式丙开临巽", "依命中条件列出主式或另式。", (p) => {
     const reasons = fengDunReasons(p);
     return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;

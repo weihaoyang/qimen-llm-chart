@@ -42,6 +42,22 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("records both Ren Dun textual variants without duplicating a palace", () => {
+    const check = evaluateQimenPatterns(chartWith([
+      palace(1, { heavenlyStem: "丁", earthlyStem: "己", gate: "休门", deity: "太阴" }),
+      palace(2, { heavenlyStem: "丁", earthlyStem: "丙", gate: "休门", deity: "白虎" }),
+      palace(3, { heavenlyStem: "丁", earthlyStem: "丙", gate: "休门", deity: "太阴" }),
+      palace(4, { heavenlyStem: "丁", earthlyStem: "丙", gate: "开门", deity: "太阴" }),
+      palace(6, { heavenlyStem: "丙", earthlyStem: "丁", gate: "休门", deity: "白虎" }),
+    ])).checks.find(item => item.id === "jiu_dun_ren")!;
+    expect(check.positions).toEqual([1, 2, 3]);
+    expect(check.evidence[0]).toContain("艺术典705");
+    expect(check.evidence[0]).not.toContain("艺术典707");
+    expect(check.evidence[1]).toContain("艺术典707");
+    expect(check.evidence[1]).not.toContain("艺术典705");
+    expect(check.evidence[2]).toContain("艺术典705");
+    expect(check.evidence[2]).toContain("艺术典707");
+  });
   it("retains both sourced 天遁 stem pairings with their actual evidence", () => {
     const report = evaluateQimenPatterns(chartWith([
       palace(1, { heavenlyStem: "丙", earthlyStem: "丁", gate: "生门" }),

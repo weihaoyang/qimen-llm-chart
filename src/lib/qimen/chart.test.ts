@@ -61,6 +61,18 @@ describe("buildChart", () => {
       expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
     }
   });
+  it("checks both 人遁 readings across 96 real charts and all outputs", () => {
+    const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const expected = chart.raw.palaces.filter(p => values(p.heavenlyStem).includes("丁") && p.gate === "休门" && (p.deity === "太阴" || values(p.earthlyStem).includes("丙"))).map(p => p.position);
+      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")?.positions, datetime).toEqual(expected);
+      const id = "patterns.jiu_dun.ren_dun";
+      expect(chart.raw.palaces.filter(p => p.auspiciousPatterns?.some(q => q.id === id)).map(p => p.position), datetime).toEqual(expected);
+      expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
+    }
+  });
   it("reconstructs the two 地遁 examples in 遁甲演义 without dropping 乙 from the rule", () => {
     const examples = [
       { datetime: "2026-01-02T06:00", dayStem: "丙", hour: "辛卯", dunType: "yang", solarTerm: "冬至", juNumber: 1, palace: 2, chief: "天冲" },
@@ -231,10 +243,10 @@ describe("buildChart", () => {
     expect(checks.find(({ id }) => id === "ri_ge")?.evidence[0]).toContain("甲午日遁辛");
   });
   it("distinguishes Taiyin and earth-Bing versions of Ren Dun on actual charts", () => {
-    // 艺术典705卷取丁休太阴，707卷另列上丁中休下丙；不把两者合并。
+    // 艺术典705卷取丁休太阴，707卷另列上丁中休下丙，独立列明命中依据。
     for (const item of [
-      { datetime: "2026-01-02T12:00", position: 1, earth: "丁", deity: "太阴", selected: true },
-      { datetime: "2026-01-04T20:00", position: 2, earth: "丙", deity: "白虎", selected: false },
+      { datetime: "2026-01-02T12:00", position: 1, earth: "丁", deity: "太阴", reason: "艺术典705", absent: "艺术典707" },
+      { datetime: "2026-01-04T20:00", position: 2, earth: "丙", deity: "白虎", reason: "艺术典707", absent: "艺术典705" },
     ] as const) {
       const chart = buildChart({ datetime: item.datetime, timeZone: "Asia/Shanghai" });
       const palace = chart.raw.palaces.find(p => p.position === item.position)!;
@@ -242,8 +254,14 @@ describe("buildChart", () => {
       expect(palace.earthlyStem).toBe(item.earth);
       expect(palace.gate).toBe("休门");
       expect(palace.deity).toBe(item.deity);
-      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")?.positions.includes(item.position)).toBe(item.selected);
-      expect(item.earth === "丙").toBe(!item.selected);
+      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")!;
+      expect(check.positions).toContain(item.position);
+      const evidence = check.evidence[check.positions.indexOf(item.position)];
+      expect(evidence).toContain(item.reason);
+      expect(evidence).not.toContain(item.absent);
+      const id = "patterns.jiu_dun.ren_dun";
+      expect(palace.auspiciousPatterns?.find(p => p.id === id)?.description).toContain(item.reason);
+      expect(chart.raw.specialPatterns.auspiciousPatterns?.find(p => p.id === id && p.position === item.position)?.description).toContain(item.reason);
     }
   });
 
