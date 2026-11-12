@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput } from "@/lib/profile";
 import { buildTarotReading } from "./reading";
-import { cards } from "@cometpisces/tarot-kit";
+import { cards, getCardMeaning } from "@cometpisces/tarot-kit";
+import { serializeTarotToStructuredText, serializeTarotToCompactJson } from "./serializer";
 
 describe("tarot reading", () => {
   it("draws a deterministic three-card spread", () => {
@@ -58,4 +59,21 @@ it("contains each of the fifty-six minor suit and rank combinations once", () =>
       .sort((a, b) => a.number - b.number)
       .map(({ id, number }) => [id, number])).toEqual(ranks.map((rank, index) => [`${rank}-of-${suit}`, index + 1]));
   }
+});
+
+it("keeps every card's shared core keyword separate from its orientation-specific meaning", () => {
+  for (const card of cards) {
+    expect(card.coreKeyword.zh || card.coreKeyword.en).toBeTruthy();
+    expect(getCardMeaning({ card, orientation: "upright" }, "zh")).toBeTruthy();
+    expect(getCardMeaning({ card, orientation: "reversed" }, "zh")).toBeTruthy();
+  }
+  const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+  const reading = Array.from({ length: 30 }, (_, i) => buildTarotReading(profile, `orientation-${i}`))
+    .find(result => result.cards.some(card => card.orientation === "逆位"))!;
+  const reversed = reading.cards.find(card => card.orientation === "逆位")!;
+  const original = cards.find(card => card.id === reversed.id)!;
+  expect(reversed.keyword).toBe(original.coreKeyword.zh ?? original.coreKeyword.en);
+  expect(reversed.meaning).toBe(getCardMeaning({ card: original, orientation: "reversed" }, "zh"));
+  expect(serializeTarotToStructuredText(reading)).toContain(`牌面核心词：${reversed.keyword} · 逆位牌义：${reversed.meaning}`);
+  expect(JSON.parse(serializeTarotToCompactJson(reading)).disclaimer).toContain("牌面核心词不区分正逆");
 });

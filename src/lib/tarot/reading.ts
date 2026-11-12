@@ -25,5 +25,5 @@ export const buildTarotReading = (profile: NormalizedProfileInput, seedOverride?
     const reversed = random() < 0.5;
     return { id: card.id, name: card.name.zh ?? card.name.en, number: card.number, arcana: card.arcana, orientation: reversed ? "逆位" : "正位", keyword: card.coreKeyword.zh ?? card.coreKeyword.en, meaning: getCardMeaning({ card, orientation: reversed ? "reversed" : "upright" }, "zh") };
   });
-  return { format: "qmdj-tarot-reading-v1", input: { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone, seed: seedText }, spreadId, spread: spread.label, positions: spread.positions, cards: readingCards, disclaimer: "研究性塔罗抽牌：使用完整 78 张 Rider–Waite–Smith 牌组，牌义采用 tarot-kit 的现代释义；当前按出生资料生成可复现抽牌，用于自我反思，不替代事实核验或专业建议。" };
+  return { format: "qmdj-tarot-reading-v1", input: { datetime: profile.normalized.datetime, timeZone: profile.normalized.timeZone, seed: seedText }, spreadId, spread: spread.label, positions: spread.positions, cards: readingCards, disclaimer: "研究性塔罗抽牌：使用完整 78 张 Rider–Waite–Smith 牌组，牌义采用 tarot-kit 的现代释义；牌面核心词不区分正逆，具体牌义按正逆分别读取。当前按出生资料生成可复现抽牌，用于自我反思，不替代事实核验或专业建议。" };
 };

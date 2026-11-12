@@ -8,6 +8,7 @@ import { buildAstroChart } from "@/lib/astro/chart";
 import { buildHumanDesignChart, buildHumanDesignChartFromDatetime } from "@/lib/human-design/chart";
 import { buildHumanDesignComposite } from "@/lib/human-design/composite";
 import { DivinationPanel } from "./divination-panel";
+import { buildTarotReading } from "@/lib/tarot/reading";
 
 const chart = () => {
   const input: ProfileInput = getDefaultProfileInput(new Date("1990-05-20T08:30:00+08:00"), "Asia/Shanghai");
@@ -17,6 +18,18 @@ const chart = () => {
 
 const noteStartingWith = (prefix: string) =>
   [...document.querySelectorAll(".divination-panel__note")].find((node) => node.textContent?.startsWith(prefix));
+
+it("labels tarot core keywords separately from the orientation-specific meaning", () => {
+  const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+  const reading = Array.from({ length: 30 }, (_, i) => buildTarotReading(profile, `orientation-${i}`))
+    .find(result => result.cards.some(card => card.orientation === "逆位"))!;
+  const reversed = reading.cards.find(card => card.orientation === "逆位")!;
+  render(<DivinationPanel kind="tarot" value={reading} />);
+  const card = [...document.querySelectorAll(".tarot-card")].find(node => node.textContent?.includes(reversed.name));
+  expect(card?.textContent).toContain(`牌面核心词：${reversed.keyword}`);
+  expect(card?.textContent).toContain(reversed.meaning);
+  cleanup();
+});
 
 describe("DivinationPanel astro（缺出生地的空态引导）", () => {
   afterEach(() => cleanup());
