@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { evaluateQimenPatterns, type QimenPatternCheck, type QimenPatternGroup, type QimenPatternStrength } from "@/lib/qimen/patterns";
+import { evaluateQimenPatterns, QIMEN_DEITY_METHOD, type QimenPatternCheck, type QimenPatternGroup, type QimenPatternStrength } from "@/lib/qimen/patterns";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 import { ProvenanceBlock } from "./provenance-block";
 
@@ -80,6 +80,7 @@ export function QimenPatternPanel({
             </header>
 
             <p>中五寄宫采用阴阳均寄坤二，天禽随天芮；古籍另有分寄口径。</p>
+            <p>{QIMEN_DEITY_METHOD}</p>
             {report.sourceNotes.map((note) => <p key={note}>{note}</p>)}
 
             {groups.map(({ group, items }) => (

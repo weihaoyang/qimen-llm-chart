@@ -17,6 +17,7 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeChartToCompactJson(chart)).toContain("值使原到中五宫后寄出");
     expect(serializeChartToStructuredText(chart)).toContain("阴阳均寄坤二，天禽随天芮");
     expect(serializeChartToCompactJson(chart)).toContain("中五阴阳均寄坤二");
+    expect(serializeChartToCompactJson(chart)).toContain("八神用白虎、玄武");
   });
   it("serializes overview and all nine palaces in stable order", () => {
     const chart = buildChart({

@@ -5,13 +5,14 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
-  it("independently enumerates chief, envoy, eight gates and stars over both dun and nine ju", () => {
+  it("independently enumerates chief, envoy, gates, stars and deities over both dun and nine ju", () => {
     const stemOrder = "戊己庚辛壬癸丁丙乙";
     const stems = "甲乙丙丁戊己庚辛壬癸", branches = "子丑寅卯辰巳午未申酉戌亥";
     const cycle = Array.from({ length: 60 }, (_, i) => stems[i % 10] + branches[i % 12]);
     const ring = [1, 8, 3, 4, 9, 2, 7, 6];
     const gates = ["休门", "生门", "伤门", "杜门", "景门", "死门", "惊门", "开门"];
     const starRing = ["天蓬", "天任", "天冲", "天辅", "天英", "天芮", "天柱", "天心"];
+    const deities = ["值符", "腾蛇", "太阴", "六合", "白虎", "玄武", "九地", "九天"];
     const stars = ["", "天蓬", "天芮", "天冲", "天辅", "天禽", "天心", "天柱", "天任", "天英"];
     const mod = (value: number, base: number) => ((value % base) + base) % base;
     const observedHours = new Set<string>();
@@ -49,10 +50,26 @@ describe("buildChart", () => {
           expect(heavenly, `${datetime} ${starPalace}`).toContain(earth.find(p => p.position === original)!.stem);
           expect(names.includes("天禽"), `${datetime} ${starPalace}`).toBe(starName === "天芮");
           if (starName === "天芮") expect(heavenly, datetime).toContain(earth.find(p => p.position === 5)!.stem);
+          const deityPalace = ring[mod(starStartPalace + direction * i, 8)];
+          expect(chart.raw.palaces.find(p => p.position === deityPalace)?.deity, `${datetime} ${deityPalace}`).toBe(deities[i]);
         }
       }
     }
     expect(observedHours.size).toBe(60);
+  });
+  it("reproduces readable deity positions from 宝鉴 for both dun with chief in 坎", () => {
+    for (const example of [
+      { dunType: "yang", solarTerm: "冬至", expected: ["值符", "腾蛇", "太阴", "六合", "白虎", "玄武", "九地", "九天"] },
+      { dunType: "yin", solarTerm: "夏至", expected: ["值符", "九天", null, "玄武", "白虎", "六合", "太阴", "腾蛇"] },
+    ] as const) {
+      const chart = buildChart({ datetime: "2026-01-05T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: example.solarTerm, dunType: example.dunType, juNumber: 1 } });
+      expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe("甲子");
+      expect(chart.raw.zhiFu.position).toBe(1);
+      const ring = [1, 8, 3, 4, 9, 2, 7, 6];
+      example.expected.forEach((name, index) => {
+        if (name !== null) expect(chart.raw.palaces.find(p => p.position === ring[index])?.deity).toBe(name);
+      });
+    }
   });
   it("compares the six 玉女守门 hours from 宝鉴 across all ju and both dun", () => {
     const hours = new Set(["庚午", "己卯", "戊子", "丁酉", "丙午", "乙卯"]);
