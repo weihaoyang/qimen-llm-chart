@@ -21,6 +21,10 @@ describe("QizhengPanel", () => {
     const { container } = render(<QizhengPanel value={value} />);
     expect(screen.getByRole("heading", { name: "七政四余" })).toBeInTheDocument();
     expect(container.querySelectorAll(".qizheng-palaces span")).toHaveLength(12);
+    for (const palace of value.palaces) {
+      expect(container.querySelector(".qizheng-palaces")).toHaveTextContent(palace.name);
+      expect(container.querySelector(".qizheng-palaces")).toHaveTextContent(palace.branch);
+    }
     expect(container.querySelector(".qizheng-palaces span.is-ming")).toBeTruthy();
     expect(container.querySelectorAll(".qizheng-row")).toHaveLength(value.stars.length);
     expect(screen.getByText("七政落宫")).toBeInTheDocument();

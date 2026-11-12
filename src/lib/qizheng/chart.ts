@@ -234,6 +234,12 @@ const dignityOf = (name: string, branch: string) => {
  */
 export const mingPalaceIndex = (sunPalace: number, hourBranch: number) => ((sunPalace - hourBranch + 3) % 12 + 12) % 12;
 
+/** 《张果星宗》十二宫例：从命宫按地支逆行依次布财帛、兄弟等宫。 */
+export const qizhengPalaces = (mingIndex: number) => TWELVE_PALACES.map((name, offset) => {
+  const index = ((mingIndex - offset) % 12 + 12) % 12;
+  return { name, index, branch: EARTHLY_BRANCHES[index] as string };
+});
+
 /** 生时（小时）→ 地支下标。23:00–00:59 为子时。 */
 export const hourToBranchIndex = (hour: number) => Math.floor(((hour + 1) % 24) / 2);
 
@@ -275,7 +281,8 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
   }
   const sunPalace = longitudeToPalace(sunLongitude);
   const mingIndex = mingPalaceIndex(sunPalace, hourToBranchIndex(hour));
-  const palaceNameOf = (palace: number) => TWELVE_PALACES[((palace - mingIndex) % 12 + 12) % 12] as string;
+  const palaces = qizhengPalaces(mingIndex);
+  const palaceNameOf = (palace: number) => palaces.find((item) => item.index === palace)!.name;
 
   for (const { name, planet } of SEVEN_LUMINARIES) {
     const longitude = longitudeOf(planet);
@@ -331,11 +338,6 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       note: remnant.note,
     });
   }
-
-  const palaces = TWELVE_PALACES.map((name, offset) => {
-    const index = (mingIndex + offset) % 12;
-    return { name, index, branch: EARTHLY_BRANCHES[index] as string };
-  });
 
   const missingStars = [...SEVEN_LUMINARIES.map(({ name }) => name), "罗睺", "计都", "月孛", "紫气"]
     .filter((name) => !stars.some((star) => star.name === name));

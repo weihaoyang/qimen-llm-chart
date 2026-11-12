@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { ayanamsa } from "@/lib/vedic/ayanamsa";
-import { buildQizhengChart, niuMansionComparison, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
+import { buildQizhengChart, niuMansionComparison, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, qizhengPalaces, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
 import { serializeQizhengToCompactJson, serializeQizhengToStructuredText } from "./serializer";
 
 const profile = () => {
@@ -19,6 +19,25 @@ const utc = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
 const drift = (millis: number) => ayanamsa(millis / 86_400_000 + 2_440_587.5) - ayanamsa(JD_EPOCH);
 
 describe("qizheng siyu chart", () => {
+  it("places the twelve houses backwards from 命 as in 张果星宗 and keeps stars consistent", () => {
+    expect(qizhengPalaces(2).map((palace) => palace.branch)).toEqual([..."寅丑子亥戌酉申未午巳辰卯"]);
+    expect(qizhengPalaces(0).map((palace) => palace.branch)).toEqual([..."子亥戌酉申未午巳辰卯寅丑"]);
+    for (let ming = 0; ming < 12; ming++) {
+      const palaces = qizhengPalaces(ming);
+      expect(new Set(palaces.map((palace) => palace.index)).size).toBe(12);
+      expect(palaces.map((palace) => palace.name)).toEqual([...TWELVE_PALACES]);
+      expect(palaces[1].index).toBe((ming + 11) % 12);
+    }
+    const chart = buildQizhengChart(profile());
+    for (const star of chart.stars) {
+      expect(star.palaceName).toBe(chart.palaces.find((palace) => palace.index === star.palace)?.name);
+    }
+    const text = serializeQizhengToStructuredText(chart);
+    const json = JSON.parse(serializeQizhengToCompactJson(chart));
+    for (const palace of chart.palaces) expect(text).toContain(`${palace.name}(${palace.branch})`);
+    expect(json.palaces).toEqual(chart.palaces);
+    expect(json.stars.map((star: { palaceName: string }) => star.palaceName)).toEqual(chart.stars.map((star) => star.palaceName));
+  });
   it("maps longitudes into palaces with the classical 十二次 (Aries = 戌)", () => {
     expect(longitudeToPalace(0)).toBe(10); // 0° 白羊 → 戌宫
     expect(longitudeToPalace(30)).toBe(9); // 30° 金牛 → 酉宫
