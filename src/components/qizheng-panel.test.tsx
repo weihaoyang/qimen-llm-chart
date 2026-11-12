@@ -29,6 +29,7 @@ describe("QizhengPanel", () => {
     expect(container.querySelectorAll(".qizheng-row")).toHaveLength(value.stars.length);
     expect(screen.getByText("七政落宫")).toBeInTheDocument();
     expect(screen.getByText("四余落宫")).toBeInTheDocument();
+    expect(screen.getByText(/依季节日出时辰起算/)).toBeInTheDocument();
     expect(screen.getByText("罗睺")).toBeInTheDocument();
     expect(screen.getByText("罗睺").closest(".qizheng-row")).toHaveTextContent("火余");
     expect(screen.getByText("计都").closest(".qizheng-row")).toHaveTextContent("土余");

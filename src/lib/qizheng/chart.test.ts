@@ -19,6 +19,17 @@ const utc = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
 const drift = (millis: number) => ayanamsa(millis / 86_400_000 + 2_440_587.5) - ayanamsa(JD_EPOCH);
 
 describe("qizheng siyu chart", () => {
+  it("uses fixed 卯 for 命宫 while disclosing the conflicting seasonal sunrise method", () => {
+    // 太阳辰、生时午：从午顺数到卯，太阳宫顺进九位，命在丑。
+    expect(mingPalaceIndex(4, 6)).toBe(1);
+    // 《春树斋丛说》引通艺录：太阳未宫、子时，遇卯法立命戌。
+    expect(mingPalaceIndex(7, 0)).toBe(10);
+    const chart = buildQizhengChart(profile());
+    const text = serializeQizhengToStructuredText(chart);
+    const json = JSON.parse(serializeQizhengToCompactJson(chart));
+    expect(text).toContain("依季节日出时辰起算");
+    expect(json.disclaimer).toContain("本站未实现其完整方法");
+  });
   it("places the twelve houses backwards from 命 as in 张果星宗 and keeps stars consistent", () => {
     expect(qizhengPalaces(2).map((palace) => palace.branch)).toEqual([..."寅丑子亥戌酉申未午巳辰卯"]);
     expect(qizhengPalaces(0).map((palace) => palace.branch)).toEqual([..."子亥戌酉申未午巳辰卯寅丑"]);
