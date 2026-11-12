@@ -73,15 +73,16 @@ describe("buildChart", () => {
       expect((chart.raw.specialPatterns.auspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position), datetime).toEqual(expected);
     }
   });
-  it("compares the 艺术典 705 人遁 example while retaining its 值使 discrepancy", () => {
+  it("compares the 人遁 example across 艺术典 704 and 705", () => {
     const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 7 } });
     expect(chart.raw.fourPillars.day.stem).toBe("乙");
     expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe("丙子");
-    expect(chart.raw.zhiFu).toMatchObject({ star: "天任", heavenlyStem: "己" });
+    expect(chart.raw.zhiFu).toMatchObject({ star: "天任", heavenlyStem: "己", position: 2 });
     expect(chart.raw.zhiShi).toMatchObject({ gate: "生门", position: 1 });
     const palace = chart.raw.palaces.find(p => p.position === 6)!;
     expect(palace.gate).toBe("休门");
     expect([palace.heavenlyStem].flat()).toContain("丁");
+    expect([palace.earthlyStem].flat()).toContain("乙");
     expect(palace.deity).toBe("太阴");
     expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_ren")?.positions).toContain(6);
   });
