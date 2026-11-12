@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import { LunarUtil, Solar } from "lunar-typescript";
 import { HYDRATION_SAFE_DATE } from "@/lib/hydration-clock";
+import { formatDateTimeInZone } from "@/lib/qimen/timezone";
 import type { NormalizedBaziChart } from "@/lib/bazi/types";
 import type { FiveElement, TenGodGroup } from "@/lib/bazi/relations";
 import {
@@ -108,7 +109,7 @@ const getLiuNianGanZhi = (year: number) => {
 const getLiuYueGanZhi = (year: number, month: number) =>
   Solar.fromYmd(year, month, 15).getLunar().getMonthInGanZhiExact();
 
-const MONTH_LABELS = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"] as const;
+const MONTH_LABELS = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"] as const;
 
 const formatStartOffset = (
   offset: NormalizedBaziChart["raw"]["yun"]["startOffset"],
@@ -143,7 +144,6 @@ const buildTenGodGroupCounts = (chart: NormalizedBaziChart) => {
   chart.raw.pillars.forEach((pillar) => {
     add(pillar.shiShenGan);
     pillar.shiShenZhi.forEach(add);
-    getHiddenStemPairs(chart.raw.dayMaster, pillar).forEach(({ shiShen }) => add(shiShen));
   });
 
   return TEN_GOD_GROUPS.map((group) => ({ group, count: counts.get(group) ?? 0 }));
@@ -243,12 +243,11 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
   // Read the clock once. Two separate `new Date()` calls could straddle a
   // month or year boundary and leave `currentYear` and `currentMonth`
   // describing different instants.
-  const currentYear = now.getFullYear();
+  const [currentYear, currentMonth] = formatDateTimeInZone(now, chart.input.normalized.timeZone).slice(0, 7).split("-").map(Number);
   const activeLiuNianYear = availableLiuNianYears.includes(selectedLiuNianYear ?? currentYear)
     ? (selectedLiuNianYear ?? currentYear)
     : (availableLiuNianYears[0] ?? currentYear);
   const activeLiuNian = getLiuNianGanZhi(activeLiuNianYear);
-  const currentMonth = now.getMonth() + 1;
   const activeLiuYueMonth = selectedLiuYueMonth ?? (activeLiuNianYear === currentYear ? currentMonth : 1);
   const activeLiuYue = getLiuYueGanZhi(activeLiuNianYear, activeLiuYueMonth);
   const dayunPillar: CorePillar = selectedDaYun
@@ -539,7 +538,7 @@ export function BaziPanel({ chart, now = HYDRATION_SAFE_DATE }: BaziPanelProps) 
               <div>{availableLiuNianYears.map((year) => <button type="button" className={activeLiuNianYear === year ? "is-active" : ""} key={year} onClick={() => { setSelectedLiuNianYear(year); setSelectedLiuYueMonth(null); }}><small>{year}</small><strong>{getLiuNianGanZhi(year)}</strong></button>)}</div>
             </div>
             <div className="bazi-timing-track bazi-timing-track--month">
-              <span>流月</span>
+              <span title="按北京时间公历每月15日取节气月柱">流月</span>
               <div>{MONTH_LABELS.map((label, index) => { const month = index + 1; return <button type="button" className={activeLiuYueMonth === month ? "is-active" : ""} key={label} onClick={() => setSelectedLiuYueMonth(month)}><small>{label}</small><strong>{getLiuYueGanZhi(activeLiuNianYear, month)}</strong></button>; })}</div>
             </div>
             <p>当前：{selectedDaYun?.ganZhi ?? "暂无大运"} · {activeLiuNian}年 · {activeLiuYue}月</p>

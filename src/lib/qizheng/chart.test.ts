@@ -33,6 +33,11 @@ describe("qizheng siyu chart", () => {
   it("places the twelve houses backwards from 命 as in 张果星宗 and keeps stars consistent", () => {
     expect(qizhengPalaces(2).map((palace) => palace.branch)).toEqual([..."寅丑子亥戌酉申未午巳辰卯"]);
     expect(qizhengPalaces(0).map((palace) => palace.branch)).toEqual([..."子亥戌酉申未午巳辰卯寅丑"]);
+    // 《完孝录》卷四〈图解〉：命在子时各宫的宫主，按十二宫逆布顺序。
+    expect(qizhengPalaces(0).map((palace) => palace.ruler)).toEqual([
+      "土星", "木星", "火星", "金星", "水星", "太阴",
+      "太阳", "水星", "金星", "火星", "木星", "土星",
+    ]);
     for (let ming = 0; ming < 12; ming++) {
       const palaces = qizhengPalaces(ming);
       expect(new Set(palaces.map((palace) => palace.index)).size).toBe(12);
@@ -45,7 +50,7 @@ describe("qizheng siyu chart", () => {
     }
     const text = serializeQizhengToStructuredText(chart);
     const json = JSON.parse(serializeQizhengToCompactJson(chart));
-    for (const palace of chart.palaces) expect(text).toContain(`${palace.name}(${palace.branch})`);
+    for (const palace of chart.palaces) expect(text).toContain(`${palace.name}(${palace.branch}) · 宫主${palace.ruler}`);
     expect(json.palaces).toEqual(chart.palaces);
     expect(json.stars.map((star: { palaceName: string }) => star.palaceName)).toEqual(chart.stars.map((star) => star.palaceName));
   });

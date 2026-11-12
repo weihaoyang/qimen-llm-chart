@@ -84,15 +84,18 @@ const relationOf = (entry: { relation?: string } | undefined) => entry?.relation
  * `3meta` 只给「已成立」的格局；这里补上「未成立」的名单与旺衰分档，
  * 让模型知道哪些经典格局被**正面否掉**、哪些成立且有力。
  */
-const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = false) => {
+const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = false, isSequence = false) => {
   const report = evaluateQimenPatterns(chart);
+  const sourceNotes = isSequence
+    ? report.sourceNotes.filter(note => !note.startsWith("六仪击刑："))
+    : report.sourceNotes;
   return {
     registered: report.registered,
     formedCount: report.formed.length,
     failedCount: report.failed.length,
     strengthCounts: report.strengthCounts,
     strengthMethod: report.strengthMethod,
-    ...(report.sourceNotes.length ? { sourceNotes: report.sourceNotes } : {}),
+    ...(sourceNotes.length ? { sourceNotes } : {}),
     formed: report.formed.map((check) => ({
       name: check.name,
       kind: check.kind,
@@ -283,7 +286,7 @@ const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
 
 const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod = false) => {
   const { chartFields, palaceFields } = buildCompactSchema();
-  const patternSummary = summarizeRegisteredPatterns(chart, true);
+  const patternSummary = summarizeRegisteredPatterns(chart, true, sharedStrengthMethod);
   const { strengthMethod: _strengthMethod, ...summaryWithoutMethod } = patternSummary;
 
   return {

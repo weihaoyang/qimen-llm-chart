@@ -92,5 +92,7 @@ describe("TaiyiPanel", () => {
     expect(screen.getByText("固定开门太乙门具").nextElementSibling).toHaveTextContent("具 · 太乙开门 · 目酉惊门");
     expect(screen.getByText("固定开门主将门具").nextElementSibling).toHaveTextContent("不具 · 太乙休门 · 目酉开门");
     expect(screen.getByText("固定开门客将门具")).toBeInTheDocument();
+    expect(screen.getByText("《太白》直使加将·主门具").nextElementSibling).toHaveTextContent("不具 · 太乙1宫伤门 · 文昌6宫生门 · 主大将6宫生门");
+    expect(screen.getByText("《太白》直使加将·客门具").nextElementSibling).toHaveTextContent("未定");
   });
 });

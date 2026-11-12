@@ -40,7 +40,7 @@ export function QizhengPanel({ value, onCopyJson, jsonCopied }: { value: Qizheng
       <div className="divination-section-heading"><span>十二宫</span><small>命宫 {value.mingPalace.branch}宫起</small></div>
       <div className="qizheng-palaces">
         {value.palaces.map((palace) => (
-          <span key={palace.name} className={palace.name === "命宫" ? "is-ming" : undefined}>{palace.name}<b>{palace.branch}</b></span>
+          <span key={palace.name} className={palace.name === "命宫" ? "is-ming" : undefined}>{palace.name}<b>{palace.branch} · {palace.ruler}</b></span>
         ))}
       </div>
 

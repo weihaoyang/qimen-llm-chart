@@ -66,6 +66,7 @@ export type TaiyiChart = {
   fixedOpenGatePalaces: Array<{ palace: number; gate: string }>;
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
   fixedOpenCompleteness: { taiyi: GateCompleteness; host: GateCompleteness; guest: GateCompleteness };
+  taibaiDutyCompleteness: { host: TaibaiGateCompleteness; guest: TaibaiGateCompleteness };
   fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
   fixedPlan: { count: number; generalPalace: number; deputyPalace: number; gatePalaces: Array<{ palace: number; gate: string }> | null } | null;
   fixedPlanSamePalaceCandidate: { count: number; generalPalace: number; deputyPalace: number; method: string } | null;
@@ -95,6 +96,7 @@ export type TaiyiChart = {
 };
 
 export type GateCompleteness = { status: "具" | "不具" | "未定" | "未排布"; taiyiGate: string | null; eyeGate: string | null; eyePosition: string };
+export type TaibaiGateCompleteness = { status: "具" | "不具" | "未定" | "未排布"; startPalace: number; gates: Array<{ name: string; palace: number | null; gate: string | null }> };
 
 /** 积年：以上元甲子为始，据《太乙金镜式经》「至唐开元十二年（724）有 1937281 积年」。 */
 export const accumulatedYears = (year: number) => year + (1937281 - 724);
@@ -141,6 +143,16 @@ export const fixedOpenGateCompleteness = (gates: Array<{ palace: number; gate: s
   const status = (checkTaiyi && taiyiGate !== null && auspicious.includes(taiyiGate)) || (eyeGate !== null && auspicious.includes(eyeGate))
     ? "不具" : eyeGate === null || (checkTaiyi && taiyiGate === null) ? "未定" : "具";
   return { status, taiyiGate, eyeGate, eyePosition };
+};
+
+/** 《太白·出师庙算》：直使加对方大将，分别检查本方目、本方大将和太乙。 */
+export const taibaiDutyGateCompleteness = (startPalace: number, startGate: string, actors: Array<{ name: string; palace: number | null }>): TaibaiGateCompleteness => {
+  const available = PALACE_RING.includes(startPalace);
+  const gates = available ? taiyiEightGatePalaces(startPalace, startGate) : null;
+  const details = actors.map(({ name, palace }) => ({ name, palace, gate: gates?.find(item => item.palace === palace)?.gate ?? null }));
+  const status = !available ? "未排布" : details.some(item => item.gate !== null && ["开门", "休门", "生门"].includes(item.gate)) ? "不具"
+    : details.some(item => item.gate === null) ? "未定" : "具";
+  return { status, startPalace, gates: details };
 };
 
 /** 入局数：积年累除元六纪周期，再累除七十二。 */
@@ -505,6 +517,10 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       taiyi: fixedOpenGateCompleteness(fixedOpenGatePalaces, palace, tianMuPos, false),
       host: fixedOpenGateCompleteness(generalGatePalaces.host, palace, tianMuPos, true),
       guest: fixedOpenGateCompleteness(generalGatePalaces.guest, palace, shiJiPos, true),
+    },
+    taibaiDutyCompleteness: {
+      host: taibaiDutyGateCompleteness(guestGeneral, annualGate.name, [{ name: "太乙", palace }, { name: "文昌", palace: tianMuPalace }, { name: "主大将", palace: hostGeneral }]),
+      guest: taibaiDutyGateCompleteness(hostGeneral, annualGate.name, [{ name: "太乙", palace }, { name: "始击", palace: shiJiPalace }, { name: "客大将", palace: guestGeneral }]),
     },
     fixedPlanEye: { ...fixedEye, deity: deityOf(fixedEye.position) },
     fixedPlan: fixedCount === null || fixedGeneral === null ? null : {

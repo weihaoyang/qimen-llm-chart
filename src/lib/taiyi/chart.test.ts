@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedOpenGateCompleteness, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition, wujingReadiness } from "./chart";
+import { accumulatedYears, annualDutyGate, annualThreeGateStatus, buildTaiyiChart, countSum, detectPatterns, fixedOpenGateCompleteness, fixedPlanEyePosition, generalPalace, generalSuPalace, harmonyLevel, harmonyLevelVariant, jiShenPosition, PALACE_RING, parityLabel, RING, ruJuNumber, shiJiPosition, taiyiEightGatePalaces, taiyiPalace, tianMuPosition, wujingReadiness, taibaiDutyGateCompleteness } from "./chart";
 
 it("rejects fractional and out-of-range inputs before indexing the Taiyi tables", () => {
   const settings = { year: 2026, cycle: 360, dun: "阳遁", ruJu: null } as const;
@@ -366,6 +366,23 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
+  it("applies 太白 duty gate to the opposite general and checks all three actors", () => {
+    const actors = [{ name: "太乙", palace: 4 }, { name: "文昌", palace: 9 }, { name: "主大将", palace: 6 }];
+    expect(taibaiDutyGateCompleteness(1, "开门", actors)).toMatchObject({ status: "具", gates: [{ gate: "伤门" }, { gate: "杜门" }, { gate: "惊门" }] });
+    expect(taibaiDutyGateCompleteness(1, "开门", [{ ...actors[0], palace: 8 }, ...actors.slice(1)]).status).toBe("不具");
+    expect(taibaiDutyGateCompleteness(1, "开门", [actors[0], { ...actors[1], palace: null }, actors[2]]).status).toBe("未定");
+    expect(taibaiDutyGateCompleteness(1, "开门", [{ ...actors[0], palace: 8 }, { ...actors[1], palace: null }, actors[2]]).status).toBe("不具");
+    expect(taibaiDutyGateCompleteness(5, "开门", actors).status).toBe("未排布");
+    const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 2 });
+    expect(chart.taibaiDutyCompleteness.host).toMatchObject({ status: "不具", startPalace: 1, gates: [{ gate: "伤门" }, { gate: "生门" }, { gate: "生门" }] });
+    expect(chart.taibaiDutyCompleteness.guest.status).toBe("未定");
+    const thirteen = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 13 });
+    expect(thirteen.taibaiDutyCompleteness.guest).toMatchObject({ status: "不具", startPalace: 8, gates: [{ gate: "休门" }, { gate: null }, { gate: "死门" }] });
+    expect(chart.taibaiDutyCompleteness.host.startPalace).toBe(chart.counts.guestGeneralPalace);
+    expect(chart.taibaiDutyCompleteness.guest.startPalace).toBe(chart.counts.hostGeneralPalace);
+    expect(serializeTaiyiToStructuredText(chart)).toContain("《太白》直使加将主门具：");
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).taibaiDutyCompleteness).toEqual(chart.taibaiDutyCompleteness);
+  });
   it("computes the three fixed-open methods independently and preserves unknowns", () => {
     const gates = taiyiEightGatePalaces(3, "开门");
     expect(fixedOpenGateCompleteness(gates, 3, "午", false)).toMatchObject({ status: "具", taiyiGate: "开门", eyeGate: "伤门" });

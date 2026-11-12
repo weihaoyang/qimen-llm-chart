@@ -27,6 +27,8 @@ import { ayanamsa, jdToJDE, julianCenturies } from "@/lib/vedic/ayanamsa";
 
 export const TWELVE_PALACES = ["命宫", "财帛", "兄弟", "田宅", "男女", "奴仆", "夫妻", "疾厄", "迁移", "官禄", "福德", "相貌"] as const;
 export const EARTHLY_BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"] as const;
+// 《儒门崇理折衷堪舆完孝录》卷四〈宫度喜忌定局〉与〈图解〉。
+const PALACE_RULERS = ["土星", "土星", "木星", "火星", "金星", "水星", "太阳", "太阴", "水星", "金星", "火星", "木星"] as const;
 /**
  * 二十八宿序（东方角亢氐房心尾箕、北方斗牛女虚危室壁、西方奎娄胃昴毕觜参、南方井鬼柳星张翼轸）。
  * 注意：这是**传世排写次序**，与黄经升序不同（黄经次序为…毕、参、觜、井…，见 `MANSION_TABLE_QING`）；
@@ -97,7 +99,7 @@ export type QizhengChart = {
   format: "qmdj-qizheng-chart-v1";
   input: { datetime: string; civilDateTime: string; timeZone: string };
   mingPalace: { index: number; branch: string };
-  palaces: Array<{ name: string; index: number; branch: string }>;
+  palaces: ReturnType<typeof qizhengPalaces>;
   stars: QizhengStar[];
   complete: boolean;
   missingStars: string[];
@@ -240,7 +242,7 @@ const MING_METHOD_NOTE = "命宫采用生时加太阳宫顺数至卯的固定卯
 /** 《张果星宗》十二宫例：从命宫按地支逆行依次布财帛、兄弟等宫。 */
 export const qizhengPalaces = (mingIndex: number) => TWELVE_PALACES.map((name, offset) => {
   const index = ((mingIndex - offset) % 12 + 12) % 12;
-  return { name, index, branch: EARTHLY_BRANCHES[index] as string };
+  return { name, index, branch: EARTHLY_BRANCHES[index], ruler: PALACE_RULERS[index] };
 });
 
 /** 生时（小时）→ 地支下标。23:00–00:59 为子时。 */

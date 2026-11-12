@@ -685,6 +685,21 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
   const sourceNotes = yuNuTime !== yuNuPalace
     ? [`玉女守门口径差异：时柱${hourPillar}${yuNuTime ? "属于" : "不属于"}《奇门宝鉴》所列六时；本站地丁与值使同宫${yuNuPalace ? "成立" : "未成立"}。${centerNote}两种判定暂不强行等同。`]
     : [];
+  // 《遁甲演义》葛洪、王璋条以本旬值符落宫为判据。
+  const chiefPunishmentPalace: Record<string, number> = {
+    甲子: 3, 甲戌: 2, 甲申: 8, 甲午: 9, 甲辰: 4, 甲寅: 4,
+  };
+  const xunShou = chart.raw.timeInfo?.xunShou?.slice(0, 2);
+  const expectedPunishment = xunShou ? chiefPunishmentPalace[xunShou] : undefined;
+  if (expectedPunishment !== undefined) {
+    const chiefPosition = chart.raw.zhiFu.position;
+    const classicalPalaces = chiefPosition === expectedPunishment ? [chiefPosition] : [];
+    const perPalace = chart.raw.palaces.filter(palace => palace.liuYiJiXing?.hasJiXing).map(palace => palace.position);
+    if (perPalace.length !== classicalPalaces.length || perPalace.some(position => !classicalPalaces.includes(position))) {
+      const describe = (positions: number[]) => positions.length ? positions.map(position => `${position}宫`).join("、") : "未命中";
+      sourceNotes.push(`六仪击刑：《遁甲演义》值符${describe(classicalPalaces)}，逐宫${describe(perPalace)}。`);
+    }
+  }
   const tombVariants = chart.raw.palaces.flatMap((palace) => {
     const stems = valuesOf(palace.heavenlyStem);
     return [

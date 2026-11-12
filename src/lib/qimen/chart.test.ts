@@ -1085,3 +1085,13 @@ it("keeps 悖格 palace and overview consistent with the catalog across actual c
   expect(formed).toBeGreaterThan(0);
   expect(empty).toBeGreaterThan(0);
 });
+
+it("reports classical chief-only punishment separately from the palace-wide rule", () => {
+  const different = evaluateQimenPatterns(buildChart({ datetime: "2026-01-05T02:00", timeZone: "Asia/Shanghai" }));
+  expect(different.sourceNotes).toContain("六仪击刑：《遁甲演义》值符未命中，逐宫4宫。");
+  const agreement = buildChart({ datetime: "2026-01-05T12:00", timeZone: "Asia/Shanghai" });
+  expect(agreement.raw.zhiFu.position).toBe(3);
+  const report = evaluateQimenPatterns(agreement);
+  expect(report.formed.find(check => check.id === "liu_yi_ji_xing")?.evidence.join(" ")).toContain("甲子戊");
+  expect(report.sourceNotes.some(note => note.startsWith("六仪击刑："))).toBe(false);
+});

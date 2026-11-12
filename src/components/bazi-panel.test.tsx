@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { buildBaziChartFromProfile } from "@/lib/bazi/chart";
@@ -40,6 +40,18 @@ const activeIn = (label: "流年" | "流月") =>
   track(label).querySelector("button.is-active small")?.textContent ?? "";
 
 describe("BaziPanel", () => {
+  it("counts each natal stem and hidden stem once in the ten-god meter", () => {
+    render(<BaziPanel chart={chart} />);
+    const meter = within(screen.getByLabelText("十神分组统计"));
+
+    // 庚午 辛巳 乙酉 癸未：三枚透干与九枚藏干。日干乙是日主。
+    const expected = { 比劫: 1, 食伤: 3, 财星: 3, 官杀: 4, 印星: 1 };
+    for (const [group, count] of Object.entries(expected)) {
+      const cell = meter.getByText(group).parentElement!;
+      expect(within(cell).getByText(String(count))).toBeTruthy();
+    }
+  });
+
   it("selects 流年 and 流月 from the injected clock, not the wall clock", () => {
     // The panel used to call `new Date()` during render, which produced different
     // HTML on the server and in the browser. It now takes the instant as a prop.
@@ -64,6 +76,14 @@ describe("BaziPanel", () => {
     expect(activeIn("流年")).toBe("2000");
     expect(activeIn("流月")).toBe("一月");
     expect(screen.getByText("2000年 · 一月")).toBeTruthy();
+  });
+
+  it("uses the chart time zone for the civil month selection", () => {
+    // 1999-12-31 16:30 UTC has already crossed midnight in Shanghai.
+    render(<BaziPanel chart={chart} now={new Date("1999-12-31T16:30:00.000Z")} />);
+    expect(activeIn("流年")).toBe("2000");
+    expect(activeIn("流月")).toBe("一月");
+    expect(track("流月").textContent).toContain("十二月");
   });
 
   it("falls back to the hydration-safe instant when no clock is supplied", () => {
