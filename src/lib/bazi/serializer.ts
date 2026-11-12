@@ -263,13 +263,23 @@ const buildTimingSummary = (
   );
   const lunar = solar.getLunar();
   const useLunarNewYear = chart.raw.conventions.yearBoundary === "lunar-new-year";
-  const currentDaYun =
-    chart.raw.yun.daYun.find(
-      (item) => calendarYear >= item.startYear && calendarYear <= item.endYear,
-    ) ?? null;
+  // The reference is only used as a civil date here. On the transition date
+  // the time is unknown, so neither adjacent cycle can be selected safely.
+  const startMatch = /^(\d{4})-(\d{2})-(\d{2}) /.exec(chart.raw.yun.startSolar);
+  const start = startMatch ? Solar.fromYmd(Number(startMatch[1]), Number(startMatch[2]), Number(startMatch[3])) : null;
+  const reference = formatReferenceDate(referenceDate);
+  const boundaries = start ? Array.from({ length: chart.raw.yun.daYun.length + 1 }, (_, i) => start.nextYear(i * 10).toYmd()) : [];
+  const atBoundary = boundaries.includes(reference);
+  const currentIndex = atBoundary ? -1 : boundaries.findIndex((boundary, i) =>
+    i < chart.raw.yun.daYun.length && reference > boundary && reference < boundaries[i + 1]);
+  const currentDaYun = currentIndex >= 0 ? chart.raw.yun.daYun[currentIndex] : null;
+  const currentNote = !start ? "起运日期缺失，无法定位当前大运。"
+    : atBoundary ? "参考日期为交运日；仅按日期判断无法区分交运前后。"
+      : currentDaYun ? "按起运日期每十周年交运；参考日期未包含交运时刻。"
+        : "参考日期不在已提供的大运区间内。";
 
   return {
-    referenceDate: formatReferenceDate(referenceDate),
+    referenceDate: reference,
     liuNian: {
       calendarYear,
       ganZhi: useLunarNewYear ? lunar.getYearInGanZhi() : lunar.getYearInGanZhiExact(),
@@ -277,7 +287,7 @@ const buildTimingSummary = (
       xunKong: useLunarNewYear ? lunar.getYearXunKong() : lunar.getYearXunKongExact(),
     },
     currentDaYun,
-    note: `${useLunarNewYear ? "流年按农历春节年干支" : "流年按参考日期的节气年干支"}提供；当前大运按起止年份近似定位，交运临界日仍需复核。`,
+    note: `${useLunarNewYear ? "流年按农历春节年干支" : "流年按参考日期的节气年干支"}提供；${currentNote}`,
   };
 };
 
@@ -485,7 +495,7 @@ export const serializeBaziToStructuredText = (
     "### 流年与当前大运",
     `参考日期: ${timing.referenceDate}`,
     `流年: ${timing.liuNian.calendarYear} ${timing.liuNian.ganZhi}（${timing.liuNian.xun} / ${timing.liuNian.xunKong}）`,
-    `当前大运: ${timing.currentDaYun?.ganZhi ?? "未在已提供的大运年份范围内"}`,
+    `当前大运: ${timing.currentDaYun?.ganZhi ?? "无法按参考日期确定"}`,
     timing.currentDaYun
       ? `当前大运年份: ${timing.currentDaYun.startYear}-${timing.currentDaYun.endYear}，年龄: ${timing.currentDaYun.startAge}-${timing.currentDaYun.endAge}岁`
       : "当前大运年份: 无",

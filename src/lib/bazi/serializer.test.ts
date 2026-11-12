@@ -4,6 +4,35 @@ import { normalizeProfileInput } from "@/lib/profile/normalize";
 import { serializeBaziToCompactJson, serializeBaziToStructuredText } from "./serializer";
 
 describe("serializeBaziToCompactJson", () => {
+  it("does not switch ten-year luck cycles at the beginning of the calendar year", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+    }));
+    expect(chart.raw.yun.startSolar).toBe("1998-05-01 12:00:00");
+    const timing = (year: number, month: number, day: number) => JSON.parse(serializeBaziToCompactJson(chart, {
+      referenceDate: new Date(year, month - 1, day),
+    })).relations.timing as { currentDaYun: { ganZhi: string } | null; note: string };
+    const cycles = chart.raw.yun.daYun;
+    expect(timing(1998, 4, 30).currentDaYun).toBeNull();
+    expect(timing(1998, 5, 2).currentDaYun?.ganZhi).toBe(cycles[0].ganZhi);
+    expect(timing(2008, 1, 1).currentDaYun?.ganZhi).toBe(cycles[0].ganZhi);
+    expect(timing(2008, 4, 30).currentDaYun?.ganZhi).toBe(cycles[0].ganZhi);
+    expect(timing(2008, 5, 1)).toMatchObject({ currentDaYun: null, note: expect.stringContaining("交运日") });
+    expect(timing(2008, 5, 2).currentDaYun?.ganZhi).toBe(cycles[1].ganZhi);
+    expect(serializeBaziToStructuredText(chart, { referenceDate: new Date(2008, 4, 1) })).toContain("当前大运: 无法按参考日期确定");
+  });
+  it("handles leap-day starting dates using the calendar library's year addition", () => {
+    const chart = buildBaziChartFromProfile(normalizeProfileInput({
+      calendarMode: "solar", datetime: "1990-01-01T12:00", timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
+    }));
+    chart.raw.yun.startSolar = "2000-02-29 12:00:00";
+    const timing = (month: number, day: number) => JSON.parse(serializeBaziToCompactJson(chart, {
+      referenceDate: new Date(2010, month - 1, day),
+    })).relations.timing as { currentDaYun: { ganZhi: string } | null; note: string };
+    expect(timing(2, 27).currentDaYun?.ganZhi).toBe(chart.raw.yun.daYun[0].ganZhi);
+    expect(timing(2, 28)).toMatchObject({ currentDaYun: null, note: expect.stringContaining("交运日") });
+    expect(timing(3, 1).currentDaYun?.ganZhi).toBe(chart.raw.yun.daYun[1].ganZhi);
+  });
   it("exports an empty-middle arch and preserves the six-break textual disagreement", () => {
     const chartAt = (datetime: string) => buildBaziChartFromProfile(normalizeProfileInput({
       calendarMode: "solar", datetime, timeZone: "Asia/Shanghai", gender: "male", timeBasis: "civil",
