@@ -114,10 +114,15 @@ export const buildBaziCompatibility = (
     }
   }
 
-  const shared = left.raw.wuXing.filter((element) => right.raw.wuXing.includes(element));
+  // Each pillar's wuXing is a two-character stem/branch pair, not one element.
+  // Compare distinct elements rather than exact pairs or repeated occurrences.
+  const visibleElements = (pairs: string[]) => new Set(pairs.flatMap((pair) => [...pair]).filter((element) => "木火土金水".includes(element)));
+  const leftElements = visibleElements(left.raw.wuXing);
+  const rightElements = visibleElements(right.raw.wuXing);
+  const shared = [..."木火土金水"].filter((element) => leftElements.has(element) && rightElements.has(element));
   if (shared.length) {
     score += Math.min(6, shared.length);
-    evidence.push(`两盘共同出现五行：${shared.join("、")}`);
+    evidence.push(`两盘天干和地支本气共同出现的五行：${shared.join("、")}`);
   }
 
   const count = (group: "合会" | "冲" | "刑害破" | "其他") => relations.filter(relation => getBaziRelationGroup(relation.type) === group).length;
@@ -130,6 +135,6 @@ export const buildBaziCompatibility = (
     relations,
     evidence,
     suggestions: ["先约定一个可观察的沟通或协作目标，并在 7 天后复盘", "把冲突拆成事实、感受、请求三层，不用命理结论替代对话", "涉及承诺、金钱或重大决定时保留可逆选项"],
-    disclaimer: "双人合盘是传统结构的比较工具，不替任何一方断言想法、忠诚或必然结果。",
+    disclaimer: "双人合盘是传统结构的比较工具；分数是产品自定义的关系计数，并非古籍评分或已验证的关系预测，不替任何一方断言想法、忠诚或必然结果。",
   };
 };

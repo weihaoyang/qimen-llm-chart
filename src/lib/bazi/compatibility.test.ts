@@ -8,6 +8,21 @@ const chart = (date: string) => buildBaziChartFromProfile(normalizeProfileInput(
 }));
 
 describe("cross-chart stem and branch control", () => {
+  it("compares distinct visible elements, not duplicated pillar element pairs", () => {
+    const left = chart("2024-10-27");
+    const right = chart("2024-11-02");
+    const withElements = (source: typeof left, wuXing: string[]) => ({ ...source, raw: { ...source.raw, wuXing } });
+    const a = withElements(left, ["木水", "木水", "木水", "木水"]);
+    const b = withElements(right, ["水火", "水火", "水火", "水火"]);
+    const result = buildBaziCompatibility(a, b);
+    expect(result.evidence).toContain("两盘天干和地支本气共同出现的五行：水");
+    const none = buildBaziCompatibility(a, withElements(right, ["火火", "火火", "火火", "火火"]));
+    expect(none.evidence.some((line) => line.includes("共同出现的五行"))).toBe(false);
+    // Avoid score clamping obscuring the count: isolate it by comparing a case with two unique matches.
+    const two = buildBaziCompatibility(a, withElements(right, ["水木", "水木", "水木", "水木"]));
+    expect(two.evidence).toContain("两盘天干和地支本气共同出现的五行：木、水");
+    expect(two.disclaimer).toContain("并非古籍评分");
+  });
   it("compares day pillars under both broad and four-stem-clash readings", () => {
     const jiaZi = chart("2024-10-27");
     expect(jiaZi.raw.baZi[2]).toBe("甲子");
