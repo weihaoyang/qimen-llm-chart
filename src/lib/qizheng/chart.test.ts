@@ -162,7 +162,7 @@ describe("qizheng siyu chart", () => {
       expect(moon?.branch).toBe(branch);
       expect(moon?.dignity).toBe(imported);
       expect(moon?.dignity).not.toBe(classical);
-      if (branch === "未") expect(moon?.classicalDignity).toBeUndefined();
+      if (branch === "未") expect(moon?.classicalDignity).toEqual({ label: "本宫", volume: 19, passage: "太阴行度" });
       else expect(moon?.classicalDignity).toEqual({ label: classical, volume: 19 });
     }
   });
@@ -171,7 +171,7 @@ describe("qizheng siyu chart", () => {
     // 卷十八太陽論、卷十九太隂論；逐日覆盖十二宫，同时检查未列的宫不被补值。
     const expected: Record<string, Record<string, string>> = {
       太阳: { 戌: "庙", 巳: "乐", 辰: "好", 寅: "喜", 午: "旺", 酉: "怒" },
-      太阴: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒" },
+      太阴: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒", 未: "本宫" },
     };
     const seen: Record<string, Set<string>> = { 太阳: new Set(), 太阴: new Set() };
     for (let day = 0; day < 366; day++) {
@@ -182,7 +182,10 @@ describe("qizheng siyu chart", () => {
         seen[name].add(star.branch);
         const label = expected[name][star.branch];
         expect(star.classicalDignity, `${name} ${star.branch}`).toEqual(
-          label ? { label, volume: name === "太阳" ? 18 : 19 } : undefined,
+          label ? { label, volume: name === "太阳" ? 18 : 19,
+            ...(name === "太阳" && ["戌", "午"].includes(star.branch) ? { passage: "太阳论", alternatives: [{ label: "本殿", passage: "太阳殿局朝元" }] } : {}),
+            ...(name === "太阴" && star.branch === "未" ? { passage: "太阴行度" } : {}),
+          } : undefined,
         );
       }
     }
@@ -190,6 +193,24 @@ describe("qizheng siyu chart", () => {
     expect(seen.太阴.size).toBe(12);
   });
 
+  it("exposes solar 本殿 and lunar 本宫 as sourced terms across structured exports", () => {
+    const cases = [
+      ["2026-03-25T12:00:00+08:00", "太阳", "戌", "庙", "太阳论", "太阳殿局朝元"],
+      ["2026-07-25T12:00:00+08:00", "太阳", "午", "旺", "太阳论", "太阳殿局朝元"],
+      ["2026-01-03T12:00:00+08:00", "太阴", "未", "本宫", "太阴行度", ""],
+    ] as const;
+    for (const [date, name, branch, label, passage, second] of cases) {
+      const chart = buildQizhengChart(normalizeProfileInput(getDefaultProfileInput(new Date(date), "Asia/Shanghai")));
+      const star = chart.stars.find(s => s.name === name)!;
+      expect(star.branch).toBe(branch);
+      expect(star.classicalDignity).toMatchObject({ label, passage });
+      const text = serializeQizhengToStructuredText(chart);
+      expect(text).toContain(`〈${passage}〉：${label}`);
+      if (second) expect(text).toContain(`〈${second}〉：本殿`);
+      const jsonStar = JSON.parse(serializeQizhengToCompactJson(chart)).stars.find((s: { name: string }) => s.name === name);
+      expect(jsonStar.classicalDignity).toEqual(star.classicalDignity);
+    }
+  });
   it("compares Jupiter and Mars palace labels with the Xingxue Dacheng passages", () => {
     // 卷十四：木庙亥、旺未；卷十五：火乐戌、旺丑。现用表另行保存。
     const cases = [

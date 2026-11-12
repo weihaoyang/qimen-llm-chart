@@ -60,7 +60,7 @@ const DIGNITY: Record<string, { temple?: string; prosperous?: string; fallen?: s
 // 《星学大成》卷14–19选定段落的宫位说；不把未校宿度推广到整宫。
 const CLASSICAL_PALACE_REFERENCES: Record<string, { volume: number; positions: Record<string, string> }> = {
   太阳: { volume: 18, positions: { 戌: "庙", 巳: "乐", 辰: "好", 寅: "喜", 午: "旺", 酉: "怒" } },
-  太阴: { volume: 19, positions: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒" } },
+  太阴: { volume: 19, positions: { 戌: "庙", 酉: "旺", 巳: "喜", 申: "乐", 亥: "顺", 丑: "顺", 寅: "怒", 未: "本宫" } },
   木星: { volume: 14, positions: { 亥: "庙", 未: "旺", 寅: "乐", 申: "好", 子: "怒", 丑: "怒" } },
   火星: { volume: 15, positions: { 卯: "庙", 戌: "乐", 丑: "旺", 未: "乐", 申: "喜", 寅: "好", 酉: "怒", 辰: "怒" } },
   土星: { volume: 16, positions: { 丑: "庙", 辰: "旺", 子: "乐", 戌: "好", 午: "喜" } },
@@ -278,6 +278,8 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
         ? {
             label: CLASSICAL_PALACE_REFERENCES[name].positions[branch],
             volume: CLASSICAL_PALACE_REFERENCES[name].volume,
+            ...(name === "太阳" && ["戌", "午"].includes(branch) ? { passage: "太阳论", alternatives: [{ label: "本殿", passage: "太阳殿局朝元" }] } : {}),
+            ...(name === "太阴" && branch === "未" ? { passage: "太阴行度" } : {}),
             ...(name === "火星" ? { passage: "卯戌丑".includes(branch) ? "火星庙旺乐顺留伏逆" : "火星论" } : {}),
             ...(name === "火星" && branch === "戌" ? { alternatives: [{ label: "好", passage: "火星论" }] } : {}),
             ...(name === "木星" && branch === "未" ? { passage: "木星庙乐旺顺留伏逆", alternatives: [{ label: "喜", passage: "木星论" }] } : {}),
