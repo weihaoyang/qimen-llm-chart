@@ -85,6 +85,12 @@ export const buildZiweiInsights = ({
   // 《全书·定贵局》：二星守命同居庙旺。会照事实不替代此条件。
   const mingTanLang = ming?.majorStars.find(star => star.name === "贪狼");
   const mingHuoXing = ming && ALL_STARS(ming).find(star => star.name === "火星");
+  const mingLingXing = ming && ALL_STARS(ming).find(star => star.name === "铃星");
+  if (ming && mingTanLang && mingLingXing) {
+    patterns.push(pattern("tan-ling-together", "贪铃同守命宫", "neutral", "贪狼与铃星同在命宫，对应《骨髓赋》的并守结构；不同注本对宫位和其他条件有不同要求，此处只列同守事实。",
+      [`命宫=${ming.name}（${ming.earthlyBranch}）`, `贪狼亮度=${mingTanLang.brightness ?? "未提供"}`, `铃星亮度=${mingLingXing.brightness ?? "未提供"}`],
+      "《紫微斗数全书》卷一·斗数骨髓赋：贪铃并守"));
+  }
   const inTempleOrProsperity = (brightness: string | undefined) => brightness === "庙" || brightness === "旺";
   if (ming && mingTanLang && mingHuoXing
     && inTempleOrProsperity(mingTanLang.brightness) && inTempleOrProsperity(mingHuoXing.brightness)) {

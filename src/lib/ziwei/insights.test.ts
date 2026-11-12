@@ -176,6 +176,41 @@ it.each(["火星", "铃星"])("does not describe two stars merely in the life pa
   expect(item?.evidence).toContain(`${star}=${sha.name}（${sha.earthlyBranch}）`);
 });
 
+it("reports Tan Ling together only when both stars occupy the life palace", () => {
+  const chart = buildZiweiChartFromProfile(profile);
+  const mingBranch = chart.raw.palaces.find(p => p.isOriginalPalace)!.branchIndex;
+  for (const [tanOffset, lingOffset, expected] of [[0, 0, true], [0, 4, false], [4, 4, false], [4, 6, false]] as const) {
+    const palaces = structuredClone(chart.raw.palaces);
+    for (const palace of palaces) {
+      palace.majorStars = palace.majorStars.filter(s => s.name !== "贪狼");
+      palace.minorStars = palace.minorStars.filter(s => s.name !== "铃星");
+      palace.adjectiveStars = palace.adjectiveStars.filter(s => s.name !== "铃星");
+    }
+    palaces.find(p => p.branchIndex === (mingBranch + tanOffset) % 12)!.majorStars.push({ name: "贪狼", brightness: "陷" });
+    palaces.find(p => p.branchIndex === (mingBranch + lingOffset) % 12)!.minorStars.push({ name: "铃星" });
+    const item = buildZiweiInsights({ palaces, mingGongBranch: mingBranch, shenGongBranch: mingBranch }).patterns.find(p => p.id === "tan-ling-together");
+    expect(Boolean(item)).toBe(expected);
+    if (item) {
+      expect(item.level).toBe("neutral");
+      expect(item.evidence).toContain("贪狼亮度=陷");
+      expect(item.evidence).toContain("铃星亮度=未提供");
+      expect(item.source).toContain("骨髓赋");
+    }
+  }
+});
+
+it("checks a published Tan Ling example against the chart", () => {
+  const input = structuredClone(profile);
+  input.original.datetime = "1980-06-15T08:00";
+  input.normalized.datetime = "1980-06-15T08:00";
+  const { raw } = buildZiweiChartFromProfile(input);
+  const ming = raw.palaces.find(p => p.earthlyBranch === raw.earthlyBranchOfSoulPalace)!;
+  expect(ming.earthlyBranch).toBe("寅");
+  expect(ming.majorStars.some(s => s.name === "贪狼")).toBe(true);
+  expect(ming.minorStars.some(s => s.name === "铃星")).toBe(true);
+  expect(raw.patterns.some(p => p.id === "tan-ling-together")).toBe(true);
+});
+
 
 it("distinguishes real same-palace examples that do and do not meet the chosen brightness clause", () => {
   for (const [datetime, branch, tanBrightness, expected] of [
