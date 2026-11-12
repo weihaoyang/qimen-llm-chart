@@ -309,6 +309,28 @@ it("compares Ziwei brightness in all twelve palaces with the Ming printed table"
   expect(differences).toEqual(["寅：图庙 / 产品旺"]);
 });
 
+it("compares solar and lunar brightness labels with the Ming printed table", () => {
+  // 日本国立公文书馆影像88、89：仅把图表“不得地”缩写为引擎的“不”，不合并其他等级。
+  const printed: Record<string, string> = { 子: "陷", 丑: "不", 寅: "旺", 卯: "庙", 辰: "旺", 巳: "旺", 午: "旺", 未: "得", 申: "得", 酉: "平", 戌: "不", 亥: "陷" };
+  const lunarPrinted: Record<string, string> = { 子: "庙", 丑: "庙", 寅: "陷", 卯: "陷", 辰: "陷", 巳: "陷", 午: "不", 未: "得", 申: "利", 酉: "旺", 戌: "旺", 亥: "庙" };
+  const seen = new Map<string, string>();
+  const lunar = new Map<string, string>();
+  for (let month = 1; month <= 12; month++) for (let hour = 0; hour < 24; hour += 2) {
+    const datetime = `2000-${String(month).padStart(2, "0")}-15T${String(hour).padStart(2, "0")}:00`;
+    const { raw } = buildZiweiChartFromProfile(profileAt("midnight", datetime));
+    for (const palace of raw.palaces) {
+      const star = palace.majorStars.find(item => item.name === "太阳");
+      if (star) seen.set(palace.earthlyBranch, star.brightness ?? "未提供");
+      const moon = palace.majorStars.find(item => item.name === "太阴");
+      if (moon) lunar.set(palace.earthlyBranch, moon.brightness ?? "未提供");
+    }
+  }
+  expect(seen.size).toBe(12);
+  for (const [branch, label] of Object.entries(printed)) expect(seen.get(branch), branch).toBe(label);
+  expect(lunar.size).toBe(12);
+  expect(Object.entries(lunarPrinted).filter(([branch, label]) => lunar.get(branch) !== label).map(([branch, label]) => `${branch}：图${label} / 产品${lunar.get(branch)}`)).toEqual(["寅：图陷 / 产品旺", "未：图得 / 产品不"]);
+});
+
 it("compares Tanlang and the three explicitly printed Huoxing positions against the Ming table", () => {
   // 明刊上册影像88/89，将古图「利益」记作利、「平和」记作平、「落陷」记作陷。
   const printed: Record<string, Record<string, string>> = {
