@@ -582,6 +582,8 @@ export type QimenPatternReport = {
   /** 成立格局按旺衰分档计数（全局格局不计入）。 */
   strengthCounts: Record<QimenPatternStrength, number>;
   strengthMethod: string;
+  /** 与所选古籍明确列出的另一判法不一致时单列，不参与格局统计。 */
+  sourceNotes: string[];
 };
 
 export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPatternReport => {
@@ -630,6 +632,12 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
   });
 
   const formed = checks.filter((check) => check.status === "成立");
+  const hourPillar = `${chart.raw.fourPillars.hour.stem}${chart.raw.fourPillars.hour.branch}`;
+  const yuNuTime = ["庚午", "己卯", "戊子", "丁酉", "丙午", "乙卯"].includes(hourPillar);
+  const yuNuPalace = checks.find(check => check.id === "yu_nu_shou_men")?.status === "成立";
+  const sourceNotes = yuNuTime !== yuNuPalace
+    ? [`玉女守门口径差异：时柱${hourPillar}${yuNuTime ? "属于" : "不属于"}《奇门宝鉴》所列六时；本站地丁与值使同宫${yuNuPalace ? "成立" : "未成立"}。两种判定暂不强行等同。`]
+    : [];
   const strengthCounts: Record<QimenPatternStrength, number> = { 有力: 0, 中平: 0, 无力: 0 };
   for (const check of formed) {
     if (check.strength) strengthCounts[check.strength] += 1;
@@ -642,5 +650,6 @@ export const evaluateQimenPatterns = (chart: NormalizedQimenChart): QimenPattern
     registered: checks.length,
     strengthCounts,
     strengthMethod: QIMEN_STRENGTH_METHOD,
+    sourceNotes,
   };
 };

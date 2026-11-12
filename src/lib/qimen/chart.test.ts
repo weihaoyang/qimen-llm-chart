@@ -5,6 +5,28 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("compares the six 玉女守门 hours from 宝鉴 across all ju and both dun", () => {
+    const hours = new Set(["庚午", "己卯", "戊子", "丁酉", "丙午", "乙卯"]);
+    const seen = new Set<string>();
+    const discrepancies: string[] = [];
+    for (const dunType of ["yang", "yin"] as const) for (let juNumber = 1; juNumber <= 9; juNumber++) {
+      for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
+        const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+        const chart = buildChart({ datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: dunType === "yang" ? "冬至" : "夏至", dunType, juNumber: juNumber as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 } });
+        const pillar = chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch;
+        const report = evaluateQimenPatterns(chart).checks.find(item => item.id === "yu_nu_shou_men")!;
+        const expected = hours.has(pillar);
+        if (expected) seen.add(pillar);
+        if ((report.status === "成立") !== expected) discrepancies.push(`${dunType} ${juNumber} ${datetime} ${pillar} ${chart.raw.zhiShi.position} ${chart.raw.zhiShi.gate} ${expected ? "time-only" : "palace-only"}`);
+        expect(evaluateQimenPatterns(chart).sourceNotes.length, `${dunType} ${juNumber} ${datetime}`).toBe(Number((report.status === "成立") !== expected));
+      }
+    }
+    expect(seen).toEqual(hours);
+    expect(discrepancies.filter(item => item.endsWith("time-only"))).toHaveLength(22);
+    expect(discrepancies.filter(item => item.endsWith("palace-only"))).toHaveLength(78);
+    expect(discrepancies).toContain("yang 1 2026-01-03T12:00 丙午 4 死门 time-only");
+    expect(discrepancies).toContain("yang 1 2026-01-03T18:00 己酉 7 死门 palace-only");
+  });
   it("shows 丙生临戊 天遁 and its bird pattern in the same real palace", () => {
     const chart = buildChart({ datetime: "2026-01-01T04:00", timeZone: "Asia/Shanghai" });
     const checks = evaluateQimenPatterns(chart).checks;

@@ -79,6 +79,8 @@ export function QimenPatternPanel({
               </div>
             </header>
 
+            {report.sourceNotes.map((note) => <p key={note}>{note}</p>)}
+
             {groups.map(({ group, items }) => (
               <section className="qimen-pattern-group" key={group} aria-label={group}>
                 <h3 className="qimen-pattern-group__title">

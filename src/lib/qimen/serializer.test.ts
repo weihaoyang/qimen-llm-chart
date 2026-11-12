@@ -7,8 +7,14 @@ import {
   summarizeRegisteredPatterns,
 } from "./serializer";
 import { buildChartSequence } from "./sequence";
+import { DEFAULT_QIMEN_SETTINGS } from "./settings";
 
 describe("serializeChartToStructuredText", () => {
+  it("retains the 玉女守门 source disagreement in text and compact JSON", () => {
+    const chart = buildChart({ datetime: "2026-01-03T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
+    expect(serializeChartToStructuredText(chart)).toContain("时柱丙午属于《奇门宝鉴》所列六时");
+    expect(serializeChartToCompactJson(chart)).toContain("地丁与值使同宫未成立");
+  });
   it("serializes overview and all nine palaces in stable order", () => {
     const chart = buildChart({
       datetime: "2026-07-01T21:30",

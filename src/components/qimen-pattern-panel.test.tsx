@@ -5,6 +5,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { NormalizedQimenChart } from "@/lib/qimen/types";
 import { QimenPatternPanel } from "./qimen-pattern-panel";
+import { buildChart } from "@/lib/qimen/chart";
+import { DEFAULT_QIMEN_SETTINGS } from "@/lib/qimen/settings";
 
 const chart = {
   raw: {
@@ -86,5 +88,11 @@ describe("QimenPatternPanel", () => {
   it("shows a placeholder before a chart exists", () => {
     render(<QimenPatternPanel chart={null} />);
     expect(screen.getByText("等待生成盘面。")).toBeInTheDocument();
+  });
+
+  it("shows the six-hour and palace disagreement without changing the count", () => {
+    const input = buildChart({ datetime: "2026-01-03T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
+    render(<QimenPatternPanel chart={input} />);
+    expect(screen.getByText(/时柱丙午属于《奇门宝鉴》所列六时/)).toHaveTextContent("地丁与值使同宫未成立");
   });
 });

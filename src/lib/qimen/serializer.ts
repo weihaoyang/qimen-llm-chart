@@ -92,6 +92,7 @@ const summarizeRegisteredPatterns = (chart: NormalizedQimenChart, compact = fals
     failedCount: report.failed.length,
     strengthCounts: report.strengthCounts,
     strengthMethod: report.strengthMethod,
+    ...(report.sourceNotes.length ? { sourceNotes: report.sourceNotes } : {}),
     formed: report.formed.map((check) => ({
       name: check.name,
       kind: check.kind,
@@ -191,6 +192,7 @@ export const serializeChartToStructuredText = (
     `全局凶格列表: ${formatPatterns(chart.raw.specialPatterns.inauspiciousPatterns)}`,
     `登记格局_统计: 登记 ${registeredPatterns.registered} · 成立 ${registeredPatterns.formedCount}（有力 ${registeredPatterns.strengthCounts.有力} / 中平 ${registeredPatterns.strengthCounts.中平} / 无力 ${registeredPatterns.strengthCounts.无力}）· 未成立 ${registeredPatterns.failedCount}`,
     `登记格局_旺衰算法: ${registeredPatterns.strengthMethod}`,
+    ...(registeredPatterns.sourceNotes?.length ? [`登记格局_版本差异: ${registeredPatterns.sourceNotes.join("；")}`] : []),
     `登记格局_成立: ${JSON.stringify(registeredPatterns.formed)}`,
     `登记格局_未成立: ${JSON.stringify(registeredPatterns.failed)}`,
   ];
