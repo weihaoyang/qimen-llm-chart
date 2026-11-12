@@ -7,7 +7,13 @@ import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 describe("buildChart", () => {
   it("checks the yin-six fire example without claiming both historical fields match", () => {
     const chart = buildChart({ datetime: "2026-01-05T04:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "夏至", dunType: "yin", juNumber: 6 } });
+    expect(chart.raw.fourPillars.day.stem).toBe("己");
     expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe("丙寅");
+    expect(chart.raw.zhiFu).toMatchObject({ star: "天心", position: 8 });
+    expect(chart.raw.zhiShi).toMatchObject({ gate: "开门", position: 4 });
+    expect([chart.raw.palaces.find(p => p.position === 8)!.earthlyStem].flat()).toContain("丙");
+    expect([chart.raw.palaces.find(p => p.position === 4)!.heavenlyStem].flat()).toContain("丙");
+    expect([chart.raw.palaces.find(p => p.position === 4)!.earthlyStem].flat()).toContain("庚");
     expect([chart.raw.palaces.find(p => p.position === 7)!.star].flat()).toContain("天英");
     expect(chart.raw.palaces.find(p => p.position === 1)!.gate).toBe("景门");
     const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "huo_ru_jin_xiang_star_gate")!;
@@ -281,12 +287,16 @@ describe("buildChart", () => {
     expect(kanHits).toBeGreaterThan(0);
     expect(guiHits).toBeGreaterThan(0);
   });
-  it("compares the 人遁 example across 艺术典 704 and 705", () => {
+  it("compares the 阳七 人遁 example and middle-palace transfer across classical sources", () => {
     const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 7 } });
     expect(chart.raw.fourPillars.day.stem).toBe("乙");
     expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe("丙子");
     expect(chart.raw.zhiFu).toMatchObject({ star: "天任", heavenlyStem: "己", position: 2 });
     expect(chart.raw.zhiShi).toMatchObject({ gate: "生门", position: 1 });
+    // 《遁甲应符经》原文明确指出丙在五宫寄二；核对地盘原位、寄宫和值符。
+    expect([chart.raw.palaces.find(p => p.position === 5)!.earthlyStem].flat()).toContain("丙");
+    expect([chart.raw.palaces.find(p => p.position === 2)!.earthlyStem].flat()).toContain("丙");
+    expect([chart.raw.palaces.find(p => p.position === 8)!.earthlyStem].flat()).not.toContain("丙");
     const palace = chart.raw.palaces.find(p => p.position === 6)!;
     expect(palace.gate).toBe("休门");
     expect([palace.heavenlyStem].flat()).toContain("丁");
