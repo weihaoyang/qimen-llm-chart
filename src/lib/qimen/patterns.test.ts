@@ -56,6 +56,18 @@ describe("evaluateQimenPatterns", () => {
     expect(check.evidence[2]).toContain("丙生临地丁");
     expect(check.evidence[2]).toContain("丙生临地戊（行军要略）");
   });
+  it("distinguishes the three-gate heavenly escape variant from the 生门 and 戊 versions", () => {
+    const check = evaluateQimenPatterns(chartWith([
+      palace(1, { heavenlyStem: "丙", earthlyStem: "丁", gate: "开门" }),
+      palace(2, { heavenlyStem: "丙", earthlyStem: "丁", gate: "休门" }),
+      palace(3, { heavenlyStem: "丙", earthlyStem: "丁", gate: "杜门" }),
+      palace(4, { heavenlyStem: "丙", earthlyStem: "戊", gate: "开门" }),
+      palace(5, { heavenlyStem: "乙", earthlyStem: "丁", gate: "开门" }),
+    ])).checks.find(p => p.id === "jiu_dun_tian")!;
+    expect(check.positions).toEqual([1, 2]);
+    expect(check.evidence[0]).toContain("丙开门临地丁（九遁变化法）");
+    expect(check.evidence[1]).toContain("丙休门临地丁（九遁变化法）");
+  });
   it("distinguishes the 风遁 乙 and 丙 variant conditions", () => {
     const one = evaluateQimenPatterns(chartWith([palace(4, { heavenlyStem: "乙", gate: "休门" })]));
     expect(one.checks.find(p => p.id === "jiu_dun_feng")?.evidence[0]).toContain("乙合三吉门临巽");

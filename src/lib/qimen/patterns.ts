@@ -158,10 +158,11 @@ export const fengDunReasons = (palace: Palace): string[] => {
 
 /** 《奇门行军要略》同时列丙生临戊与临丁。 */
 export const tianDunReasons = (palace: Palace): string[] => {
-  if (!hasHeaven(palace, "丙") || !gateIn(palace, ["生门"])) return [];
+  if (!hasHeaven(palace, "丙")) return [];
   return [
-    ...(hasEarth(palace, "丁") ? ["丙生临地丁"] : []),
-    ...(hasEarth(palace, "戊") ? ["丙生临地戊（行军要略）"] : []),
+    ...(hasEarth(palace, "丁") && gateIn(palace, ["生门"]) ? ["丙生临地丁"] : []),
+    ...(hasEarth(palace, "戊") && gateIn(palace, ["生门"]) ? ["丙生临地戊（行军要略）"] : []),
+    ...(hasEarth(palace, "丁") && gateIn(palace, ["开门", "休门"]) ? [`丙${palace.gate}临地丁（九遁变化法）`] : []),
   ];
 };
 
@@ -270,7 +271,7 @@ const stemPair = (heaven: string, earth: string): CatalogEntry["match"] => (pala
 
 export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   // ---- 九遁 ----
-  good("jiu_dun_tian", "天遁", "九遁", "天盘丙合生门临地丁；《行军要略》另列临地戊", "按命中干配列证据，戊、丁两式不可混同。", (p) => {
+  good("jiu_dun_tian", "天遁", "九遁", "天盘丙合生门临地丁；另列丙生临地戊、丙开或休临地丁", "按命中干配列证据，戊、丁两式不可混同。", (p) => {
     const reasons = tianDunReasons(p);
     return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
   }),

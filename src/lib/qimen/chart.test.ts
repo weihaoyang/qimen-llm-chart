@@ -16,12 +16,22 @@ describe("buildChart", () => {
     expect(chart.raw.palaces.find(p => p.position === 4)?.auspiciousPatterns?.filter(p => p.id === id)).toHaveLength(1);
     expect(chart.raw.specialPatterns.auspiciousPatterns?.filter(p => p.id === id).map(p => p.position)).toContain(4);
   });
-  it("checks both 天遁 pairings across 96 real charts and both raw outputs", () => {
+  it("records the 九遁变化法 开门 variant on a real chart", () => {
+    const chart = buildChart({ datetime: "2026-01-03T04:00", timeZone: "Asia/Shanghai" });
+    const p = chart.raw.palaces.find(p => p.position === 1)!;
+    expect(p.gate).toBe("开门");
+    expect([p.heavenlyStem].flat()).toContain("丙");
+    expect([p.earthlyStem].flat()).toContain("丁");
+    const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_tian")!;
+    expect(check.positions).toContain(1);
+    expect(check.evidence.join(" ")).toContain("丙开门临地丁（九遁变化法）");
+  });
+  it("checks sourced 天遁 pairings across 96 real charts and both raw outputs", () => {
     const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
     for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
       const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
       const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
-      const expected = chart.raw.palaces.filter(p => p.gate === "生门" && values(p.heavenlyStem).includes("丙") && values(p.earthlyStem).some(stem => ["丁", "戊"].includes(stem))).map(p => p.position);
+      const expected = chart.raw.palaces.filter(p => values(p.heavenlyStem).includes("丙") && ((p.gate === "生门" && values(p.earthlyStem).some(stem => ["丁", "戊"].includes(stem))) || (["开门", "休门"].includes(p.gate) && values(p.earthlyStem).includes("丁")))).map(p => p.position);
       expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_tian")?.positions, datetime).toEqual(expected);
       const id = "patterns.jiu_dun.tian_dun";
       expect(chart.raw.palaces.filter(p => p.auspiciousPatterns?.some(q => q.id === id)).map(p => p.position), datetime).toEqual(expected);
