@@ -51,7 +51,7 @@ export type BaziReverseCandidate = {
 export type BaziReverseResult = {
   engineVersion: "bazi-reverse-v1";
   candidates: BaziReverseCandidate[];
-  /** 命中数达到 maxResults 后提前停止扫描。 */
+  /** 找到超出 maxResults 的额外匹配时提前停止扫描。 */
   truncated: boolean;
   /** 实际走过天数（含被干支预筛排除的天）。 */
   scannedDays: number;
@@ -287,6 +287,10 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
         }
 
         matchedDays += 1;
+        if (candidates.length >= maxResults) {
+          truncated = true;
+          break;
+        }
         const representative = ranges[0][0] === 0 && ranges[0][1] === 1439 ? 720 : ranges[0][0];
         const date = `${year}-${pad(month)}-${pad(day)}`;
         const lunar = Solar.fromYmdHms(year, month, day, Math.floor(representative / 60), representative % 60, 0).getLunar();
@@ -301,10 +305,6 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
           dayMaster: ganzhi[2][0],
         });
 
-        if (candidates.length >= maxResults) {
-          truncated = true;
-          break;
-        }
       }
 
       if (truncated) {
@@ -336,7 +336,7 @@ export const deriveBirthDatesFromBazi = (query: BaziReverseQuery): BaziReverseRe
   }
 
   if (truncated) {
-    notes.push(`结果达到 ${maxResults} 条上限已截断，可缩小年份范围或补齐干支后再查。`);
+    notes.push(`结果超过 ${maxResults} 条上限已截断，可缩小年份范围或补齐干支后再查。`);
   }
 
   if (candidates.length === 0) {

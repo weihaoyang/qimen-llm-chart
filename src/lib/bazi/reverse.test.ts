@@ -171,6 +171,21 @@ describe("deriveBirthDatesFromBazi", () => {
     expect(result.notes.some((note) => note.includes("截断"))).toBe(true);
   });
 
+  it("distinguishes an exact result count from a genuinely truncated search", () => {
+    const pillars = pillarsOf("1990-05-20T14:30");
+    const query = { pillars, startYear: 1990, endYear: 1990 };
+    const all = deriveBirthDatesFromBazi(query);
+    expect(all.candidates).toHaveLength(1);
+    const exact = deriveBirthDatesFromBazi({ ...query, maxResults: 1 });
+    expect(exact.candidates).toEqual(all.candidates);
+    expect(exact.truncated).toBe(false);
+    expect(exact.notes.some((note) => note.includes("截断"))).toBe(false);
+    const overflow = deriveBirthDatesFromBazi({ pillars: { day: pillars.day }, startYear: 1990, endYear: 1990, maxResults: 1 });
+    expect(overflow.candidates).toHaveLength(1);
+    expect(overflow.truncated).toBe(true);
+    expect(overflow.matchedDays).toBe(2);
+  });
+
   it("returns an explained empty result when nothing matches", () => {
     const result = deriveBirthDatesFromBazi({
       pillars: { year: "甲子" },
