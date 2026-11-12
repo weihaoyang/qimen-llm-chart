@@ -72,8 +72,8 @@ const CLASSICAL_PALACE_REFERENCES: Record<string, { volume: number; positions: R
   计都: { volume: 22, positions: { 亥: "庙", 戌: "旺", 寅: "乐", 未: "好", 卯: "喜", 巳: "喜", 辰: "怒" } },
 };
 
-// 《星学正传》紫气条称木之余与吉祥之曜；是文本归类，不由现代位置推导。
-const ELEMENT: Record<string, string> = { 太阳: "火", 太阴: "水", 木星: "木", 火星: "火", 土星: "土", 金星: "金", 水星: "水", 罗睺: "火", 计都: "土", 月孛: "水", 紫气: "木余" };
+// 《图书编》将四余分别称作火、土、水、木之余；与七政本体分开记录。
+const ELEMENT: Record<string, string> = { 太阳: "火", 太阴: "水", 木星: "木", 火星: "火", 土星: "土", 金星: "金", 水星: "水", 罗睺: "火余", 计都: "土余", 月孛: "水余", 紫气: "木余" };
 const FORTUNE: Record<string, string> = { 太阳: "大吉", 太阴: "吉", 木星: "吉", 火星: "凶", 土星: "凶", 金星: "吉", 水星: "中", 罗睺: "凶", 计都: "凶", 月孛: "凶", 紫气: "吉" };
 
 export type QizhengStar = {
@@ -238,12 +238,12 @@ const fourRemainders = (utcMillis: number) => {
   const ziQi = wrap(270 + 7 * 30 + 17 + 50 / 60 + 14 / 3600 + 53 / 216000
     + (utcMillis - ziQiEpoch) / 86_400_000 * 126.720777 / 3600);
   return [
-    { name: "罗睺", longitude: wrap(ascendingNode + 180), note: "果老旧法：罗睺=降交点（汤若望新法以罗睺为升交点，本仓未取）" },
-    { name: "计都", longitude: wrap(ascendingNode), note: "果老旧法：计都=升交点" },
+    { name: "罗睺", longitude: wrap(ascendingNode + 180), note: "果老旧法：罗睺=降交点（汤若望新法以罗睺为升交点，本仓未取）；火余为《图书编》的传统归类" },
+    { name: "计都", longitude: wrap(ascendingNode), note: "果老旧法：计都=升交点；土余为《图书编》的传统归类" },
     // 《图书编》卷二十一「孛生于月……月之行迟速有常度，迟之处即孛也」「六十二日行七度，六十二年而七周天」；
     // 《清史稿·时宪志一》「月孛乃月行极高之点」。均指月球远地点，与 Meeus 平近地点 +180° 同义。
     // 校验：4069.0137287°／世纪 ≈ 40.7°／年 ≈ 7°／62.8 日，与「六十二日行七度」相符（周期 3232.6 日 ≈ 8.85 年）。
-    { name: "月孛", longitude: wrap(perigee + 180), note: "月远地点（Meeus 47.7 平根；即果老「月行最迟之处」）" },
+    { name: "月孛", longitude: wrap(perigee + 180), note: "月远地点（Meeus 47.7 平根；即果老「月行最迟之处」）；水余为《图书编》的传统归类" },
     { name: "紫气", longitude: ziQi, note: "清代平行研究模型：乾隆甲子法元，子正按 UTC+08 近似；1911 年两宿样本已对照，其他年代为外推，宿位沿用本站康熙旧钤；木余、吉为《星学正传》中的传统归类，并非位置模型的验证" },
   ];
 };

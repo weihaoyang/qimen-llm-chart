@@ -26,6 +26,9 @@ describe("QizhengPanel", () => {
     expect(screen.getByText("七政落宫")).toBeInTheDocument();
     expect(screen.getByText("四余落宫")).toBeInTheDocument();
     expect(screen.getByText("罗睺")).toBeInTheDocument();
+    expect(screen.getByText("罗睺").closest(".qizheng-row")).toHaveTextContent("火余");
+    expect(screen.getByText("计都").closest(".qizheng-row")).toHaveTextContent("土余");
+    expect(screen.getByText("月孛").closest(".qizheng-row")).toHaveTextContent("水余");
     expect(screen.getByText("紫气")).toBeInTheDocument();
     expect(screen.getByText("紫气").closest(".qizheng-row")).toHaveTextContent("木余 · 吉");
     expect(screen.getAllByText(/其他年代为外推/).length).toBeGreaterThan(0);

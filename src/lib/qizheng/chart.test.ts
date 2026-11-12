@@ -358,6 +358,20 @@ describe("qizheng siyu chart", () => {
     }
   });
 
+  it("distinguishes four remainder classifications from the seven luminaries", () => {
+    const chart = buildQizhengChart(profile());
+    for (const [name, element] of [["罗睺", "火余"], ["计都", "土余"], ["月孛", "水余"], ["紫气", "木余"]] as const) {
+      const star = chart.stars.find(item => item.name === name)!;
+      expect(star.element).toBe(element);
+      expect(star.note).toMatch(/《图书编》|《星学正传》/);
+      expect(serializeQizhengToStructuredText(chart)).toContain(` · ${element} · `);
+      expect(JSON.parse(serializeQizhengToCompactJson(chart)).stars.find((item: { name: string }) => item.name === name).element).toBe(element);
+    }
+    expect(chart.stars.find(item => item.name === "火星")?.element).toBe("火");
+    expect(chart.stars.find(item => item.name === "土星")?.element).toBe("土");
+    expect(chart.stars.find(item => item.name === "水星")?.element).toBe("水");
+  });
+
   it("keeps 罗睺 and 计都 opposite and is deterministic", () => {
     const chart = buildQizhengChart(profile());
     const luo = chart.stars.find((star) => star.name === "罗睺");
