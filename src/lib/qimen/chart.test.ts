@@ -16,6 +16,29 @@ describe("buildChart", () => {
     expect(chart.raw.palaces.find(p => p.position === 4)?.auspiciousPatterns?.filter(p => p.id === id)).toHaveLength(1);
     expect(chart.raw.specialPatterns.auspiciousPatterns?.filter(p => p.id === id).map(p => p.position)).toContain(4);
   });
+  it("reconstructs both classical 天遁 examples using their stated ju and time pillars", () => {
+    const examples = [
+      { datetime: "2026-01-01T18:00", dayStem: "乙", hour: "乙酉", dunType: "yang", solarTerm: "冬至", juNumber: 4, palace: 1, chief: "天心", gate: "开门", gatePosition: 7 },
+      { datetime: "2026-01-04T16:00", dayStem: "戊", hour: "庚申", dunType: "yin", solarTerm: "夏至", juNumber: 6, palace: 9, chief: "天蓬", gate: "休门", gatePosition: 4 },
+    ] as const;
+    for (const x of examples) {
+      const chart = buildChart({ datetime: x.datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: x.solarTerm, dunType: x.dunType, juNumber: x.juNumber } });
+      expect(chart.raw.fourPillars.day.stem).toBe(x.dayStem);
+      expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(x.hour);
+      expect(chart.raw.zhiFu.star).toBe(x.chief);
+      expect(chart.raw.zhiShi).toMatchObject({ gate: x.gate, position: x.gatePosition });
+      const p = chart.raw.palaces.find(p => p.position === x.palace)!;
+      expect(p.gate).toBe("生门");
+      expect([p.heavenlyStem].flat()).toContain("丙");
+      expect([p.earthlyStem].flat()).toContain("丁");
+      const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_tian")!;
+      expect(check.positions).toContain(x.palace);
+      expect(check.evidence.join(" ")).toContain("丙生临地丁");
+      const id = "patterns.jiu_dun.tian_dun";
+      expect(p.auspiciousPatterns?.filter(item => item.id === id)).toHaveLength(1);
+      expect(chart.raw.specialPatterns.auspiciousPatterns?.some(item => item.id === id && item.position === x.palace)).toBe(true);
+    }
+  });
   it("records the 九遁变化法 开门 variant on a real chart", () => {
     const chart = buildChart({ datetime: "2026-01-03T04:00", timeZone: "Asia/Shanghai" });
     const p = chart.raw.palaces.find(p => p.position === 1)!;
