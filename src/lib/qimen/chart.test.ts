@@ -5,12 +5,13 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
-  it("independently enumerates chief, envoy and eight gates over both dun and nine ju", () => {
+  it("independently enumerates chief, envoy, eight gates and stars over both dun and nine ju", () => {
     const stemOrder = "戊己庚辛壬癸丁丙乙";
     const stems = "甲乙丙丁戊己庚辛壬癸", branches = "子丑寅卯辰巳午未申酉戌亥";
     const cycle = Array.from({ length: 60 }, (_, i) => stems[i % 10] + branches[i % 12]);
     const ring = [1, 8, 3, 4, 9, 2, 7, 6];
     const gates = ["休门", "生门", "伤门", "杜门", "景门", "死门", "惊门", "开门"];
+    const starRing = ["天蓬", "天任", "天冲", "天辅", "天英", "天芮", "天柱", "天心"];
     const stars = ["", "天蓬", "天芮", "天冲", "天辅", "天禽", "天心", "天柱", "天任", "天英"];
     const mod = (value: number, base: number) => ((value % base) + base) % base;
     const observedHours = new Set<string>();
@@ -33,9 +34,21 @@ describe("buildChart", () => {
         const gatePosition = gateRaw === 5 ? 2 : gateRaw;
         expect(chart.raw.zhiShi, datetime).toMatchObject({ gate: envoyGate, position: gatePosition });
         const startPalaceIndex = ring.indexOf(gatePosition), startGateIndex = gates.indexOf(envoyGate);
+        const starStartPalace = ring.indexOf(timeOrigin === 5 ? 2 : timeOrigin);
+        const starStart = starRing.indexOf(chiefOrigin === 5 ? "天芮" : stars[chiefOrigin]);
         for (let i = 0; i < 8; i++) {
           const palace = ring[(startPalaceIndex + i) % 8];
           expect(chart.raw.palaces.find(p => p.position === palace)?.gate, `${datetime} ${palace}`).toBe(gates[(startGateIndex + i) % 8]);
+          const starPalace = ring[(starStartPalace + i) % 8];
+          const starName = starRing[(starStart + i) % 8];
+          const actual = chart.raw.palaces.find(p => p.position === starPalace)!;
+          const names = [actual.star].flat();
+          const heavenly = [actual.heavenlyStem].flat();
+          const original = ring[starRing.indexOf(starName)];
+          expect(names, `${datetime} ${starPalace}`).toContain(starName);
+          expect(heavenly, `${datetime} ${starPalace}`).toContain(earth.find(p => p.position === original)!.stem);
+          expect(names.includes("天禽"), `${datetime} ${starPalace}`).toBe(starName === "天芮");
+          if (starName === "天芮") expect(heavenly, datetime).toContain(earth.find(p => p.position === 5)!.stem);
         }
       }
     }
