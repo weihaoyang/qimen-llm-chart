@@ -56,6 +56,17 @@ const qimenJuPatches = [
   ["lib/qimen/QimenChart.js", "(0, calculator_1.getJuShu)(solarTerm, yuan, isYangdun);", "((0, calculator_1.getJuShu)(solarTerm, yuan, isYangdun) || (0, calculator_1.getJuShu)(solarTerm, yuan, !isYangdun));"],
   ["dist/3meta.esm.js", "||me(B,x,m),p=", "||me(B,x,m)||me(B,x,!m),p="],
 ];
+// 值使门取寄宫之门，但旬首在中五时仍从五宫起算；不能从寄宫二起算。
+for (const [path, before, after] of [
+  ["lib/qimen/calculator.js", "let position = constants_1.GATE_ORIGINAL_POSITIONS[zhiShiMen];", "let position = zhiFuGong;"],
+  ["dist/3meta.esm.js", "h=(le(r)-le(s)+12)%12;let g=ie[a];", "h=(le(r)-le(s)+12)%12;let g=n;"],
+]) {
+  const file = new URL("../node_modules/3meta/" + path, import.meta.url);
+  const source = readFileSync(file, "utf8");
+  if (source.includes(after)) continue;
+  if (source.split(before).length !== 2) throw new Error("Review 3meta central palace gate counting patch");
+  writeFileSync(file, source.replace(before, after));
+}
 for (const [path, before, after] of qimenJuPatches) {
   const file = new URL("../node_modules/3meta/" + path, import.meta.url);
   const source = readFileSync(file, "utf8");

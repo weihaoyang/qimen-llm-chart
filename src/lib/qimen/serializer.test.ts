@@ -11,9 +11,9 @@ import { DEFAULT_QIMEN_SETTINGS } from "./settings";
 
 describe("serializeChartToStructuredText", () => {
   it("retains the 玉女守门 source disagreement in text and compact JSON", () => {
-    const chart = buildChart({ datetime: "2026-01-03T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
-    expect(serializeChartToStructuredText(chart)).toContain("时柱丙午属于《奇门宝鉴》所列六时");
-    expect(serializeChartToCompactJson(chart)).toContain("地丁与值使同宫未成立");
+    const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 2 } });
+    expect(serializeChartToStructuredText(chart)).toContain("时柱丙子不属于《奇门宝鉴》所列六时");
+    expect(serializeChartToCompactJson(chart)).toContain("地丁与值使同宫成立");
   });
   it("serializes overview and all nine palaces in stable order", () => {
     const chart = buildChart({
@@ -130,11 +130,11 @@ describe("serializeChartToStructuredText", () => {
   });
 
   it("explains the abbreviated classical convention in compact output", () => {
-    const chart = buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" });
+    const chart = buildChart({ datetime: "2026-01-01T06:00", timeZone: "Asia/Shanghai" });
     const payload = serializeChartToCompactJson(chart);
     expect(payload).toContain("门宫证据的“旨”指《奇门旨归》");
-    expect(payload).toContain("生门生6宫（和/旨义）");
-    expect(payload).toContain("1宫生伤门（义/旨和）");
+    expect(payload).toContain("休门生4宫（和/旨义）");
+    expect(payload).toContain("8宫生惊门（义/旨和）");
   });
 
   it("keeps a twelve-step sequence compact payload within the agent API limit", () => {

@@ -22,13 +22,18 @@ describe("buildChart", () => {
       }
     }
     expect(seen).toEqual(hours);
-    expect(discrepancies.filter(item => item.endsWith("time-only"))).toHaveLength(22);
-    expect(discrepancies.filter(item => item.endsWith("palace-only"))).toHaveLength(78);
-    expect(discrepancies).toContain("yang 1 2026-01-03T12:00 丙午 4 死门 time-only");
-    expect(discrepancies).toContain("yang 1 2026-01-03T18:00 己酉 7 死门 palace-only");
+    expect(discrepancies.filter(item => item.endsWith("time-only"))).toHaveLength(0);
+    expect(discrepancies.filter(item => item.endsWith("palace-only"))).toHaveLength(56);
+    expect(discrepancies).toContain("yang 2 2026-01-01T00:00 丙子 8 伤门 palace-only");
+  });
+  it("counts 值使 from 中五 while borrowing the 坤 gate", () => {
+    const chart = buildChart({ datetime: "2026-01-03T12:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "冬至", dunType: "yang", juNumber: 1 } });
+    expect(chart.raw.zhiShi).toMatchObject({ gate: "死门", position: 7 });
+    expect(chart.raw.palaces.find(p => p.position === 7)?.earthlyStem).toBe("丁");
+    expect(evaluateQimenPatterns(chart).checks.find(item => item.id === "yu_nu_shou_men")?.status).toBe("成立");
   });
   it("shows 丙生临戊 天遁 and its bird pattern in the same real palace", () => {
-    const chart = buildChart({ datetime: "2026-01-01T04:00", timeZone: "Asia/Shanghai" });
+    const chart = buildChart({ datetime: "2026-01-01T20:00", timeZone: "Asia/Shanghai" });
     const checks = evaluateQimenPatterns(chart).checks;
     const tian = checks.find(item => item.id === "jiu_dun_tian")!;
     expect(tian.positions).toContain(4);
@@ -73,7 +78,7 @@ describe("buildChart", () => {
   });
   it("checks sourced 天遁 pairings across 96 real charts and both raw outputs", () => {
     const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
-    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+    for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
       const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
       const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
       const expected = chart.raw.palaces.filter(p => values(p.heavenlyStem).includes("丙") && ((p.gate === "生门" && values(p.earthlyStem).some(stem => ["丁", "戊"].includes(stem))) || (["开门", "休门"].includes(p.gate) && values(p.earthlyStem).includes("丁")))).map(p => p.position);
@@ -98,7 +103,7 @@ describe("buildChart", () => {
   it("labels 龙遁 sources consistently across actual chart outputs", () => {
     let kanHits = 0, guiHits = 0;
     const values = (value: unknown): string[] => Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
-    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+    for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
       const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
       const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
       const expected = chart.raw.palaces.filter(p => values(p.heavenlyStem).includes("乙") && ((p.position === 1 && ["开门", "休门", "生门"].includes(p.gate as string)) || (p.gate === "休门" && values(p.earthlyStem).includes("癸"))));
@@ -258,10 +263,10 @@ describe("buildChart", () => {
     expect(chart.raw.palaces.find(({ position }) => position === 8)?.gate).toBe("开门");
   });
   it("exposes both 门宫和义 naming conventions on the same chart", () => {
-    const report = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T00:00", timeZone: "Asia/Shanghai" }));
+    const report = evaluateQimenPatterns(buildChart({ datetime: "2026-01-01T06:00", timeZone: "Asia/Shanghai" }));
     const check = report.checks.find(({ id }) => id === "men_gong_he_yi")!;
-    expect(check.evidence).toContain("生门生6宫（现和/旨归义）");
-    expect(check.evidence).toContain("1宫生伤门（现义/旨归和）");
+    expect(check.evidence).toContain("休门生4宫（现和/旨归义）");
+    expect(check.evidence).toContain("8宫生惊门（现义/旨归和）");
   });
   it("keeps two sourced 天网 conditions distinct while counting one catalog entry", () => {
     const cases = [
