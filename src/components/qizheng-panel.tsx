@@ -12,7 +12,7 @@ const StarTable = ({ title, stars }: { title: string; stars: QizhengStar[] }) =>
           <b>{star.name}</b>
           <span title="宫位与宿位按未显示的精度计算">约 {star.longitude.toFixed(2)}°</span>
           <span>{star.palaceName}({star.branch})</span>
-          <span>宿{star.mansion}{star.mansionComparison ? <small>牛宿界对照：{star.mansionComparison.mansion}（{star.mansionComparison.method}）</small> : null}{star.nodeConventionComparison ? <small title={star.nodeConventionComparison.method}>新法命名对照：约 {star.nodeConventionComparison.longitude.toFixed(2)}° · {star.nodeConventionComparison.palaceName}({star.nodeConventionComparison.branch}) · 宿{star.nodeConventionComparison.mansion}</small> : null}</span>
+          <span>宿{star.mansion} · 度主{star.mansionRuler}{star.mansionComparison ? <small>牛宿界对照：{star.mansionComparison.mansion}（{star.mansionComparison.method}）</small> : null}{star.nodeConventionComparison ? <small title={star.nodeConventionComparison.method}>新法命名对照：约 {star.nodeConventionComparison.longitude.toFixed(2)}° · {star.nodeConventionComparison.palaceName}({star.nodeConventionComparison.branch}) · 宿{star.nodeConventionComparison.mansion}</small> : null}</span>
           <span className={`qizheng-row__dignity is-${star.dignity === "庙" || star.dignity === "旺" ? "good" : star.dignity === "陷" ? "bad" : "flat"}`}>现表：{star.dignity}{star.classicalDignity ? <small>星学大成卷{star.classicalDignity.volume}{star.classicalDignity.passage ? `〈${star.classicalDignity.passage}〉` : ""}：{star.classicalDignity.label}{star.classicalDignity.alternatives?.map((item) => `；〈${item.passage}〉：${item.label}`)}</small> : null}</span>
           <span>{star.element} · {star.fortune}</span>
         </div>

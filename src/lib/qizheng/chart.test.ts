@@ -54,6 +54,21 @@ describe("qizheng siyu chart", () => {
     expect(json.palaces).toEqual(chart.palaces);
     expect(json.stars.map((star: { palaceName: string }) => star.palaceName)).toEqual(chart.stars.map((star) => star.palaceName));
   });
+  it("derives stellar degree rulers from the mansion independently of the palace ruler", () => {
+    const chart = buildQizhengChart(profile());
+    const rouhu = chart.stars.find((star) => star.name === "罗睺");
+    const jidu = chart.stars.find((star) => star.name === "计都");
+    expect(rouhu).toMatchObject({ branch: "午", mansion: "柳", mansionRuler: "土星" });
+    expect(jidu).toMatchObject({ branch: "子", mansion: "牛", mansionRuler: "金星" });
+    expect(chart.palaces.find((palace) => palace.branch === rouhu?.branch)?.ruler).toBe("太阳");
+    expect(chart.palaces.find((palace) => palace.branch === jidu?.branch)?.ruler).toBe("土星");
+    const text = serializeQizhengToStructuredText(chart);
+    expect(text).toContain("宿柳 · 度主土星");
+    expect(text).toContain("宿牛 · 度主金星");
+    const json = JSON.parse(serializeQizhengToCompactJson(chart));
+    expect(json.stars).toContainEqual(expect.objectContaining({ name: "计都", mansionRuler: "金星" }));
+  });
+
   it("maps longitudes into palaces with the classical 十二次 (Aries = 戌)", () => {
     expect(longitudeToPalace(0)).toBe(10); // 0° 白羊 → 戌宫
     expect(longitudeToPalace(30)).toBe(9); // 30° 金牛 → 酉宫

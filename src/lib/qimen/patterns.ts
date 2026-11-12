@@ -136,6 +136,12 @@ const deityIn = (palace: Palace, deities: readonly string[]) => deities.includes
 const palaceLabel = (position: Position) => `第 ${position} 宫`;
 const stemsOf = (value: unknown) => valuesOf(value).join("/") || "无";
 
+/** 《遁甲演义》丙生临九天，《元灵经》另列乙开得天心。 */
+export const shenDunReasons = (palace: Palace): string[] => [
+  ...(hasHeaven(palace, "丙") && gateIn(palace, ["生门"]) && deityIn(palace, ["九天"]) ? ["丙生临九天（遁甲演义）"] : []),
+  ...(hasHeaven(palace, "乙") && gateIn(palace, ["开门"]) && palace.star === "天心" ? ["乙开得天心（元灵经）"] : []),
+];
+
 /** 坎宫宽式见《图书集成》704；临癸式见《奇门遁甲秘笈大全》。 */
 export const longDunReasons = (palace: Palace): string[] => {
   if (!hasHeaven(palace, "乙")) return [];
@@ -334,9 +340,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("jiu_dun_hu", "虎遁", "九遁", "乙加辛休门在艮；或辛生门在艮；一云丙加辛生门", "主威势、攻取与决断；宜竞争、出手，但忌过刚。", (p) =>
     matchesHuDun(p) ? combinationEvidence(p) : null,
   ),
-  good("jiu_dun_shen", "神遁", "九遁", "天盘丙 + 生门 + 九天", "主声势、上位与号召；宜树立形象、争取支持。", (p) =>
-    hasHeaven(p, "丙") && gateIn(p, ["生门"]) && deityIn(p, ["九天"]) ? combinationEvidence(p) : null,
-  ),
+  good("jiu_dun_shen", "神遁", "九遁", "天丙、生门临九天，或天乙、开门得天心", "按文献分别列出命中条件。", (p) => {
+    const reasons = shenDunReasons(p);
+    return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
+  }),
   good("jiu_dun_gui", "鬼遁", "九遁", "奇门吉格三式；旨归另列丁休九地，及辛加丁合休生杜临艮九地", "所列九地为本站神盘；按命中条件分列原文口径。", (p) => {
     const reasons = guiDunReasons(p);
     return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;

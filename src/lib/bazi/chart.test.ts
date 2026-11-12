@@ -235,6 +235,23 @@ describe("buildBaziChartFromProfile", () => {
     expect(chartFor("2024-02-05T12:00", "male").raw.yun.direction).toBe("forward");
   });
 
+  it("follows the classical Jia-Zi third-month Xu-hour palace example", () => {
+    const { raw } = chartFor("1984-04-15T20:00");
+    expect(raw.baZi[0]).toBe("甲子");
+    expect(raw.baZi[1]).toBe("戊辰");
+    expect(raw.mingGong).toEqual({ pillar: "丁卯", naYin: "炉中火" });
+  });
+
+  it("uses the selected year stem to derive the auxiliary palace stems", () => {
+    const date = "2024-02-05T12:00";
+    const term = chartFor(date).raw;
+    const lunar = chartFor(date, "male", { yearBoundary: "lunar-new-year", dayBoundary: "midnight" }).raw;
+    expect(term.mingGong).toEqual({ pillar: "癸酉", naYin: "剑锋金" });
+    expect(term.shenGong).toEqual(term.mingGong);
+    expect(lunar.mingGong).toEqual({ pillar: "辛酉", naYin: "石榴木" });
+    expect(lunar.shenGong).toEqual(lunar.mingGong);
+  });
+
   it("keeps the current lunar-typescript solar-term boundary stable", () => {
     expect(chartFor("2024-02-04T16:20").raw.baZi).toEqual(["癸卯", "乙丑", "戊戌", "庚申"]);
     expect(chartFor("2024-02-04T17:20").raw.baZi).toEqual(["甲辰", "丙寅", "戊戌", "辛酉"]);

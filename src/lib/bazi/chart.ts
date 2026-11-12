@@ -207,6 +207,17 @@ const getPillarDetail = (
   }
 };
 
+// 命、身宫支沿用排盘库的月时定位，宫干按本站选定的年干起寅。
+const palacePillarForYear = (palace: string, yearStem: string) => {
+  const branch = palace.slice(1);
+  const yearIndex = LunarUtil.GAN.indexOf(yearStem) - 1;
+  const branchOffset = LunarUtil.MONTH_ZHI.indexOf(branch) - 1;
+  const tigerStemIndex = (yearIndex % 5) * 2 + 2;
+  const stem = LunarUtil.GAN[(tigerStemIndex + branchOffset) % 10 + 1];
+  const pillar = stem + branch;
+  return { pillar, naYin: LunarUtil.NAYIN[pillar] ?? "" };
+};
+
 const buildYunPreview = (
   gender: NormalizedProfileInput["original"]["gender"],
   eightChar: EightCharInstance,
@@ -274,8 +285,8 @@ export const buildBaziChartFromProfile = (
   });
   const taiYuan = { pillar: eightChar.getTaiYuan(), naYin: eightChar.getTaiYuanNaYin() };
   const taiXi = { pillar: eightChar.getTaiXi(), naYin: eightChar.getTaiXiNaYin() };
-  const mingGong = { pillar: eightChar.getMingGong(), naYin: eightChar.getMingGongNaYin() };
-  const shenGong = { pillar: eightChar.getShenGong(), naYin: eightChar.getShenGongNaYin() };
+  const mingGong = palacePillarForYear(eightChar.getMingGong(), pillars[0].heavenlyStem);
+  const shenGong = palacePillarForYear(eightChar.getShenGong(), pillars[0].heavenlyStem);
   const naYin = pillars.map((pillar) => pillar.naYin);
   const structureAudit = buildBaziStructureAudit(pillars, eightChar.getDayGan(), naYin, mingGong.pillar, shenGong.pillar);
   const baZi = pillars.map((pillar) => pillar.pillar);

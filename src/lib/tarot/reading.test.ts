@@ -3,6 +3,7 @@ import { getDefaultProfileInput, normalizeProfileInput } from "@/lib/profile";
 import { buildTarotReading } from "./reading";
 import { cards, getCardMeaning } from "@cometpisces/tarot-kit";
 import { serializeTarotToStructuredText, serializeTarotToCompactJson } from "./serializer";
+import type { TarotCard } from "./types";
 
 describe("tarot reading", () => {
   it("draws a deterministic three-card spread", () => {
@@ -76,4 +77,17 @@ it("keeps every card's shared core keyword separate from its orientation-specifi
   expect(reversed.meaning).toBe(getCardMeaning({ card: original, orientation: "reversed" }, "zh"));
   expect(serializeTarotToStructuredText(reading)).toContain(`牌面核心词：${reversed.keyword} · 逆位牌义：${reversed.meaning}`);
   expect(JSON.parse(serializeTarotToCompactJson(reading)).disclaimer).toContain("牌面核心词不区分正逆");
+});
+
+it("distinguishes Waite's illustrated entry from his supplementary Two of Cups reversal", () => {
+  const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+  const readings = Array.from({ length: 300 }, (_, index) => buildTarotReading(profile, `cups-source-${index}`));
+  const reversed = readings.find(reading => reading.cards.some(card => card.id === "two-of-cups" && card.orientation === "逆位"))!;
+  const upright = readings.find(reading => reading.cards.some(card => card.id === "two-of-cups" && card.orientation === "正位"))!;
+  const card = reversed.cards.find(item => item.id === "two-of-cups")!;
+  expect(card.sourceComparison).toContain("图解条未列逆位");
+  expect(card.sourceComparison).toContain("补充释义另列‘热情’");
+  expect(upright.cards.find(item => item.id === "two-of-cups")?.sourceComparison).toBeUndefined();
+  expect(serializeTarotToStructuredText(reversed)).toContain(card.sourceComparison);
+  expect(JSON.parse(serializeTarotToCompactJson(reversed)).cards.find((item: TarotCard) => item.id === "two-of-cups").sourceComparison).toBe(card.sourceComparison);
 });

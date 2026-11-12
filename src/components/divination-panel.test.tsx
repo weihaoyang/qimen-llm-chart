@@ -31,6 +31,15 @@ it("labels tarot core keywords separately from the orientation-specific meaning"
   cleanup();
 });
 
+it("shows the historical source distinction when Two of Cups is reversed", () => {
+  const profile = normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-01T00:00:00Z"), "Asia/Shanghai"));
+  const reading = Array.from({ length: 300 }, (_, i) => buildTarotReading(profile, `cups-source-${i}`))
+    .find(result => result.cards.some(card => card.id === "two-of-cups" && card.orientation === "逆位"))!;
+  render(<DivinationPanel kind="tarot" value={reading} />);
+  expect(screen.getByText(/图解条未列逆位/)).toHaveTextContent("补充释义另列‘热情’");
+  cleanup();
+});
+
 describe("DivinationPanel astro（缺出生地的空态引导）", () => {
   afterEach(() => cleanup());
 

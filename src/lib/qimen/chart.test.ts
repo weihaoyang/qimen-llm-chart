@@ -1095,3 +1095,22 @@ it("reports classical chief-only punishment separately from the palace-wide rule
   expect(report.formed.find(check => check.id === "liu_yi_ji_xing")?.evidence.join(" ")).toContain("甲子戊");
   expect(report.sourceNotes.some(note => note.startsWith("六仪击刑："))).toBe(false);
 });
+
+it.each([
+  [1, 8, "丙生临九天（遁甲演义）"],
+  [7, 6, "乙开得天心（元灵经）"],
+] as const)("reports the sourced 神遁 condition for 阳遁%s局", (juNumber, position, reason) => {
+  const chart = buildChart({
+    datetime: "2026-01-01T16:00",
+    timeZone: "Asia/Shanghai",
+    qimenSettings: { solarTerm: "auto", dunType: "yang", juNumber, yearDivide: "exact" },
+  });
+  const id = "patterns.jiu_dun.shen_dun";
+  expect(chart.raw.specialPatterns.auspiciousPatterns?.filter(pattern => pattern.id === id)).toEqual([
+    expect.objectContaining({ position, description: reason }),
+  ]);
+  expect(chart.raw.palaces.find(palace => palace.position === position)?.auspiciousPatterns).toContainEqual(
+    expect.objectContaining({ id, description: reason }),
+  );
+  expect(evaluateQimenPatterns(chart).formed.find(check => check.id === "jiu_dun_shen")?.evidence.join(" ")).toContain(reason);
+});

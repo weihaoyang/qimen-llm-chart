@@ -36,6 +36,17 @@ const PALACE_RULERS = ["土星", "土星", "木星", "火星", "金星", "水星
  */
 export const TWENTY_EIGHT_MANSIONS = ["角", "亢", "氐", "房", "心", "尾", "箕", "斗", "牛", "女", "虚", "危", "室", "壁", "奎", "娄", "胃", "昴", "毕", "觜", "参", "井", "鬼", "柳", "星", "张", "翼", "轸"] as const;
 
+type Mansion = (typeof TWENTY_EIGHT_MANSIONS)[number];
+type Ruler = (typeof PALACE_RULERS)[number];
+
+// 《图书编》〈二十八宿总叙〉以七政分配每方七宿，《完孝录》卷四详列宫、度主。
+const MANSION_RULERS: Record<Mansion, Ruler> = {
+  角: "木星", 亢: "金星", 氐: "土星", 房: "太阳", 心: "太阴", 尾: "火星", 箕: "水星",
+  斗: "木星", 牛: "金星", 女: "土星", 虚: "太阳", 危: "太阴", 室: "火星", 壁: "水星",
+  奎: "木星", 娄: "金星", 胃: "土星", 昴: "太阳", 毕: "太阴", 觜: "火星", 参: "水星",
+  井: "木星", 鬼: "金星", 柳: "土星", 星: "太阳", 张: "太阴", 翼: "火星", 轸: "水星",
+};
+
 /** 七政：太阳、太阴与水金火木土五星（对应西方体系的日/月/水/金/火/木/土）。 */
 export const SEVEN_LUMINARIES: Array<{ name: string; planet: string }> = [
   { name: "太阳", planet: "太阳" },
@@ -85,7 +96,8 @@ export type QizhengStar = {
   palace: number;
   branch: string;
   palaceName: string;
-  mansion: string;
+  mansion: Mansion;
+  mansionRuler: Ruler;
   mansionComparison?: { mansion: string; method: string };
   nodeConventionComparison?: { longitude: number; branch: string; palaceName: string; mansion: string; method: string };
   dignity: string;
@@ -159,7 +171,7 @@ export const longitudeToPalace = (longitude: number) => ((10 - Math.floor(wrap(l
  * 参见《清史稿·时宪志一》：康熙四年议政王等言「汤若望将觜、参二宿改易前后」；
  * 乾隆十九年十二月「请以乾隆十九年为始，《时宪书》之值宿，改觜前参后」。
  */
-const MANSION_TABLE_QING: Array<[string, number, number, number]> = [
+const MANSION_TABLE_QING: Array<[Mansion, number, number, number]> = [
   // [宿名, 宫(0=星纪/冬至起), 度, 分]，按原表自斗起、黄经东行排列
   ["斗", 0, 5, 50], ["牛", 0, 29, 37], ["女", 1, 7, 23], ["虚", 1, 19, 1], ["危", 1, 29, 0],
   ["室", 2, 19, 7], ["壁", 3, 4, 48], ["奎", 3, 17, 54], ["娄", 3, 29, 33], ["胃", 4, 12, 33],
@@ -175,7 +187,7 @@ const MANSION_EPOCH_JD = 2336128.5;
 const MANSION_EPOCH_ORIGIN = 270;
 
 /** 二十八宿起点（即各宿距星）在 1684 历元的回归黄经，按黄经升序；古典宿界即距星。 */
-const MANSION_STARTS_1684: Array<{ name: string; longitude: number }> = MANSION_TABLE_QING
+const MANSION_STARTS_1684: Array<{ name: Mansion; longitude: number }> = MANSION_TABLE_QING
   .map(([name, gong, du, fen]) => ({ name, longitude: wrap(MANSION_EPOCH_ORIGIN + gong * 30 + du + fen / 60) }))
   .sort((a, b) => a.longitude - b.longitude);
 
@@ -294,6 +306,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     if (longitude === null || !Number.isFinite(longitude)) continue;
     const palace = longitudeToPalace(longitude);
     const branch = EARTHLY_BRANCHES[palace];
+    const mansion = longitudeToMansion(longitude, utcMillis);
     stars.push({
       name,
       kind: "七政",
@@ -301,7 +314,8 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       palace,
       branch,
       palaceName: palaceNameOf(palace),
-      mansion: longitudeToMansion(longitude, utcMillis),
+      mansion,
+      mansionRuler: MANSION_RULERS[mansion],
       mansionComparison: niuMansionComparison(longitude, utcMillis),
       dignity: dignityOf(name, branch),
       classicalDignity: CLASSICAL_PALACE_REFERENCES[name]?.positions[branch]
@@ -326,6 +340,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     if (!Number.isFinite(remnant.longitude)) continue;
     const palace = longitudeToPalace(remnant.longitude);
     const branch = EARTHLY_BRANCHES[palace];
+    const mansion = longitudeToMansion(remnant.longitude, utcMillis);
     // 只交换名称，复用同一组现代平交点；不假装复现汤若望历书的推算精度。
     const oppositeNode = remnant.name === "罗睺" ? remainders.find(item => item.name === "计都")
       : remnant.name === "计都" ? remainders.find(item => item.name === "罗睺") : undefined;
@@ -337,7 +352,8 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       palace,
       branch,
       palaceName: palaceNameOf(palace),
-      mansion: longitudeToMansion(remnant.longitude, utcMillis),
+      mansion,
+      mansionRuler: MANSION_RULERS[mansion],
       mansionComparison: niuMansionComparison(remnant.longitude, utcMillis),
       ...(oppositeNode && comparisonPalace !== undefined ? {
         nodeConventionComparison: {
