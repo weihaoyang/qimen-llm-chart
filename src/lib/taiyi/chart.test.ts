@@ -99,11 +99,28 @@ describe("accumulation and palaces", () => {
     let centre = 0;
     for (let year = 2020; year < 2032; year++) for (const dun of ["阳遁", "阴遁"] as const) for (let ruJu = 1; ruJu <= 72; ruJu++) {
       const example = buildTaiyiChart({ year, cycle: 360, dun, ruJu });
-      if (example.fixedPlanEye.position === example.taiyi.position) { expect(example.fixedPlan).toBeNull(); samePalace++; }
+      expect(example.fixedPlanSamePalaceCandidate === null).toBe(example.fixedPlanEye.position !== example.taiyi.position);
+      if (example.fixedPlanEye.position === example.taiyi.position) {
+        expect(example.fixedPlan).toBeNull();
+        expect(example.fixedPlanSamePalaceCandidate).toMatchObject({ count: example.taiyi.palace, generalPalace: example.taiyi.palace, deputyPalace: generalSuPalace(example.taiyi.palace) });
+        expect(example.fixedPlanSamePalaceCandidate?.method).toContain("跨书推导");
+        expect(serializeTaiyiToStructuredText(example)).toContain("定算同宫候选（跨书推导，非古书实例）");
+        expect(JSON.parse(serializeTaiyiToCompactJson(example)).fixedPlanSamePalaceCandidate.count).toBe(example.taiyi.palace);
+        samePalace++;
+      }
       else if (example.fixedPlan?.generalPalace === 5) { expect(example.fixedPlan.gatePalaces).toBeNull(); centre++; }
     }
     expect(samePalace).toBeGreaterThan(0);
     expect(centre).toBeGreaterThan(0);
+  });
+  it("keeps two derived-year same-palace estimates separate from confirmed fixed calculations", () => {
+    for (const [year, dun, ju, palace, deputy] of [[1907, "阳遁", 8, 3, 9], [1914, "阴遁", 15, 4, 2]] as const) {
+      const chart = buildTaiyiChart({ year, cycle: 360, dun, ruJu: null });
+      expect(chart.input).toMatchObject({ ruJu: ju, derived: true });
+      expect(chart.fixedPlanEye.position).toBe(chart.taiyi.position);
+      expect(chart.fixedPlan).toBeNull();
+      expect(chart.fixedPlanSamePalaceCandidate).toMatchObject({ count: palace, generalPalace: palace, deputyPalace: deputy });
+    }
   });
   it("reproduces annual duty gate examples and every thirty-year boundary", () => {
     expect(annualDutyGate(accumulatedYears(724))).toEqual({ name: "开门", yearInGate: 1, yearInCycle: 1 });

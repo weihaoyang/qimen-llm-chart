@@ -26,6 +26,16 @@ describe("TaiyiPanel", () => {
     expect(screen.queryByText(/本仓未能核到其一手出处/)).not.toBeInTheDocument();
   });
 
+  it("marks a same-palace estimate as a cross-text inference", () => {
+    const chart = Array.from({ length: 72 }, (_, i) => buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: i + 1 })).find(item => item.fixedPlanSamePalaceCandidate)!;
+    expect(chart).toBeDefined();
+    render(<TaiyiPanel chart={chart} yearInput="2024" cycle={360} dun="阳遁" ruJuInput={String(chart.input.ruJu)} />);
+    expect(screen.getByText("定目与太乙同宫，待核")).toBeInTheDocument();
+    expect(screen.getByText("定算同宫候选")).toBeInTheDocument();
+    expect(screen.getByText(/跨书推导，非古书定算同宫实例/)).toBeInTheDocument();
+    expect(screen.queryByText("开门加定大将")).not.toBeInTheDocument();
+  });
+
   it("shows the sourced 912 opposite-gate case", () => {
     const chart = buildTaiyiChart({ year: 912, cycle: 360, dun: "阳遁", ruJu: null });
     render(<TaiyiPanel chart={chart} yearInput="912" cycle={360} dun="阳遁" ruJuInput="" />);

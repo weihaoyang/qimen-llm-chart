@@ -65,6 +65,7 @@ export type TaiyiChart = {
   generalGatePalaces: { host: Array<{ palace: number; gate: string }> | null; guest: Array<{ palace: number; gate: string }> | null };
   fixedPlanEye: { yearBranch: string; combiningBranch: string; position: string; deity: TaiyiDeity };
   fixedPlan: { count: number; generalPalace: number; deputyPalace: number; gatePalaces: Array<{ palace: number; gate: string }> | null } | null;
+  fixedPlanSamePalaceCandidate: { count: number; generalPalace: number; deputyPalace: number; method: string } | null;
   fixedPlanSourceComparison: { source: string; count: number; generalPalace: number; deputyPalace: number } | null;
   hostDeputySourceComparison: { source: string; diagramPalace: number; prosePalace: number; method: string } | null;
   taiyi: { palace: number; trigram: string; position: string; element: string; block: number };
@@ -436,6 +437,12 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       deputyPalace: generalSuPalace(fixedGeneral),
       gatePalaces: fixedGeneral === 5 ? null : taiyiEightGatePalaces(fixedGeneral, "开门"),
     },
+    fixedPlanSamePalaceCandidate: fixedCount === null ? {
+      count: palace,
+      generalPalace: palace,
+      deputyPalace: generalSuPalace(palace),
+      method: "将《图书集成》二目同宫取本宫的主客算规则推及定目；跨书推导，非古书定算同宫实例",
+    } : null,
     fixedPlanSourceComparison: year === 1588 && dun === "阴遁" && ruJu === 49 && fixedEye.position === "戌" && taiyiPosition === "巽"
       ? { source: "《太乙秘书》万历戊子阴遁例", count: 25, generalPalace: 5, deputyPalace: 5 }
       : null,
