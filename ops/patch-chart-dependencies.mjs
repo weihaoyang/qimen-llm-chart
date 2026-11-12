@@ -197,6 +197,46 @@ for (const [path, before, after] of [
   }
 }
 // Keep Porphyry quadrants in zodiac order where the horizon axis reverses.
+// Placidus is valid below the polar circle, not merely below 66 degrees. Defer
+// that check until the chart date supplies its obliquity; signal failed
+// convergence so the chart layer can label its actual Porphyry fallback.
+for (const format of ["js", "cjs"]) {
+  const file = new URL("../node_modules/celestine/dist/index." + format, import.meta.url);
+  let source = readFileSync(file, "utf8");
+  const validationBefore = `  if (LATITUDE_SENSITIVE_SYSTEMS.includes(requestedSystem)) {
+    if (absLatitude > MAX_LATITUDE_PLACIDUS2) {`;
+  const validationAfter = `  if (LATITUDE_SENSITIVE_SYSTEMS.includes(requestedSystem)) {
+    if (requestedSystem !== "placidus" && absLatitude > MAX_LATITUDE_PLACIDUS2) {`;
+  const calculationAfter = `  if (LATITUDE_SENSITIVE_SYSTEMS.includes(requestedSystem)) {
+    if (requestedSystem === "placidus" ? absLatitude >= 90 - meanObliquity(T) : absLatitude > MAX_LATITUDE_PLACIDUS2) {`;
+  const chartMarker = "function calculateChartHouses(location, lst, T, requestedSystem) {";
+  const validationMarker = "function validateChartOptions(options, latitude) {";
+  const replaceWithin = (marker, before, after) => {
+    const start = source.indexOf(marker);
+    if (start < 0) throw new Error(`Missing celestine section: ${marker}`);
+    const index = source.indexOf(before, start);
+    if (source.startsWith(after, index)) return;
+    if (index < 0 || index - start > 1000) {
+      if (source.indexOf(after, start) >= start && source.indexOf(after, start) - start < 1000) return;
+      throw new Error(`Review celestine Placidus latitude patch: ${marker}`);
+    }
+    source = source.slice(0, index) + after + source.slice(index + before.length);
+  };
+  replaceWithin(chartMarker, validationBefore, calculationAfter);
+  replaceWithin(validationMarker, validationBefore, validationAfter);
+  const placidusStart = source.indexOf("function placidusHouses(ascendant, midheaven, latitude, obliquity) {");
+  const placidusEnd = source.indexOf("// src/houses/house-systems/regiomontanus.ts", placidusStart);
+  if (placidusStart < 0 || placidusEnd < 0) throw new Error("Missing celestine Placidus section");
+  let section = source.slice(placidusStart, placidusEnd);
+  const beforeFallback = "return porphyryHouses(asc, mc);";
+  const afterFallback = 'throw new Error("Placidus unavailable; use chart-level fallback");';
+  if (section.includes(beforeFallback)) {
+    if (section.split(beforeFallback).length !== 3) throw new Error("Review celestine Placidus fallback patch");
+    section = section.replaceAll(beforeFallback, afterFallback);
+    source = source.slice(0, placidusStart) + section + source.slice(placidusEnd);
+  } else if (section.split(afterFallback).length !== 3) throw new Error("Missing celestine Placidus fallback patch");
+  writeFileSync(file, source);
+}
 for (const format of ["js", "cjs"]) {
   const file = new URL("../node_modules/celestine/dist/index." + format, import.meta.url);
   const source = readFileSync(file, "utf8");

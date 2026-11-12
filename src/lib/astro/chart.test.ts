@@ -7,7 +7,9 @@ import { serializeAstroToCompactJson, serializeAstroToStructuredText } from "./s
 describe("astro chart", () => {
   it.each([
     [66, "Placidus"],
-    [66.1, "Porphyry"],
+    [66.1, "Placidus"],
+    [66.56, "Placidus"],
+    [66.57, "Porphyry"],
     [-70, "Porphyry"],
     [89.95, "Whole Sign"],
   ])("reports the computed house system at latitude %s", (latitude, system) => {
@@ -16,6 +18,30 @@ describe("astro chart", () => {
     const chart = buildAstroChart(normalizeProfileInput(input));
     expect(chart.houseSystem).toBe(system);
     expect(chart.houses).toHaveLength(12);
+  });
+
+  it.each([
+    [66.1, "Placidus", [88.523588, 92.142847, 95.510865, 99.611088, 106.117945, 122.588073, 268.523588, 272.142847, 275.510865, 279.611088, 286.117945, 302.588073]],
+    [66.55, "Placidus", [94.629786, 95.647858, 97.146870, 99.611088, 104.503226, 119.328594, 274.629786, 275.647858, 277.146870, 279.611088, 284.503226, 299.328594]],
+    [-66.1, "Placidus", [5.758360, 26.414451, 55.585422, 99.611088, 140.201903, 167.140250, 185.758360, 206.414451, 235.585422, 279.611088, 320.201903, 347.140250]],
+    [66.57, "Porphyry", [94.904862, 96.473604, 98.042346, 99.611088, 158.042346, 216.473604, 274.904862, 276.473604, 278.042346, 279.611088, 338.042346, 36.473604]],
+  ] as const)("uses the date-specific Placidus polar limit at latitude %s", (latitude, system, expected) => {
+    const input = getDefaultProfileInput(new Date("2000-01-01T12:00:00Z"), "UTC");
+    input.location = { timeZone: "UTC", latitude, longitude: 0 };
+    const chart = buildAstroChart(normalizeProfileInput(input));
+    expect(chart.houseSystem).toBe(system);
+    chart.houses.forEach((house, i) => {
+      expect(Math.abs(((house.longitude - expected[i] + 540) % 360) - 180)).toBeLessThan(0.04);
+    });
+  });
+
+  it("labels a Placidus convergence failure as Porphyry", () => {
+    const input = getDefaultProfileInput(new Date("2000-01-01T00:00:00Z"), "UTC");
+    input.location = { timeZone: "UTC", latitude: 66.5607088, longitude: 0 };
+    const chart = buildAstroChart(normalizeProfileInput(input));
+    expect(chart.houseSystem).toBe("Porphyry");
+    expect(chart.houses).toHaveLength(12);
+    expect(chart.houses.every(house => Number.isFinite(house.longitude))).toBe(true);
   });
 
   it.each([
