@@ -278,6 +278,20 @@ describe("buildBaziChartFromProfile", () => {
     }
   });
 
+  it("查日支神煞只比较其他柱，并保留年支来源", () => {
+    const sample = chartFor("2026-02-09T06:00").raw.pillars;
+    for (const [base, target, star] of [["午", "午", "将星"], ["戌", "戌", "华盖"]] as const) {
+      const pillars = sample.map(pillar => pillar.key === "day" || pillar.key === "time"
+        ? { ...pillar, earthlyBranch: target }
+        : pillar.key === "year" ? { ...pillar, earthlyBranch: base } : pillar);
+      const results = buildShenSha(pillars, "甲");
+      const at = (key: string) => results[pillars.findIndex(pillar => pillar.key === key)];
+      expect(at("day")).not.toContain(`${star}（日）`);
+      expect(at("day")).toContain(`${star}（年）`);
+      expect(at("time")).toContain(`${star}（日）`);
+    }
+  });
+
   it("takes Geng's Tian Yi from the ox-and-goat table", () => {
     const ox = chartFor("2026-02-15T02:00").raw;
     const snake = chartFor("2026-02-15T10:00").raw;
@@ -286,7 +300,7 @@ describe("buildBaziChartFromProfile", () => {
     expect(snake.pillars.find(({ key }) => key === "time")?.shenSha).not.toContain("天乙贵人");
   });
 
-  it("derives 文昌 from each day stem's 食神禄支", () => {
+  it("matches the selected 文昌 table, including the earth 食神长生 cases", () => {
     expect(Array.from("甲乙丙丁戊己庚辛壬癸", getWenChangBranch)).toEqual(Array.from("巳午申酉申酉亥子寅卯"));
     const noon = chartFor("2026-02-10T12:00").raw;
     const night = chartFor("2026-02-10T22:00").raw;

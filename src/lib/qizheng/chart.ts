@@ -85,6 +85,7 @@ export type QizhengStar = {
   palaceName: string;
   mansion: string;
   mansionComparison?: { mansion: string; method: string };
+  nodeConventionComparison?: { longitude: number; branch: string; palaceName: string; mansion: string; method: string };
   dignity: string;
   classicalDignity?: { label: string; volume: number; passage?: string; alternatives?: Array<{ label: string; passage: string }> };
   element: string;
@@ -258,7 +259,7 @@ const fourRemainders = (utcMillis: number) => {
   const ziQi = wrap(270 + 7 * 30 + 17 + 50 / 60 + 14 / 3600 + 53 / 216000
     + (utcMillis - ziQiEpoch) / 86_400_000 * 126.720777 / 3600);
   return [
-    { name: "罗睺", longitude: wrap(ascendingNode + 180), note: "果老旧法：罗睺=降交点（汤若望新法以罗睺为升交点，本仓未取）；火余为《图书编》的传统归类" },
+    { name: "罗睺", longitude: wrap(ascendingNode + 180), note: "果老旧法：罗睺=降交点（汤若望新法以罗睺为升交点，主盘未取）；火余为《图书编》的传统归类" },
     { name: "计都", longitude: wrap(ascendingNode), note: "果老旧法：计都=升交点；土余为《图书编》的传统归类" },
     // 《图书编》卷二十一「孛生于月……月之行迟速有常度，迟之处即孛也」「六十二日行七度，六十二年而七周天」；
     // 《清史稿·时宪志一》「月孛乃月行极高之点」。均指月球远地点，与 Meeus 平近地点 +180° 同义。
@@ -318,10 +319,15 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
     });
   }
 
-  for (const remnant of fourRemainders(utcMillis)) {
+  const remainders = fourRemainders(utcMillis);
+  for (const remnant of remainders) {
     if (!Number.isFinite(remnant.longitude)) continue;
     const palace = longitudeToPalace(remnant.longitude);
     const branch = EARTHLY_BRANCHES[palace];
+    // 只交换名称，复用同一组现代平交点；不假装复现汤若望历书的推算精度。
+    const oppositeNode = remnant.name === "罗睺" ? remainders.find(item => item.name === "计都")
+      : remnant.name === "计都" ? remainders.find(item => item.name === "罗睺") : undefined;
+    const comparisonPalace = oppositeNode && Number.isFinite(oppositeNode.longitude) ? longitudeToPalace(oppositeNode.longitude) : undefined;
     stars.push({
       name: remnant.name,
       kind: "四余",
@@ -331,6 +337,15 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       palaceName: palaceNameOf(palace),
       mansion: longitudeToMansion(remnant.longitude, utcMillis),
       mansionComparison: niuMansionComparison(remnant.longitude, utcMillis),
+      ...(oppositeNode && comparisonPalace !== undefined ? {
+        nodeConventionComparison: {
+          longitude: oppositeNode.longitude,
+          branch: EARTHLY_BRANCHES[comparisonPalace],
+          palaceName: palaceNameOf(comparisonPalace),
+          mansion: longitudeToMansion(oppositeNode.longitude, utcMillis),
+          method: "汤若望新法命名对照：仅交换同一组现代平交点名称，并非重算古历；庙旺标签属于主盘",
+        },
+      } : {}),
       dignity: "—",
       classicalDignity: CLASSICAL_PALACE_REFERENCES[remnant.name]?.positions[branch]
         ? { label: CLASSICAL_PALACE_REFERENCES[remnant.name].positions[branch], volume: CLASSICAL_PALACE_REFERENCES[remnant.name].volume, passage: `${remnant.name}论` }

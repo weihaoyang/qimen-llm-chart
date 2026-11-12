@@ -42,6 +42,23 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("separates 鬼遁 conditions in 旨归 verse and prose from the earlier variants", () => {
+    const report = evaluateQimenPatterns(chartWith([
+      palace(1, { heavenlyStem: "丁", earthlyStem: "乙", gate: "休门", deity: "九地" }),
+      palace(8, { heavenlyStem: "辛", earthlyStem: "丁", gate: "杜门", deity: "九地" }),
+      palace(2, { heavenlyStem: "丁", gate: "休门", deity: "太阴" }),
+      palace(3, { heavenlyStem: "辛", earthlyStem: "丁", gate: "杜门", deity: "九地" }),
+    ])).checks.find(item => item.id === "jiu_dun_gui")!;
+    expect(report.positions).toEqual([1, 8]);
+    expect(report.evidence[0]).toContain("丁休临九地（旨归九遁歌）");
+    expect(report.evidence[1]).toContain("辛加地丁合休生杜临艮九地（旨归正文）");
+    const overlap = evaluateQimenPatterns(chartWith([
+      palace(8, { heavenlyStem: ["丁", "辛"], earthlyStem: "丁", gate: "休门", deity: "九地" }),
+    ])).checks.find(item => item.id === "jiu_dun_gui")!;
+    expect(overlap.positions).toEqual([8]);
+    expect(overlap.evidence[0]).toContain("旨归九遁歌");
+    expect(overlap.evidence[0]).toContain("旨归正文");
+  });
   it("labels the separate star and gate interpretation and keeps overlapping evidence", () => {
     const check = evaluateQimenPatterns(chartWith([
       palace(6, { star: "天英", gate: "景门" }),

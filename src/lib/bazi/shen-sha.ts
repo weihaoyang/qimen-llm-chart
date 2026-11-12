@@ -24,7 +24,7 @@ const LU_SHEN: Record<string, Branch> = {
 
 const STEMS = Array.from("甲乙丙丁戊己庚辛壬癸");
 
-// 命理探原：以食神临官取文昌，戊己食神改取申酉。
+// 《命理探原》以食神临官、长生取文昌；丙丁的食神戊己依长生取申酉。
 export const getWenChangBranch = (dayMaster: string): Branch | undefined => {
   if (dayMaster === "丙") return "申";
   if (dayMaster === "丁") return "酉";
@@ -81,7 +81,8 @@ export const buildShenSha = (
 
     for (const [label, targets] of Object.entries(GROUP_TARGET)) {
       if (yearBranch && targets[yearBranch] === earthlyBranch) add(result, `${label}（年）`);
-      if (dayBranch && targets[dayBranch] === earthlyBranch) add(result, `${label}（日）`);
+      // 日支作基准时，在年月时寻找目标，不把日支与自身比较。
+      if (pillar.key !== "day" && dayBranch && targets[dayBranch] === earthlyBranch) add(result, `${label}（日）`);
     }
 
     return result;

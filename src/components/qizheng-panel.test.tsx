@@ -49,6 +49,18 @@ describe("QizhengPanel", () => {
     expect(sun).toHaveTextContent("其他宿界和岁差仍用本站口径");
   });
 
+  it("shows node naming alternatives on both affected stars only", () => {
+    const value = chart();
+    render(<QizhengPanel value={value} />);
+    const luo = screen.getByText("罗睺").closest(".qizheng-row");
+    const ji = value.stars.find(star => star.name === "计都")!;
+    expect(luo).toHaveTextContent(`新法命名对照：约 ${ji.longitude.toFixed(2)}°`);
+    expect(luo).toHaveTextContent(`宿${ji.mansion}`);
+    expect(screen.getByText("计都").closest(".qizheng-row")).toHaveTextContent("新法命名对照");
+    expect(screen.getByText("月孛").closest(".qizheng-row")).not.toHaveTextContent("新法命名对照");
+    expect(screen.getByText(/新法命名对照仅交换/)).toHaveTextContent("并非重算古历");
+  });
+
   it("shows both named passages when the same book disagrees about Mars", () => {
     const input = getDefaultProfileInput(new Date("1990-06-15T12:00:00+08:00"), "Asia/Shanghai");
     render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);

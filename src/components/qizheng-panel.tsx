@@ -12,7 +12,7 @@ const StarTable = ({ title, stars }: { title: string; stars: QizhengStar[] }) =>
           <b>{star.name}</b>
           <span title="宫位与宿位按未显示的精度计算">约 {star.longitude.toFixed(2)}°</span>
           <span>{star.palaceName}({star.branch})</span>
-          <span>宿{star.mansion}{star.mansionComparison ? <small>牛宿界对照：{star.mansionComparison.mansion}（{star.mansionComparison.method}）</small> : null}</span>
+          <span>宿{star.mansion}{star.mansionComparison ? <small>牛宿界对照：{star.mansionComparison.mansion}（{star.mansionComparison.method}）</small> : null}{star.nodeConventionComparison ? <small title={star.nodeConventionComparison.method}>新法命名对照：约 {star.nodeConventionComparison.longitude.toFixed(2)}° · {star.nodeConventionComparison.palaceName}({star.nodeConventionComparison.branch}) · 宿{star.nodeConventionComparison.mansion}</small> : null}</span>
           <span className={`qizheng-row__dignity is-${star.dignity === "庙" || star.dignity === "旺" ? "good" : star.dignity === "陷" ? "bad" : "flat"}`}>现表：{star.dignity}{star.classicalDignity ? <small>星学大成卷{star.classicalDignity.volume}{star.classicalDignity.passage ? `〈${star.classicalDignity.passage}〉` : ""}：{star.classicalDignity.label}{star.classicalDignity.alternatives?.map((item) => `；〈${item.passage}〉：${item.label}`)}</small> : null}</span>
           <span>{star.element} · {star.fortune}</span>
         </div>
@@ -29,7 +29,7 @@ export function QizhengPanel({ value, onCopyJson, jsonCopied }: { value: Qizheng
         <div>
           <p className="divination-panel__kicker">SEVEN LUMINARIES / FOUR REMNANTS</p>
           <h2>七政四余</h2>
-          <p className="divination-panel__subhead">七政＝日月与水金火木土五星；四余＝罗睺、计都、月孛、紫气。七政黄经取本仓真星历；罗睺/计都为黄白平交点，月孛为平月远地点。紫气用清代平行研究模型，法元子正按 UTC+08 近似；1911 年鬼、柳两宿已有样本对照，其他年代为外推。二十八宿用康熙旧钤并按岁差推移，与乾隆宿界存在差异。十二宫按古典十二次，命宫用果老式。庙旺陷采用有限表项，未列不等于古籍无说。</p>
+          <p className="divination-panel__subhead">七政＝日月与水金火木土五星；四余＝罗睺、计都、月孛、紫气。七政黄经取本仓真星历；罗睺/计都为黄白平交点，新法命名对照仅交换同一组交点的名称，并非重算古历；庙旺标签属于主盘。月孛为平月远地点。紫气用清代平行研究模型，法元子正按 UTC+08 近似；1911 年鬼、柳两宿已有样本对照，其他年代为外推。二十八宿用康熙旧钤并按岁差推移，与乾隆宿界存在差异。十二宫按古典十二次，命宫用果老式。庙旺陷采用有限表项，未列不等于古籍无说。</p>
         </div>
         <div className="divination-panel__header-actions">
           {onCopyJson ? <button type="button" className="divination-panel__export" onClick={onCopyJson}>复制 JSON <span>{jsonCopied ? "✓" : "⧉"}</span></button> : null}

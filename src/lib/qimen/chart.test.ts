@@ -5,6 +5,25 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("checks both 旨归 鬼遁 variants across actual charts", () => {
+    let found = 0;
+    for (let day = 1; day <= 20; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const expected = chart.raw.palaces.filter(p => p.deity === "九地" && (([p.heavenlyStem].flat().includes("丁") && p.gate === "休门") || (p.position === 8 && [p.heavenlyStem].flat().includes("辛") && [p.earthlyStem].flat().includes("丁") && ["休门", "生门", "杜门"].includes(p.gate as string))));
+      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_gui")!;
+      for (const palace of expected) {
+        expect(check.positions, datetime).toContain(palace.position);
+        expect(palace.auspiciousPatterns?.some(item => item.id === "patterns.jiu_dun.gui_dun"), datetime).toBe(true);
+        expect(chart.raw.specialPatterns.auspiciousPatterns?.some(item => item.id === "patterns.jiu_dun.gui_dun" && item.position === palace.position), datetime).toBe(true);
+        found++;
+      }
+    }
+    expect(found).toBeGreaterThan(0);
+    const example = buildChart({ datetime: "2026-01-05T14:00", timeZone: "Asia/Shanghai" });
+    expect(example.raw.palaces.find(p => p.position === 8)).toMatchObject({ heavenlyStem: "丁", earthlyStem: "丙", gate: "休门", deity: "九地" });
+    expect(evaluateQimenPatterns(example).checks.find(p => p.id === "jiu_dun_gui")!.evidence.join(" ")).toContain("丁休临九地（旨归九遁歌）");
+  });
   it("checks the yin-six fire example without claiming both historical fields match", () => {
     const chart = buildChart({ datetime: "2026-01-05T04:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "夏至", dunType: "yin", juNumber: 6 } });
     expect(chart.raw.fourPillars.day.stem).toBe("己");

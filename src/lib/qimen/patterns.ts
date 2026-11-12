@@ -202,12 +202,18 @@ export const matchesHuDun = (palace: Palace) =>
   || (palace.position === 8 && hasHeaven(palace, "辛") && gateIn(palace, ["生门"]))
   || (hasHeaven(palace, "丙") && hasEarth(palace, "辛") && gateIn(palace, ["生门"]));
 
-export const matchesGuiDun = (palace: Palace) =>
-  deityIn(palace, ["九地"]) && (
-    (hasHeaven(palace, "丁") && gateIn(palace, ["生门"]) && palace.position === 8)
-    || (hasHeaven(palace, "乙") && gateIn(palace, ["杜门"]))
-    || (hasHeaven(palace, "丁") && gateIn(palace, ["开门"]))
-  );
+/** 同一《旨归》九遁歌与鬼遁正文另有两套条件；神盘仍采用本站现有九地。 */
+export const guiDunReasons = (palace: Palace): string[] => {
+  if (!deityIn(palace, ["九地"])) return [];
+  return [
+    ...(hasHeaven(palace, "丁") && gateIn(palace, ["生门"]) && palace.position === 8 ? ["丁生九地临艮（奇门吉格）"] : []),
+    ...(hasHeaven(palace, "乙") && gateIn(palace, ["杜门"]) ? ["乙杜临九地（奇门吉格）"] : []),
+    ...(hasHeaven(palace, "丁") && gateIn(palace, ["开门"]) ? ["丁开临九地（奇门吉格一云）"] : []),
+    ...(hasHeaven(palace, "丁") && gateIn(palace, ["休门"]) ? ["丁休临九地（旨归九遁歌）"] : []),
+    ...(palace.position === 8 && hasHeaven(palace, "辛") && hasEarth(palace, "丁") && gateIn(palace, ["休门", "生门", "杜门"]) ? ["辛加地丁合休生杜临艮九地（旨归正文）"] : []),
+  ];
+};
+export const matchesGuiDun = (palace: Palace) => guiDunReasons(palace).length > 0;
 
 // 五假中的干取天盘；人假取《奇门法窍》的六壬读法。
 export const matchesDiJia = (palace: Palace) =>
@@ -331,9 +337,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   good("jiu_dun_shen", "神遁", "九遁", "天盘丙 + 生门 + 九天", "主声势、上位与号召；宜树立形象、争取支持。", (p) =>
     hasHeaven(p, "丙") && gateIn(p, ["生门"]) && deityIn(p, ["九天"]) ? combinationEvidence(p) : null,
   ),
-  good("jiu_dun_gui", "鬼遁", "九遁", "九地下丁生门临艮，或乙杜门；一云丁开门九地", "主隐蔽、暗查与回避；宜调查防守，不宜张扬。", (p) =>
-    matchesGuiDun(p) ? combinationEvidence(p) : null,
-  ),
+  good("jiu_dun_gui", "鬼遁", "九遁", "奇门吉格三式；旨归另列丁休九地，及辛加丁合休生杜临艮九地", "所列九地为本站神盘；按命中条件分列原文口径。", (p) => {
+    const reasons = guiDunReasons(p);
+    return reasons.length ? `${combinationEvidence(p)}：${reasons.join("、")}` : null;
+  }),
 
   // ---- 三诈五假 ----
   good("zhen_zha", "真诈", "三诈五假", "天盘乙/丙/丁 + 开/休/生门 + 太阴", "主以巧取胜、借智成事；善用信息差与内应。", (p) =>

@@ -437,6 +437,28 @@ describe("qizheng siyu chart", () => {
     expect(buildQizhengChart(profile())).toEqual(chart);
   });
 
+  it("compares the opposed node names without claiming to recompute the historical ephemeris", () => {
+    for (const p of [profile(), normalizeProfileInput(getDefaultProfileInput(new Date("2026-01-03T12:00:00+08:00"), "Asia/Shanghai"))]) {
+      const chart = buildQizhengChart(p);
+      const luo = chart.stars.find(star => star.name === "罗睺")!;
+      const ji = chart.stars.find(star => star.name === "计都")!;
+      for (const [current, opposite] of [[luo, ji], [ji, luo]]) {
+        expect(current.nodeConventionComparison).toMatchObject({ longitude: opposite.longitude, branch: opposite.branch, palaceName: opposite.palaceName, mansion: opposite.mansion, method: expect.stringContaining("并非重算古历") });
+        expect(current.branch).not.toBe(opposite.branch);
+      }
+      if (chart.input.civilDateTime.startsWith("1990")) {
+        expect(luo).toMatchObject({ branch: "午", mansion: "柳", nodeConventionComparison: { branch: "子", mansion: "牛" } });
+      } else {
+        expect(luo).toMatchObject({ branch: "巳", mansion: "张", nodeConventionComparison: { branch: "亥", mansion: "危" } });
+      }
+      expect(chart.stars.find(star => star.name === "月孛")?.nodeConventionComparison).toBeUndefined();
+      const text = serializeQizhengToStructuredText(chart);
+      expect(text).toContain(`新法命名对照：${ji.longitude}°`);
+      const json = JSON.parse(serializeQizhengToCompactJson(chart));
+      expect(json.stars.find((star: { name: string }) => star.name === "罗睺").nodeConventionComparison).toEqual(luo.nodeConventionComparison);
+    }
+  });
+
   it("keeps 月孛 as the lunar mean apogee (classical 六十二日行七度 / 六十二年而七周天)", () => {
     const chart = buildQizhengChart(profile());
     const yuebei = chart.stars.find((star) => star.name === "月孛");

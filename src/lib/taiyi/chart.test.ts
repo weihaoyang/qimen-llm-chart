@@ -511,6 +511,18 @@ describe("taiyi chart", () => {
     expect(check("丑", "寅")).toBeUndefined();
   });
 
+  it("reproduces 集成's 阳二局 四郭固 as a specific historical example", () => {
+    const chart = buildTaiyiChart({ year: 185, cycle: 360, dun: "阳遁", ruJu: 2 });
+    expect([chart.taiyi.palace, chart.tianMu.position, chart.shiJi.position]).toEqual([1, "酉", "戌"]);
+    expect([chart.counts.hostGeneralPalace, chart.counts.hostSuPalace, chart.counts.guestGeneralPalace, chart.counts.guestSuPalace]).toEqual([6, 8, 1, 3]);
+    const witness = "四郭固：《古今图书集成》阳二局书例；主大小将挟太乙、客大将同太乙宫，按相同盘位复现，不外推通则";
+    expect(chart.patterns).toContain(witness);
+    expect(serializeTaiyiToStructuredText(chart)).toContain(witness);
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).patterns).toContain(witness);
+    const changed = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "酉", shiJiPosition: "戌", hostGeneralPalace: 6, hostSuPalace: 8, guestGeneralPalace: 1, guestSuPalace: 4 });
+    expect(changed.some(item => item.includes("阳二局书例"))).toBe(false);
+  });
+
   it("retains simultaneous concealment and identifies which side is blocked in the centre", () => {
     const all = detectPatterns({ taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "亥", shiJiPosition: "乾", hostGeneralPalace: 1, hostSuPalace: 5, guestGeneralPalace: 5, guestSuPalace: 3 });
     expect(all).toContain("掩：始击将临太乙宫、始击掩主大将");

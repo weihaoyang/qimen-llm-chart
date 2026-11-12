@@ -420,6 +420,11 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     ...(shiJiPalace === taiyiPalace ? ["始击（客目）"] : []),
   ];
   const siGuoGu = siGuoGuEyes.length > 0 && generalsGuanGroups.length > 0;
+  // 《古今图书集成》艺术典687卷阳二局例：主大小将挟太乙，客大将同太乙宫。
+  // 原文的通则措辞宽泛；仅对所列盘位均吻合的例子复现，不将其外推为通则。
+  const siGuoGuJichengExample = taiyiPalace === 1 && taiyiPosition === "乾" && tianMuPosition === "酉" && shiJiPosition === "戌"
+    && input.hostGeneralPalace === 6 && input.hostSuPalace === 8
+    && input.guestGeneralPalace === 1 && input.guestSuPalace === 3;
   // 选定合象：两组并见。主客大将同宫本身即满足本仓「关」，不是额外独立命中。
   const siGuoDu = tianMuPalace !== null && input.guestSuPalace === tianMuPalace
     && input.hostGeneralPalace === input.guestGeneralPalace;
@@ -433,7 +438,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
     guan ? `关：${guanActors.join("；")}` : "",
     ge ? `格：${geActors.join("、")}与太乙对宫` : "",
     duiWenchang || duiTaibai.length ? `对：${[duiWenchang ? "文昌与太乙对冲（《金镜》口径）" : "", duiTaibai.length ? `${duiTaibai.join("、")}与太乙对冲（《太白》口径）` : ""].filter(Boolean).join("；")}` : "",
-    siGuoGu ? `四郭固：${siGuoGuEyes.join("、")}与太乙同在${taiyiPalace}宫；${generalsGuanGroups.join("；")}` : "",
+    siGuoGu ? `四郭固：${siGuoGuEyes.join("、")}与太乙同在${taiyiPalace}宫；${generalsGuanGroups.join("；")}` : siGuoGuJichengExample ? "四郭固：《古今图书集成》阳二局书例；主大小将挟太乙、客大将同太乙宫，按相同盘位复现，不外推通则" : "",
     siGuoDu ? "四郭杜：客参将同文昌、主大将同客大将（该将并本身亦为关）" : "",
     ties.length ? `提挟：${ties.join("、")}` : "",
     pairedFlanks.length ? `大小将挟：《太乙秘書》局注口径，${pairedFlanks.join("、")}` : "",
