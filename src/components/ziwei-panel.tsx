@@ -140,11 +140,11 @@ export function ZiweiPanel({ value, chart }: ZiweiPanelProps) {
         />
       </div>
 
-      {chart && chart.raw.palaces.some(palace => palace.majorStars.some(star => star.mingPrintBrightness && star.mingPrintBrightness !== star.brightness)) ? (
+      {chart && chart.raw.palaces.some(palace => [...palace.majorStars, ...palace.minorStars].some(star => star.mingPrintBrightness && star.mingPrintBrightness !== star.brightness)) ? (
         <aside className="divination-panel__note" aria-label="亮度版本对照">
           <span>版本对照</span>《紫微斗数全书》明刊图表与现用表不同：
-          {chart.raw.palaces.flatMap(palace => palace.majorStars.filter(star => star.mingPrintBrightness && star.mingPrintBrightness !== star.brightness).map(star => `${star.name}${palace.earthlyBranch}宫：现表${star.brightness ?? "未提供"}，明刊${star.mingPrintBrightness}`)).join("；")}。
-          明刊图表与正文及其他刊本可能不同。
+          {chart.raw.palaces.flatMap(palace => [...palace.majorStars, ...palace.minorStars].filter(star => star.mingPrintBrightness && star.mingPrintBrightness !== star.brightness).map(star => `${star.name}${palace.earthlyBranch}宫：现表${star.brightness ?? "未提供"}，明刊${star.mingPrintBrightness}`)).join("；")}。
+          仅对已核星曜和宫位比较；明刊图表与正文及其他刊本可能不同。
         </aside>
       ) : null}
 

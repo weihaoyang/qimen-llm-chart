@@ -304,6 +304,7 @@ it("compares Ziwei brightness in all twelve palaces with the Ming printed table"
     const palace = raw.palaces.find((item) => item.earthlyBranch === branch)!;
     const star = palace.majorStars.find((item) => item.name === "紫微")!;
     expect(star, branch).toBeDefined();
+    expect(star.mingPrintBrightness, branch).toBe(printed[branch]);
     if (star.brightness !== printed[branch]) differences.push(`${branch}：图${printed[branch]} / 产品${star.brightness}`);
   }
   expect(differences).toEqual(["寅：图庙 / 产品旺"]);
@@ -350,7 +351,10 @@ it("compares Tanlang and the three explicitly printed Huoxing positions against 
       const { raw } = buildZiweiChartFromProfile(profileAt("midnight", datetime));
       for (const palace of raw.palaces) {
         for (const star of [...palace.majorStars, ...palace.minorStars]) {
-          if (printed[star.name]?.[palace.earthlyBranch]) observations.set(`${star.name}:${palace.earthlyBranch}`, star.brightness ?? "未提供");
+          if (star.name in printed) {
+            expect(star.mingPrintBrightness, `${star.name} ${palace.earthlyBranch}`).toBe(printed[star.name][palace.earthlyBranch]);
+            if (printed[star.name][palace.earthlyBranch]) observations.set(`${star.name}:${palace.earthlyBranch}`, star.brightness ?? "未提供");
+          }
         }
       }
     }
@@ -379,7 +383,10 @@ it("compares Tianji and Tianliang with legible Ming table entries", () => {
       const { raw } = buildZiweiChartFromProfile(profileAt("midnight", datetime));
       for (const palace of raw.palaces) {
         for (const star of palace.majorStars) {
-          if (printed[star.name]?.[palace.earthlyBranch]) observations.set(`${star.name}:${palace.earthlyBranch}`, star.brightness ?? "未提供");
+          if (star.name in printed) {
+            expect(star.mingPrintBrightness, `${star.name} ${palace.earthlyBranch}`).toBe(printed[star.name][palace.earthlyBranch]);
+            if (printed[star.name][palace.earthlyBranch]) observations.set(`${star.name}:${palace.earthlyBranch}`, star.brightness ?? "未提供");
+          }
         }
       }
     }

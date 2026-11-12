@@ -78,7 +78,17 @@ const serializeStar = (star: {
 const MING_PRINT_BRIGHTNESS: Record<string, Record<string, string>> = {
   太阳: Object.fromEntries(BRANCHES.map((branch, i) => [branch, ["陷", "不", "旺", "庙", "旺", "旺", "旺", "得", "得", "平", "不", "陷"][i]])),
   太阴: Object.fromEntries(BRANCHES.map((branch, i) => [branch, ["庙", "庙", "陷", "陷", "陷", "陷", "不", "得", "利", "旺", "旺", "庙"][i]])),
+  紫微: { 子: "平", 丑: "庙", 寅: "庙", 卯: "旺", 辰: "得", 巳: "旺", 午: "庙", 未: "庙", 申: "旺", 酉: "旺", 戌: "得", 亥: "旺" },
+  贪狼: { 子: "旺", 丑: "利", 寅: "平", 卯: "得", 辰: "庙", 巳: "陷", 午: "旺", 未: "庙", 申: "平", 酉: "利", 戌: "庙", 亥: "陷" },
+  天机: { 子: "庙", 丑: "陷", 寅: "得", 卯: "旺", 辰: "利", 巳: "平", 午: "庙", 申: "得", 酉: "庙", 戌: "利", 亥: "平" },
+  天梁: { 子: "庙", 丑: "旺", 寅: "庙", 卯: "庙", 辰: "庙", 巳: "平", 午: "庙", 未: "旺", 申: "陷", 酉: "得", 戌: "庙", 亥: "陷" },
+  火星: { 子: "陷", 丑: "得", 卯: "利" },
 };
+
+const serializeMingStar = (star: Parameters<typeof serializeStar>[0], branch: string): ZiweiStarSummary => ({
+  ...serializeStar(star),
+  ...(MING_PRINT_BRIGHTNESS[star.name]?.[branch] ? { mingPrintBrightness: MING_PRINT_BRIGHTNESS[star.name][branch] } : {}),
+});
 
 const serializePalace = (palace: {
   index: number;
@@ -124,11 +134,8 @@ const serializePalace = (palace: {
   heavenlyStem: palace.heavenlyStem,
   earthlyBranch: palace.earthlyBranch,
   branchIndex: palace.branchIndex ?? -1,
-  majorStars: palace.majorStars.map((star) => ({
-    ...serializeStar(star),
-    ...(MING_PRINT_BRIGHTNESS[star.name]?.[palace.earthlyBranch] ? { mingPrintBrightness: MING_PRINT_BRIGHTNESS[star.name][palace.earthlyBranch] } : {}),
-  })),
-  minorStars: palace.minorStars.map(serializeStar),
+  majorStars: palace.majorStars.map((star) => serializeMingStar(star, palace.earthlyBranch)),
+  minorStars: palace.minorStars.map((star) => serializeMingStar(star, palace.earthlyBranch)),
   adjectiveStars: palace.adjectiveStars.map(serializeStar),
   changsheng12: palace.changsheng12,
   boshi12: palace.boshi12,
