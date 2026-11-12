@@ -366,6 +366,23 @@ describe("host and guest counts", () => {
 });
 
 describe("taiyi chart", () => {
+  it("reports fixed-plan-eye pressure with the 秘書 source in all four neighboring positions", () => {
+    const base = { taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "寅", shiJiPosition: "巳", hostGeneralPalace: 3, hostSuPalace: 4, guestGeneralPalace: 5, guestSuPalace: 7 };
+    for (const [position, kind, detail] of [["亥", "外迫", "前一辰"], ["戌", "内迫", "后一辰"], ["子", "外迫", "前一宫"], ["酉", "内迫", "后一宫"]] as const) {
+      const lines = detectPatterns({ ...base, fixedPlanEyePosition: position });
+      expect(lines.find(line => line.startsWith(`迫（${kind}）`))).toContain(`定计目（《太乙秘书》）在太乙${detail}`);
+    }
+    expect(detectPatterns({ ...base, fixedPlanEyePosition: "乾" }).some(line => line.includes("定计目（《太乙秘书》）"))).toBe(false);
+    for (const [ruJu, palace, eye] of [[3, 1, "酉"], [8, 3, "子"]] as const) {
+      const chart = buildTaiyiChart({ year: 1588, cycle: 360, dun: "阳遁", ruJu });
+      expect(chart.taiyi.palace).toBe(palace);
+      expect(chart.fixedPlanEye.position).toBe(eye);
+      const witness = "定计目（《太乙秘书》）在太乙后一宫";
+      expect(chart.patterns.some(line => line.startsWith("迫（内迫）") && line.includes(witness))).toBe(true);
+      expect(serializeTaiyiToStructuredText(chart)).toContain(witness);
+      expect(JSON.parse(serializeTaiyiToCompactJson(chart)).patterns.join("\n")).toContain(witness);
+    }
+  });
   it("checks 对 actors by source", () => {
     const base = { taiyiPalace: 1, taiyiPosition: "乾", tianMuPosition: "子", shiJiPosition: "亥", hostGeneralPalace: 9, hostSuPalace: 9, guestGeneralPalace: 3, guestSuPalace: 4 };
     expect(detectPatterns(base)).toContain("对：主大将、主参将与太乙对冲（《太白》口径）");

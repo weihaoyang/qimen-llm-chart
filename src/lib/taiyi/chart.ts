@@ -240,6 +240,7 @@ export type TaiyiPatternInput = {
   taiyiPosition: string;
   tianMuPosition: string;
   shiJiPosition: string;
+  fixedPlanEyePosition?: string;
   hostGeneralPalace: number;
   guestGeneralPalace: number;
   hostSuPalace: number;
@@ -291,6 +292,7 @@ export const detectPatterns = (input: TaiyiPatternInput): string[] => {
   };
   pushPo("天目（文昌）", tianMuPosition);
   for (const general of generals) pushPo(general.label, positionOfPalace(general.palace));
+  if (input.fixedPlanEyePosition) pushPo("定计目（《太乙秘书》）", input.fixedPlanEyePosition);
   // 囚：采用局注的宽判，文昌或任一将与太乙同宫。
   const qiuActors = [
     ...(tianMuPalace === taiyiPalace ? ["天目（文昌）"] : []),
@@ -483,12 +485,12 @@ export const buildTaiyiChart = (settings: TaiyiSettings): TaiyiChart => {
       hostHarmonyLevelVariant: harmonyLevelVariant(host),
       guestHarmonyLevelVariant: harmonyLevelVariant(guest),
     },
-    patterns: detectPatterns({ taiyiPalace: palace, taiyiPosition, tianMuPosition: tianMuPos, shiJiPosition: shiJiPos, hostGeneralPalace: hostGeneral, guestGeneralPalace: guestGeneral, hostSuPalace: hostSu, guestSuPalace: guestSu }),
+    patterns: detectPatterns({ taiyiPalace: palace, taiyiPosition, tianMuPosition: tianMuPos, shiJiPosition: shiJiPos, fixedPlanEyePosition: fixedEye.position, hostGeneralPalace: hostGeneral, guestGeneralPalace: guestGeneral, hostSuPalace: hostSu, guestSuPalace: guestSu }),
     cycle: DEITIES,
     disclaimer:
       "太乙神数研究盘：按公共领域古籍《太乙金镜式经》（唐·王希明，四库全书本）与《太乙秘書》一系规则实现（太乙三年一宫、二十四年一周不入中宫；阳遁顺行、阴遁逆行；天目以入局数十八累除、阳遁自武德起阴遁自吕申起并重留乾坤／艮巽；计神逆行十二支；始击以计神加和德顺行十六神；主客算自二目顺数正宫至太乙前一宫；大将取算之个位、参将取『三因大将满十去之』）。"
       + "**遁不由局数推出**：卷三与秘書皆阳局七十二局、阴局七十二局并列（秘書阳局第一局太乙一宫、阴局第一局太乙九宫），故本仓须人工选定遁；未选定时按阳遁排出并在界面提示（input.dunDefaulted）。"
-      + "格局参考卷三及《太乙秘書》局注，囚、关采用局注的同宫宽判。「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
+      + "格局参考卷三及《太乙秘書》局注，囚、关采用局注的同宫宽判。「推掩法／推击法／推迫法／推囚法／推关法／推格法／推对法／推四郭固法／郭杜法／推提挟法」收掩、击、迫（内外）、囚、关、格、对、四郭固、四郭杜、提挟，另附中宫之「杜塞」；击用始击、迫用文昌与四将，并据《太乙秘书》另列定计目（卷二〈推五将所主法〉：上目号始击属客、下目号文昌属主，与卷三「上目无迫」相合）。"
       + "「前一宫／后一宫」按八正宫环（乾一坎八艮三震四巽九离二坤七兑六）定序，「前一辰／后一辰」按十六神环紧邻之间神定序。"
       + "四郭固、四郭杜取所列合象读法；四郭杜中主客大将同宫本身已满足本站的关，并非另证其他格局。提挟依李淳风说以「太乙与主/客大将共为某目/将之左右邻宫」为判据（二目临间神者即挟闭）；另据《太白》列太乙与正宫主目挟客、客目挟主。另列《太乙秘書》主或客大小将共挟对方目、对方大小将或太乙，按八正宫邻位（间神取相邻正宫）计算；其他组合未穷举。岁计直门加太乙与开门加太乙分别列示；主客大将以开门加将宫，落中宫时标八门杜而不擅自寄宫。执提仅列岁计直门加太乙的一种图示口径，不代表全部传本；840年执提记载此法未命中。"
       + "和数只列事实、不下判词：算值、奇偶、所立正宫／间神，并按卷二〈推阴阳和不和〉列「上和十四、十八、三十三；次和二十三、二十九、三十二；下和十二、十六、二十七、三十四、三十八」。卷二与《太乙秘書》《太乙統宗寶鑑》《淘金歌》一系的和数清单不同（后者次和另含三十六、下和另含二十一、上和无三十三），且两书局注互相矛盾（如秘書阳局 1「客算十三和」与卷三立成同局「十三〈不和〉」），同篇不合判据又含太乙宫、二目所立、算奇偶等多维（卷二另有『八三四九为阳宫、二七六一为阴宫』，与乾坎艮震为阳之常义相异），故本仓不输出和／不和与长／短判词。"

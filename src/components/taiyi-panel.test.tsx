@@ -66,4 +66,10 @@ describe("TaiyiPanel", () => {
     render(<TaiyiPanel chart={chart} yearInput="2024" cycle={360} dun="阳遁" ruJuInput="13" />);
     expect(screen.getByText(/主参将与太乙对冲（《太白》口径）/)).toBeInTheDocument();
   });
+
+  it("shows fixed-plan-eye pressure alongside other witnesses", () => {
+    const chart = buildTaiyiChart({ year: 1588, cycle: 360, dun: "阳遁", ruJu: 3 });
+    render(<TaiyiPanel chart={chart} yearInput="1588" cycle={360} dun="阳遁" ruJuInput="3" />);
+    expect(screen.getByText(/定计目（《太乙秘书》）在太乙后一宫/)).toBeInTheDocument();
+  });
 });
