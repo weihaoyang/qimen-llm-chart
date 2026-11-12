@@ -599,6 +599,30 @@ it("compares legible 甲申 transmissions with 太白兵备统宗宝鉴 twelve-c
   expect(differences).toEqual(["寅:寅巳申/寅巳卯"]);
 });
 
+it("cross-checks the illegible 太白 甲申 third case against 探原 without emending the text", () => {
+  // 太白卷四十二电子本作「干辰寅」；探原电子本甲申干上子明确作午辰寅。
+  // 分开保存原字和另一书的读数，不能把后者当成太白原字。
+  const taibaiElectronic = "干辰寅";
+  const tanyuanElectronic = "午辰寅";
+  const cases = new Set<string>();
+  let combinations = 0;
+  for (let offset = 0; offset < 60; offset++) {
+    const date = new Date(Date.UTC(2024, 8, 27 + offset)).toISOString().slice(0, 10);
+    for (const monthGeneral of "子丑寅卯辰巳午未申酉戌亥") for (let hour = 0; hour < 24; hour += 2) {
+      const input = { date, hour, timezone: "Asia/Shanghai", monthGeneral };
+      const chart = calculateDaliuren(input);
+      if (chart.dateInfo.ganZhi.day !== "甲申" || chart.siKe.yiKe[0][0] !== "子") continue;
+      const actual = [chart.sanChuan.chu[0], chart.sanChuan.zhong[0], chart.sanChuan.mo[0]].join("");
+      expect(actual, `${date} ${monthGeneral}将 ${hour}时`).toBe(tanyuanElectronic);
+      expect(actual).not.toBe(taibaiElectronic);
+      cases.add(date);
+      combinations++;
+    }
+  }
+  expect(cases.size).toBe(1);
+  expect(combinations).toBe(12);
+});
+
 it("checks all six 甲-day 伏吟 transmissions against 六壬大全 and the other 太白 entries", () => {
   // 六壬大全卷七：甲日伏吟寅发用，刑巳、巳刑申。
   // 太白卷四十二甲子、甲戌、甲午、甲辰日均写寅巳申；甲申条电子文本末字有异。
