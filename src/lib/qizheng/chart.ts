@@ -84,6 +84,7 @@ export type QizhengStar = {
   branch: string;
   palaceName: string;
   mansion: string;
+  mansionComparison?: { mansion: string; method: string };
   dignity: string;
   classicalDignity?: { label: string; volume: number; passage?: string; alternatives?: Array<{ label: string; passage: string }> };
   element: string;
@@ -203,6 +204,17 @@ export const longitudeToMansion = (tropicalLongitude: number, utcMillis: number)
   return MANSION_STARTS_1684[(index + MANSION_STARTS_1684.length) % MANSION_STARTS_1684.length].name;
 };
 
+/** 只替换牛宿界作灵敏度对照，其余宿界与岁差仍用本仓表，并非重建《五礼通考》全表。 */
+export const niuMansionComparison = (longitude: number, utcMillis: number) => {
+  const jd = utcMillis / 86_400_000 + 2_440_587.5;
+  const epochLongitude = wrap(longitude - (ayanamsa(jd) - ayanamsa(MANSION_EPOCH_JD)));
+  const alternativeStart = 299 + 27 / 60;
+  const selectedStart = 299 + 37 / 60;
+  return epochLongitude >= alternativeStart && epochLongitude < selectedStart
+    ? { mansion: "牛", method: "仅将牛距星改用《五礼通考》29°27′；其他宿界和岁差仍用本站口径" }
+    : undefined;
+};
+
 const dignityOf = (name: string, branch: string) => {
   const table = DIGNITY[name];
   if (!table) return "—";
@@ -278,6 +290,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       branch,
       palaceName: palaceNameOf(palace),
       mansion: longitudeToMansion(longitude, utcMillis),
+      mansionComparison: niuMansionComparison(longitude, utcMillis),
       dignity: dignityOf(name, branch),
       classicalDignity: CLASSICAL_PALACE_REFERENCES[name]?.positions[branch]
         ? {
@@ -308,6 +321,7 @@ export const buildQizhengChart = (profile: NormalizedProfileInput): QizhengChart
       branch,
       palaceName: palaceNameOf(palace),
       mansion: longitudeToMansion(remnant.longitude, utcMillis),
+      mansionComparison: niuMansionComparison(remnant.longitude, utcMillis),
       dignity: "—",
       classicalDignity: CLASSICAL_PALACE_REFERENCES[remnant.name]?.positions[branch]
         ? { label: CLASSICAL_PALACE_REFERENCES[remnant.name].positions[branch], volume: CLASSICAL_PALACE_REFERENCES[remnant.name].volume, passage: `${remnant.name}论` }

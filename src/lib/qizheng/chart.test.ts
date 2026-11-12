@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultProfileInput, normalizeProfileInput, type ProfileInput } from "@/lib/profile";
 import { ayanamsa } from "@/lib/vedic/ayanamsa";
-import { buildQizhengChart, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
+import { buildQizhengChart, niuMansionComparison, hourToBranchIndex, longitudeToMansion, longitudeToPalace, mingPalaceIndex, SEVEN_LUMINARIES, TWELVE_PALACES } from "./chart";
 import { serializeQizhengToCompactJson, serializeQizhengToStructuredText } from "./serializer";
 
 const profile = () => {
@@ -52,6 +52,31 @@ describe("qizheng siyu chart", () => {
     expect(longitudeToMansion(299 + 32 / 60, EPOCH_UT)).toBe("斗");
     expect(longitudeToMansion(299 + 36.99 / 60, EPOCH_UT)).toBe("斗");
     expect(longitudeToMansion(299 + 37.01 / 60, EPOCH_UT)).toBe("牛");
+  });
+
+  it("exposes only the 牛 boundary discrepancy and keeps its historical scope explicit", () => {
+    const below = 299 + 26.99 / 60, start = 299 + 27 / 60, middle = 299 + 32 / 60, end = 299 + 37 / 60;
+    expect(niuMansionComparison(below, EPOCH_UT)).toBeUndefined();
+    expect(niuMansionComparison(start, EPOCH_UT)?.mansion).toBe("牛");
+    expect(longitudeToMansion(middle, EPOCH_UT)).toBe("斗");
+    expect(niuMansionComparison(middle, EPOCH_UT)).toMatchObject({ mansion: "牛", method: expect.stringContaining("其他宿界和岁差仍用本站口径") });
+    expect(niuMansionComparison(end, EPOCH_UT)).toBeUndefined();
+    const instant = utc("2026-01-01");
+    expect(niuMansionComparison(middle + drift(instant), instant)?.mansion).toBe("牛");
+    expect(niuMansionComparison(end + drift(instant) + 0.0001, instant)).toBeUndefined();
+  });
+
+  it("shows the 牛 boundary variant for an actual solar position and carries it through exports", () => {
+    const input = getDefaultProfileInput(new Date("2026-01-24T14:00:00+08:00"), "Asia/Shanghai");
+    const chart = buildQizhengChart(normalizeProfileInput(input));
+    const sun = chart.stars.find(item => item.name === "太阳")!;
+    expect(sun.longitude).toBeCloseTo(304.2518778, 5);
+    expect(sun.mansion).toBe("斗");
+    expect(sun.mansionComparison?.mansion).toBe("牛");
+    expect(serializeQizhengToStructuredText(chart)).toContain("宿斗（牛宿界对照：牛");
+    expect(JSON.parse(serializeQizhengToCompactJson(chart)).stars.find((item: { name: string }) => item.name === "太阳").mansionComparison.mansion).toBe("牛");
+    const next = getDefaultProfileInput(new Date("2026-01-25T14:00:00+08:00"), "Asia/Shanghai");
+    expect(buildQizhengChart(normalizeProfileInput(next)).stars.find(item => item.name === "太阳")?.mansionComparison).toBeUndefined();
   });
 
   it("uses the 柳 boundary corroborated by the 五礼通考 and the mansion width table", () => {

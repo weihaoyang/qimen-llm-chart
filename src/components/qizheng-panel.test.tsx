@@ -35,6 +35,15 @@ describe("QizhengPanel", () => {
     expect(container.querySelector(".qizheng-row__dignity small")).toHaveTextContent("星学大成卷");
   });
 
+  it("shows the limited 牛 boundary comparison on the affected star", () => {
+    const input = getDefaultProfileInput(new Date("2026-01-24T14:00:00+08:00"), "Asia/Shanghai");
+    render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);
+    const sun = screen.getByText("太阳").closest(".qizheng-row");
+    expect(sun).toHaveTextContent("宿斗");
+    expect(sun).toHaveTextContent("牛宿界对照：牛");
+    expect(sun).toHaveTextContent("其他宿界和岁差仍用本站口径");
+  });
+
   it("shows both named passages when the same book disagrees about Mars", () => {
     const input = getDefaultProfileInput(new Date("1990-06-15T12:00:00+08:00"), "Asia/Shanghai");
     render(<QizhengPanel value={buildQizhengChart(normalizeProfileInput(input))} />);
