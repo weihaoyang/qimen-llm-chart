@@ -54,4 +54,10 @@ describe("TaiyiPanel", () => {
     render(<TaiyiPanel chart={chart} yearInput="724" cycle={360} dun="阳遁" ruJuInput="2" />);
     expect(screen.getByText(/主大小将挟客大将于正宫/)).toBeInTheDocument();
   });
+
+  it("shows the 太白 eye-and-Taiyi flank on the actual plate", () => {
+    const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu: 15 });
+    render(<TaiyiPanel chart={chart} yearInput="2024" cycle={360} dun="阳遁" ruJuInput="15" />);
+    expect(screen.getByText(/太乙与天目（文昌）共挟始击（客目）于正宫/)).toBeInTheDocument();
+  });
 });

@@ -466,6 +466,23 @@ describe("taiyi chart", () => {
     expect(withoutFlanks.some(entry => entry.startsWith("提挟："))).toBe(false);
   });
 
+  it("includes the 太白 eye-and-Taiyi flank in both directions without treating a 間神 as a flanker", () => {
+    const base = { taiyiPalace: 1, taiyiPosition: "乾", hostGeneralPalace: 3, hostSuPalace: 4, guestGeneralPalace: 6, guestSuPalace: 7 };
+    const host = detectPatterns({ ...base, tianMuPosition: "子", shiJiPosition: "亥" });
+    expect(host.find((item) => item.startsWith("提挟："))).toContain("太乙与天目（文昌）共挟始击（客目）于间神（《太白》口径）");
+    const guest = detectPatterns({ ...base, tianMuPosition: "亥", shiJiPosition: "子" });
+    expect(guest.find((item) => item.startsWith("提挟："))).toContain("太乙与始击（客目）共挟天目（文昌）于间神（《太白》口径）");
+    const unsupported = detectPatterns({ ...base, tianMuPosition: "亥", shiJiPosition: "戌" });
+    expect(unsupported.some((item) => item.includes("《太白》口径"))).toBe(false);
+    for (const [ruJu, target] of [[15, "于正宫"], [25, "于间神"]] as const) {
+      const chart = buildTaiyiChart({ year: 2024, cycle: 360, dun: "阳遁", ruJu });
+      const expected = `太乙与天目（文昌）共挟始击（客目）${target}（《太白》口径）`;
+      expect(chart.patterns.join("\n")).toContain(expected);
+      expect(serializeTaiyiToStructuredText(chart)).toContain(expected);
+      expect(JSON.parse(serializeTaiyiToCompactJson(chart)).patterns.join("\n")).toContain(expected);
+    }
+  });
+
   it("retains simultaneous flank witnesses in actual Yang 28, 44 and 70 charts", () => {
     const cases = [
       [28, "太乙与主大将共挟始击（客目）于正宫", "太乙与主大将共挟客大将于正宫"],
