@@ -16,6 +16,8 @@ describe("serializeChartToStructuredText", () => {
     expect(serializeChartToCompactJson(chart)).toContain("地丁与值使同宫成立");
     expect(serializeChartToCompactJson(chart)).toContain("值使原到中五宫后寄出");
     expect(serializeChartToStructuredText(chart)).toContain("阴阳均寄坤二，天禽随天芮");
+    expect(serializeChartToStructuredText(chart)).toContain("本站迫指门克宫，制指宫克门");
+    expect(serializeChartToCompactJson(chart)).toContain("本站迫指门克宫，制指宫克门");
     expect(serializeChartToCompactJson(chart)).toContain("中五阴阳均寄坤二");
     expect(serializeChartToCompactJson(chart)).toContain("八神用白虎、玄武");
   });

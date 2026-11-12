@@ -60,6 +60,25 @@ describe("buildChart", () => {
     }
     expect(heart).toBeGreaterThan(0); expect(pillar).toBeGreaterThan(0); expect(different).toBeGreaterThan(0);
   });
+  it("compares gate-palace pressure with the five-element relationship across actual charts", () => {
+    // 艺术典705：门克宫为迫。除书中列举，还按八门五行推导杜门、死门等对应宫。
+    const elements: Record<string, string> = { 休门: "水", 生门: "土", 伤门: "木", 杜门: "木", 景门: "火", 死门: "土", 惊门: "金", 开门: "金" };
+    const palaceElements: Record<number, string> = { 1: "水", 2: "土", 3: "木", 4: "木", 6: "金", 7: "金", 8: "土", 9: "火" };
+    const controlling: Record<string, string> = { 水: "火", 火: "金", 金: "木", 木: "土", 土: "水" };
+    const seen = new Set<string>();
+    for (let day = 1; day <= 10; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      for (const palace of chart.raw.palaces) {
+        if (!(palace.position in palaceElements)) continue;
+        const key = `${palace.gate}-${palace.position}`;
+        seen.add(key);
+        expect(palace.gatePressure === "迫", `${datetime} ${key}`).toBe(controlling[elements[palace.gate]] === palaceElements[palace.position]);
+        expect(palace.gatePressure === "制", `${datetime} ${key}`).toBe(controlling[palaceElements[palace.position]] === elements[palace.gate]);
+      }
+    }
+    expect(seen.size).toBe(64);
+  });
   it("independently enumerates chief, envoy, gates, stars and deities over both dun and nine ju", () => {
     const stemOrder = "戊己庚辛壬癸丁丙乙";
     const stems = "甲乙丙丁戊己庚辛壬癸", branches = "子丑寅卯辰巳午未申酉戌亥";

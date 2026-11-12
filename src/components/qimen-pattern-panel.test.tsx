@@ -64,6 +64,7 @@ describe("QimenPatternPanel", () => {
     // 青龙返首 forms in palace 3 whose gate/star are both 旺 → 有力.
     expect(screen.getAllByText("有力").length).toBeGreaterThan(0);
     expect(screen.getByText(/八神用白虎、玄武/)).toBeInTheDocument();
+    expect(screen.getByText(/本站迫指门克宫，制指宫克门/)).toBeInTheDocument();
   });
 
   it("filters to formed or failed", () => {

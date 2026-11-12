@@ -6,7 +6,7 @@ import type {
 } from "3meta";
 import type { ChartSequenceItem } from "./sequence";
 import type { NormalizedQimenChart } from "./types";
-import { evaluateQimenPatterns, QIMEN_DEITY_METHOD, QIMEN_STRENGTH_METHOD } from "./patterns";
+import { evaluateQimenPatterns, QIMEN_DEITY_METHOD, QIMEN_STRENGTH_METHOD, QIMEN_PRESSURE_TERMS } from "./patterns";
 
 const formatValue = (value: unknown): string => {
   if (value === undefined || value === null || value === "") {
@@ -185,6 +185,7 @@ export const serializeChartToStructuredText = (
     `值使宫位: ${formatValue(chart.raw.zhiShi.position)}`,
     "中五寄宫: 阴阳均寄坤二，天禽随天芮；古籍另有分寄口径",
     `八神口径: ${QIMEN_DEITY_METHOD}`,
+    `门宫术语: ${QIMEN_PRESSURE_TERMS}`,
     `驿马地支: ${formatValue(chart.raw.postHorse.branch)}`,
     `驿马宫位: ${formatValue(chart.raw.postHorse.position)}`,
     `季节: ${formatValue(chart.raw.season)}`,
@@ -347,7 +348,7 @@ const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod 
 
 const buildCompactPayload = (chart: NormalizedQimenChart) => ({
   format: "qmdj-llm-compact-v1",
-  note: `中五阴阳均寄坤二，天禽随天芮；另有分寄法。${QIMEN_DEITY_METHOD}legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。门宫证据的“旨”指《奇门旨归》。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。`,
+  note: `中五阴阳均寄坤二，天禽随天芮；另有分寄法。${QIMEN_DEITY_METHOD}${QIMEN_PRESSURE_TERMS}legend.chart 与 chart 按索引一一对应；legend.palace 与 palaces 每行按索引一一对应；值为“无”表示源值为空、缺失或无该项。紧凑载荷里的「十干克应」只给关系码，完整描述见结构化文本。门宫证据的“旨”指《奇门旨归》。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。`,
   ...buildCompactSections(chart),
 });
 
@@ -363,7 +364,7 @@ export const serializeSequenceToCompactJson = (
 
     return {
       format: "qmdj-llm-sequence-compact-v1",
-      note: `中五阴阳均寄坤二，天禽随天芮；另有分寄法。${QIMEN_DEITY_METHOD}legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。门宫证据的“旨”指《奇门旨归》。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。`,
+      note: `中五阴阳均寄坤二，天禽随天芮；另有分寄法。${QIMEN_DEITY_METHOD}${QIMEN_PRESSURE_TERMS}legend 只出现一次；每个 item 的 chart 与 palaces 按 legend 索引一一对应。门宫证据的“旨”指《奇门旨归》。旺衰依据在各宫九星/八门旺衰；未列usageRestrictions表示无已登记取用限制。`,
       count: sequence.length,
       strengthMethod: QIMEN_STRENGTH_METHOD,
       legend: sharedLegend,

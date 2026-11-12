@@ -557,6 +557,7 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
 ];
 
 export const QIMEN_STRENGTH_METHOD = "门星旺衰赋分：旺3、相2、休1、囚0、死/废-1；取成立宫位最高和分，4起有力、1起中平，其余无力。取用限制另列，不计入此分。";
+export const QIMEN_PRESSURE_TERMS = "本站迫指门克宫，制指宫克门（艺术典705）；《秘笈大全》首句另称门克宫为宫迫、宫克门为门迫，后句制害用语亦有歧义。";
 export const QIMEN_DEITY_METHOD = "八神用白虎、玄武；《统宗》另列勾陈、朱雀及其属神，异书口径不同。";
 
 const usageRestrictions = (id: string, palace: Palace): string[] => {
