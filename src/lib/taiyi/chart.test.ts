@@ -64,6 +64,20 @@ describe("accumulation and palaces", () => {
     expect(result[1].hypothesis).not.toBe(25);
   });
 
+  it("reconstructs 講武全書 庚辰 seventeen-chart 定计 from the stated positions", () => {
+    // 原书：庚辰十七局，大武居坤，太乙七宫；合神酉加辰，文昌下吕申，间神起一至大威，得十六。
+    // 1580 仅作为庚辰输入载体，入局强制为 17，不声称是原文具体年份。
+    const chart = buildTaiyiChart({ year: 1580, cycle: 360, dun: "阳遁", ruJu: 17 });
+    expect(chart.taiyi).toMatchObject({ palace: 7, position: "坤" });
+    expect(chart.tianMu).toMatchObject({ position: "坤", deity: { name: "大武" } });
+    expect(chart.fixedPlanEye).toMatchObject({ yearBranch: "辰", combiningBranch: "酉", position: "寅", deity: { name: "吕申" } });
+    expect(chart.fixedPlan).toMatchObject({ count: 16, generalPalace: 6, deputyPalace: 8 });
+    expect(countSum("寅", "坤")).toBe(1 + 4 + 9 + 2);
+    // 吕申是十六神的名称，不是地支申；混淆二者会得到另一数值。
+    expect(countSum("申", "坤")).toBe(34);
+    expect(JSON.parse(serializeTaiyiToCompactJson(chart)).fixedPlan.count).toBe(16);
+    expect(serializeTaiyiToStructuredText(chart)).toContain("太乙前止法）：16");
+  });
   it("follows the 金钥匙 定算 examples and preserves its contrast with 秘书", () => {
     // 金钥匙戊戌月：定目戌，太乙巽，1+1+8+3+4=17；丁未日：定目艮，太乙子，3+4+9+2+7+6+1=32。
     expect(countSum("戌", "巽")).toBe(17);
