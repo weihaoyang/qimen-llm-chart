@@ -42,6 +42,21 @@ const statusOf = (report: ReturnType<typeof evaluateQimenPatterns>, id: string) 
   report.checks.find((check) => check.id === id)?.status;
 
 describe("evaluateQimenPatterns", () => {
+  it("labels the separate star and gate interpretation and keeps overlapping evidence", () => {
+    const check = evaluateQimenPatterns(chartWith([
+      palace(6, { star: "天英", gate: "景门" }),
+      palace(7, { star: "天英", gate: "休门" }),
+      palace(9, { star: "天英", gate: "景门" }),
+    ])).checks.find(p => p.id === "huo_ru_jin_xiang_star_gate")!;
+    expect(check.positions).toEqual([6, 7]);
+    expect(check.evidence[0]).toContain("天英临乾兑");
+    expect(check.evidence[0]).toContain("景门临乾兑");
+    expect(check.evidence[1]).toContain("天英临乾兑");
+    const gate = evaluateQimenPatterns(chartWith([palace(7, { star: "天心", gate: "景门" })])).checks.find(p => p.id === "huo_ru_jin_xiang_star_gate")!;
+    expect(gate.positions).toEqual([7]);
+    expect(gate.evidence[0]).toContain("景门临乾兑");
+    expect(evaluateQimenPatterns(chartWith([palace(6)])).checks.find(p => p.id === "huo_ru_jin_xiang_star_gate")?.status).toBe("未成立");
+  });
   it("separates 金入火乡 by star from the 庚加丙 stem rule", () => {
     const report = evaluateQimenPatterns(chartWith([
       palace(9, { star: "天心", heavenlyStem: "乙", earthlyStem: "丁" }),

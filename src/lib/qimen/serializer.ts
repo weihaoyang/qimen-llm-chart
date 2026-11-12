@@ -220,7 +220,6 @@ const buildCompactSchema = () => {
     "值符",
     "值使",
     "驿马",
-    "暗干表",
     "全局特殊格局",
     "登记格局判定",
   ];
@@ -276,7 +275,7 @@ const compactSpecialPatterns = (chart: NormalizedQimenChart) => ({
     return { id: pattern.id, name: pattern.name, position: pattern.position };
   }),
   inauspiciousPatterns: (chart.raw.specialPatterns.inauspiciousPatterns ?? []).map((pattern) => {
-    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing", "patterns.bad.bei_ge", "patterns.bad.tian_wang_si_zhang", "patterns.bad.jin_ru_huo_xiang_star"].includes(pattern.id)) return pattern;
+    if (!["patterns.bad.sui_ge", "patterns.bad.yue_ge", "patterns.bad.shi_ge", "patterns.bad.ri_ge", "patterns.bad.fei_gan_ge", "patterns.bad.san_qi_ru_mu", "patterns.bad.san_qi_shou_xing", "patterns.bad.bei_ge", "patterns.bad.tian_wang_si_zhang", "patterns.bad.jin_ru_huo_xiang_star", "patterns.bad.huo_ru_jin_xiang_star_gate"].includes(pattern.id)) return pattern;
     return { id: pattern.id, name: pattern.name, position: pattern.position };
   }),
 });
@@ -304,7 +303,6 @@ const buildCompactSections = (chart: NormalizedQimenChart, sharedStrengthMethod 
       normalizeValue(chart.raw.zhiFu),
       normalizeValue(chart.raw.zhiShi),
       normalizeValue(chart.raw.postHorse),
-      normalizeValue(chart.hiddenStemsByPalace),
       normalizeValue(compactSpecialPatterns(chart)),
       sharedStrengthMethod ? summaryWithoutMethod : patternSummary,
     ],

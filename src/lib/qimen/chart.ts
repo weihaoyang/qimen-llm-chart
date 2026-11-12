@@ -2,7 +2,7 @@ import { Solar } from "lunar-typescript";
 import { getCivilDateTime } from "@/lib/profile/normalize";
 import { QimenChart, i18n } from "3meta";
 import type { NormalizedProfileInput } from "@/lib/profile";
-import { beiGeReasons, sanQiRestrictionReasons, sanQiTombStems, tianWangReasons, metalStarInFireReasons, matchesPillarGengGe, matchesPillarFeiGan, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia, matchesHuanYi, matchesXiangZuo, yunDunReasons, fengDunReasons, tianDunReasons, renDunReasons, longDunReasons } from "./patterns";
+import { beiGeReasons, sanQiRestrictionReasons, sanQiTombStems, tianWangReasons, metalStarInFireReasons, fireInMetalReasons, matchesPillarGengGe, matchesPillarFeiGan, matchesFeiGong, matchesFuGong, matchesSanQiDeShi, matchesSanZha, matchesHuDun, matchesGuiDun, matchesQiYouLuWei, matchesSanQiShengDian, matchesDiJia, matchesRenJia, matchesShenJia, matchesGuiJia, matchesHuanYi, matchesXiangZuo, yunDunReasons, fengDunReasons, tianDunReasons, renDunReasons, longDunReasons } from "./patterns";
 import { QIMEN_SOLAR_TERMS, type QimenSettings } from "./settings";
 import { formatLocalDateTime, getChinaEphemerisParts, toZonedDate } from "./timezone";
 import type { NormalizedQimenChart, RawChartData, UserChartInput } from "./types";
@@ -99,13 +99,16 @@ export const buildChart = (
   const sanQiRestrictionId = "patterns.bad.san_qi_shou_xing";
   const beiGeId = "patterns.bad.bei_ge";
   const metalStarId = "patterns.bad.jin_ru_huo_xiang_star";
-  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || id === feiGanId || id === tianWangId || id === sanQiTombId || id === sanQiRestrictionId || id === beiGeId || id === metalStarId || id === "patterns.bad.fu_gan_ge" || pillarGengRules.some(rule => rule.id === id);
+  const fireStarGateId = "patterns.bad.huo_ru_jin_xiang_star_gate";
+  const isCorrectedBadPattern = (id: string | undefined) => id === fuGongId || id === feiGongId || id === feiGanId || id === tianWangId || id === sanQiTombId || id === sanQiRestrictionId || id === beiGeId || id === metalStarId || id === fireStarGateId || id === "patterns.bad.fu_gan_ge" || pillarGengRules.some(rule => rule.id === id);
   const palaces = sortPalaces(rawChart).map((palace) => {
     const auspiciousPatterns = (palace.auspiciousPatterns ?? []).filter(({ id }) => !isCorrectedGoodPattern(id));
     const inauspiciousPatterns = (palace.inauspiciousPatterns ?? []).filter(({ id }) => !isCorrectedBadPattern(id));
     const position = palace.position;
     const metalStarReasons = metalStarInFireReasons(palace);
     if (metalStarReasons.length) inauspiciousPatterns.push({ id: metalStarId, name: "金入火乡（星）", type: "金入火乡（星）", position, description: `${metalStarReasons.join("、")}（艺术典704）` });
+    const fireReasons = fireInMetalReasons(palace);
+    if (fireReasons.length) inauspiciousPatterns.push({ id: fireStarGateId, name: "火入金乡（星门）", type: "火入金乡（星门）", position, description: `${fireReasons.join("、")}（艺术典704，分别临宫解读）` });
     if (matchesHuanYi(palace, rawChart.zhiFu.heavenlyStem)) auspiciousPatterns.push({ id: huanYiId, name: "欢怡", type: "欢怡", position, description: "天盘三奇临地盘本旬值符遁仪" });
     if (matchesXiangZuo(palace, rawChart.zhiFu.position)) auspiciousPatterns.push({ id: xiangZuoId, name: "相佐", type: "相佐", position, description: "天盘值符临地盘三奇" });
     const yunReasons = yunDunReasons(palace);

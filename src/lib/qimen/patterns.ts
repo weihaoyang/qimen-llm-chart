@@ -149,6 +149,14 @@ export const matchesLongDun = (palace: Palace) => longDunReasons(palace).length 
 export const metalStarInFireReasons = (palace: Palace): string[] => palace.position === 9
   ? valuesOf(palace.star).filter(star => star === "天心" || star === "天柱").map(star => `${star}临离九宫`)
   : [];
+/** 将704卷“天英景门到七六宫”明确按星、门分别临宫解读。 */
+export const fireInMetalReasons = (palace: Palace): string[] => {
+  if (palace.position !== 6 && palace.position !== 7) return [];
+  return [
+    ...(valuesOf(palace.star).includes("天英") ? ["天英临乾兑"] : []),
+    ...(palace.gate === "景门" ? ["景门临乾兑"] : []),
+  ];
+};
 
 /** 《奇门吉格》云遁主式与“一云”分开保留；《旨归》坤宫辛为主式的较窄版本。 */
 export const yunDunReasons = (palace: Palace): string[] => {
@@ -408,6 +416,10 @@ export const QIMEN_PATTERN_CATALOG: CatalogEntry[] = [
   bad("jin_ru_huo_xiang_star", "金入火乡（星）", "常用凶格", "天心或天柱临离九宫", "《古今图书集成》另列星宫条件；与庚加丙分列，不要求二者同时成立。", (p) => {
     const reasons = metalStarInFireReasons(p);
     return reasons.length ? `${palaceLabel(p.position)}：${reasons.join("、")}（艺术典704）` : null;
+  }),
+  bad("huo_ru_jin_xiang_star_gate", "火入金乡（星门）", "常用凶格", "天英或景门临乾六、兑七", "将《图书集成》“天英景门到七六宫”按星或门分别临宫解读；与丙加庚分列。", (p) => {
+    const reasons = fireInMetalReasons(p);
+    return reasons.length ? `${palaceLabel(p.position)}：${reasons.join("、")}（艺术典704，分别临宫解读）` : null;
   }),
   bad("zhu_que_tou_jiang", "朱雀投江", "常用凶格", "天盘丁 + 地盘癸", "主文书口舌受挫、信息落空；重报文不重口头。", stemPair("丁", "癸")),
   bad("teng_she_yao_jiao", "螣蛇夭矫", "常用凶格", "天盘癸 + 地盘丁", "主虚惊、反复与纠缠；避开情绪化决策。", stemPair("癸", "丁")),

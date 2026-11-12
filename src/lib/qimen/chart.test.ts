@@ -5,6 +5,35 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("checks the yin-six fire example without claiming both historical fields match", () => {
+    const chart = buildChart({ datetime: "2026-01-05T04:00", timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: "夏至", dunType: "yin", juNumber: 6 } });
+    expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe("丙寅");
+    expect([chart.raw.palaces.find(p => p.position === 7)!.star].flat()).toContain("天英");
+    expect(chart.raw.palaces.find(p => p.position === 1)!.gate).toBe("景门");
+    const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "huo_ru_jin_xiang_star_gate")!;
+    expect(check.positions).toEqual([7]);
+    expect(check.evidence[0]).toContain("天英临乾兑");
+    expect(check.evidence[0]).not.toContain("景门临乾兑");
+  });
+  it("checks fire star and gate independently across actual charts", () => {
+    let star = 0, gate = 0;
+    for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
+      const datetime = `2026-01-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
+      const chart = buildChart({ datetime, timeZone: "Asia/Shanghai" });
+      const matches = chart.raw.palaces.filter(p => [6, 7].includes(p.position) && ([p.star].flat().includes("天英") || p.gate === "景门"));
+      const check = evaluateQimenPatterns(chart).checks.find(p => p.id === "huo_ru_jin_xiang_star_gate")!;
+      expect([...check.positions].sort(), datetime).toEqual(matches.map(p => p.position).sort());
+      const id = "patterns.bad.huo_ru_jin_xiang_star_gate";
+      for (const palace of chart.raw.palaces) {
+        const expected = matches.includes(palace);
+        expect(palace.inauspiciousPatterns?.filter(p => p.id === id).length ?? 0, datetime).toBe(Number(expected));
+      }
+      expect((chart.raw.specialPatterns.inauspiciousPatterns ?? []).filter(p => p.id === id).map(p => p.position).sort(), datetime).toEqual(matches.map(p => p.position).sort());
+      star += matches.filter(p => [p.star].flat().includes("天英")).length;
+      gate += matches.filter(p => p.gate === "景门").length;
+    }
+    expect(star).toBeGreaterThan(0); expect(gate).toBeGreaterThan(0);
+  });
   it("checks metal-star-in-fire separately from stem matching on actual charts", () => {
     let heart = 0, pillar = 0, different = 0;
     for (let day = 1; day <= 8; day++) for (let hour = 0; hour < 24; hour += 2) {
