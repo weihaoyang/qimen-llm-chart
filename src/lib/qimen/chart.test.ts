@@ -5,6 +5,22 @@ import { evaluateQimenPatterns } from "./patterns";
 import { DEFAULT_QIMEN_SETTINGS, QIMEN_SOLAR_TERMS } from "./settings";
 
 describe("buildChart", () => {
+  it("reconstructs the two 地遁 examples in 遁甲演义 without dropping 乙 from the rule", () => {
+    const examples = [
+      { datetime: "2026-01-02T06:00", dayStem: "丙", hour: "辛卯", dunType: "yang", solarTerm: "冬至", juNumber: 1, palace: 2, chief: "天冲" },
+      { datetime: "2026-01-05T04:00", dayStem: "己", hour: "丙寅", dunType: "yin", solarTerm: "夏至", juNumber: 9, palace: 8, chief: "天英" },
+    ] as const;
+    for (const example of examples) {
+      const chart = buildChart({ datetime: example.datetime, timeZone: "Asia/Shanghai", qimenSettings: { ...DEFAULT_QIMEN_SETTINGS, solarTerm: example.solarTerm, dunType: example.dunType, juNumber: example.juNumber } });
+      expect(chart.raw.fourPillars.day.stem).toBe(example.dayStem);
+      expect(chart.raw.fourPillars.hour.stem + chart.raw.fourPillars.hour.branch).toBe(example.hour);
+      expect(chart.raw.zhiFu.star).toBe(example.chief);
+      const palace = chart.raw.palaces.find(p => p.position === example.palace)!;
+      expect(palace).toMatchObject({ gate: "开门", heavenlyStem: "乙", earthlyStem: "己" });
+      expect(evaluateQimenPatterns(chart).checks.find(p => p.id === "jiu_dun_di")?.positions).toContain(example.palace);
+      expect(palace.auspiciousPatterns?.some(p => p.id === "patterns.jiu_dun.di_dun")).toBe(true);
+    }
+  });
   it("reports 丙开临巽 风遁 consistently in the registry and both chart outputs", () => {
     const chart = buildChart({ datetime: "2026-01-04T06:00", timeZone: "Asia/Shanghai" });
     const check = evaluateQimenPatterns(chart).checks.find(item => item.id === "jiu_dun_feng")!;
