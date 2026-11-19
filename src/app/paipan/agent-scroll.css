@@ -34,28 +34,56 @@
   }
 
   html body .page-shell.product-chart > .paipan-workspace > #qimen-chart,
-  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent,
   html body .page-shell.product-chart > .paipan-workspace > .analysis-panel-divider,
-  html body .page-shell.product-chart > .analysis-layout--classic > * {
+  html body .page-shell.product-chart > .analysis-layout--classic > :first-child {
     min-height: calc(100dvh - 104px) !important;
     height: auto !important;
     overflow: visible !important;
   }
 
   html body .page-shell.product-chart > .paipan-workspace > #qimen-chart > .canvas-panel,
-  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel,
-  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel > *,
-  html body .page-shell.product-chart > .analysis-layout--classic :is(.classic-observatory, .classic-agent-rail) {
+  html body .page-shell.product-chart > .analysis-layout--classic > .classic-observatory {
     min-height: 0 !important;
     height: auto !important;
     overflow: visible !important;
   }
 
-  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel {
-    display: block !important;
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent,
+  html body .page-shell.product-chart > .analysis-layout--classic > .classic-agent-rail {
+    position: sticky !important;
+    top: 8px !important;
+    align-self: start !important;
+    width: 100% !important;
+    height: calc(100dvh - 16px) !important;
+    min-height: calc(100dvh - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    overflow: hidden !important;
   }
 
-  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel > div {
-    min-height: calc(100dvh - 104px) !important;
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel,
+  html body .page-shell.product-chart > .analysis-layout--classic > .classic-agent-rail {
+    display: flex !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel > [data-agent-conversation="root"],
+  html body .page-shell.product-chart > .analysis-layout--classic > .classic-agent-rail > [data-agent-conversation="root"] {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+
+  html body .page-shell.product-chart [data-agent-conversation="viewport"] {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-width: none !important;
+  }
+
+  html body .page-shell.product-chart [data-agent-conversation="viewport"]::-webkit-scrollbar {
+    display: none !important;
   }
 }

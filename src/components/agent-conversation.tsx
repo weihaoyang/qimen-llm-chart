@@ -208,7 +208,7 @@ export function AgentConversation(props: InspectorPanelProps) {
     // External chart/map suggestions populate the same composer; they do not submit twice.
     if (props.agentQuestion) runtime.thread.composer.setText(props.agentQuestion);
   }), [props.agentConversation, props.agentQuestion, runtime]);
-  return <AssistantRuntimeProvider runtime={runtime}><ThreadPrimitive.Root className={styles.root}>
+  return <AssistantRuntimeProvider runtime={runtime}><ThreadPrimitive.Root className={styles.root} data-agent-conversation="root">
     <header className={styles.head}>
       <div><small>知几 / DIALOGUE</small><h3>{props.agentTitle ?? "盘面解读"}</h3></div>
       <div className={styles.headActions}>
@@ -234,7 +234,7 @@ export function AgentConversation(props: InspectorPanelProps) {
       </select>
     </label>
     {toolEvents.some((event) => event.type === "tool_start" || event.type === "tool_result" || event.type === "chart_update") ? <div className={styles.toolCards} aria-label="工具调用记录">{toolEvents.filter((event) => event.type === "tool_start" || event.type === "tool_result" || event.type === "chart_update").slice(-4).map((event, index) => <div className={styles.toolCard} key={`${event.type}-${index}`}><strong>{event.type === "tool_start" ? `调用 ${event.toolName}` : event.type === "tool_result" ? `${event.toolName} · ${event.status === "success" ? "完成" : "失败"}` : "盘面已更新"}</strong><span>{event.type === "tool_start" ? `关键参数：${event.inputSummary ?? "参数已校验"}` : event.summary}</span>{event.type === "chart_update" && event.calibration ? <><small>候选时辰：{event.calibration.candidates.map((candidate: { time: string }) => candidate.time).join("、")}。{event.calibration.evidence ? `已确认：${event.calibration.evidence}。` : ""}{event.calibration.instruction}</small><div className={styles.toolCardActions}>{event.calibration.candidates.map((candidate) => <button type="button" key={candidate.time} onClick={() => props.onChartContextUpdate?.({ ...event, profile: candidate.profile, structuredText: candidate.structuredText, jsonPayload: candidate.jsonPayload })}>应用 {candidate.time}</button>)}</div></> : null}{event.type === "chart_update" ? <div className={styles.toolCardActions}><button type="button" onClick={() => props.onChartContextUpdate?.(event)}>应用到当前盘面</button><button type="button" onClick={() => props.agentStreamConfig?.onRestoreChartContext?.()}>恢复上一盘面</button></div> : null}</div>)}</div> : null}
-    <ThreadPrimitive.Viewport className={styles.viewport}>
+    <ThreadPrimitive.Viewport className={styles.viewport} data-agent-conversation="viewport">
       <ThreadPrimitive.If empty><div className={styles.welcome}><span>从你的问题开始</span><p>选择一个方向，Agent 会结合当前盘面继续追问。</p><div>{starterPrompts.map((prompt) => <button type="button" key={prompt.label} onClick={()=>runtime.thread.composer.setText(prompt.question)}>{prompt.label} <b aria-hidden="true">↗</b></button>)}</div></div></ThreadPrimitive.If>
       <ThreadPrimitive.Messages components={{UserMessage,AssistantMessage}} />
       <ThreadPrimitive.If running><p className={styles.generating} role="status">● 正在生成回答…</p></ThreadPrimitive.If>
