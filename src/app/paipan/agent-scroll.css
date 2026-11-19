@@ -1,0 +1,61 @@
+/*
+ * Desktop workbench scrolling belongs to the document, not to each column.
+ * The chart and Agent share one vertical rhythm and expose a single scrollbar
+ * at the far right edge of the page.
+ */
+@media (min-width: 721px) {
+  html:has(.product-chart),
+  body:has(.product-chart) {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  html body .page-shell.product-chart {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace,
+  html body .page-shell.product-chart > .analysis-layout,
+  html body .page-shell.product-chart > .analysis-layout--classic {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: calc(100dvh - 104px) !important;
+    overflow: visible !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace {
+    align-items: stretch !important;
+    grid-template-rows: auto !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-chart,
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent,
+  html body .page-shell.product-chart > .paipan-workspace > .analysis-panel-divider,
+  html body .page-shell.product-chart > .analysis-layout--classic > * {
+    min-height: calc(100dvh - 104px) !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-chart > .canvas-panel,
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel,
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel > *,
+  html body .page-shell.product-chart > .analysis-layout--classic :is(.classic-observatory, .classic-agent-rail) {
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel {
+    display: block !important;
+  }
+
+  html body .page-shell.product-chart > .paipan-workspace > #qimen-agent > .sidebar-panel > div {
+    min-height: calc(100dvh - 104px) !important;
+  }
+}

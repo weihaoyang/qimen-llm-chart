@@ -47,21 +47,18 @@ export function AgentConversation(props: InspectorPanelProps) {
     if (typeof window === "undefined") return [];
     try { const value = JSON.parse(localStorage.getItem(storageKey) || "[]"); return Array.isArray(value) ? value.slice(0, 20) : []; } catch { return []; }
   });
-  const [recalcDate, setRecalcDate] = useState("");
   const [conversationMode, setConversationMode] = useState<AgentConversationMode>(props.conversationMode ?? "free");
   const [toolStatus, setToolStatus] = useState("");
   const [toolEvents, setToolEvents] = useState<AgentToolEvent[]>(() => [...(props.toolEvents ?? [])]);
-  const [syncStatus, setSyncStatus] = useState<"syncing" | "synced" | "failed">(props.platformStatus === "authenticated" ? "syncing" : "failed");
   const cloudLoaded = useRef(false);
   useEffect(() => {
     if (props.platformStatus !== "authenticated" || !props.agentStreamConfig || cloudLoaded.current) return;
     cloudLoaded.current = true;
-    setSyncStatus("syncing");
     void (async () => {
       try {
         const headers = await props.agentStreamConfig?.requestHeaders();
         const response = await fetch("/api/agent/cases", { headers });
-        if (!response.ok) { setSyncStatus("failed"); return; }
+        if (!response.ok) return;
         const result = await response.json() as { cases?: Array<{ id: string; title: string; updatedAt: string; status?: "active" | "decided" | "archived" }> };
         const cases = result.cases ?? [];
         const cloud = await Promise.all(cases.slice(0, 20).map(async (item) => {
@@ -76,8 +73,7 @@ export function AgentConversation(props: InspectorPanelProps) {
           localStorage.setItem(storageKey, JSON.stringify(merged));
           return merged;
         });
-        setSyncStatus("synced");
-      } catch { setSyncStatus("failed"); /* local sessions remain available when cloud recovery fails */ }
+      } catch { /* local sessions remain available when cloud recovery fails */ }
     })();
   }, [props.platformStatus, props.agentStreamConfig, storageKey]);
   const updateCloudCase = async (id: string, input: { title?: string; status?: "active" | "decided" | "archived" }) => {
@@ -88,8 +84,7 @@ export function AgentConversation(props: InspectorPanelProps) {
     try {
       const response = await fetch(`/api/agent/cases/${caseId}`, { method: "PATCH", headers: { ...(await config.requestHeaders()), "Content-Type": "application/json" }, body: JSON.stringify(input) });
       if (!response.ok) throw new Error("case update failed");
-      setSyncStatus("synced");
-    } catch { setSyncStatus("failed"); /* local state remains usable when the session expires */ }
+    } catch { /* local state remains usable when the session expires */ }
   };
   const renameSession = (session: { id: string; title: string }) => {
     const title = window.prompt("会话名称", session.title)?.trim();
@@ -120,8 +115,7 @@ export function AgentConversation(props: InspectorPanelProps) {
     setSavedSessions(next);
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* optional */ }
     const config = latest.current.agentStreamConfig;
-    if (latest.current.platformStatus !== "authenticated" || !config) { setSyncStatus("failed"); return; }
-    setSyncStatus("syncing");
+    if (latest.current.platformStatus !== "authenticated" || !config) return;
     try {
       const headers = { ...(await config.requestHeaders()), "Content-Type": "application/json" };
       const caseKey = `${storageKey}:case:${next[0].id}`;
@@ -143,8 +137,7 @@ export function AgentConversation(props: InspectorPanelProps) {
       }
       const evidenceResponse = await fetch(`/api/agent/cases/${caseId}/evidence`, { method: "POST", headers, body: JSON.stringify({ mode: latest.current.mode, sourceText: latest.current.structuredText, structuredJson: JSON.parse(latest.current.jsonPayload || "{}") }) });
       if (!evidenceResponse.ok) throw new Error("evidence sync failed");
-      setSyncStatus("synced");
-    } catch { setSyncStatus("failed"); /* local history remains available if the platform session expires */ }
+    } catch { /* local history remains available if the platform session expires */ }
   };
   const [adapter] = useState<ChatModelAdapter>(() => ({
     async *run({messages,abortSignal}) {
@@ -201,10 +194,13 @@ export function AgentConversation(props: InspectorPanelProps) {
     }
   }));
   const runtime=useLocalRuntime(adapter,{initialMessages:props.agentConversation.map(m=>({role:m.role,content:m.content}))});
-  const quickPrompts = Array.from(new Set([
-    ...props.agentFollowUps,
-    ...props.agentAngles.slice(0, 4).map((angle) => angle.question),
-  ])).slice(0, 6);
+  const starterPrompts = [
+    ...props.agentAngles.map((angle) => ({ label: angle.label, question: angle.question })),
+    ...(props.mode === "bazi" ? [{
+      label: "开始校时",
+      question: "我不确定自己的出生时辰，请通过前事和稳定性格帮我校时。我的公历生日、性别和时区是：____。候选时辰是：____、____。请先建立候选盘，再每次只问我一个能区分候选的核验问题。",
+    }] : []),
+  ].filter((prompt, index, list) => list.findIndex((candidate) => candidate.question === prompt.question) === index).slice(0, 3);
   useEffect(() => runWhenThreadReady(runtime, () => {
     if (props.agentConversation.length && !runtime.thread.getState().messages.length) {
       runtime.thread.reset(props.agentConversation.map(m => ({ role: m.role, content: m.content })));
@@ -213,24 +209,39 @@ export function AgentConversation(props: InspectorPanelProps) {
     if (props.agentQuestion) runtime.thread.composer.setText(props.agentQuestion);
   }), [props.agentConversation, props.agentQuestion, runtime]);
   return <AssistantRuntimeProvider runtime={runtime}><ThreadPrimitive.Root className={styles.root}>
-    <header className={styles.head}><div><small>知几 / DIALOGUE</small><h3>{props.agentTitle ?? "盘面解读"}</h3></div><div className={styles.headActions}><span className={styles.syncStatus}>{syncStatus === "synced" ? "云端已同步" : syncStatus === "syncing" ? "同步中" : syncStatus === "failed" ? "云端同步失败，已保留本地草稿" : "本地会话"}</span><button type="button" onClick={() => setHistoryOpen((value) => !value)}>历史会话</button><span>{props.agentUsageAvailable>0 ? `余 ${props.agentUsageAvailable} 轮` : "无可用额度"}</span></div></header>
+    <header className={styles.head}>
+      <div><small>知几 / DIALOGUE</small><h3>{props.agentTitle ?? "盘面解读"}</h3></div>
+      <div className={styles.headActions}>
+        <button type="button" onClick={() => setHistoryOpen((value) => !value)} aria-expanded={historyOpen}>历史</button>
+        <span className={styles.quotaBadge}>{props.agentUsageAvailable>0 ? `余 ${props.agentUsageAvailable} 轮` : "无可用额度"}</span>
+      </div>
+    </header>
     {historyOpen ? <aside className={styles.history}><div className={styles.historyHead}><strong>历史会话</strong><button type="button" onClick={() => { activeSessionId.current = null; setActiveSessionIdState(null); runtime.thread.reset([]); setHistoryOpen(false); }}>新建</button></div>{savedSessions.length ? savedSessions.map((session) => <div className={`${styles.historyRow} ${activeSessionIdState === session.id ? styles.historyCurrent : ""}`} key={session.id}><button type="button" className={styles.historyItem} onClick={() => { activeSessionId.current = session.id; setActiveSessionIdState(session.id); runtime.thread.reset(session.messages.map((m) => ({ role: m.role, content: m.content }))); setHistoryOpen(false); }}><strong>{session.title}</strong><small>{activeSessionIdState === session.id ? "当前会话 · " : ""}{session.status === "archived" ? "已归档 · " : ""}{new Date(session.updatedAt).toLocaleString("zh-CN")}</small></button><div className={styles.historyActions}><button type="button" aria-label="重命名会话" onClick={() => renameSession(session)}>改名</button><button type="button" aria-label="归档会话" onClick={() => archiveSession(session)}>归档</button><button type="button" aria-label="删除会话" onClick={() => void deleteSession(session)}>删除</button></div></div>) : <small className={styles.historyEmpty}>暂无历史会话</small>}</aside> : null}
-    <div className={styles.context}><span>◈ {({qimen:"奇门",bazi:"八字",ziwei:"紫微",combined:"三盘联合",research:"术数研究",astro:"星盘", "human-design":"人类图", tarot:"塔罗", "fourth-way":"第四道", harmonic:"泛音星盘", huangji:"皇极经世", qizheng:"七政四余", "sacred-geometry":"神圣几何", runes:"卢恩符文", uranian:"汉堡学派", maya:"玛雅历法", vedic:"吠陀分盘", qabalah:"赫尔墨斯卡巴拉", "taiyi-shenshu":"太乙神数", akasha:"阿卡西 · 全息", "ziwei-flying":"紫微飞星", "bazi-tcm":"中医运气"})[props.mode]}盘面上下文</span><small>{props.structuredText ? "已载入" : "等待排盘"}</small></div>
-    <div className={styles.modeRail} aria-label="Agent 工作模式">{([ ["free", "自由对话"], ["interview", "人生访谈"], ["calibration", "出生校时"], ["recalculate", "重新排盘"] ] as const).map(([value, label]) => <button key={value} type="button" className={conversationMode === value ? styles.modeActive : ""} onClick={() => { setConversationMode(value); props.onConversationModeChange?.(value); }}>{label}</button>)}</div>
+    <label className={styles.modePicker}>
+      <span>对话方式</span>
+      <select
+        value={conversationMode}
+        onChange={(event) => {
+          const nextMode = event.target.value as AgentConversationMode;
+          setConversationMode(nextMode);
+          props.onConversationModeChange?.(nextMode);
+        }}
+      >
+        <option value="free">自由对话</option>
+        <option value="interview">人生访谈</option>
+        <option value="calibration">出生校时</option>
+        <option value="recalculate">重新排盘</option>
+      </select>
+    </label>
     {toolEvents.some((event) => event.type === "tool_start" || event.type === "tool_result" || event.type === "chart_update") ? <div className={styles.toolCards} aria-label="工具调用记录">{toolEvents.filter((event) => event.type === "tool_start" || event.type === "tool_result" || event.type === "chart_update").slice(-4).map((event, index) => <div className={styles.toolCard} key={`${event.type}-${index}`}><strong>{event.type === "tool_start" ? `调用 ${event.toolName}` : event.type === "tool_result" ? `${event.toolName} · ${event.status === "success" ? "完成" : "失败"}` : "盘面已更新"}</strong><span>{event.type === "tool_start" ? `关键参数：${event.inputSummary ?? "参数已校验"}` : event.summary}</span>{event.type === "chart_update" && event.calibration ? <><small>候选时辰：{event.calibration.candidates.map((candidate: { time: string }) => candidate.time).join("、")}。{event.calibration.evidence ? `已确认：${event.calibration.evidence}。` : ""}{event.calibration.instruction}</small><div className={styles.toolCardActions}>{event.calibration.candidates.map((candidate) => <button type="button" key={candidate.time} onClick={() => props.onChartContextUpdate?.({ ...event, profile: candidate.profile, structuredText: candidate.structuredText, jsonPayload: candidate.jsonPayload })}>应用 {candidate.time}</button>)}</div></> : null}{event.type === "chart_update" ? <div className={styles.toolCardActions}><button type="button" onClick={() => props.onChartContextUpdate?.(event)}>应用到当前盘面</button><button type="button" onClick={() => props.agentStreamConfig?.onRestoreChartContext?.()}>恢复上一盘面</button></div> : null}</div>)}</div> : null}
-    {props.onRecalculate ? <div className={styles.tools}><strong>工具</strong><input type="datetime-local" value={recalcDate} onChange={(event) => setRecalcDate(event.target.value)} aria-label="新的排盘时间" /><button type="button" onClick={() => { if (recalcDate) props.onRecalculate?.(recalcDate); }}>重新计算并注入</button></div> : null}
     <ThreadPrimitive.Viewport className={styles.viewport}>
-      <ThreadPrimitive.If empty><div className={styles.welcome}><span>从你的问题开始。</span><p>告诉我眼下的选择，我们结合盘面逐步核对。</p><div>{props.agentAngles.slice(0,4).map(a=><button type="button" key={a.label} onClick={()=>runtime.thread.composer.setText(a.question)}>{a.label} ↗</button>)}{props.mode === "bazi" ? <button type="button" onClick={()=>runtime.thread.composer.setText("我不确定自己的出生时辰，请通过前事和稳定性格帮我校时。我的公历生日、性别和时区是：____。候选时辰是：____、____。请先建立候选盘，再每次只问我一个能区分候选的核验问题。")}>开始校时 ↗</button> : null}</div></div></ThreadPrimitive.If>
+      <ThreadPrimitive.If empty><div className={styles.welcome}><span>从你的问题开始</span><p>选择一个方向，Agent 会结合当前盘面继续追问。</p><div>{starterPrompts.map((prompt) => <button type="button" key={prompt.label} onClick={()=>runtime.thread.composer.setText(prompt.question)}>{prompt.label} <b aria-hidden="true">↗</b></button>)}</div></div></ThreadPrimitive.If>
       <ThreadPrimitive.Messages components={{UserMessage,AssistantMessage}} />
       <ThreadPrimitive.If running><p className={styles.generating} role="status">● 正在生成回答…</p></ThreadPrimitive.If>
       {toolStatus ? <p className={styles.toolStatus} role="status">◇ {toolStatus}</p> : null}
-      <ThreadPrimitive.ScrollToBottom className={styles.jump}>回到最新 ↓</ThreadPrimitive.ScrollToBottom>
     </ThreadPrimitive.Viewport>
     {props.agentError ? <p className={styles.error} role="status">{props.agentError}</p> : null}
     <ComposerPrimitive.Root className={styles.composer}>
-      {quickPrompts.length ? <div className={styles.quickPrompts} aria-label="快捷追问">
-        {quickPrompts.map((prompt) => <button type="button" key={prompt} onClick={() => runtime.thread.composer.setText(prompt)}>{prompt}</button>)}
-      </div> : null}
       <ComposerPrimitive.Input className={styles.input} aria-label="发送给 Agent 的问题" placeholder="继续追问，或说说你的具体情况…" maxLength={2000} />
       <div className={styles.composerFoot}><small>Enter 发送 · Shift + Enter 换行</small><ThreadPrimitive.If running={false}><ComposerPrimitive.Send disabled={!props.structuredText} className={styles.send}>提交分析 ↑</ComposerPrimitive.Send></ThreadPrimitive.If><ThreadPrimitive.If running><ComposerPrimitive.Cancel className={styles.send}>停止 ■</ComposerPrimitive.Cancel></ThreadPrimitive.If></div>
     </ComposerPrimitive.Root>

@@ -68,6 +68,10 @@ describe("AppShell", () => {
     expect(screen.queryByRole("button", { name: /管理员.*邀请码/ })).not.toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-agent-sidebar"]')).not.toBeInTheDocument();
     expect(document.querySelector('[data-layout="chart-analysis-drawer"]')).toBeInTheDocument();
+    expect(screen.queryByText(/云端同步失败，已保留本地草稿/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("新的排盘时间")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "对话方式" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /盘面总览/ })).toBeInTheDocument();
     // AI 面板已收敛：桌面非三盘模式下 AI 常驻右侧对话区，不再有重复的「盘面分析」抽屉按钮
     expect(screen.queryByRole("button", { name: /盘面分析/ })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "发送给 Agent 的问题" })).toBeInTheDocument();
