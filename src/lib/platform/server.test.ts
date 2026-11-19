@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchPlatformAccount, readBearerToken, reservePlatformUsage } from "./server";
+import { fetchPlatformAccount, PlatformServerRequestError, readBearerToken, reservePlatformUsage } from "./server";
 
 describe("platform server helpers", () => {
   it("extracts bearer token from authorization header", () => {
@@ -40,5 +40,28 @@ describe("platform server helpers", () => {
     expect(await request.json()).toEqual({ product_code: "qimen", metric: "analysis_turn", quantity: 1, idempotency_key: "request-1" });
     expect(fetchImpl.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
     expect(result).toEqual({ reservation_id: "reservation-1" });
+  });
+
+  it("surfaces a quota denial instead of collapsing it into a generic platform failure", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: "quota_insufficient",
+      message: "Available value cannot cover this operation.",
+    }), {
+      status: 409,
+      headers: { "content-type": "application/json" },
+    }));
+
+    const request = reservePlatformUsage("access-token", {
+      env: { PLATFORM_BASE_URL: "https://platform.example.com", PLATFORM_PRODUCT_CODE: "qimen" },
+      fetchImpl,
+      requestId: "request-without-quota",
+    });
+
+    await expect(request).rejects.toEqual(expect.objectContaining({
+      status: 402,
+      reasonCode: "usage_credit_unavailable",
+      message: "当前没有可用的 AI 分析额度，请购买后重试。",
+    }));
+    await expect(request).rejects.toBeInstanceOf(PlatformServerRequestError);
   });
 });

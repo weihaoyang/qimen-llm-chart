@@ -102,10 +102,28 @@ const mapPlatformError = (error: unknown): never => {
   throw error;
 };
 
+const platformErrorCode = (error: unknown): string | undefined => {
+  if (!error || typeof error !== "object") return undefined;
+  const body = error as { code?: unknown; reason_code?: unknown; reasonCode?: unknown };
+  return [body.code, body.reason_code, body.reasonCode]
+    .find((value): value is string => typeof value === "string" && value.length > 0);
+};
 
 const unwrap = <T,>(result: { data?: T; error?: unknown; response: Response }): T => {
   if (result.error || result.data === undefined) {
-    throw new PlatformServerRequestError(result.response.status || 502, "platform_request_failed", "平台请求未成功。");
+    const reasonCode = platformErrorCode(result.error);
+    if (reasonCode === "quota_insufficient") {
+      throw new PlatformServerRequestError(
+        402,
+        "usage_credit_unavailable",
+        "当前没有可用的 AI 分析额度，请购买后重试。",
+      );
+    }
+    throw new PlatformServerRequestError(
+      result.response.status || 502,
+      reasonCode ?? "platform_request_failed",
+      "平台请求未成功。",
+    );
   }
   return result.data;
 };
