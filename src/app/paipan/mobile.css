@@ -198,18 +198,13 @@
     transform: translate(1px, 1px);
   }
 
-  html body .page-shell.product-chart .mobile-action-bar .mobile-action--primary {
-    background: var(--paipan-accent);
-    font-weight: 950;
-  }
-
-  html body .page-shell.product-chart .mobile-action-bar .mobile-action--primary span {
+  html body .page-shell.product-chart .mobile-action-bar .mobile-action--analysis span {
     display: grid;
     width: 20px;
     height: 16px;
     place-items: center;
     background: var(--paipan-ink);
-    color: var(--paipan-accent);
+    color: var(--paipan-paper);
     font-family: var(--paipan-font-mono);
     font-size: 9px;
     font-weight: 950;

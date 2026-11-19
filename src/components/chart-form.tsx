@@ -105,17 +105,18 @@ function LunarDateTimeWheels({
       </select>
     </label>
   );
-  return <div className="datetime-wheels lunar-datetime-wheels" aria-label="滚轮调整农历日期时间">
+  return <fieldset className="datetime-wheels lunar-datetime-wheels control-field-wide">
+    <legend>农历日期时间</legend>
     {wheel("农历年", "year", Array.from({ length: 201 }, (_, index) => 1900 + index), "年")}
     {wheel("农历月", "month", Array.from({ length: 12 }, (_, index) => index + 1), "月")}
     {wheel("农历日", "day", Array.from({ length: 30 }, (_, index) => index + 1), "日")}
     {wheel("农历时", "hour", Array.from({ length: 24 }, (_, index) => index), "时")}
     {wheel("农历分", "minute", Array.from({ length: 12 }, (_, index) => index * 5), "分")}
-    <div className="datetime-wheel datetime-wheel--check">
-      <span>月份</span>
-      <label className="checkbox-field"><input checked={Boolean(value.isLeapMonth)} type="checkbox" onChange={(event) => onChange({ ...value, isLeapMonth: event.target.checked })} /><span>闰月</span></label>
-    </div>
-  </div>;
+    <label className="lunar-leap-option">
+      <input checked={Boolean(value.isLeapMonth)} type="checkbox" onChange={(event) => onChange({ ...value, isLeapMonth: event.target.checked })} />
+      <span>闰月</span>
+    </label>
+  </fieldset>;
 }
 
 type ChartFormProps = {

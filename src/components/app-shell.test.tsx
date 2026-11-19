@@ -412,9 +412,10 @@ describe("AppShell", () => {
     expect(screen.getByText("第一次用？四步上手")).toBeInTheDocument();
     // 引导里直接写出「当前盘面是哪一份」
     expect(guide.textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
-    // 「改时间」按钮自己就带着当前时间，首屏不用猜
-    const timeButton = screen.getByRole("button", { name: /^改时间/ });
-    expect(timeButton.textContent ?? "").toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+    // 当前时间是单独的状态，不混进动作的名称，读屏仍可取到它。
+    const timeButton = screen.getByRole("button", { name: "改时间" });
+    expect(timeButton).toHaveAccessibleDescription(/当前盘面时间.*\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+    expect(screen.getByText("当前盘面时间")).toBeVisible();
     // 「带我走一遍」= 分步高亮指引：把「在哪点」逐个指出来
     fireEvent.click(screen.getByRole("button", { name: /带我走一遍/ }));
     const tour = screen.getByRole("dialog", { name: "分步指引" });

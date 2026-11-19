@@ -609,8 +609,8 @@ export function AppShell({ platformConfig }: AppShellProps) {
     return () => window.clearTimeout(timer);
   }, [guidedTourSeen.seen, markTourSeen]);
 
-  // 首屏必须能看出「当前盘面是谁、什么时间」：把它直接写在「改时间」按钮上，
-  // 并标出这是不是默认样例（第一次用最容易在这里迷失）。
+  // Keep the original profile summary for onboarding. The toolbar below
+  // uses the visible chart time instead, including the selected sequence item.
   const profileMeta = useMemo(() => {
     const datetime = normalizedProfile.normalized.datetime.replace("T", " ").slice(0, 16);
     const city = normalizedProfile.original.location?.city ?? "未设出生地";
@@ -1808,10 +1808,9 @@ export function AppShell({ platformConfig }: AppShellProps) {
       {/* 排盘时间前后推移：任何体系都用得到（研究页是 K 线，不需要）。 */}
       {mode !== "research" ? (
         <div className="chart-time-stepper" aria-label="盘面时间快速调整">
-          <span>排盘时间</span>
-          {/* 时钟文本：SSR 用 hydration-safe 常量、客户端挂载后换成真实时钟，
-              两者必然不同，故按 React 对时间戳的约定抑制这一层的水合比对。 */}
-          <strong suppressHydrationWarning>{formState.datetime.replace("T", " ")}</strong>
+          <span>{isMobile ? "快速推移" : "排盘时间"}</span>
+          {/* On mobile the selected time is already in the masthead. */}
+          {!isMobile ? <strong suppressHydrationWarning>{formState.datetime.replace("T", " ")}</strong> : null}
           <DateTimeStepper onShift={shiftChartDateTime} />
         </div>
       ) : null}
@@ -2253,11 +2252,27 @@ export function AppShell({ platformConfig }: AppShellProps) {
     </div>, document.body
   ) : null;
 
+  const canEditChartTime = mode !== "research" && !classicWorkspace;
+  const chartInputDateTime = mode === "qimen" ? activeQimenChart?.input.datetime : undefined;
+  const chartTime = chartInputDateTime ? chartInputDateTime.replace("T", " ").slice(0, 16) : profileMeta.datetime;
+  const modeTitle = classicWorkspace ? "经典观象" : mode === "qimen" && sequence.length > 0 ? "奇门序列" : activeModeMeta.title;
+  const chartTimeReadout = (id: string) => (
+    <div className="chart-toolbar__readout" id={id}>
+      <span>当前盘面时间</span>
+      <time dateTime={chartTime.replace(" ", "T")} suppressHydrationWarning>{chartTime}</time>
+    </div>
+  );
+  const chartTimeAction = (mobile: boolean) => (
+    <button type="button"
+      className={mobile ? "mobile-action chart-toolbar__edit" : "chart-toolbar__edit"}
+      aria-controls="chart-parameters-popover" aria-describedby={mobile ? "mobile-chart-time" : "desktop-chart-time"}
+      aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters}
+      data-tour="time">
+      <Clock size={16} strokeWidth={2} aria-hidden="true" /><span>改时间</span>
+    </button>
+  );
   const mobileActionBar = isMobile ? (
     <nav className="mobile-action-bar" aria-label="排盘操作">
-      {mode !== "research" && !classicWorkspace ? (
-        <button type="button" className="mobile-action" aria-controls="chart-parameters-popover" aria-expanded={parametersOpen} aria-haspopup="dialog" onClick={openParameters} title="修改出生时间 / 问事时间与排盘资料" data-tour="time"><Clock size={14} strokeWidth={2} />改时间<span className="hero-action__meta" suppressHydrationWarning>{profileMeta.label}</span></button>
-      ) : null}
       {mode !== "research" && !classicWorkspace ? (
         <button type="button" className="mobile-action" aria-expanded={birthLibraryOpen} onClick={() => setBirthLibraryOpen((value) => !value)}>出生档案</button>
       ) : null}
@@ -2265,10 +2280,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
         <ChartMaterials text={structuredText} json={jsonPayload} literature={agentLiteratureContext} />
       </div>
       {mode !== "combined" && !classicWorkspace ? (
-        <button type="button" className="mobile-action mobile-action--primary" data-tour="ai" onClick={() => setChartAnalysisOpen(true)} title="在底部「AI 盘面分析」里提问，或把分析台展开">
+        <button type="button" className="mobile-action mobile-action--analysis" data-tour="ai" onClick={() => setChartAnalysisOpen(true)} title="在底部「AI 盘面分析」里提问，或把分析台展开">
           <span>AI</span>盘面分析
         </button>
       ) : null}
+      {canEditChartTime ? chartTimeAction(true) : null}
     </nav>
   ) : null;
 
@@ -2302,6 +2318,7 @@ export function AppShell({ platformConfig }: AppShellProps) {
           <div className="mobile-hero__top">
             <div className="mobile-hero__brand">
               <h1>知几</h1>
+              <span className="chart-toolbar__mode">{modeTitle}</span>
             </div>
             {/* 两个入口成组靠右：早先它们各自作为 space-between 的一项，中间被撑出近百像素空档。 */}
             <div className="mobile-hero__actions">
@@ -2316,11 +2333,13 @@ export function AppShell({ platformConfig }: AppShellProps) {
             </div>
           </div>
           <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
+          {canEditChartTime ? chartTimeReadout("mobile-chart-time") : null}
         </header>
       ) : (
         <header className="observatory-hero">
           <div className="observatory-hero__copy">
             <h1>知几</h1>
+            <span className="chart-toolbar__mode">{modeTitle}</span>
           </div>
 
           <ModeTabs mode={mode} onChange={handleModeChange} classicActive={classicWorkspace} onClassicSelect={handleClassicWorkspaceOpen} />
@@ -2345,21 +2364,11 @@ export function AppShell({ platformConfig }: AppShellProps) {
               使用说明
             </button>
           </div>
-          {mode !== "research" && !classicWorkspace ? (
-            <button
-              className="hero-action"
-              type="button"
-              aria-controls="chart-parameters-popover"
-              aria-expanded={parametersOpen}
-              aria-haspopup="dialog"
-              onClick={openParameters}
-              title="修改出生时间 / 问事时间与排盘资料，改完点「应用并重新排盘」"
-              data-tour="time"
-            >
-              <Clock size={14} strokeWidth={2} />
-              改时间{" "}
-              <span className="hero-action__meta" suppressHydrationWarning>{profileMeta.label}</span>
-            </button>
+          {canEditChartTime ? (
+            <div className="chart-toolbar__time-group">
+              {chartTimeReadout("desktop-chart-time")}
+              {chartTimeAction(false)}
+            </div>
           ) : null}
           {mode !== "research" && !classicWorkspace ? <div className="birth-library-control">
             <button type="button" className="hero-action" onClick={() => setBirthLibraryOpen((value) => !value)} title="保存常用出生资料：一键切换、导入 / 导出 JSON">出生档案</button>

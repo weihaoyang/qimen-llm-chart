@@ -380,3 +380,89 @@ html body .page-shell.product-chart .workbench-tabs {
   overflow-y: hidden !important;
 }
 
+
+/* A chart reading is information; editing it is the single primary action. */
+.product-chart .chart-toolbar__mode {
+  color: #4f545e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.product-chart .chart-toolbar__time-group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-self: end;
+  gap: 10px;
+}
+
+.product-chart .chart-toolbar__readout {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--paipan-ink);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.product-chart .chart-toolbar__readout > span { color: #4f545e; font-size: 10px; font-weight: 700; }
+
+.product-chart .chart-toolbar__readout time {
+  font: 750 13px / 1.2 var(--paipan-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+html body .page-shell.product-chart[data-shell] :is(.chart-toolbar__time-group, .mobile-action-bar) .chart-toolbar__edit {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 11px;
+  border: 1px solid #213456;
+  border-radius: 6px;
+  background: #213456;
+  color: #fff;
+  font: 800 13px / 1 var(--paipan-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+html body .page-shell.product-chart[data-shell] :is(.chart-toolbar__time-group, .mobile-action-bar) .chart-toolbar__edit:hover { background: #344b72; }
+html body .page-shell.product-chart[data-shell] :is(.chart-toolbar__time-group, .mobile-action-bar) .chart-toolbar__edit:focus-visible { outline: 2px solid #3c64b6; outline-offset: 3px; }
+.product-chart .chart-toolbar__edit svg { flex: 0 0 auto; }
+
+@media (721px <= width < 1560px) {
+  .product-chart .observatory-hero > .chart-toolbar__time-group { grid-area: 1 / 2; }
+}
+
+@media (max-width: 720px) {
+  .product-chart .mobile-hero .chart-toolbar__readout {
+    flex-flow: row wrap;
+    align-items: baseline;
+    gap: 3px 9px;
+    border-top: 1px solid #d4d2c9;
+    padding: 6px 2px 0;
+  }
+
+  html body .page-shell.product-chart[data-shell] .mobile-action-bar .chart-toolbar__edit { flex: 1.3 0 auto; min-height: 50px; }
+}
+
+/* A compact desktop still keeps all utilities reachable without squeezing
+   the primary action or truncating the selected time. */
+@media (721px <= width <= 1024px) {
+  html body .page-shell.product-chart .observatory-hero {
+    grid-template-columns: auto auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto !important;
+  }
+  html body .page-shell.product-chart .observatory-hero > .chart-toolbar__time-group { grid-area: 1 / 2 / 2 / -1; }
+  html body .page-shell.product-chart .observatory-hero .workbench-tabs { grid-area: 3 / 1 / 4 / -1 !important; }
+  html body .page-shell.product-chart .observatory-hero__materials { grid-area: 2 / 1 !important; }
+  html body .page-shell.product-chart .observatory-hero > .birth-library-control { grid-area: 2 / 2 !important; }
+  html body .page-shell.product-chart .observatory-hero > .birth-library-control:has([title*="保存常用"]) { grid-area: 2 / 3 !important; }
+  html body .page-shell.product-chart .observatory-hero .platform-account { grid-area: 2 / 4 !important; }
+}
